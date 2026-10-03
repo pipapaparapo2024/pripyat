@@ -94,7 +94,11 @@ console.log('\n3) Регресс: _ratingTop() по-прежнему исклю�
 {
     const ratingTopIdx = bossesPhpSrc.indexOf('private function _ratingTop(');
     assert(ratingTopIdx !== -1, '_ratingTop() найден');
-    const ratingTopBody = bossesPhpSrc.slice(ratingTopIdx, ratingTopIdx + 1200);
+    // 04.10.2026: было фиксированное окно в 1200 символов — хрупко (сломалось от одного только
+    // добавленного докблока комментария, функция реально выросла до ~2600 символов после фикса
+    // "гарантия себя в топе"). Теперь — до начала следующей функции, устойчиво к размеру коммента.
+    const ratingTopEndIdx = bossesPhpSrc.indexOf('\n        function rating()', ratingTopIdx);
+    const ratingTopBody = bossesPhpSrc.slice(ratingTopIdx, ratingTopEndIdx !== -1 ? ratingTopEndIdx : ratingTopIdx + 3000);
 
     assert(/_damageSumSince\(\$link,\s*\$uid,\s*\$bossId,\s*\$startMs,\s*true\)/.test(ratingTopBody),
         'мой урон в топе по-прежнему считается с excludeSedoy=true');

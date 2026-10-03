@@ -31,7 +31,7 @@
         function __construct($registry){
             $this->registry = $registry;
             $this->ops = new Gameops($registry);
-            $this->permits = ['open'];
+            $this->permits = ['open', 'preview'];
         }
 
         private function _catalog(){
@@ -45,6 +45,37 @@
                 else break;
             }
             return $lvl;
+        }
+
+        // 04.10.2026 (по прямому указанию — "должно сразу рассчитываться какое оружие и в каких
+        // количествах будет в награде рюкзака, и указываться в рюкзаке"): раньше розыгрыш
+        // мачете/ствола/автомата (RNG по весам d=[%,%,%]) происходил ТОЛЬКО внутри open(), в
+        // момент клика ЗАБРАТЬ — превью (до клика) не могло знать реальный сплит и показывало
+        // весь вес тира под иконкой автомата как грубый ориентир. preview() ниже теперь катает
+        // ТОТ ЖЕ бросок заранее и отдаёт клиенту честный результат ДО подтверждения.
+        //
+        // Чтобы preview() и open() гарантированно совпадали (игрок видит ИМЕННО то, что получит,
+        // не просто вероятный ориентир), оба сеют mt_rand() одним и тем же детерминированным
+        // seed, построенным из uid+текущих ryukzak_points — пока очки не изменились (а между
+        // открытием экрана и кликом ЗАБРАТЬ они не меняются, очки растут только с боёв боссов),
+        // оба вызова катают АБСОЛЮТНО одинаковую последовательность rand-чисел → одинаковый
+        // mach/pist/ak. Отдельная сессия/новое поле в БД не нужны — детерминированный seed
+        // заменяет персистентное состояние.
+        private function _rollWeapons($tier, $uid, $points){
+            mt_srand(crc32($uid . '_' . $points));
+            $mach = 0; $pist = 0; $ak = 0;
+            for($i = 0; $i < intval($tier['w']); $i++){
+                $roll = mt_rand(0, 9999) / 100.0;
+                if($roll < $tier['d'][0]) $mach++;
+                else if($roll < $tier['d'][0] + $tier['d'][1]) $pist++;
+                else $ak++;
+            }
+            // Возвращаем глобальный mt_rand() к несеянному (системно случайному) состоянию —
+            // не оставляем его детерминированным для любого кода, который может выполниться
+            // позже в том же запросе (сейчас после этого в open()/preview() mt_rand() больше не
+            // используется, но это дешёвая защита от будущих регрессий).
+            mt_srand();
+            return [$mach, $pist, $ak];
         }
 
         // 04.10.2026 (баг найден по прямому указанию — "ударил босса мачете, попап «оружие не
@@ -77,6 +108,28 @@
             $user[$ammoKey] = strval($data[$wid]['qty']);
         }
 
+        // 04.10.2026: честное превью — рассчитывает ровно то, что реально получит игрок при
+        // клике ЗАБРАТЬ (тот же уровень/тир и тот же детерминированный бросок оружия, см.
+        // _rollWeapons()), не только cig/c/exp/k (которые и так фиксированы тиром — RNG нужен
+        // был только для mach/pist/ak). Ничего не списывает и не начисляет.
+        function preview(){
+            $uid = intval($this->registry['uid']);
+            $user = $this->ops->loadUser();
+            if(!$user) return $this->ops->fail(99);
+
+            $catalog = $this->_catalog();
+            $points  = $this->ops->i($user, 'ryukzak_points', 0);
+            $level   = max(1, $this->_levelFromPoints($points, $catalog['thresholds']));
+            $tier    = $catalog['tiers'][$level - 1];
+            list($mach, $pist, $ak) = $this->_rollWeapons($tier, $uid, $points);
+
+            $this->ops->ok([
+                'level' => $level, 'cig' => intval($tier['cig']), 'c' => intval($tier['c']),
+                'exp' => intval($tier['exp']), 'k' => intval($tier['k'] ?? 0), 'key_boss' => intval($tier['key_boss'] ?? -1),
+                'mach' => $mach, 'pist' => $pist, 'ak' => $ak,
+            ]);
+        }
+
         function open(){
             $uid = intval($this->registry['uid']);
             $user = $this->ops->loadUser();
@@ -99,15 +152,11 @@
             $level = max(1, $this->_levelFromPoints($points, $catalog['thresholds']));
             $tier = $catalog['tiers'][$level - 1];
 
-            // RNG оружия по весам d=[machete%, gun%, auto%] — та же формула, что раньше
-            // считал клиент (ryukzak.js: for i<w { roll=rand(0,100); ... }).
-            $mach = 0; $pist = 0; $ak = 0;
-            for($i = 0; $i < intval($tier['w']); $i++){
-                $roll = mt_rand(0, 9999) / 100.0;
-                if($roll < $tier['d'][0]) $mach++;
-                else if($roll < $tier['d'][0] + $tier['d'][1]) $pist++;
-                else $ak++;
-            }
+            // 04.10.2026: тот же детерминированный бросок, что и preview() (см. _rollWeapons()) —
+            // пока ryukzak_points не менялись между показом превью и этим кликом (очки растут
+            // только с боёв боссов, не за время просмотра экрана), результат ГАРАНТИРОВАННО
+            // совпадает с тем, что игрок уже увидел на превью — не просто вероятный ориентир.
+            list($mach, $pist, $ak) = $this->_rollWeapons($tier, $uid, $points);
 
             $this->ops->add($user, 'cigarettes', intval($tier['cig']));
             $this->ops->add($user, 'coins', intval($tier['c']));

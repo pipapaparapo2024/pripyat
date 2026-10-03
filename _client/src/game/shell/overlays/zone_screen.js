@@ -291,8 +291,9 @@ export function attachZoneScreen(proto){
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
 		timerLbl.anchor.set(0.5, 0.5);
-		// 26.09.2026 (по прямому указанию — "текст до сбора прибыли подними вверх на 3px").
-		timerLbl.x = 665; timerLbl.y = 693;
+		// 04.10.2026 (по прямому указанию, редактор позиций — x:665 y:692 scale:1.209 w:258 h:24).
+		timerLbl.x = 665; timerLbl.y = 692;
+		timerLbl.scale.set(1.209);
 		timerLbl.visible = false;
 		win.addChild(timerLbl);
 		this._zoneTimerLbl = timerLbl;

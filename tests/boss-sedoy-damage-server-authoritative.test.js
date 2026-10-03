@@ -81,8 +81,11 @@ console.log('\nTest 3: bosses.php.useSedoy() — урон реально пиш�
         'dealt = min(остаток седого, текущее HP) — не расходует больше, чем нужно для добивания');
     assert(!!body && /INSERT INTO `boss_damage_log`/.test(body),
         'пишет удар седого в boss_damage_log — тот же источник правды, что читают _syncFightSession()/_ratingTop() для HP и топа урона');
-    assert(!!body && /'boss_fight_session'\] = json_encode\(\$session\);/.test(body),
-        'сохраняет обновлённый HP-кэш сразу — следующий claimKill()/attack() увидит актуальный HP');
+    // 04.10.2026: прямое присваивание $user['boss_fight_session']=json_encode($session) заменено
+    // на атомарный _commitFightSession() (блокировка строки — защита от гонки с параллельным
+    // attack()/friendsDamage(), см. tests/boss-fight-session-row-lock-race.test.js).
+    assert(!!body && /\$this->_commitFightSession\(\$link, \$uid, \$session\);/.test(body),
+        'сохраняет обновлённый HP-кэш сразу атомарно — следующий claimKill()/attack() увидит актуальный HP');
 }
 
 console.log('\nTest 4: bosses.php.useSedoy() — НЕ засчитывается ни в скиллы, ни в total_damage (топ/задания), но пишется в boss_damage_log (HP/внутрибоевой рейтинг)');

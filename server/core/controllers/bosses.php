@@ -376,6 +376,54 @@
             return $session;
         }
 
+        // ── БЛОКИРОВКА СТРОКИ ДЛЯ boss_fight_session (04.10.2026, по прямому указанию —
+        // найдено на реальных данных прод-БД при разборе "друг бьёт, HP кэша не падает") ──
+        //
+        // attack()/friendsDamage()/startFight()/useSedoy() — ЧЕТЫРЕ разных эндпоинта, каждый из
+        // которых читал boss_fight_session через обычный Gameops::loadUser() (своё соединение,
+        // полная строка игрока, БЕЗ блокировки) и писал его обратно через обычный saveUser()
+        // (INSERT...ON DUPLICATE KEY UPDATE, см. Database::saveData()). Если два таких запроса
+        // прилетают почти одновременно (типичный случай — клиент периодически опрашивает
+        // friendsDamage(), пока игрок одновременно жмёт "Ударить"), оба читают ОДИН И ТОТ ЖЕ
+        // старый кэш, оба независимо считают СВОЙ новый hp/cursorId — и чей saveUser()
+        // отработает позже, тот молча затирает обновление первого (классический lost update,
+        // тот же класс, что уже чинили для списания патронов тут же в attack(), см. комментарий
+        // у блокировки weapons ниже). На живых данных это выглядело так: cursorId в кэше уехал
+        // далеко вперёд (значит SQL матчил и "видел" урон друга), а hp при этом не падал вообще —
+        // чьё-то более позднее сохранение каждый раз отменяло предыдущее уменьшение.
+        //
+        // Фикс — тот же паттерн, что уже доказал себя для патронов: SELECT...FOR UPDATE держит
+        // блокировку СТРОКИ игрока до COMMIT, второй параллельный запрос физически ждёт эту
+        // транзакцию и видит уже обновлённое значение, а не стартует от того же устаревшего
+        // снимка. Критично: читаем/пересчитываем кэш ЗАНОВО ПОД локом (не доверяем значению,
+        // загруженному РАНЬШЕ через обычный loadUser() в начале функции) — иначе лок защитил бы
+        // только запись, но не чтение, и гонка осталась бы на уровне "кто читал раньше".
+        //
+        // Контракт: открывает транзакцию и НЕ коммитит её — вызывающий код может ещё что-то
+        // применить к $session (вычесть свой удар, добавить урон Седого) на том же $link, прежде
+        // чем сохранить через _commitFightSession() ниже. Если вызывающий код прерывается раньше
+        // (return fail(...)) не вызвав _commitFightSession() — соединение закрывается в конце
+        // запроса, mysqli сам откатывает незакоммиченную транзакцию, блокировка снимается, другие
+        // данные игрока это не затрагивает (сама строка не менялась, только читалась).
+        private function _syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince){
+            $link->begin_transaction();
+            $lockRes = $link->query("SELECT `boss_fight_session` FROM `{$this->registry['utb']}` WHERE `id`=".intval($uid)." FOR UPDATE");
+            $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
+            $raw = ($lockRow && $lockRow['boss_fight_session'] !== null) ? json_decode($lockRow['boss_fight_session'], true) : null;
+            $lockedSession = is_array($raw) ? $raw : [];
+
+            return $this->_syncFightSession($link, $uid, $lockedSession, $diffIdx, $bossId, $bossStartMs, $friendsSince);
+        }
+
+        // Пишет итоговый $session обратно (сырым UPDATE, в обход Gameops::saveUser() — та же
+        // причина, что и у записи weapons в attack(): нужен ИМЕННО этот $link, внутри ТОЙ ЖЕ
+        // транзакции, что и блокирующий SELECT выше) и коммитит, снимая блокировку строки.
+        private function _commitFightSession($link, $uid, $session){
+            $json = json_encode($session);
+            $link->query("UPDATE `{$this->registry['utb']}` SET `boss_fight_session`='".$link->real_escape_string($json)."' WHERE `id`=".intval($uid));
+            $link->commit();
+        }
+
         // Курсорное (не пересчётное) подтягивание урона друзей — читает из boss_damage_log
         // ТОЛЬКО новые строки (id > cursorId), вычитает их сумму из session['hp'] и
         // продвигает курсор до максимального увиденного id. Время (`time>=bossStartMs`) тут
@@ -440,14 +488,18 @@
 
             $link = $this->_rawLink();
             if(!$link) return $this->ops->fail(99);
-            $session = $this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $bossStartMs, $friendsSince);
-            $link->close();
-
             // Это единственный эндпоинт, который клиент дёргает ПЕРИОДИЧЕСКИ пока открыт
             // экран боя (см. bosses-combat.js._syncFriendsDamage) — именно здесь курсор
             // реально "едет вперёд" и сохраняется, тот же принцип, что refreshDamages() у
-            // референсной игры сохраняет строку боя при каждом check().
-            $user['boss_fight_session'] = json_encode($session);
+            // референсной игры сохраняет строку боя при каждом check(). 04.10.2026: под
+            // блокировкой строки (см. _syncFightSessionLocked()) — этот опрос чаще всего и
+            // участвует в гонке с attack()/useSedoy().
+            $session = $this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince);
+            $this->_commitFightSession($link, $uid, $session);
+            $link->close();
+
+            // boss_fight_session уже атомарно сохранён выше — $user не трогаем для этого поля,
+            // чтобы обычный saveUser() (другие поля, напр. friends_since) его не перезаписал.
             $this->ops->saveUser($user);
 
             $this->registry['tools']->output(['hp' => intval($session['hp']), 'maxHp' => $maxHp]);
@@ -474,23 +526,35 @@
             $startMs = $this->_myFightStart($myData, $diffIdx, $bossId);
             // A completed fight has no active window; time >= 0 would include all history.
             if($startMs <= 0) return [];
-            $entries = [];
 
             $myDmg = $this->_damageSumSince($link, $uid, $bossId, $startMs, true);
-            if($myDmg > 0) $entries[] = ['id' => $uid, 'damage' => $myDmg, 'nick' => $nick];
+            $myEntry = $myDmg > 0 ? ['id' => $uid, 'damage' => $myDmg, 'nick' => $nick] : null;
 
+            // 04.10.2026 (по прямому указанию — "может быть такое что я не попаду в топ, поэтому
+            // имеет смысл брать не 8 лучших игроков по вкладу, а всё-таки 9"): раньше моя строка
+            // и строки друзей сливались в ОДИН список, сортировались по урону и только потом
+            // резались до 9 — если у игрока набиралось 9+ взаимных друзей, бьющих того же/другого
+            // босса, и все они нанесли БОЛЬШЕ урона, чем сам игрок, его СОБСТВЕННАЯ строка
+            // вылетала из "рейтинга урона" его же боя (array_slice резал её наравне со всеми).
+            // Фикс: себя показываем ВСЕГДА (если бил хоть раз), друзей берём топ-8 по урону — итог
+            // так и остаётся максимум 9 строк (под UI, см. комментарий выше — 3 в живой панели,
+            // 3+6 в попапе результата), но свой вклад больше не может быть вытеснен чужим.
+            $friendEntries = [];
             if($diffIdx !== 3 && !empty($friendsSince)){
                 $perUser = $this->_friendsDamagePerUserSince($link, $friendsSince, true);
                 if(!empty($perUser)){
                     $rows = $this->registry['udb']->getData($this->registry['utb'], array('id', 'nick'), 'id IN('.implode(',', array_keys($perUser)).')', true);
                     $nicks = [];
                     if(is_array($rows)) foreach($rows as $row) $nicks[intval($row['id'])] = strval($row['nick'] ?? '');
-                    foreach($perUser as $fid => $dmg) $entries[] = ['id' => $fid, 'damage' => $dmg, 'nick' => $nicks[$fid] ?? ''];
+                    foreach($perUser as $fid => $dmg) $friendEntries[] = ['id' => $fid, 'damage' => $dmg, 'nick' => $nicks[$fid] ?? ''];
                 }
             }
+            usort($friendEntries, function($a, $b){ return $b['damage'] - $a['damage']; });
+            $topFriends = array_slice($friendEntries, 0, 8);
 
+            $entries = $myEntry ? array_merge([$myEntry], $topFriends) : $topFriends;
             usort($entries, function($a, $b){ return $b['damage'] - $a['damage']; });
-            return array_slice($entries, 0, 9);
+            return $entries;
         }
 
         // Рейтинг урона (панель «РЕЙТИНГ УРОНА» + кнопка «ПЕРЕЗАГРУЗИТЬ», bosses_fight.js.
@@ -501,16 +565,33 @@
             if($bossId < 0 || $bossId > 7 || $diffIdx < 0 || $diffIdx > 3) return $this->registry['tools']->output(['top' => []]);
 
             $uid = abs(intval($this->registry['uid']));
-            $me = $this->registry['udb']->getData($this->registry['utb'], array('bosses_data', 'friends', 'nick'), 'id='.$this->registry['uid']);
+            $me = $this->registry['udb']->getData($this->registry['utb'], array('bosses_data', 'friends', 'friends_since', 'nick'), 'id='.$this->registry['uid']);
             if(isset($me['error']) && $me['error']) return $this->registry['tools']->output(['top' => []]);
 
             $myData = $this->_decodeBossesData($me['bosses_data'] ?? null);
             if(!is_array($myData)) $myData = [];
             $friendIds = (!isset($me['error']) && $diffIdx !== 3) ? $this->_friendIds($me) : [];
 
+            // 04.10.2026 (НАЙДЕНО по репорту "урон друзьям приходит, но они не отображаются в
+            // рейтинге урона/попапе победы"): сюда передавался СЫРОЙ $friendIds (плоский список
+            // uid) вместо карты uid=>effectiveSinceMs, которую строит _friendsSinceMap() и
+            // ожидает _ratingTop() (параметр там называется $friendsSince не просто так — см.
+            // _friendsSinceConds()). foreach по плоскому списку даёт $uid=0,1,2... (ИНДЕКСЫ
+            // массива), а $since=РЕАЛЬНЫЙ uid друга — SQL-условие вида "uid=0 AND
+            // time>=382448269" никогда не совпадает ни с одной строкой boss_damage_log
+            // (настоящих VK-uid, равных 0 или 1, не бывает), поэтому _friendsDamagePerUserSince()
+            // детерминированно возвращал [] — друзья НИКОГДА не попадали в рейтинг, независимо
+            // от того, бил ли реально друг босса. HP же считается отдельным путём
+            // (_syncFightSession()/friendsDamage()), который строит карту ПРАВИЛЬНО через
+            // _friendsSinceMap() — отсюда и расхождение "урон засчитывается в HP, но в списке
+            // участников друга нет". Тот же баг был в endFightSession() и claimKill() — см.
+            // правки там же.
+            $myFightStartForLog = $this->_myFightStart($myData, $diffIdx, $bossId);
+            $friendsSince = (!empty($friendIds) && $myFightStartForLog > 0) ? $this->_friendsSinceMap($me, $friendIds, $myFightStartForLog) : [];
+
             $link = $this->_rawLink();
             if(!$link) return $this->registry['tools']->output(['top' => []]);
-            $top = $this->_ratingTop($link, $uid, strval($me['nick'] ?? ''), $bossId, $diffIdx, $myData, $friendIds);
+            $top = $this->_ratingTop($link, $uid, strval($me['nick'] ?? ''), $bossId, $diffIdx, $myData, $friendsSince);
             $link->close();
 
             // 24.09.2026 (диагностика по репорту "рейтинг накапливается между боями, а не
@@ -520,10 +601,9 @@
             // был единственным из активных боссовых эндпоинтов вообще БЕЗ error_log — добавлено,
             // чтобы при следующем повторении бага в логе сразу было видно, какой именно
             // startMs использовался и что вернул SUM(), вместо гадания.
-            $myFightStartForLog = $this->_myFightStart($myData, $diffIdx, $bossId);
             error_log('[bosses.rating] ' . json_encode([
                 'uid' => $uid, 'bossId' => $bossId, 'diffIdx' => $diffIdx,
-                'myFightStart' => $myFightStartForLog, 'friendIds' => $friendIds,
+                'myFightStart' => $myFightStartForLog, 'friendIds' => $friendIds, 'friendsSince' => $friendsSince,
                 'top' => $top, 'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
             ]));
 
@@ -756,9 +836,13 @@
             // friendsDamage() — периодический опрос экрана боя. Итог: урон друга реально
             // подхватывался только этим опросом, а не сразу при старте/атаке/клейме победы.
             $friendsSince = $this->_friendsSinceMap($user, $friendIds, $activeStartMs);
-            $session = $this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $activeStartMs, $friendsSince);
+            // 04.10.2026: под блокировкой строки (см. _syncFightSessionLocked()) — защита от
+            // гонки с attack()/friendsDamage() на тот же самый момент старта/возврата в бой.
+            $session = $this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $activeStartMs, $friendsSince);
+            $this->_commitFightSession($link, $uid, $session);
             $link->close();
-            $user['boss_fight_session'] = json_encode($session);
+            // boss_fight_session уже атомарно сохранён выше — НЕ присваиваем $user['boss_fight_session'],
+            // чтобы следующий saveUser() (ниже) его не перезаписал устаревшим значением.
 
             $user['bosses_data'] = json_encode($data);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
@@ -985,9 +1069,15 @@
                 if(!is_array($data)) $data = [];
 
                 $friendIds = ($diffIdx !== 3 && !empty($user['friends'])) ? $this->_friendIds($user) : [];
+                // 04.10.2026 (тот же баг, что в rating()/claimKill() — см. подробный комментарий
+                // в rating()): _ratingTop() ожидает карту uid=>effectiveSinceMs ($friendsSince),
+                // а не сырой список uid ($friendIds) — раньше сюда передавался именно сырой
+                // список, и друзья никогда не попадали в «участники боя» этого попапа.
+                $endFightStartMs = $this->_myFightStart($data, $diffIdx, $bossId);
+                $friendsSince = (!empty($friendIds) && $endFightStartMs > 0) ? $this->_friendsSinceMap($user, $friendIds, $endFightStartMs) : [];
                 $link = $this->_rawLink();
                 if($link){
-                    $top = $this->_ratingTop($link, abs(intval($this->registry['uid'])), strval($user['nick'] ?? ''), $bossId, $diffIdx, $data, $friendIds);
+                    $top = $this->_ratingTop($link, abs(intval($this->registry['uid'])), strval($user['nick'] ?? ''), $bossId, $diffIdx, $data, $friendsSince);
                     $link->close();
                 }
 
@@ -1143,11 +1233,17 @@
             // урон друга на КАЖДОЙ атаке фактически не подхватывался (мусорное SQL-условие).
             $friendIds = ($diffIdx !== 3 && !empty($user['friends'])) ? $this->_friendIds($user) : [];
             $friendsSince = $this->_friendsSinceMap($user, $friendIds, $bossStartMs);
-            $session = $this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $bossStartMs, $friendsSince);
+            // 04.10.2026: под блокировкой строки (см. _syncFightSessionLocked()) — найдено на
+            // реальных прод-данных: без лока параллельный friendsDamage()-опрос мог прочитать
+            // тот же устаревший кэш и своим более поздним saveUser() затереть именно ЭТОТ удар.
+            $session = $this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince);
             $hpBefore = intval($session['hp']);
 
             $newHp = max(0, $hpBefore - $damage);
             $session['hp'] = $newHp;
+            // Коммитим СРАЗУ (снимает блокировку строки) — INSERT ниже и списание патронов это
+            // уже отдельные, самостоятельные операции, им эта блокировка не нужна.
+            $this->_commitFightSession($link, $uid, $session);
 
             // 26.09.2026 (по прямому указанию — "бью х10, урон 2к/10к, а при победе фиксирует
             // хп босса 1к, но отображать в попапе победы нужно ровно столько, сколько ударил"):
@@ -1249,7 +1345,9 @@
             $this->_syncSkillPoints($skillsState, $sCatalog);
             $user['skills_levels'] = json_encode($skillsState);
 
-            $user['boss_fight_session'] = json_encode($session);
+            // boss_fight_session уже атомарно сохранён выше (_commitFightSession) — НЕ
+            // присваиваем его здесь, иначе этот saveUser() перезаписал бы его значением,
+            // загруженным ДО блокировки (устаревшим относительно только что закоммиченного).
             $user['bosses_data'] = json_encode($data);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
 
@@ -1393,7 +1491,9 @@
             // _syncFightSession() в файле, а не только 4 ожидаемых).
             $friendIds = ($diffIdx !== 3 && !empty($user['friends'])) ? $this->_friendIds($user) : [];
             $friendsSince = $this->_friendsSinceMap($user, $friendIds, $bossStartMs);
-            $session = $this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $bossStartMs, $friendsSince);
+            // 04.10.2026: под блокировкой строки (см. _syncFightSessionLocked()) — тот же класс
+            // гонки, что в attack()/friendsDamage().
+            $session = $this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince);
             $hpBefore = intval($session['hp']);
 
             // dealt = min(остаток урона седого, текущее HP) — не расходуем больше, чем нужно для
@@ -1423,14 +1523,17 @@
                 $stmt->execute();
                 $stmt->close();
             }
+            // Коммитим после INSERT (та же транзакция, что и блокирующий SELECT в
+            // _syncFightSessionLocked()) — снимает блокировку строки.
+            $this->_commitFightSession($link, $uid, $session);
             $link->close();
 
             // 28.09.2026: total_damage здесь БОЛЬШЕ НЕ растёт (см. большой комментарий над
             // функцией) — этот удар уже учтён в boss_damage_log/HP выше, этого достаточно для
             // корректной боёвки и внутрибоевого рейтинга друзей; в lifetime-счётчик топа/заданий
             // он попадать не должен.
+            // boss_fight_session уже атомарно сохранён выше — НЕ присваиваем его здесь.
             $user['sedoy_dmg_left'] = strval(max(0, $sedoyLeft - $dealt));
-            $user['boss_fight_session'] = json_encode($session);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
 
             error_log('[bosses.useSedoy] uid=' . $uid . ' bossId=' . $bossId . ' diffIdx=' . $diffIdx
@@ -1491,6 +1594,12 @@
             // сюда передавался сырой $hpFriendIds вместо карты $friendsSince — HP-проверка на
             // клейме не подхватывала свежий урон друга, случившийся между последним attack() и
             // самим claimKill() (если friendsDamage() ещё не успел опросить в этот момент).
+            // 04.10.2026: НЕ переведено на _syncFightSessionLocked() — эта проверка ничего не
+            // пишет обратно (просто гейт curHp<=0 чуть ниже), поэтому лока от lost-update ей не
+            // нужно. Возможная цена нелоченного чтения — редкий ложный fail(67) на "бой ещё не
+            // добит", если прямо в этот момент параллельно летит чужой attack()/friendsDamage() —
+            // безопасно восстанавливается повторным кликом ЗАБРАТЬ, в отличие от молчаливой
+            // потери урона в кэше, которую лок в attack()/friendsDamage()/useSedoy() и чинит.
             $hpFriendIds = ($diffIdx !== 3 && !empty($user['friends'])) ? $this->_friendIds($user) : [];
             $hpFriendsSince = $this->_friendsSinceMap($user, $hpFriendIds, $fightStart);
             $hpSession = $this->_syncFightSession($hpLink, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $fightStart, $hpFriendsSince);
@@ -1513,10 +1622,14 @@
 
             // Топ участников этой победы (для попапа результата боя) — считаем ДО сброса
             // bossStartMs ниже, тем же _ratingTop(), что и живая панель «РЕЙТИНГ УРОНА».
-            $friendIds = ($diffIdx !== 3 && !empty($user['friends'])) ? $this->_friendIds($user) : [];
+            // 04.10.2026 (НАЙДЕНО по репорту "урон друзьям приходит, но в попапе победы их нет"):
+            // раньше здесь заново строился СЫРОЙ $friendIds и передавался в _ratingTop() вместо
+            // карты uid=>effectiveSinceMs — переиспользуем уже готовый $hpFriendsSince (посчитан
+            // чуть выше для HP-проверки той же _friendsSinceMap(), тот же $fightStart) — тот же
+            // баг, что и в rating()/endFightSession(), см. подробный комментарий в rating().
             $hpLink = $this->_rawLink();
             if(!$hpLink) return $this->ops->fail(99);
-            $topEntries = $this->_ratingTop($hpLink, $uid, strval($user['nick'] ?? ''), $bossId, $diffIdx, $data, $friendIds);
+            $topEntries = $this->_ratingTop($hpLink, $uid, strval($user['nick'] ?? ''), $bossId, $diffIdx, $data, $hpFriendsSince);
             // Отдельно от topEntries (см. большой комментарий у _sedoyDamageMineSince выше) —
             // сколько снял МОЙ Седой за ЭТУ попытку, для отдельной строки в попапе результата
             // боя, не смешанной с реальным боевым рейтингом. 30.09.2026: урон Седого ДРУГА сюда

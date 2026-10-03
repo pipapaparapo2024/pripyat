@@ -15,6 +15,10 @@ export function attachInterfacePanels(proto){
         if(this.up.butt_settings){
             this._addHoverGlow(this.up.butt_settings);
             this.up.butt_settings.on('pointerdown', ()=>this._openSoundPopup());
+            // 04.10.2026 (по прямому указанию — "кнопку иконку настроек опусти вниз на 2px"):
+            // база (x:1237 y:23) по-прежнему зашита в interface_elements.min.js (см. коммент
+            // выше) — не трогаем компилированный FLA, нудж применяем тут же, как раньше.
+            this.up.butt_settings.y += 2;
         }
 
         if(this.up.butt_energy_plus){

@@ -82,8 +82,10 @@ console.log('\nTest 2: friendsDamage() — считает урон друзей 
     const start = bossesPhp.indexOf('function friendsDamage(){');
     const end   = bossesPhp.indexOf('function rating(){');
     const body  = bossesPhp.slice(start, end);
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-        'friendsDamage() синхронизирует и отдаёт готовый hp из кэша (не total_damage для ручного вычитания на клиенте)');
+    // 04.10.2026: friendsDamage() переведён на _syncFightSessionLocked() (блокировка строки —
+    // защита от гонки параллельных запросов, см. tests/boss-fight-session-row-lock-race.test.js).
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+        'friendsDamage() синхронизирует (под блокировкой строки) и отдаёт готовый hp из кэша (не total_damage для ручного вычитания на клиенте)');
     assert(!/\$data\['curCycleDmg'\]/.test(body), 'friendsDamage() больше не читает client-writable curCycleDmg вообще — источник правды теперь boss_damage_log/boss_fight_session');
 }
 

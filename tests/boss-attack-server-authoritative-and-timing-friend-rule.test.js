@@ -131,9 +131,14 @@ console.log('\nTest 5: bosses.php.attack() — HP производное (не �
     // 30.09.2026 (прогон перед деплоем — тест обновлён под актуальную сигнатуру): 29.09.2026
     // 7-й параметр _syncFightSession() стал картой $friendsSince (uid=>effectiveSinceMs) вместо
     // плоского списка $friendIds — фикс retroactive-урона друга (см. _friendsSinceMap()).
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-        'HP до удара — из личного кэша (_syncFightSession подтягивает свежий урон друзей курсором)');
+    // 04.10.2026 (найдено на реальных прод-данных — "cursorId уехал вперёд, а hp не упал"):
+    // голый _syncFightSession() был уязвим к гонке с параллельным friendsDamage()/useSedoy()
+    // (lost update). Теперь — _syncFightSessionLocked(), блокирует строку SELECT...FOR UPDATE
+    // и перечитывает кэш ПОД локом, см. tests/boss-fight-session-row-lock-race.test.js.
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+        'HP до удара — из личного кэша, под блокировкой строки (_syncFightSessionLocked подтягивает свежий урон друзей курсором)');
     assert(/\$hpBefore = intval\(\$session\['hp'\]\);/.test(body), 'hpBefore читается из кэша, не пересчитывается SUM()-ом');
+    assert(/\$this->_commitFightSession\(\$link, \$uid, \$session\);/.test(body), 'обновлённый кэш коммитится атомарно (снимает блокировку строки) ДО продолжения обработки удара');
     assert(/INSERT INTO `boss_damage_log`/.test(body), 'каждый удар всё равно пишется в лог (источник правды для истории/рейтинга/курсора друзей)');
     assert(/'hp' => \$newHp,/.test(body) && /'maxHp' => \$maxHp,/.test(body) && /'damage' => \$damage,/.test(body) && /'critical' => \$critInt,/.test(body),
         'ответ содержит готовые hp/maxHp/damage/critical — клиенту не нужно ничего досчитывать');

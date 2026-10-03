@@ -341,7 +341,11 @@ export function attachBossesSelect(proto){
 					mSpr.anchor.set(0.5, 0.5);
 					mSpr.x = MEDAL_POS[mi].x + BOSS_SHIFT_X;
 					mSpr.y = cardY + MEDAL_POS[mi].dy + MEDAL_DY[mi];
-					mSpr.alpha = medalKilled >= MEDAL_THRESHOLDS[mi] ? 1.0 : 0.35;
+					// 04.10.2026 (по прямому указанию, скриншот — "медалька какая-то прозрачная"):
+					// незаработанная медаль была слишком заметным "призраком" при alpha:0.35 —
+					// сделана почти незаметной (0.1), но не скрыта полностью (игрок всё ещё
+					// понимает, что место под медаль есть).
+					mSpr.alpha = medalKilled >= MEDAL_THRESHOLDS[mi] ? 1.0 : 0.1;
 					cardsContainer.addChild(mSpr);
 				});
 			}

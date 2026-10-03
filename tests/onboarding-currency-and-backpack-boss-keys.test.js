@@ -35,8 +35,10 @@ assert(/'bosses_data'/.test(serverRyuk) && !/add\(\$user, 'boss_keys'/.test(serv
 assert(/boss_key_1: 'Счастливчик'/.test(reward) && /boss_key_4: 'Крыс'/.test(reward), 'попап содержит подписи персональных ключей');
 
 console.log('\n3) Награда рюкзака показывает иконки ножа/пистолета по новым координатам');
-assert(/'награда рюкзак нож\.png':\s*\{ ?x: 510, ?y: 370 ?\}/.test(ryuk), 'нож рюкзака на x:510 y:370');
-assert(/'награда рюкзак пистолет\.png':\s*\{ ?x: 305, ?y: 215 ?\}/.test(ryuk), 'пистолет рюкзака на x:305 y:215');
+// 04.10.2026: повторная правка координат (редактор позиций) — нож 510,370→460,350, пистолет
+// 305,215→275,185 (scale 0.810 не менялся, совпадает с уже заданным spr.scale.set(0.81)).
+assert(/'награда рюкзак нож\.png':\s*\{ ?x: 460, ?y: 350 ?\}/.test(ryuk), 'нож рюкзака на x:460 y:350');
+assert(/'награда рюкзак пистолет\.png':\s*\{ ?x: 275, ?y: 185 ?\}/.test(ryuk), 'пистолет рюкзака на x:275 y:185');
 assert(/reward\.mach > 0\) iconItems\.push\(\{f:'награда рюкзак нож\.png'/.test(ryuk), 'иконка ножа рисуется только если нож реально выпал');
 assert(/reward\.pist > 0\) iconItems\.push\(\{f:'награда рюкзак пистолет\.png'/.test(ryuk), 'иконка пистолета рисуется только если пистолет реально выпал');
 // Старые имена допустимы только в поясняющем комментарии ("заменили старые X/Y"), не как
@@ -45,6 +47,25 @@ assert(!/'nagrada_ryukzak_nozh\.png'/.test(ryuk) && !/'nagrada_ryukzak_pistolet\
 const fs_ = fs, path_ = path;
 assert(fs_.existsSync(path_.join(root, "_client/development/images/layers/popups/sidorovich/награда рюкзак нож.png")), 'файл иконки ножа скопирован в проект');
 assert(fs_.existsSync(path_.join(root, "_client/development/images/layers/popups/sidorovich/награда рюкзак пистолет.png")), 'файл иконки пистолета скопирован в проект');
+
+console.log('\n3b) 04.10.2026: иконка ключа в награде рюкзака больше не грузится по несуществующему пути');
+{
+    // Баг (репорт — "всё ещё не выводит выбитые ключи из рюкзака"): keyIconSpr.texture
+    // грузился как BASE+file, где BASE = './images/layers/popups/sidorovich/' — файлов
+    // 'ключ *.png' там нет (только в './images/' и './images/layers/popups/bosses/'),
+    // PIXI.Texture.from() тихо отдавал битую текстуру, keyIconSpr.visible=true выставлялся
+    // корректно, но рисовать было нечего — визуально "ключ не выводится".
+    const fs_ = fs, path_ = path;
+    assert(/const KEY_BASE = '\.\/images\/';/.test(ryuk), 'ключ грузится из KEY_BASE (./images/), а не из BASE (sidorovich/)');
+    assert(/keyIconSpr\.texture = PIXI\.Texture\.from\(KEY_BASE \+ file\);/.test(ryuk), '_setKeyPreview реально использует KEY_BASE, не старый BASE');
+    assert(fs_.existsSync(path_.join(root, "_client/development/images/ключ меченный.png")), 'файл ключа реально существует по новому пути (KEY_BASE)');
+    assert(!fs_.existsSync(path_.join(root, "_client/development/images/layers/popups/sidorovich/ключ меченный.png")), 'по старому пути (BASE) файла ключа действительно нет — подтверждает причину бага');
+    // 04.10.2026 (по прямому указанию, редактор позиций — x:320 y:410, фикс. ширина 90px,
+    // высота по пропорциям): нативный размер 272×362 у всех 7 файлов ключей (см. AGENTS.md,
+    // подтверждено при downscale 27.09.2026) → высота = 90 * 362/272 ≈ 120.
+    assert(/keyIconSpr\.x = 320; keyIconSpr\.y = 410;/.test(ryuk), 'ключ позиционирован на x:320 y:410');
+    assert(/keyIconSpr\.width = 90; keyIconSpr\.height = 120;/.test(ryuk), 'ключ — фиксированная ширина 90px, высота по пропорции нативного размера (120px)');
+}
 
 console.log('\n4) DEV-кнопка выставляет ровно 20-й уровень');
 assert(/label:'МАКС\. 20 УР\.'[\s\S]{0,90}_setDevRyukzakLevel20/.test(dev), 'кнопка «МАКС. 20 УР.» есть в DEV-панели');

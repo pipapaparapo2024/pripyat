@@ -139,7 +139,7 @@ console.log('\nTest 7: _applyFriendDamage() — курсорная дедупл�
         'курсор продвигается до максимального увиденного id — тот же удар друга не может быть учтён дважды на следующем вызове');
 }
 
-console.log('\nTest 8: attack() — HP до удара из кэша (не пересчёт), кэш сохраняется в той же транзакции, что и bosses_data');
+console.log('\nTest 8: attack() — HP до удара из кэша (не пересчёт), кэш сохраняется под блокировкой строки');
 {
     const start = bossesPhp.indexOf('function attack(){');
     const end   = bossesPhp.indexOf('function claimKill()');
@@ -148,12 +148,21 @@ console.log('\nTest 8: attack() — HP до удара из кэша (не пе�
     // передавался сырой $friendIds (баг, см. докблок в шапке файла).
     assert(/\$friendsSince = \$this->_friendsSinceMap\(\$user, \$friendIds, \$bossStartMs\);/.test(body),
         'attack() строит карту $friendsSince через _friendsSinceMap() ПЕРЕД синхронизацией кэша');
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-        'attack() синхронизирует кэш перед применением своего удара (подтягивает свежий урон друга курсором) — передаёт карту, не список');
+    // 04.10.2026 (найдено на реальных прод-данных — "cursorId уехал вперёд, а hp не упал"): голый
+    // _syncFightSession() + отдельный $user['boss_fight_session']=json_encode($session) в ОБЩЕМ
+    // saveUser() были уязвимы к гонке с параллельным friendsDamage()/useSedoy() — кто сохранил
+    // последним, тот и победил (lost update), ОДИН round-trip не спасал от этого, только маскировал
+    // проблему "меньшим числом запросов". Теперь — _syncFightSessionLocked() (блокирует строку
+    // SELECT...FOR UPDATE, перечитывает кэш ПОД локом) + _commitFightSession() (отдельный, СРАЗУ
+    // закоммиченный round-trip) — см. tests/boss-fight-session-row-lock-race.test.js.
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+        'attack() синхронизирует кэш ПОД БЛОКИРОВКОЙ строки перед применением своего удара (подтягивает свежий урон друга курсором)');
     assert(/\$hpBefore = intval\(\$session\['hp'\]\);/.test(body), 'hpBefore читается из кэша');
     assert(/\$session\['hp'\] = \$newHp;/.test(body), 'свой удар напрямую мутирует session[\'hp\'] — без лишнего SUM()-запроса');
-    assert(/\$user\['boss_fight_session'\] = json_encode\(\$session\);\s*\n\s*\$user\['bosses_data'\] = json_encode\(\$data\);\s*\n\s*if\(!\$this->ops->saveUser\(\$user\)\) return \$this->ops->fail\(99\);/.test(body),
-        'boss_fight_session сохраняется в ТОМ ЖЕ saveUser(), что и bosses_data/skills_levels — один round-trip к БД, не два');
+    assert(/\$this->_commitFightSession\(\$link, \$uid, \$session\);/.test(body),
+        'boss_fight_session коммитится атомарно (отдельным round-trip, под той же блокировкой, что и чтение) — намеренный trade-off корректности против "одного round-trip"');
+    assert(!/\$user\['boss_fight_session'\] = json_encode\(\$session\);/.test(body),
+        'регресс-гвард: $user[\'boss_fight_session\'] больше НЕ присваивается здесь — иначе финальный saveUser() ниже перезаписал бы атомарно сохранённое значение устаревшим');
 }
 
 console.log('\nTest 9: startFight() — синхронизирует и сохраняет кэш при старте/резюме, отдаёт hp из кэша в ответе');
@@ -167,8 +176,11 @@ console.log('\nTest 9: startFight() — синхронизирует и сохр
     // сюда передавался сырой $friendIds (баг, см. докблок в шапке файла).
     assert(/\$friendsSince = \$this->_friendsSinceMap\(\$user, \$friendIds, \$activeStartMs\);/.test(body),
         'startFight() строит карту $friendsSince через _friendsSinceMap() ПЕРЕД синхронизацией кэша');
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$activeStartMs, \$friendsSince\);/.test(body),
-        'startFight() синхронизирует кэш ДО финального saveUser() — свежий hp едет в одном запросе с bossStartMs/keys, карта, не список');
+    // 04.10.2026: _syncFightSessionLocked()+_commitFightSession() вместо голого _syncFightSession()
+    // — см. комментарий у Test 8 выше (та же гонка, тот же фикс).
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$activeStartMs, \$friendsSince\);/.test(body),
+        'startFight() синхронизирует кэш ПОД БЛОКИРОВКОЙ строки — свежий hp едет в ответе с bossStartMs/keys, карта, не список');
+    assert(/\$this->_commitFightSession\(\$link, \$uid, \$session\);/.test(body), 'startFight() коммитит кэш атомарно ДО финального saveUser() (bosses_data/skills_levels)');
     assert(/'hp' => intval\(\$session\['hp'\]\), 'maxHp' => \$this->BOSS_HP\[\$bossId\]\[\$diffIdx\],/.test(body),
         'ответ startFight() отдаёт hp из кэша (для резюма уже идущего боя — не всегда maxHp)');
 }
@@ -200,10 +212,13 @@ console.log('\nTest 11: friendsDamage() (эндпоинт периодическ
     // по-прежнему корректно.
     assert(/\$friendsSince = \$this->_friendsSinceMap\(\$user, \$friendIds, \$bossStartMs\);/.test(body),
         'friendsDamage() строит карту $friendsSince через _friendsSinceMap()');
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-        'friendsDamage() синхронизирует кэш через тот же метод, что attack()/startFight()/claimKill()');
-    assert(/\$user\['boss_fight_session'\] = json_encode\(\$session\);\s*\n\s*\$this->ops->saveUser\(\$user\);/.test(body),
-        'friendsDamage() САМ сохраняет обновлённый кэш (в отличие от чистого GET-опроса) — курсор реально "едет вперёд" при периодическом polling, а не только при собственном ударе игрока');
+    // 04.10.2026: _syncFightSessionLocked()+_commitFightSession() вместо голого _syncFightSession()
+    // — см. комментарий у Test 8 выше (та же гонка, тот же фикс; friendsDamage() как раз и есть
+    // тот самый периодический опрос, который чаще всего и участвовал в гонке с attack()/useSedoy()).
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+        'friendsDamage() синхронизирует кэш ПОД БЛОКИРОВКОЙ строки через тот же метод, что attack()/startFight()/useSedoy()');
+    assert(/\$this->_commitFightSession\(\$link, \$uid, \$session\);/.test(body),
+        'friendsDamage() САМ атомарно коммитит обновлённый кэш (в отличие от чистого GET-опроса) — курсор реально "едет вперёд" при периодическом polling, а не только при собственном ударе игрока');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

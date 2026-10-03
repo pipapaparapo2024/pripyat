@@ -69,8 +69,10 @@ console.log('\nTest 3: attack() синхронизирует кэш HP чере�
     // 24.09.2026: attack() больше не считает $myDmgSoFar/$friendDmg отдельно — берёт готовый
     // $session['hp'] из _syncFightSession() (фильтр по boss_id живёт внутри неё же, см.
     // boss-rating-hp-scoped-by-boss-id.test.js).
-    assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-        'attack() синхронизирует hpBefore через _syncFightSession() (учитывает соло так же, как раньше)');
+    // 04.10.2026: attack() переведён на _syncFightSessionLocked() (блокировка строки — защита от
+    // гонки параллельных запросов, см. tests/boss-fight-session-row-lock-race.test.js).
+    assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+        'attack() синхронизирует hpBefore через _syncFightSessionLocked() (учитывает соло так же, как раньше)');
     assert(/\$hpBefore = intval\(\$session\['hp'\]\);/.test(body),
         'hpBefore читается из session[\'hp\'] — в соло друзья никогда не подмешиваются (гейт внутри _syncFightSession()/_applyFriendDamage())');
 }

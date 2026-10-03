@@ -215,9 +215,10 @@ export function attachRouletteScreen(proto){
 
         const autoTick = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рулетка галочка автоматически.png'));
         autoTick.anchor.set(0.5, 0.5);
-        // 03.10.2026 (по прямому указанию — "галочку ставь по тем же координатам, что и блок
-        // под неё"): было autoCheckbox.x/y + 7 (визуальное центрирование внутри блока).
-        autoTick.x = autoCheckbox.x; autoTick.y = autoCheckbox.y;
+        // 04.10.2026 (по прямому указанию, редактор позиций — x:902 y:565 scale:1.000 w:15 h:14):
+        // снова своя явная позиция, не завязана на autoCheckbox.x/y (03.10.2026 эта привязка
+        // чуть промахнулась визуально).
+        autoTick.x = 902; autoTick.y = 565;
         autoTick.visible = false;
         win.addChild(autoTick);
         this._roulAutoTick = autoTick;

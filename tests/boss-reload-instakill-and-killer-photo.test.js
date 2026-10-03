@@ -49,8 +49,10 @@ console.log('\nTest 1: bosses.php friendsDamage() — использует curCy
         // над _syncFightSession()): "только урон в активном цикле, не пожизненный" по-прежнему
         // гарантируется границей $bossStartMs = момент старта МОЕГО текущего боя (либо в самом
         // бэкфилле кэша, либо через курсор, который заведён от этой же границы при бэкфилле).
-        assert(/\$session = \$this->_syncFightSession\(\$link, \$uid, \$this->_loadFightSession\(\$user\), \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
-            'синхронизирует кэш HP через _syncFightSession() — урон друга засчитывается только с момента старта МОЕГО боя, не пожизненно');
+        // 04.10.2026: friendsDamage() переведён на _syncFightSessionLocked() (блокировка строки —
+        // защита от гонки параллельных запросов, см. tests/boss-fight-session-row-lock-race.test.js).
+        assert(/\$session = \$this->_syncFightSessionLocked\(\$link, \$uid, \$diffIdx, \$bossId, \$bossStartMs, \$friendsSince\);/.test(body),
+            'синхронизирует кэш HP через _syncFightSessionLocked() — урон друга засчитывается только с момента старта МОЕГО боя, не пожизненно');
         assert(!/\$data\['bossDamage'\]\[\$bossId\]/.test(body),
             'пожизненный bossDamage не используется для списания HP');
     }

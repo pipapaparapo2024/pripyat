@@ -64,12 +64,15 @@ export function attachRyukzak(proto){
 
 		// 02.10.2026 (по прямому указанию — новый арт для ножа/пистолета, координаты даны
 		// пользователем напрямую): заменили старые nagrada_ryukzak_nozh.png/_pistolet.png.
+		// 04.10.2026 (повторная правка, редактор позиций — пистолет x:275 y:185 scale:0.810,
+		// нож x:460 y:350 scale:0.810): scale совпадает с уже заданным глобальным spr.scale.set(0.81)
+		// ниже, менять нужно только x/y этих двух записей.
 		const FIXED_POS = {
-			'награда рюкзак пистолет.png': { x: 305, y: 215 },
+			'награда рюкзак пистолет.png': { x: 275, y: 185 },
 			'nagrada_ryukzak_sigi.png':     { x: 404, y: 178 },
 			'nagrada_ryukzak_rubli.png':    { x: 544, y: 190 },
 			'nagrada_ryukzak_opyt.png':     { x: 682, y: 198 },
-			'награда рюкзак нож.png':      { x: 510, y: 370 },
+			'награда рюкзак нож.png':      { x: 460, y: 350 },
 			'nagrada_ryukzak_avtomat.png':  { x: 615, y: 342 },
 		};
 		const LABEL_OFFSET = {
@@ -122,31 +125,59 @@ export function attachRyukzak(proto){
 		// рюкзака теперь всегда ровно 1 (см. ryukzak_rewards.json/ryukzak_config.json —
 		// значения k>1 на верхних уровнях убраны тем же указанием), так что подписывать
 		// количество отдельно избыточно.
-		const REWARD_KEY_SCALE = 0.260; // та же величина, что и bosses_prefight.js (тот же арт)
+		// 04.10.2026 (баг найден по прямому указанию — "ключи боссов не отображаются"):
+		// иконка грузилась по BASE ('./images/layers/popups/sidorovich/' + file) — файлов
+		// 'ключ *.png' там нет (есть только в './images/' и './images/layers/popups/bosses/'),
+		// PIXI.Texture.from() тихо отдавал битую/пустую текстуру, keyIconSpr.visible=true
+		// выставлялся корректно, но рисовать было нечего. KEY_BASE — тот же './images/', что
+		// и в bosses_prefight.js (откуда и скопирован этот арт).
+		const KEY_BASE = './images/';
 		const KEY_BOSS_ICON_FILES = { 1:'ключ счастливчик.png', 2:'ключ ястреб.png', 3:'ключ меченный.png' };
 		const keyIconSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);
 		keyIconSpr.anchor.set(0.5, 0.5);
-		keyIconSpr.scale.set(REWARD_KEY_SCALE);
-		keyIconSpr.x = 640; keyIconSpr.y = 92;
+		// 04.10.2026 (по прямому указанию, редактор позиций — x:320 y:410, фиксированная
+		// ширина 90px, высота по пропорциям): нативный размер файлов 'ключ *.png' — 272×362
+		// у всех 7 (см. AGENTS.md, уже проверено при downscale 27.09.2026) — высота по той же
+		// пропорции = 90 * 362/272 ≈ 120.
+		keyIconSpr.x = 320; keyIconSpr.y = 410;
+		keyIconSpr.width = 90; keyIconSpr.height = 120;
 		keyIconSpr.visible = false;
 		win.addChild(keyIconSpr);
 		const _setKeyPreview = (count, bossId) => {
 			const file = KEY_BOSS_ICON_FILES[bossId];
 			if(count > 0 && file){
-				keyIconSpr.texture = PIXI.Texture.from(BASE + file);
+				keyIconSpr.texture = PIXI.Texture.from(KEY_BASE + file);
+				keyIconSpr.width = 90; keyIconSpr.height = 120;
 				keyIconSpr.visible = true;
 			} else {
 				keyIconSpr.visible = false;
 			}
 		};
-		// Превью ДО открытия — по ожидаемым числам уровня (cig/c/exp фиксированы в тарифе,
-		// оружие показываем суммарным "w" через нож/пистолет/автомат поровну — чисто ориентир,
-		// реальный сплит решит RNG сервера в момент открытия).
+		// Грубый ориентир СРАЗУ (нет сетевой задержки) — cig/c/exp фиксированы в тарифе, оружие
+		// пока показываем суммарным "w" под иконкой автомата, пока не пришёл честный ответ сервера.
 		_renderRewardIcons({
 			cig: previewTier.cig, c: previewTier.c, exp: previewTier.exp,
 			mach: 0, pist: 0, ak: previewTier.w,
 		});
 		_setKeyPreview(previewTier.k || 0, previewTier.key_boss);
+
+		// 04.10.2026 (по прямому указанию — "должно сразу рассчитываться какое оружие и в каких
+		// количествах будет в награде рюкзака, и указываться в рюкзаке"): грубый ориентир выше
+		// заменяется ЧЕСТНЫМ сплитом с сервера (ryukzak.preview) — тот же детерминированный
+		// бросок, что реально применит open() при клике ЗАБРАТЬ (см. ryukzak.php._rollWeapons()),
+		// поэтому превью и фактическая награда гарантированно совпадают, а не просто похожи.
+		if(window.TS){
+			TS.php('ryukzak.preview', {}, (res) => {
+				if(this._ryukzakWin !== win) return; // экран успели закрыть/переоткрыть — чужой ответ не трогаем
+				console.log('[ryukzak._openRyukzakReward] ← честное превью сервера:', JSON.stringify(res));
+				_renderRewardIcons(res);
+				_setKeyPreview(res.k || 0, res.key_boss);
+				lvlTxt.text = 'УРОВЕНЬ РЮКЗАКА : ' + res.level;
+				_renderProgress(res.level);
+			}, (err) => {
+				console.error('[ryukzak._openRyukzakReward] ошибка честного превью, остаётся грубый ориентир:', JSON.stringify(err));
+			});
+		}
 
 		// --- Прогресс-бар уровня рюкзака ---
 		const lvlTxt = new PIXI.Text('УРОВЕНЬ РЮКЗАКА : ' + previewLevel, {

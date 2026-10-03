@@ -64,7 +64,9 @@ console.log('\nTest 2: ryukzak.php — новый server-authoritative конт�
     // контроллер хаты) — regex больше не требует, чтобы ryukzak был последним элементом.
     assert(/'ryukzak'/.test(registrySrc), "'ryukzak' добавлен в массив classes registry.php");
     assert(/class Ryukzak/i.test(ryukzakPhpSrc), 'класс Ryukzak определён');
-    assert(/\$this->permits = \['open'\];/.test(ryukzakPhpSrc), 'permits содержит open');
+    // 04.10.2026: 'preview' добавлен рядом с 'open' (честный предрасчёт оружия в награде рюкзака
+    // до клика ЗАБРАТЬ, см. tests/ryukzak-honest-weapon-preview.test.js) — permits теперь из двух.
+    assert(/\$this->permits = \['open', 'preview'\];/.test(ryukzakPhpSrc), 'permits содержит open и preview');
     // 25.09.2026: блок стал многострочным (добавлено логирование, см. большой коммент про
     // обнуление ryukzak_points у класса) — deduct + fail(46) внутри одного if по-прежнему рядом.
     assert(/if\(!\$this->ops->deduct\(\$user, 'stew', \$cost\)\)\{[\s\S]{0,200}?return \$this->ops->fail\(46\);/.test(ryukzakPhpSrc),

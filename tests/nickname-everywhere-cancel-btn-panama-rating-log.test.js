@@ -85,7 +85,9 @@ console.log('\nTest 4: сервер отдаёт игровой ник (nick) в
     const ratingStart = bossesPhp.indexOf('private function _ratingTop(');
     const ratingEnd   = bossesPhp.indexOf('function killers()');
     const ratingBody  = bossesPhp.slice(ratingStart, ratingEnd);
-    assert(/array\('bosses_data', 'friends', 'nick'\)/.test(ratingBody), 'bosses.rating() выбирает СВОЙ nick из БД');
+    // 04.10.2026: 'friends_since' добавлен в список полей (нужен для honest-карты $friendsSince,
+    // см. tests/boss-friendssince-map-all-call-sites.test.js, Test 7/8) — nick по-прежнему читается.
+    assert(/array\('bosses_data', 'friends', 'friends_since', 'nick'\)/.test(ratingBody), 'bosses.rating() выбирает СВОЙ nick из БД');
     assert(/strval\(\$me\['nick'\] \?\? ''\)/.test(ratingBody), 'bosses.rating() передаёт СВОЙ nick в _ratingTop()');
     assert(/array\('id', 'nick'\)/.test(ratingBody), 'bosses.rating() отдельно выбирает nick друзей из БД');
     assert(/'nick' => \$nicks\[\$fid\] \?\? ''/.test(ratingBody), '_ratingTop() отдаёт nick друзей в каждой строке');

@@ -98,12 +98,18 @@ console.log('\nTest 5: sanity — все серверные вызывающие
         "function friendsDamage(){",
         "function startFight(){",
     ];
+    // 04.10.2026: 4 из 5 мест (все, кроме claimKill()) переведены на _syncFightSessionLocked()
+    // (см. tests/boss-fight-session-row-lock-race.test.js — защита от гонки параллельных
+    // запросов) — он САМ вызывает _syncFightSession() внутри, значит исправленная граница
+    // курсора по-прежнему применяется ко всем местам автоматически, просто через один
+    // дополнительный уровень обёртки у четырёх из них.
     callers.forEach(marker => {
         const idx = bossesPhp.indexOf(marker);
         assert(idx !== -1, marker + ' найдена в bosses.php');
         const nextFn = bossesPhp.indexOf('\n        function ', idx + 1);
         const funcBody = bossesPhp.slice(idx, nextFn === -1 ? bossesPhp.length : nextFn);
-        assert(/\$this->_syncFightSession\(/.test(funcBody), marker + ' вызывает _syncFightSession() — получает исправленную границу курсора автоматически, без отдельной правки в каждой функции');
+        assert(/\$this->_syncFightSession(Locked)?\(/.test(funcBody),
+            marker + ' вызывает _syncFightSession() (напрямую или через _syncFightSessionLocked()) — получает исправленную границу курсора автоматически, без отдельной правки в каждой функции');
     });
 }
 

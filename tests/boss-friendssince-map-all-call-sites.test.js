@@ -30,6 +30,20 @@
  * ВСЕ вызовы _syncFightSession() в файле, а не только 4 ожидаемых): useSedoy() тоже строит личный
  * HP-кэш через _syncFightSession() и ТОЖЕ передавал сырой $friendIds. Исправлено так же.
  *
+ * ⚠️⚠️ 04.10.2026 (найдено заново, по репорту "убил босса в группе, но рейтинг урона и попап
+ * победы/поражения показывают только меня, хотя урон друзьям явно приходит — HP снижается"):
+ * фикс выше 30.09.2026 закрыл только ОДНУ из двух параллельных веток, читающих $friendsSince —
+ * HP-путь (_syncFightSession()). Вторая ветка — РЕЙТИНГ УЧАСТНИКОВ (_ratingTop(), панель
+ * «РЕЙТИНГ УРОНА» + попап результата боя) — имеет СВОИ три вызывающих места (rating(),
+ * endFightSession(), claimKill() — последний отдельно от своего же HP-вызова на несколько строк
+ * ниже) и ни одно из них тогда не трогали. Все три передавали тот же сырой $friendIds напрямую —
+ * тот же баг, что описан выше, только в другой функции: HP честно снижался (путь через
+ * friendsDamage()/_syncFightSession() был уже исправлен), а список участников оставался пустым
+ * (кроме себя) — ровно симптом из репорта. Фикс (Test 7/8 ниже): rating()/endFightSession()
+ * теперь строят $friendsSince через _friendsSinceMap() перед вызовом _ratingTop(); claimKill()
+ * переиспользует $hpFriendsSince, уже посчитанный чуть выше для HP-проверки, вместо повторной
+ * сборки сырого списка.
+ *
  * Run: node tests/boss-friendssince-map-all-call-sites.test.js
  */
 const fs = require('fs');
@@ -50,24 +64,28 @@ function bodyOf(startMarker, endMarker) {
     return bossesPhp.slice(start, end);
 }
 
-console.log('\nTest 1: startFight() строит $friendsSince через _friendsSinceMap() перед _syncFightSession()');
+console.log('\nTest 1: startFight() строит $friendsSince через _friendsSinceMap() перед _syncFightSessionLocked()');
 {
+    // 04.10.2026: startFight() переведён на _syncFightSessionLocked() (блокировка строки — защита
+    // от гонки параллельных запросов, см. tests/boss-fight-session-row-lock-race.test.js) —
+    // карта $friendsSince по-прежнему строится ДО вызова, просто вызов теперь locked-вариант.
     const body = bodyOf('function startFight(){', 'function _loadWeaponsLocal(');
     const mapIdx = body.indexOf('$friendsSince = $this->_friendsSinceMap($user, $friendIds, $activeStartMs);');
-    const syncIdx = body.indexOf('$this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $activeStartMs, $friendsSince);');
+    const syncIdx = body.indexOf('$this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $activeStartMs, $friendsSince);');
     assert(mapIdx !== -1, '_friendsSinceMap() вызывается');
-    assert(syncIdx !== -1, '_syncFightSession() получает $friendsSince (карту), а не $friendIds');
-    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSession(), а не после');
+    assert(syncIdx !== -1, '_syncFightSessionLocked() получает $friendsSince (карту), а не $friendIds');
+    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSessionLocked(), а не после');
 }
 
-console.log('\nTest 2: attack() строит $friendsSince через _friendsSinceMap() перед _syncFightSession()');
+console.log('\nTest 2: attack() строит $friendsSince через _friendsSinceMap() перед _syncFightSessionLocked()');
 {
+    // 04.10.2026: attack() переведён на _syncFightSessionLocked() — см. комментарий у Test 1.
     const body = bodyOf('function attack(){', 'function claimKill()');
     const mapIdx = body.indexOf('$friendsSince = $this->_friendsSinceMap($user, $friendIds, $bossStartMs);');
-    const syncIdx = body.indexOf('$this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $bossStartMs, $friendsSince);');
+    const syncIdx = body.indexOf('$this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince);');
     assert(mapIdx !== -1, '_friendsSinceMap() вызывается');
-    assert(syncIdx !== -1, '_syncFightSession() получает $friendsSince (карту), а не $friendIds');
-    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSession(), а не после');
+    assert(syncIdx !== -1, '_syncFightSessionLocked() получает $friendsSince (карту), а не $friendIds');
+    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSessionLocked(), а не после');
 }
 
 console.log('\nTest 3: claimKill() строит $hpFriendsSince через _friendsSinceMap() перед _syncFightSession()');
@@ -89,23 +107,32 @@ console.log('\nTest 4: friendsDamage() (уже было корректно) не
         'регресс-гвард: friendsDamage() не передаёт сырой $friendIds напрямую в _syncFightSession()');
 }
 
-console.log('\nTest 4b: useSedoy() (пятое, изначально пропущенное место) строит $friendsSince перед _syncFightSession()');
+console.log('\nTest 4b: useSedoy() (пятое, изначально пропущенное место) строит $friendsSince перед _syncFightSessionLocked()');
 {
+    // 04.10.2026: useSedoy() переведён на _syncFightSessionLocked() — см. комментарий у Test 1.
     const body = bodyOf('function useSedoy(){', "'patch' => \$patch,");
     const mapIdx = body.indexOf('$friendsSince = $this->_friendsSinceMap($user, $friendIds, $bossStartMs);');
-    const syncIdx = body.indexOf('$this->_syncFightSession($link, $uid, $this->_loadFightSession($user), $diffIdx, $bossId, $bossStartMs, $friendsSince);');
+    const syncIdx = body.indexOf('$this->_syncFightSessionLocked($link, $uid, $diffIdx, $bossId, $bossStartMs, $friendsSince);');
     assert(mapIdx !== -1, '_friendsSinceMap() вызывается внутри useSedoy()');
-    assert(syncIdx !== -1, '_syncFightSession() получает $friendsSince (карту), а не $friendIds');
-    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSession(), а не после');
+    assert(syncIdx !== -1, '_syncFightSessionLocked() получает $friendsSince (карту), а не $friendIds');
+    assert(mapIdx !== -1 && syncIdx !== -1 && mapIdx < syncIdx, 'карта строится ДО вызова _syncFightSessionLocked(), а не после');
 }
 
-console.log('\nTest 5: регресс-гвард — ни в одном из ВСЕХ вызовов _syncFightSession() в файле последним аргументом не остался сырой список ($friendIds/$hpFriendIds)');
+console.log('\nTest 5: регресс-гвард — ни в одном из ВСЕХ вызовов _syncFightSession()/_syncFightSessionLocked() в файле последним аргументом не остался сырой список ($friendIds/$hpFriendIds)');
 {
-    // Ищем ВСЕ вызовы _syncFightSession( ... ) во всём файле, не полагаясь на заранее известное
-    // число мест — именно так нашлось пятое (useSedoy()), пропущенное при первом проходе фикса.
-    const calls = bossesPhp.match(/\$this->_syncFightSession\([^;]*\);/g) || [];
-    assert(calls.length === 5, `найдено ровно 5 вызовов _syncFightSession() (attack/startFight/claimKill/friendsDamage/useSedoy) — найдено ${calls.length}. Если это число изменилось — проверь КАЖДОЕ новое место на карту $friendsSince, не полагайся на память об этом списке`);
-    const badCalls = calls.filter(c => /\$(friendIds|hpFriendIds)\)/.test(c));
+    // Ищем ВСЕ вызовы обоих вариантов во всём файле, не полагаясь на заранее известное число
+    // мест — именно так нашлось пятое (useSedoy()), пропущенное при первом проходе фикса.
+    // 04.10.2026: после блокировки строки (tests/boss-fight-session-row-lock-race.test.js) 4 из
+    // 5 "логических" вызывающих мест (attack/startFight/friendsDamage/useSedoy) зовут
+    // _syncFightSessionLocked() вместо голого _syncFightSession() — последний остаётся только у
+    // claimKill() (read-only гейт, см. комментарий в коде) И внутри самой _syncFightSessionLocked()
+    // (её собственная реализация). Поэтому считаем раздельно и складываем.
+    const rawCalls    = bossesPhp.match(/\$this->_syncFightSession\([^;]*\);/g) || [];
+    const lockedCalls = bossesPhp.match(/\$this->_syncFightSessionLocked\([^;]*\);/g) || [];
+    assert(rawCalls.length === 2, `найдено ровно 2 "сырых" вызова _syncFightSession() (claimKill() + реализация внутри _syncFightSessionLocked()) — найдено ${rawCalls.length}`);
+    assert(lockedCalls.length === 4, `найдено ровно 4 вызова _syncFightSessionLocked() (attack/startFight/friendsDamage/useSedoy) — найдено ${lockedCalls.length}. Если число изменилось — проверь новое место на карту $friendsSince, не полагайся на память об этом списке`);
+    const allCalls = [...rawCalls, ...lockedCalls];
+    const badCalls = allCalls.filter(c => /\$(friendIds|hpFriendIds)\)/.test(c));
     assert(badCalls.length === 0,
         `ни один вызов не передаёт сырой список последним аргументом — найдено нарушений: ${badCalls.length}${badCalls.length ? ' (' + badCalls.join(' | ') + ')' : ''}`);
 }
@@ -129,6 +156,42 @@ console.log('\nTest 6: мини-модель — демонстрирует, П�
         'баг: на плоском списке uid превращается в индекс массива (0,1) — условие ищет несуществующих игроков uid=0/uid=1');
     assert(correctCond === '(uid=123456789 AND time>=1700000000000) OR (uid=987654321 AND time>=1700000005000)',
         'фикс: на карте uid — реальный id друга, time — реальная граница дружбы/старта боя');
+}
+
+console.log('\nTest 7 (04.10.2026): регресс ТОГО ЖЕ класса бага в ПАРАЛЛЕЛЬНОМ пути — _ratingTop()');
+{
+    // 30.09.2026 фикс выше закрыл только _syncFightSession() (HP-путь). _ratingTop() —
+    // отдельная функция ("участники боя"/попап победы), с собственными тремя вызывающими
+    // местами (rating(), endFightSession(), claimKill()), которые 30.09.2026 не трогали —
+    // баг пережил тот фикс, обнаружен заново по репорту "урон друзьям приходит в HP, но их
+    // нет в рейтинге/попапе победы" — ровно то расхождение, которое и предсказывает разница
+    // между двумя путями.
+    const ratingBody = bodyOf('function rating(){', 'function killers(){');
+    assert(/\$friendsSince = \(!empty\(\$friendIds\) && \$myFightStartForLog > 0\) \? \$this->_friendsSinceMap\(\$me, \$friendIds, \$myFightStartForLog\) : \[\];/.test(ratingBody),
+        'rating(): строит $friendsSince через _friendsSinceMap() ДО вызова _ratingTop()');
+    assert(/\$top = \$this->_ratingTop\(\$link, \$uid, strval\(\$me\['nick'\] \?\? ''\), \$bossId, \$diffIdx, \$myData, \$friendsSince\);/.test(ratingBody),
+        'rating(): _ratingTop() получает $friendsSince (карту), а не сырой $friendIds');
+
+    const endBody = bodyOf('function endFightSession(){', 'function attack(){');
+    assert(/\$friendsSince = \(!empty\(\$friendIds\) && \$endFightStartMs > 0\) \? \$this->_friendsSinceMap\(\$user, \$friendIds, \$endFightStartMs\) : \[\];/.test(endBody),
+        'endFightSession(): строит $friendsSince через _friendsSinceMap() ДО вызова _ratingTop()');
+    assert(/\$top = \$this->_ratingTop\(\$link, abs\(intval\(\$this->registry\['uid'\]\)\), strval\(\$user\['nick'\] \?\? ''\), \$bossId, \$diffIdx, \$data, \$friendsSince\);/.test(endBody),
+        'endFightSession(): _ratingTop() получает $friendsSince (карту), а не сырой $friendIds');
+
+    const claimBody = bodyOf('function claimKill(){', null);
+    assert(/\$topEntries = \$this->_ratingTop\(\$hpLink, \$uid, strval\(\$user\['nick'\] \?\? ''\), \$bossId, \$diffIdx, \$data, \$hpFriendsSince\);/.test(claimBody),
+        'claimKill(): _ratingTop() переиспользует уже готовый $hpFriendsSince (карту), а не заново собранный сырой $friendIds');
+    assert(!/\$friendIds = \(\$diffIdx !== 3 && !empty\(\$user\['friends'\]\)\) \? \$this->_friendIds\(\$user\) : \[\];\s*\n\s*\$hpLink = \$this->_rawLink\(\);\s*\n\s*if\(!\$hpLink\) return \$this->ops->fail\(99\);\s*\n\s*\$topEntries = \$this->_ratingTop/.test(claimBody),
+        'claimKill(): регресс-гвард — старая избыточная сборка сырого $friendIds прямо перед _ratingTop() убрана целиком');
+}
+
+console.log('\nTest 8: регресс-гвард — ни в одном из ВСЕХ вызовов _ratingTop() в файле последним аргументом не остался сырой список ($friendIds/$hpFriendIds)');
+{
+    const calls = bossesPhp.match(/\$this->_ratingTop\([^;]*\);/g) || [];
+    assert(calls.length === 3, `найдено ровно 3 вызова _ratingTop() (rating/endFightSession/claimKill) — найдено ${calls.length}. Если это число изменилось — проверь КАЖДОЕ новое место на карту $friendsSince, не полагайся на память об этом списке`);
+    const badCalls = calls.filter(c => /\$(friendIds|hpFriendIds)\)/.test(c));
+    assert(badCalls.length === 0,
+        `ни один вызов не передаёт сырой список последним аргументом — найдено нарушений: ${badCalls.length}${badCalls.length ? ' (' + badCalls.join(' | ') + ')' : ''}`);
 }
 
 console.log(`\n${'─'.repeat(50)}`);

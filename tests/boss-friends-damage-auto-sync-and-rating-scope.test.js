@@ -44,8 +44,11 @@ console.log('\nTest 1: bosses.php.rating() ограничен друзьями (
     // Механика переехала на derived-HP/boss_damage_log (см. большой комментарий в bosses.php
     // над _derivedHp()) — своя строка больше не строится через $ids=[uid]+merge, а читается
     // напрямую одним getData(), но суть "друзья, не глобальный топ" не изменилась.
-    assert(/\$me = \$this->registry\['udb'\]->getData\(\$this->registry\['utb'\], array\('bosses_data', 'friends', 'nick'\), 'id='\.\$this->registry\['uid'\]\);/.test(body),
-        'rating() читает СВОЮ строку (включая friends) одним запросом');
+    // 04.10.2026: 'friends_since' добавлен в список полей (нужен rating() для honest-карты
+    // $friendsSince через _friendsSinceMap() — фикс бага "друзья бьют, в рейтинге их нет", см.
+    // tests/boss-friendssince-map-all-call-sites.test.js, Test 7/8).
+    assert(/\$me = \$this->registry\['udb'\]->getData\(\$this->registry\['utb'\], array\('bosses_data', 'friends', 'friends_since', 'nick'\), 'id='\.\$this->registry\['uid'\]\);/.test(body),
+        'rating() читает СВОЮ строку (включая friends/friends_since) одним запросом');
     // 22.09.2026: friendIds теперь дополнительно гейтится diffIdx!==3 прямо в этом же
     // выражении (раньше проверка была отдельным блоком ниже) — суть (общий хелпер _friendIds())
     // не изменилась.
@@ -59,8 +62,12 @@ console.log('\nTest 1: bosses.php.rating() ограничен друзьями (
     const friendIdsBody = bossesPhp.slice(bossesPhp.indexOf('private function _friendIds($user){'), bossesPhp.indexOf('// ── КЭШ HP'));
     assert(/foreach\(explode\(',', \$user\['friends'\]\) as \$fid\)/.test(friendIdsBody), '_friendIds() парсит id из explode по полю friends');
 
-    assert(/if\(\$myDmg > 0\) \$entries\[\] = \['id' => \$uid, 'damage' => \$myDmg/.test(body),
-        'свой id тоже входит в выборку (иначе игрок не увидит себя в собственном рейтинге друзей)');
+    // 04.10.2026 (по прямому указанию — "может быть такое что я не попаду в топ"): своя строка
+    // больше не идёт в общий $entries наравне с друзьями (где её мог вытеснить array_slice) —
+    // теперь отдельная $myEntry, гарантированно домёрживаемая в итоговый список ниже, см.
+    // tests/boss-damage-rating.test.js.
+    assert(/\$myEntry = \$myDmg > 0 \? \['id' => \$uid, 'damage' => \$myDmg, 'nick' => \$nick\] : null;/.test(body),
+        'свой id тоже входит в выборку (иначе игрок не увидит себя в собственном рейтинге друзей) — теперь гарантированно, не только при удачном array_slice');
     // 23.09.2026 (по прямому указанию, AskUserQuestion): фильтр boss_id добавлен только для
     // СВОЕГО урона (_damageSumSince) — friends-функции сознательно оставлены кросс-боссовыми,
     // см. boss-rating-hp-scoped-by-boss-id.test.js.

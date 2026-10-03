@@ -235,7 +235,14 @@ test('Рейтинг босса — по друзьям, по урону с boss
         'старые client-writable поля curCycleDmg/bossDamage больше не используются в рейтинге — только boss_damage_log');
     // 18.09.2026: топ-3 → топ-9 — новый попап результата боя показывает места 1-3 фото-аватарками
     // (УЧАСТНИКИ БОЯ) и места 4-9 текстовым списком (ТОП УРОНА), см. boss_result.js.
-    assert(ratingTopBody[1].includes('array_slice($entries, 0, 9)'), 'рейтинг не ограничен тремя игроками — теперь топ-9');
+    // 04.10.2026 (по прямому указанию — "может быть такое что я не попаду в топ, поэтому имеет
+    // смысл брать не 8 лучших игроков по вкладу, а всё-таки 9"): раньше себя и друзей сливали в
+    // один список и резали array_slice(,0,9) НАРАВНЕ — при 9+ друзьях с большим уроном своя
+    // строка могла вылететь из топа СВОЕГО ЖЕ боя. Теперь себя показываем ВСЕГДА (если бил), а
+    // топ-8 берём только среди друзей — итог тот же максимум 9 строк, но свой вклад гарантирован.
+    assert(ratingTopBody[1].includes('array_slice($friendEntries, 0, 8)'), 'топ друзей не ограничен 8 лучшими по вкладу');
+    assert(ratingTopBody[1].includes('$entries = $myEntry ? array_merge([$myEntry], $topFriends) : $topFriends;'),
+        'своя строка не гарантирована в итоговом списке — может быть вытеснена друзьями с большим уроном');
 });
 
 const bossesCoreSrc = readSrc('game/bosses.js');
@@ -409,9 +416,16 @@ test('Помощь друзей (friendsDamage) — HP из личного кэ�
     const friendsEnd   = bossesPhp.indexOf('function rating()', friendsStart);
     const friendsBody  = friendsStart !== -1 && friendsEnd !== -1 ? bossesPhp.slice(friendsStart, friendsEnd) : null;
     assert(friendsBody, 'не найден метод friendsDamage (сигнатура могла измениться)');
-    assert(friendsBody.includes('_syncFightSession('), 'HP синхронизируется через общий с attack()/startFight()/claimKill() кэш-метод');
-    assert(friendsBody.includes("json_encode($session)") && friendsBody.includes('saveUser($user)'),
-        'обновлённый кэш (курсор + hp) реально сохраняется — иначе урон друга пересчитывался бы заново на каждый опрос');
+    // 04.10.2026 (по прямому указанию, найдено на реальных прод-данных — "cursorId уехал вперёд,
+    // а hp не упал"): голый _syncFightSession() + отдельное $user['boss_fight_session']=
+    // json_encode($session) были уязвимы к гонке с параллельным attack()/useSedoy() (lost
+    // update — кто сохранил последним, тот и победил). Теперь — _syncFightSessionLocked()
+    // (блокирует строку SELECT...FOR UPDATE, перечитывает кэш ПОД локом) + _commitFightSession()
+    // (пишет сырым UPDATE и коммитит) — см. tests/boss-fight-session-row-lock-race.test.js.
+    assert(friendsBody.includes('_syncFightSessionLocked('), 'HP синхронизируется через общий locked-метод с attack()/startFight()/useSedoy()');
+    assert(friendsBody.includes('_commitFightSession('),
+        'обновлённый кэш (курсор + hp) реально сохраняется атомарно под локом — иначе урон друга мог теряться при гонке с параллельным запросом');
+    assert(friendsBody.includes('saveUser($user)'), 'остальные поля (напр. friends_since) по-прежнему сохраняются обычным saveUser()');
     assert(!friendsBody.includes('curCycleDmg') && !friendsBody.includes('bossDamage'),
         'friendsDamage всё ещё читает старые client-writable поля вместо boss_damage_log');
 });

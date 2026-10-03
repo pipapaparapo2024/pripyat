@@ -163,7 +163,11 @@ console.log('\nTest 10: bosses.php.rating()/_ratingTop() отдаёт топ-9 (
     const ratingMatch = bossesPhpSrc.match(/private function _ratingTop\([^)]*\)\{([\s\S]*?)\n        \}/);
     assert(!!ratingMatch, '_ratingTop() найден');
     const body = ratingMatch ? ratingMatch[1] : '';
-    assert(/array_slice\(\$entries,\s*0,\s*9\)/.test(body), 'rating()/_ratingTop() режет entries на топ-9, не топ-3');
+    // 04.10.2026 (по прямому указанию — "может быть такое что я не попаду в топ"): топ больше не
+    // режется ОДНИМ array_slice($entries,0,9) наравне со своей строкой — себя показываем ВСЕГДА,
+    // топ-8 берём только среди друзей (array_slice($friendEntries,0,8)). Итог тот же максимум 9
+    // строк (нужных для "ТОП УРОНА" 4-9), но свой вклад гарантирован, см. tests/boss-damage-rating.test.js.
+    assert(/array_slice\(\$friendEntries,\s*0,\s*8\)/.test(body), 'rating()/_ratingTop() режет друзей на топ-8 (+ гарантированная своя строка = топ-9, не топ-3)');
 }
 
 console.log('\nTest 11: bosses.php.claimKill() возвращает заработанные очки рюкзака в reward (не только тихо копит в ryukzak_points)');
