@@ -1,0 +1,152 @@
+{
+  "canvas": [
+    1536,
+    1024
+  ],
+  "layers": [
+    {
+      "name": "Группа 1",
+      "kind": "group",
+      "x": -234,
+      "y": -32,
+      "w": 1500,
+      "h": 2111,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_Группа_1_GROUP.png",
+      "children": [
+        {
+          "name": "Прямоугольник 1",
+          "kind": "shape",
+          "x": -30,
+          "y": -32,
+          "w": 1092,
+          "h": 1608,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_00_Прямоугольник_1.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 1",
+          "kind": "shape",
+          "x": -30,
+          "y": -32,
+          "w": 1092,
+          "h": 1608,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_00_Прямоугольник_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": -234,
+          "y": 285,
+          "w": 1500,
+          "h": 1794,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_01_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": -234,
+          "y": 285,
+          "w": 1500,
+          "h": 1794,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_01_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": 276,
+          "y": 485,
+          "w": 511,
+          "h": 500,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_02_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": 276,
+          "y": 485,
+          "w": 511,
+          "h": 500,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_02_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 425,
+          "y": 718,
+          "w": 65,
+          "h": 29,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_03_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 425,
+          "y": 718,
+          "w": 65,
+          "h": 29,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_03_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 438,
+          "y": 608,
+          "w": 197,
+          "h": 232,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_04_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 438,
+          "y": 608,
+          "w": 197,
+          "h": 232,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_04_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": 232,
+          "y": 529,
+          "w": 494,
+          "h": 482,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_05_Слой_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": 232,
+          "y": 529,
+          "w": 494,
+          "h": 482,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Компас\\00_05_Слой_2.png",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

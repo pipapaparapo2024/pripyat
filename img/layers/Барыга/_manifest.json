@@ -1,0 +1,1433 @@
+{
+  "canvas": [
+    1386,
+    574
+  ],
+  "layers": [
+    {
+      "name": "Слой 1",
+      "kind": "pixel",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": []
+    },
+    {
+      "name": "Группа 1",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 574,
+      "h": 1386,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_Группа_1_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 0,
+          "y": 57,
+          "w": 574,
+          "h": 1310,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 0,
+          "y": 57,
+          "w": 574,
+          "h": 1310,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 82",
+          "kind": "pixel",
+          "x": 0,
+          "y": 0,
+          "w": 574,
+          "h": 1386,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_01_Слой_82.png",
+          "children": []
+        },
+        {
+          "name": "Слой 82",
+          "kind": "pixel",
+          "x": 0,
+          "y": 0,
+          "w": 574,
+          "h": 1386,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_01_Слой_82.png",
+          "children": []
+        },
+        {
+          "name": "Цветовой тон/Насыщенность 3",
+          "kind": "huesaturation",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": []
+        },
+        {
+          "name": "Цветовой тон/Насыщенность 3",
+          "kind": "huesaturation",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": []
+        },
+        {
+          "name": "банка",
+          "kind": "group",
+          "x": 296,
+          "y": 323,
+          "w": 249,
+          "h": 191,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_банка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 434,
+              "y": 340,
+              "w": 111,
+              "h": 174,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 434,
+              "y": 340,
+              "w": 111,
+              "h": 174,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_02_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_02_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "банка",
+          "kind": "group",
+          "x": 296,
+          "y": 323,
+          "w": 249,
+          "h": 191,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_банка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 434,
+              "y": 340,
+              "w": 111,
+              "h": 174,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 434,
+              "y": 340,
+              "w": 111,
+              "h": 174,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_02_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 296,
+              "y": 323,
+              "w": 211,
+              "h": 152,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_03_02_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Консы на полке",
+          "kind": "group",
+          "x": 213,
+          "y": 83,
+          "w": 67,
+          "h": 606,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_Консы_на_полке_GROUP.png",
+          "children": [
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_00_active.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_00_active.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_01_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_01_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Консы на полке",
+          "kind": "group",
+          "x": 213,
+          "y": 83,
+          "w": 67,
+          "h": 606,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_Консы_на_полке_GROUP.png",
+          "children": [
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_00_active.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_00_active.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_01_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 213,
+              "y": 83,
+              "w": 67,
+              "h": 606,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_04_01_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "сумка",
+          "kind": "group",
+          "x": 73,
+          "y": 8,
+          "w": 501,
+          "h": 436,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_сумка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": 390,
+              "y": 48,
+              "w": 184,
+              "h": 353,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_00_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": 390,
+              "y": 48,
+              "w": 184,
+              "h": 353,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_00_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": 190,
+              "y": 137,
+              "w": 384,
+              "h": 301,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_02_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": 190,
+              "y": 137,
+              "w": 384,
+              "h": 301,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_02_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 59,
+              "y": 48,
+              "w": 515,
+              "h": 854,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_03_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 59,
+              "y": 48,
+              "w": 515,
+              "h": 854,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_03_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_04_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_04_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "сумка",
+          "kind": "group",
+          "x": 73,
+          "y": 8,
+          "w": 501,
+          "h": 436,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_сумка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": 390,
+              "y": 48,
+              "w": 184,
+              "h": 353,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_00_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": 390,
+              "y": 48,
+              "w": 184,
+              "h": 353,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_00_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "activ",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_01_activ.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": 190,
+              "y": 137,
+              "w": 384,
+              "h": 301,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_02_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": 190,
+              "y": 137,
+              "w": 384,
+              "h": 301,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_02_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 59,
+              "y": 48,
+              "w": 515,
+              "h": 854,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_03_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 59,
+              "y": 48,
+              "w": 515,
+              "h": 854,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_03_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_04_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 73,
+              "y": 8,
+              "w": 496,
+              "h": 436,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_05_04_inactive.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "посылка",
+          "kind": "group",
+          "x": 359,
+          "y": 948,
+          "w": 215,
+          "h": 438,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 5",
+              "kind": "pixel",
+              "x": 401,
+              "y": 1259,
+              "w": 173,
+              "h": 127,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 5",
+              "kind": "pixel",
+              "x": 401,
+              "y": 1259,
+              "w": 173,
+              "h": 127,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 4",
+              "kind": "pixel",
+              "x": 465,
+              "y": 948,
+              "w": 107,
+              "h": 409,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 4",
+              "kind": "pixel",
+              "x": 465,
+              "y": 948,
+              "w": 107,
+              "h": 409,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": 308,
+              "y": 909,
+              "w": 217,
+              "h": 362,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": 308,
+              "y": 909,
+              "w": 217,
+              "h": 362,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3 копия",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3 копия",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "посылка",
+          "kind": "group",
+          "x": 359,
+          "y": 948,
+          "w": 215,
+          "h": 438,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 5",
+              "kind": "pixel",
+              "x": 401,
+              "y": 1259,
+              "w": 173,
+              "h": 127,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 5",
+              "kind": "pixel",
+              "x": 401,
+              "y": 1259,
+              "w": 173,
+              "h": 127,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 4",
+              "kind": "pixel",
+              "x": 465,
+              "y": 948,
+              "w": 107,
+              "h": 409,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 4",
+              "kind": "pixel",
+              "x": 465,
+              "y": 948,
+              "w": 107,
+              "h": 409,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": 308,
+              "y": 909,
+              "w": 217,
+              "h": 362,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": 308,
+              "y": 909,
+              "w": 217,
+              "h": 362,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3 копия",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 3 копия",
+              "kind": "pixel",
+              "x": 359,
+              "y": 978,
+              "w": 193,
+              "h": 323,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Слой 83",
+          "kind": "pixel",
+          "x": 11,
+          "y": 59,
+          "w": 380,
+          "h": 676,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_07_Слой_83.png",
+          "children": []
+        },
+        {
+          "name": "Слой 83",
+          "kind": "pixel",
+          "x": 11,
+          "y": 59,
+          "w": 380,
+          "h": 676,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_07_Слой_83.png",
+          "children": []
+        },
+        {
+          "name": "Сиги на полке",
+          "kind": "group",
+          "x": 55,
+          "y": 86,
+          "w": 79,
+          "h": 593,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_Сиги_на_полке_GROUP.png",
+          "children": [
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_00_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_00_inactive.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_01_active.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_01_active.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Сиги на полке",
+          "kind": "group",
+          "x": 55,
+          "y": 86,
+          "w": 79,
+          "h": 593,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_Сиги_на_полке_GROUP.png",
+          "children": [
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_00_inactive.png",
+              "children": []
+            },
+            {
+              "name": "inactive",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_00_inactive.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_01_active.png",
+              "children": []
+            },
+            {
+              "name": "active",
+              "kind": "pixel",
+              "x": 55,
+              "y": 86,
+              "w": 79,
+              "h": 593,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_08_01_active.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Слой 16",
+          "kind": "pixel",
+          "x": 148,
+          "y": 193,
+          "w": 48,
+          "h": 148,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_09_Слой_16.png",
+          "children": []
+        },
+        {
+          "name": "Слой 16",
+          "kind": "pixel",
+          "x": 148,
+          "y": 193,
+          "w": 48,
+          "h": 148,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_09_Слой_16.png",
+          "children": []
+        },
+        {
+          "name": "купить",
+          "kind": "type",
+          "x": 162,
+          "y": 254,
+          "w": 21,
+          "h": 69,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_10_купить.png",
+          "children": []
+        },
+        {
+          "name": "купить",
+          "kind": "type",
+          "x": 162,
+          "y": 254,
+          "w": 21,
+          "h": 69,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_10_купить.png",
+          "children": []
+        },
+        {
+          "name": "Слой 19",
+          "kind": "pixel",
+          "x": 207,
+          "y": 423,
+          "w": 59,
+          "h": 213,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_11_Слой_19.png",
+          "children": []
+        },
+        {
+          "name": "Слой 19",
+          "kind": "pixel",
+          "x": 207,
+          "y": 423,
+          "w": 59,
+          "h": 213,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_11_Слой_19.png",
+          "children": []
+        },
+        {
+          "name": "Слой 18",
+          "kind": "pixel",
+          "x": 116,
+          "y": 438,
+          "w": 133,
+          "h": 204,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_12_Слой_18.png",
+          "children": []
+        },
+        {
+          "name": "Слой 18",
+          "kind": "pixel",
+          "x": 116,
+          "y": 438,
+          "w": 133,
+          "h": 204,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_12_Слой_18.png",
+          "children": []
+        },
+        {
+          "name": "Слой 17",
+          "kind": "pixel",
+          "x": 158,
+          "y": 212,
+          "w": 28,
+          "h": 36,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_13_Слой_17.png",
+          "children": []
+        },
+        {
+          "name": "Слой 17",
+          "kind": "pixel",
+          "x": 158,
+          "y": 212,
+          "w": 28,
+          "h": 36,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_13_Слой_17.png",
+          "children": []
+        },
+        {
+          "name": "Группа 4",
+          "kind": "group",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 457,
+              "y": 182,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 457,
+              "y": 182,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Открыть",
+              "kind": "type",
+              "x": 470,
+              "y": 220,
+              "w": 20,
+              "h": 87,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_01_Открыть.png",
+              "children": []
+            },
+            {
+              "name": "Открыть",
+              "kind": "type",
+              "x": 470,
+              "y": 220,
+              "w": 20,
+              "h": 87,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_01_Открыть.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Группа 4",
+          "kind": "group",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 457,
+              "y": 182,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 457,
+              "y": 182,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Открыть",
+              "kind": "type",
+              "x": 470,
+              "y": 220,
+              "w": 20,
+              "h": 87,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_01_Открыть.png",
+              "children": []
+            },
+            {
+              "name": "Открыть",
+              "kind": "type",
+              "x": 470,
+              "y": 220,
+              "w": 20,
+              "h": 87,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_14_01_Открыть.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Группа 4 копия 2",
+          "kind": "group",
+          "x": 171,
+          "y": 309,
+          "w": 45,
+          "h": 166,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_Группа_4_копия_2_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 171,
+              "y": 309,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 171,
+              "y": 309,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "купить",
+              "kind": "type",
+              "x": 185,
+              "y": 355,
+              "w": 19,
+              "h": 71,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_01_купить.png",
+              "children": []
+            },
+            {
+              "name": "купить",
+              "kind": "type",
+              "x": 185,
+              "y": 355,
+              "w": 19,
+              "h": 71,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_01_купить.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Группа 4 копия 2",
+          "kind": "group",
+          "x": 171,
+          "y": 309,
+          "w": 45,
+          "h": 166,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_Группа_4_копия_2_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 171,
+              "y": 309,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 171,
+              "y": 309,
+              "w": 45,
+              "h": 166,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_00_Слой_84.png",
+              "children": []
+            },
+            {
+              "name": "купить",
+              "kind": "type",
+              "x": 185,
+              "y": 355,
+              "w": 19,
+              "h": 71,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_01_купить.png",
+              "children": []
+            },
+            {
+              "name": "купить",
+              "kind": "type",
+              "x": 185,
+              "y": 355,
+              "w": 19,
+              "h": 71,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Барыга\\01_15_01_купить.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Группа 4 копия",
+          "kind": "group",
+          "x": 451,
+          "y": 1046,
+          "w": 45,
+          "h": 166,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 451,
+              "y": 1046,
+              "w": 45,
+              "h": 166,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 451,
+              "y": 1046,
+              "w": 45,
+              "h": 166,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "вскрыть",
+              "kind": "type",
+              "x": 464,
+              "y": 1084,
+              "w": 20,
+              "h": 87,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "вскрыть",
+              "kind": "type",
+              "x": 464,
+              "y": 1084,
+              "w": 20,
+              "h": 87,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Группа 4 копия",
+          "kind": "group",
+          "x": 451,
+          "y": 1046,
+          "w": 45,
+          "h": 166,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 451,
+              "y": 1046,
+              "w": 45,
+              "h": 166,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 84",
+              "kind": "pixel",
+              "x": 451,
+              "y": 1046,
+              "w": 45,
+              "h": 166,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "вскрыть",
+              "kind": "type",
+              "x": 464,
+              "y": 1084,
+              "w": 20,
+              "h": 87,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "вскрыть",
+              "kind": "type",
+              "x": 464,
+              "y": 1084,
+              "w": 20,
+              "h": 87,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

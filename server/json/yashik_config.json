@@ -1,0 +1,15 @@
+{
+  "bullet_cost_ach": 50,
+  "patron_cost_stew": 50,
+  "stash_min": 10, "stash_max": 20,
+  "cig_min": 5000, "cig_max": 10000,
+  "coins_min": 5, "coins_max": 15,
+  "exp_min": 100, "exp_max": 499,
+  "lost_stash_sets": [
+    {"items": [81, 82, 83, 69], "hand": 84},
+    {"items": [90, 70, 85, 71], "hand": 91},
+    {"items": [86, 87, 88, 72], "hand": 92}
+  ],
+  "lost_stash_pity_min": 100,
+  "lost_stash_pity_max": 150
+}

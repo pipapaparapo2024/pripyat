@@ -1,0 +1,12 @@
+[
+  {"name":"Тушёнка","rarity":0,"weight":60,"effect":{"stew":10}},
+  {"name":"Тушёнка ×3","rarity":0,"weight":60,"effect":{"stew":30}},
+  {"name":"Аптечка","rarity":0,"weight":60,"effect":{"energy":30}},
+  {"name":"100 монет","rarity":0,"weight":60,"effect":{"coins":100}},
+  {"name":"500 монет","rarity":1,"weight":30,"effect":{"coins":500}},
+  {"name":"2000 монет","rarity":2,"weight":10,"effect":{"coins":2000}},
+  {"name":"Ключ от схрона","rarity":1,"weight":30,"effect":{"boss_keys":1}},
+  {"name":"Артефакт «Медуза»","rarity":2,"weight":10,"effect":{"max_energy":20}},
+  {"name":"Патроны улучш.","rarity":1,"weight":30,"effect":{"damage_boost":15}},
+  {"name":"Папиросы ×3","rarity":0,"weight":60,"effect":{"cigarettes":3}}
+]

@@ -1,0 +1,3402 @@
+[
+  {
+    "id": "dmg_1k",
+    "cat": "damage",
+    "name": "Первая кровь",
+    "pts": 1,
+    "threshold": 1000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_10k",
+    "cat": "damage",
+    "name": "Опасный сталкер",
+    "pts": 1,
+    "threshold": 10000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_50k",
+    "cat": "damage",
+    "name": "Раздающий боль",
+    "pts": 2,
+    "threshold": 50000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_100k",
+    "cat": "damage",
+    "name": "Машина урона",
+    "pts": 2,
+    "threshold": 100000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_500k",
+    "cat": "damage",
+    "name": "Легенда зоны",
+    "pts": 3,
+    "threshold": 500000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_1kk",
+    "cat": "damage",
+    "name": "Миллионер боли",
+    "pts": 4,
+    "threshold": 1000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_2kk",
+    "cat": "damage",
+    "name": "Дважды миллионер",
+    "pts": 5,
+    "threshold": 2000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_3kk",
+    "cat": "damage",
+    "name": "Урон на завтрак",
+    "pts": 6,
+    "threshold": 3000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_4kk",
+    "cat": "damage",
+    "name": "Сила четырех",
+    "pts": 7,
+    "threshold": 4000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_5kk",
+    "cat": "damage",
+    "name": "Урон без границ",
+    "pts": 10,
+    "threshold": 5000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_10kk",
+    "cat": "damage",
+    "name": "Десятикратный",
+    "pts": 10,
+    "threshold": 10000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_20kk",
+    "cat": "damage",
+    "name": "Мясник зоны",
+    "pts": 10,
+    "threshold": 20000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "dmg_30kk",
+    "cat": "damage",
+    "name": "Ломать не строить",
+    "pts": 15,
+    "threshold": 30000000,
+    "statPath": [
+      "dmg"
+    ]
+  },
+  {
+    "id": "auto_10",
+    "cat": "auto",
+    "name": "Автоматная нычка",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_100",
+    "cat": "auto",
+    "name": "Автоматный запас",
+    "pts": 1,
+    "threshold": 100,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_150",
+    "cat": "auto",
+    "name": "Автоматов мне!",
+    "pts": 1,
+    "threshold": 150,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_200",
+    "cat": "auto",
+    "name": "Газель автоматов",
+    "pts": 1,
+    "threshold": 200,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_500",
+    "cat": "auto",
+    "name": "Автоматчик",
+    "pts": 2,
+    "threshold": 500,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_1k",
+    "cat": "auto",
+    "name": "Закупился на славу",
+    "pts": 3,
+    "threshold": 1000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_10k",
+    "cat": "auto",
+    "name": "Автомата очередь",
+    "pts": 4,
+    "threshold": 10000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_25k",
+    "cat": "auto",
+    "name": "Рэмбо",
+    "pts": 5,
+    "threshold": 25000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_50k",
+    "cat": "auto",
+    "name": "Шквал автомата",
+    "pts": 6,
+    "threshold": 50000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_100k",
+    "cat": "auto",
+    "name": "Целый склад",
+    "pts": 10,
+    "threshold": 100000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_150k",
+    "cat": "auto",
+    "name": "Поставщик",
+    "pts": 15,
+    "threshold": 150000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_300k",
+    "cat": "auto",
+    "name": "Терминатор",
+    "pts": 50,
+    "threshold": 300000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "auto_500k",
+    "cat": "auto",
+    "name": "Оружейный барон",
+    "pts": 100,
+    "threshold": 500000,
+    "statPath": [
+      "auto"
+    ]
+  },
+  {
+    "id": "gun_10",
+    "cat": "gun",
+    "name": "Пукалка",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_100",
+    "cat": "gun",
+    "name": "Дешевый стрелок",
+    "pts": 1,
+    "threshold": 100,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_150",
+    "cat": "gun",
+    "name": "Кобура под подушкой",
+    "pts": 1,
+    "threshold": 150,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_200",
+    "cat": "gun",
+    "name": "Кладовщик огнестрела",
+    "pts": 1,
+    "threshold": 200,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_500",
+    "cat": "gun",
+    "name": "Арсенал зоны",
+    "pts": 2,
+    "threshold": 500,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_1k",
+    "cat": "gun",
+    "name": "Патронный король",
+    "pts": 3,
+    "threshold": 1000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_10k",
+    "cat": "gun",
+    "name": "С двух рук",
+    "pts": 4,
+    "threshold": 10000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_36k",
+    "cat": "gun",
+    "name": "Склад стволов",
+    "pts": 5,
+    "threshold": 36000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_180k",
+    "cat": "gun",
+    "name": "Вооружен до зубов",
+    "pts": 10,
+    "threshold": 180000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_360k",
+    "cat": "gun",
+    "name": "Огневая мощь",
+    "pts": 50,
+    "threshold": 360000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "gun_720k",
+    "cat": "gun",
+    "name": "Огнестрельный магнат",
+    "pts": 100,
+    "threshold": 720000,
+    "statPath": [
+      "gun"
+    ]
+  },
+  {
+    "id": "mac_10",
+    "cat": "machete",
+    "name": "Царапка",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_100",
+    "cat": "machete",
+    "name": "Прокальщик",
+    "pts": 1,
+    "threshold": 100,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_150",
+    "cat": "machete",
+    "name": "Острый малец",
+    "pts": 1,
+    "threshold": 150,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_200",
+    "cat": "machete",
+    "name": "Клад под матрасом",
+    "pts": 1,
+    "threshold": 200,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_500",
+    "cat": "machete",
+    "name": "Секретарь заточек",
+    "pts": 2,
+    "threshold": 500,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_1k",
+    "cat": "machete",
+    "name": "Завхоз мачете",
+    "pts": 3,
+    "threshold": 1000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_10k",
+    "cat": "machete",
+    "name": "Коллекционер клинков",
+    "pts": 4,
+    "threshold": 10000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_36k",
+    "cat": "machete",
+    "name": "Сталь в запасе",
+    "pts": 5,
+    "threshold": 36000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_180k",
+    "cat": "machete",
+    "name": "Зона заточек",
+    "pts": 10,
+    "threshold": 180000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_360k",
+    "cat": "machete",
+    "name": "Клинковый магнат",
+    "pts": 50,
+    "threshold": 360000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "mac_720k",
+    "cat": "machete",
+    "name": "Стальной король",
+    "pts": 100,
+    "threshold": 720000,
+    "statPath": [
+      "mac"
+    ]
+  },
+  {
+    "id": "solo_0",
+    "cat": "solo",
+    "name": "Попался в капкан",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      0
+    ]
+  },
+  {
+    "id": "solo_1",
+    "cat": "solo",
+    "name": "Переиграл и уничтожил",
+    "pts": 2,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      1
+    ]
+  },
+  {
+    "id": "solo_2",
+    "cat": "solo",
+    "name": "Настоящий орел",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      2
+    ]
+  },
+  {
+    "id": "solo_3",
+    "cat": "solo",
+    "name": "Сорвиголова",
+    "pts": 4,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      3
+    ]
+  },
+  {
+    "id": "solo_4",
+    "cat": "solo",
+    "name": "Попался в мышеловку",
+    "pts": 10,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      4
+    ]
+  },
+  {
+    "id": "solo_5",
+    "cat": "solo",
+    "name": "Жилистый прогнулся",
+    "pts": 15,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      5
+    ]
+  },
+  {
+    "id": "solo_6",
+    "cat": "solo",
+    "name": "Пора на пенсию",
+    "pts": 20,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      6
+    ]
+  },
+  {
+    "id": "solo_7",
+    "cat": "solo",
+    "name": "Месть Люси",
+    "pts": 50,
+    "threshold": 1,
+    "statPath": [
+      "soloKills",
+      7
+    ]
+  },
+  {
+    "id": "kill_0",
+    "cat": "kill",
+    "name": "Охотник повержен",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      0
+    ]
+  },
+  {
+    "id": "kill_1",
+    "cat": "kill",
+    "name": "Счастливчик повержен",
+    "pts": 2,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      1
+    ]
+  },
+  {
+    "id": "kill_2",
+    "cat": "kill",
+    "name": "Ястреб повержен",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      2
+    ]
+  },
+  {
+    "id": "kill_3",
+    "cat": "kill",
+    "name": "Меченный повержен",
+    "pts": 4,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      3
+    ]
+  },
+  {
+    "id": "kill_4",
+    "cat": "kill",
+    "name": "Крыс повержен",
+    "pts": 6,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      4
+    ]
+  },
+  {
+    "id": "kill_5",
+    "cat": "kill",
+    "name": "Баркут повержен",
+    "pts": 8,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      5
+    ]
+  },
+  {
+    "id": "kill_6",
+    "cat": "kill",
+    "name": "Борода повержен",
+    "pts": 8,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      6
+    ]
+  },
+  {
+    "id": "kill_7",
+    "cat": "kill",
+    "name": "Жгут повержен",
+    "pts": 15,
+    "threshold": 1,
+    "statPath": [
+      "kills",
+      7
+    ]
+  },
+  {
+    "id": "fast_0",
+    "cat": "fast",
+    "name": "Молниеносно Охотник",
+    "pts": 2,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      0
+    ]
+  },
+  {
+    "id": "fast_1",
+    "cat": "fast",
+    "name": "Молниеносно Счастливчик",
+    "pts": 4,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      1
+    ]
+  },
+  {
+    "id": "fast_2",
+    "cat": "fast",
+    "name": "Молниеносно Ястреб",
+    "pts": 4,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      2
+    ]
+  },
+  {
+    "id": "fast_3",
+    "cat": "fast",
+    "name": "Молниеносно Меченный",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      3
+    ]
+  },
+  {
+    "id": "fast_4",
+    "cat": "fast",
+    "name": "Молниеносно Крыс",
+    "pts": 6,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      4
+    ]
+  },
+  {
+    "id": "fast_5",
+    "cat": "fast",
+    "name": "Молниеносно Баркут",
+    "pts": 7,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      5
+    ]
+  },
+  {
+    "id": "fast_6",
+    "cat": "fast",
+    "name": "Молниеносно Борода",
+    "pts": 7,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      6
+    ]
+  },
+  {
+    "id": "fast_7",
+    "cat": "fast",
+    "name": "Молниеносно Жгут",
+    "pts": 10,
+    "threshold": 1,
+    "statPath": [
+      "speedKills",
+      7
+    ]
+  },
+  {
+    "id": "sk_10",
+    "cat": "skills",
+    "name": "Новичок",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_30",
+    "cat": "skills",
+    "name": "Ученик",
+    "pts": 1,
+    "threshold": 30,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_50",
+    "cat": "skills",
+    "name": "Знающий",
+    "pts": 2,
+    "threshold": 50,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_75",
+    "cat": "skills",
+    "name": "Разносторонний",
+    "pts": 2,
+    "threshold": 75,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_100",
+    "cat": "skills",
+    "name": "Знаток",
+    "pts": 4,
+    "threshold": 100,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_150",
+    "cat": "skills",
+    "name": "Местный мудрец",
+    "pts": 4,
+    "threshold": 150,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_200",
+    "cat": "skills",
+    "name": "Опытный",
+    "pts": 5,
+    "threshold": 200,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_300",
+    "cat": "skills",
+    "name": "Мастер",
+    "pts": 5,
+    "threshold": 300,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "sk_460",
+    "cat": "skills",
+    "name": "Черный пояс",
+    "pts": 10,
+    "threshold": 460,
+    "statPath": [
+      "skillLvls"
+    ]
+  },
+  {
+    "id": "zk_k1",
+    "cat": "zone_clear",
+    "name": "Первая зачистка",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "zoneClear",
+      0
+    ]
+  },
+  {
+    "id": "zk_k5",
+    "cat": "zone_clear",
+    "name": "Привык к Кордону",
+    "pts": 2,
+    "threshold": 5,
+    "statPath": [
+      "zoneClear",
+      0
+    ]
+  },
+  {
+    "id": "zk_k10",
+    "cat": "zone_clear",
+    "name": "Завсегдатай",
+    "pts": 3,
+    "threshold": 10,
+    "statPath": [
+      "zoneClear",
+      0
+    ]
+  },
+  {
+    "id": "zk_k25",
+    "cat": "zone_clear",
+    "name": "Опытный сталкер",
+    "pts": 5,
+    "threshold": 25,
+    "statPath": [
+      "zoneClear",
+      0
+    ]
+  },
+  {
+    "id": "zk_k50",
+    "cat": "zone_clear",
+    "name": "Король Кордона",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "zoneClear",
+      0
+    ]
+  },
+  {
+    "id": "zk_s1",
+    "cat": "zone_clear",
+    "name": "Новичок на свалке",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "zoneClear",
+      1
+    ]
+  },
+  {
+    "id": "zk_s5",
+    "cat": "zone_clear",
+    "name": "Привык к запаху",
+    "pts": 2,
+    "threshold": 5,
+    "statPath": [
+      "zoneClear",
+      1
+    ]
+  },
+  {
+    "id": "zk_s10",
+    "cat": "zone_clear",
+    "name": "Сторожила",
+    "pts": 3,
+    "threshold": 10,
+    "statPath": [
+      "zoneClear",
+      1
+    ]
+  },
+  {
+    "id": "zk_s25",
+    "cat": "zone_clear",
+    "name": "Хозяин Свалки",
+    "pts": 5,
+    "threshold": 25,
+    "statPath": [
+      "zoneClear",
+      1
+    ]
+  },
+  {
+    "id": "zk_s50",
+    "cat": "zone_clear",
+    "name": "Король Свалки",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "zoneClear",
+      1
+    ]
+  },
+  {
+    "id": "zk_d1",
+    "cat": "zone_clear",
+    "name": "Постоялец",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "zoneClear",
+      2
+    ]
+  },
+  {
+    "id": "zk_d5",
+    "cat": "zone_clear",
+    "name": "Не первый раз",
+    "pts": 2,
+    "threshold": 5,
+    "statPath": [
+      "zoneClear",
+      2
+    ]
+  },
+  {
+    "id": "zk_d10",
+    "cat": "zone_clear",
+    "name": "Темнее ночи",
+    "pts": 3,
+    "threshold": 10,
+    "statPath": [
+      "zoneClear",
+      2
+    ]
+  },
+  {
+    "id": "zk_d25",
+    "cat": "zone_clear",
+    "name": "Уверенно",
+    "pts": 5,
+    "threshold": 25,
+    "statPath": [
+      "zoneClear",
+      2
+    ]
+  },
+  {
+    "id": "zk_d50",
+    "cat": "zone_clear",
+    "name": "Король Темной долины",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "zoneClear",
+      2
+    ]
+  },
+  {
+    "id": "zk_a1",
+    "cat": "zone_clear",
+    "name": "Ученик",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "zoneClear",
+      3
+    ]
+  },
+  {
+    "id": "zk_a5",
+    "cat": "zone_clear",
+    "name": "Мастер",
+    "pts": 2,
+    "threshold": 5,
+    "statPath": [
+      "zoneClear",
+      3
+    ]
+  },
+  {
+    "id": "zk_a10",
+    "cat": "zone_clear",
+    "name": "Старший смены",
+    "pts": 3,
+    "threshold": 10,
+    "statPath": [
+      "zoneClear",
+      3
+    ]
+  },
+  {
+    "id": "zk_a25",
+    "cat": "zone_clear",
+    "name": "Начальник",
+    "pts": 5,
+    "threshold": 25,
+    "statPath": [
+      "zoneClear",
+      3
+    ]
+  },
+  {
+    "id": "zk_a50",
+    "cat": "zone_clear",
+    "name": "Хозяин",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "zoneClear",
+      3
+    ]
+  },
+  {
+    "id": "zk_y1",
+    "cat": "zone_clear",
+    "name": "Чистильщик Янтаря",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "zoneClear",
+      4
+    ]
+  },
+  {
+    "id": "zk_y5",
+    "cat": "zone_clear",
+    "name": "Глушитель Зоны",
+    "pts": 2,
+    "threshold": 5,
+    "statPath": [
+      "zoneClear",
+      4
+    ]
+  },
+  {
+    "id": "zk_y10",
+    "cat": "zone_clear",
+    "name": "Санитар Зоны",
+    "pts": 3,
+    "threshold": 10,
+    "statPath": [
+      "zoneClear",
+      4
+    ]
+  },
+  {
+    "id": "zk_y25",
+    "cat": "zone_clear",
+    "name": "Тишина над болотом",
+    "pts": 5,
+    "threshold": 25,
+    "statPath": [
+      "zoneClear",
+      4
+    ]
+  },
+  {
+    "id": "zk_y50",
+    "cat": "zone_clear",
+    "name": "Последний сигнал Янтаря",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "zoneClear",
+      4
+    ]
+  },
+  {
+    "id": "st_k_lezv1",
+    "cat": "stash",
+    "name": "Первый след",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "k_lezv"
+    ]
+  },
+  {
+    "id": "st_k_lezv10",
+    "cat": "stash",
+    "name": "Любопытный Сталкер",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "k_lezv"
+    ]
+  },
+  {
+    "id": "st_k_lyub1",
+    "cat": "stash",
+    "name": "Сборщик находок",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "k_lyub"
+    ]
+  },
+  {
+    "id": "st_k_lyub10",
+    "cat": "stash",
+    "name": "По следам тайников",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "k_lyub"
+    ]
+  },
+  {
+    "id": "st_k_avto1",
+    "cat": "stash",
+    "name": "Первые реликвии",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "k_avto"
+    ]
+  },
+  {
+    "id": "st_k_avto10",
+    "cat": "stash",
+    "name": "Охотник за тайниками",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "k_avto"
+    ]
+  },
+  {
+    "id": "st_s_yuv1",
+    "cat": "stash",
+    "name": "Следопыт Зоны",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "s_yuv"
+    ]
+  },
+  {
+    "id": "st_s_yuv10",
+    "cat": "stash",
+    "name": "Знаток укромных мест",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "s_yuv"
+    ]
+  },
+  {
+    "id": "st_s_sysh1",
+    "cat": "stash",
+    "name": "Коллекционер аномалий",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "s_sysh"
+    ]
+  },
+  {
+    "id": "st_s_sysh10",
+    "cat": "stash",
+    "name": "Старьевщик Зоны",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "s_sysh"
+    ]
+  },
+  {
+    "id": "st_s_met1",
+    "cat": "stash",
+    "name": "Хранитель находок",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "s_met"
+    ]
+  },
+  {
+    "id": "st_s_met10",
+    "cat": "stash",
+    "name": "Мастер тайников",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "s_met"
+    ]
+  },
+  {
+    "id": "st_d_umn1",
+    "cat": "stash",
+    "name": "Легенда Сталкерских схронов",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "d_umn"
+    ]
+  },
+  {
+    "id": "st_d_umn10",
+    "cat": "stash",
+    "name": "Собиратель Зоны",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "d_umn"
+    ]
+  },
+  {
+    "id": "st_d_az1",
+    "cat": "stash",
+    "name": "Архивариус Зоны",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "d_az"
+    ]
+  },
+  {
+    "id": "st_d_az10",
+    "cat": "stash",
+    "name": "Хроновед",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "d_az"
+    ]
+  },
+  {
+    "id": "st_d_kost1",
+    "cat": "stash",
+    "name": "Охотник за утерянным",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "d_kost"
+    ]
+  },
+  {
+    "id": "st_d_kost10",
+    "cat": "stash",
+    "name": "Тайная добыча",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "d_kost"
+    ]
+  },
+  {
+    "id": "st_a_rast1",
+    "cat": "stash",
+    "name": "Хранитель забытых вещей",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "a_rast"
+    ]
+  },
+  {
+    "id": "st_a_rast10",
+    "cat": "stash",
+    "name": "Собиратель легенд",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "a_rast"
+    ]
+  },
+  {
+    "id": "st_a_kur1",
+    "cat": "stash",
+    "name": "Следы прошлого",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "a_kur"
+    ]
+  },
+  {
+    "id": "st_a_kur10",
+    "cat": "stash",
+    "name": "Зоновский кладоискатель",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "a_kur"
+    ]
+  },
+  {
+    "id": "st_a_pozh1",
+    "cat": "stash",
+    "name": "Трофеи Пустоши",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "a_pozh"
+    ]
+  },
+  {
+    "id": "st_a_pozh10",
+    "cat": "stash",
+    "name": "Артефактолог",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "a_pozh"
+    ]
+  },
+  {
+    "id": "st_y_koll1",
+    "cat": "stash",
+    "name": "Разгадчик схронов",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "y_koll"
+    ]
+  },
+  {
+    "id": "st_y_koll10",
+    "cat": "stash",
+    "name": "Тихий мародер",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "y_koll"
+    ]
+  },
+  {
+    "id": "st_y_muz1",
+    "cat": "stash",
+    "name": "Собиратель тайн",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "y_muz"
+    ]
+  },
+  {
+    "id": "st_y_muz10",
+    "cat": "stash",
+    "name": "Пыльные реликвии",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "y_muz"
+    ]
+  },
+  {
+    "id": "st_y_kegl1",
+    "cat": "stash",
+    "name": "Секреты под ржавчиной",
+    "pts": 5,
+    "threshold": 1,
+    "statPath": [
+      "stash",
+      "y_kegl"
+    ]
+  },
+  {
+    "id": "st_y_kegl10",
+    "cat": "stash",
+    "name": "Поиск без конца",
+    "pts": 10,
+    "threshold": 10,
+    "statPath": [
+      "stash",
+      "y_kegl"
+    ]
+  },
+  {
+    "id": "en_50",
+    "cat": "energy",
+    "name": "Первые искры",
+    "pts": 1,
+    "threshold": 50,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_500",
+    "cat": "energy",
+    "name": "Разогрев",
+    "pts": 1,
+    "threshold": 500,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_1k",
+    "cat": "energy",
+    "name": "Поток энергии",
+    "pts": 1,
+    "threshold": 1000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_2k5",
+    "cat": "energy",
+    "name": "Энергетический импульс",
+    "pts": 2,
+    "threshold": 2500,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_5k",
+    "cat": "energy",
+    "name": "На полном заряде",
+    "pts": 2,
+    "threshold": 5000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_10k",
+    "cat": "energy",
+    "name": "Перегрузка системы",
+    "pts": 2,
+    "threshold": 10000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_25k",
+    "cat": "energy",
+    "name": "Энергетический шторм",
+    "pts": 3,
+    "threshold": 25000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_50k",
+    "cat": "energy",
+    "name": "Критическая мощность",
+    "pts": 3,
+    "threshold": 50000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_75k",
+    "cat": "energy",
+    "name": "Генератор хаоса",
+    "pts": 5,
+    "threshold": 75000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_100k",
+    "cat": "energy",
+    "name": "Абсолютный заряд",
+    "pts": 5,
+    "threshold": 100000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_150k",
+    "cat": "energy",
+    "name": "За пределами нормы",
+    "pts": 8,
+    "threshold": 150000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_200k",
+    "cat": "energy",
+    "name": "Живая энергия",
+    "pts": 8,
+    "threshold": 200000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_300k",
+    "cat": "energy",
+    "name": "Ядро силы",
+    "pts": 10,
+    "threshold": 300000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_500k",
+    "cat": "energy",
+    "name": "Источник разрушения",
+    "pts": 25,
+    "threshold": 500000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "en_1kk",
+    "cat": "energy",
+    "name": "Повелитель энергии",
+    "pts": 50,
+    "threshold": 1000000,
+    "statPath": [
+      "energy"
+    ]
+  },
+  {
+    "id": "crd_l25",
+    "cat": "cards",
+    "name": "(карты) 25 уровень",
+    "pts": 1,
+    "threshold": 25,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_l50",
+    "cat": "cards",
+    "name": "(карты) 50 уровень",
+    "pts": 2,
+    "threshold": 50,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_l100",
+    "cat": "cards",
+    "name": "(карты) 100 уровень",
+    "pts": 4,
+    "threshold": 100,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_l150",
+    "cat": "cards",
+    "name": "(карты) 150 уровень",
+    "pts": 8,
+    "threshold": 150,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_l200",
+    "cat": "cards",
+    "name": "(карты) 200 уровень",
+    "pts": 10,
+    "threshold": 200,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_l300",
+    "cat": "cards",
+    "name": "(карты) 300 уровень",
+    "pts": 20,
+    "threshold": 300,
+    "statPath": [
+      "cardsLvl"
+    ]
+  },
+  {
+    "id": "crd_77",
+    "cat": "cards",
+    "name": "Семерки",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "77"
+    ]
+  },
+  {
+    "id": "crd_88",
+    "cat": "cards",
+    "name": "Восьмерки",
+    "pts": 1,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "88"
+    ]
+  },
+  {
+    "id": "crd_99",
+    "cat": "cards",
+    "name": "Девятки",
+    "pts": 2,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "99"
+    ]
+  },
+  {
+    "id": "crd_tt",
+    "cat": "cards",
+    "name": "Десятки",
+    "pts": 2,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "tt"
+    ]
+  },
+  {
+    "id": "crd_jj",
+    "cat": "cards",
+    "name": "Валеты",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "jj"
+    ]
+  },
+  {
+    "id": "crd_qq",
+    "cat": "cards",
+    "name": "Дамы",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "qq"
+    ]
+  },
+  {
+    "id": "crd_kk",
+    "cat": "cards",
+    "name": "Короли",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "kk"
+    ]
+  },
+  {
+    "id": "crd_aa",
+    "cat": "cards",
+    "name": "Тузы",
+    "pts": 3,
+    "threshold": 1,
+    "statPath": [
+      "cardsCombos",
+      "aa"
+    ]
+  },
+  {
+    "id": "pkr_l10",
+    "cat": "poker",
+    "name": "Азартное начало",
+    "pts": 5,
+    "threshold": 10,
+    "statPath": [
+      "pokerLvl"
+    ]
+  },
+  {
+    "id": "pkr_l30",
+    "cat": "poker",
+    "name": "Сегодня везет",
+    "pts": 5,
+    "threshold": 30,
+    "statPath": [
+      "pokerLvl"
+    ]
+  },
+  {
+    "id": "pkr_l50",
+    "cat": "poker",
+    "name": "Любимец карт",
+    "pts": 10,
+    "threshold": 50,
+    "statPath": [
+      "pokerLvl"
+    ]
+  },
+  {
+    "id": "pkr_l70",
+    "cat": "poker",
+    "name": "Опытный картежник",
+    "pts": 20,
+    "threshold": 70,
+    "statPath": [
+      "pokerLvl"
+    ]
+  },
+  {
+    "id": "pkr_l100",
+    "cat": "poker",
+    "name": "Катала",
+    "pts": 30,
+    "threshold": 100,
+    "statPath": [
+      "pokerLvl"
+    ]
+  },
+  {
+    "id": "pkr_kare",
+    "cat": "poker",
+    "name": "(покер) Каре",
+    "pts": 20,
+    "threshold": 1,
+    "statPath": [
+      "pokerCombos",
+      "kare"
+    ]
+  },
+  {
+    "id": "pkr_sf",
+    "cat": "poker",
+    "name": "(покер) Стрит-Флеш",
+    "pts": 40,
+    "threshold": 1,
+    "statPath": [
+      "pokerCombos",
+      "sf"
+    ]
+  },
+  {
+    "id": "pkr_rf",
+    "cat": "poker",
+    "name": "(покер) Роял-Флеш",
+    "pts": 60,
+    "threshold": 1,
+    "statPath": [
+      "pokerCombos",
+      "rf"
+    ]
+  },
+  {
+    "id": "pkr_sp1k",
+    "cat": "poker",
+    "name": "Непосильным трудом",
+    "pts": 5,
+    "threshold": 1000,
+    "statPath": [
+      "pokerSpichki"
+    ]
+  },
+  {
+    "id": "pkr_sp2k",
+    "cat": "poker",
+    "name": "Азартное состояние",
+    "pts": 6,
+    "threshold": 2000,
+    "statPath": [
+      "pokerSpichki"
+    ]
+  },
+  {
+    "id": "pkr_sp4k",
+    "cat": "poker",
+    "name": "Выгодная игра",
+    "pts": 10,
+    "threshold": 4000,
+    "statPath": [
+      "pokerSpichki"
+    ]
+  },
+  {
+    "id": "pkr_sp6k",
+    "cat": "poker",
+    "name": "Дорога к богатству",
+    "pts": 15,
+    "threshold": 6000,
+    "statPath": [
+      "pokerSpichki"
+    ]
+  },
+  {
+    "id": "pkr_sp10k",
+    "cat": "poker",
+    "name": "Поднялся на покере",
+    "pts": 20,
+    "threshold": 10000,
+    "statPath": [
+      "pokerSpichki"
+    ]
+  },
+  {
+    "id": "rul_l2",
+    "cat": "roulette",
+    "name": "Первые обороты",
+    "pts": 1,
+    "threshold": 2,
+    "statPath": [
+      "rouletteLvl"
+    ]
+  },
+  {
+    "id": "rul_l10",
+    "cat": "roulette",
+    "name": "Колесник",
+    "pts": 4,
+    "threshold": 10,
+    "statPath": [
+      "rouletteLvl"
+    ]
+  },
+  {
+    "id": "rul_l25",
+    "cat": "roulette",
+    "name": "Везунчик",
+    "pts": 10,
+    "threshold": 25,
+    "statPath": [
+      "rouletteLvl"
+    ]
+  },
+  {
+    "id": "rul_l50",
+    "cat": "roulette",
+    "name": "Мастер удачи",
+    "pts": 20,
+    "threshold": 50,
+    "statPath": [
+      "rouletteLvl"
+    ]
+  },
+  {
+    "id": "rul_l100",
+    "cat": "roulette",
+    "name": "Легенда фортуны",
+    "pts": 50,
+    "threshold": 100,
+    "statPath": [
+      "rouletteLvl"
+    ]
+  },
+  {
+    "id": "rul_sp100",
+    "cat": "roulette",
+    "name": "Первая сотня",
+    "pts": 3,
+    "threshold": 100,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "rul_sp500",
+    "cat": "roulette",
+    "name": "Полтысячи",
+    "pts": 5,
+    "threshold": 500,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "rul_sp1k",
+    "cat": "roulette",
+    "name": "Косарик",
+    "pts": 8,
+    "threshold": 1000,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "rul_sp2k",
+    "cat": "roulette",
+    "name": "Горячая пара",
+    "pts": 10,
+    "threshold": 2000,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "rul_sp5k",
+    "cat": "roulette",
+    "name": "Спичечный магнат",
+    "pts": 20,
+    "threshold": 5000,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "rul_sp10k",
+    "cat": "roulette",
+    "name": "Пироман",
+    "pts": 40,
+    "threshold": 10000,
+    "statPath": [
+      "rouletteSpichki"
+    ]
+  },
+  {
+    "id": "exp_10k",
+    "cat": "exp",
+    "name": "Малек",
+    "pts": 1,
+    "threshold": 10000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_20k",
+    "cat": "exp",
+    "name": "Работяга",
+    "pts": 2,
+    "threshold": 20000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_50k",
+    "cat": "exp",
+    "name": "Эльдорадо",
+    "pts": 3,
+    "threshold": 50000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_100k",
+    "cat": "exp",
+    "name": "Кормленный с Хабара",
+    "pts": 4,
+    "threshold": 100000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_150k",
+    "cat": "exp",
+    "name": "Почти тракторист",
+    "pts": 5,
+    "threshold": 150000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_300k",
+    "cat": "exp",
+    "name": "Тракторист",
+    "pts": 6,
+    "threshold": 300000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_500k",
+    "cat": "exp",
+    "name": "Мощно",
+    "pts": 8,
+    "threshold": 500000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_1kk",
+    "cat": "exp",
+    "name": "внатуре четко",
+    "pts": 10,
+    "threshold": 1000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_5kk",
+    "cat": "exp",
+    "name": "Блатной",
+    "pts": 12,
+    "threshold": 5000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_10kk",
+    "cat": "exp",
+    "name": "Мужик",
+    "pts": 15,
+    "threshold": 10000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_20kk",
+    "cat": "exp",
+    "name": "Старший по зачистке",
+    "pts": 20,
+    "threshold": 20000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_30kk",
+    "cat": "exp",
+    "name": "Куратор Зоны",
+    "pts": 25,
+    "threshold": 30000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_40kk",
+    "cat": "exp",
+    "name": "Слово имеет вес",
+    "pts": 30,
+    "threshold": 40000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_50kk",
+    "cat": "exp",
+    "name": "Главный",
+    "pts": 40,
+    "threshold": 50000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_100kk",
+    "cat": "exp",
+    "name": "Первый среди первых",
+    "pts": 60,
+    "threshold": 100000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "exp_200kk",
+    "cat": "exp",
+    "name": "Лучший друг Седого",
+    "pts": 80,
+    "threshold": 200000000,
+    "statPath": [
+      "exp"
+    ]
+  },
+  {
+    "id": "cig_10k",
+    "cat": "cig_hoard",
+    "name": "Первая затяжка",
+    "pts": 1,
+    "threshold": 10000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_50k",
+    "cat": "cig_hoard",
+    "name": "Пыхарь",
+    "pts": 2,
+    "threshold": 50000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_100k",
+    "cat": "cig_hoard",
+    "name": "Закурил конкретно",
+    "pts": 3,
+    "threshold": 100000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_300k",
+    "cat": "cig_hoard",
+    "name": "Дымовая завеса",
+    "pts": 4,
+    "threshold": 300000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_500k",
+    "cat": "cig_hoard",
+    "name": "Сигаретный магнат",
+    "pts": 5,
+    "threshold": 500000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_1kk",
+    "cat": "cig_hoard",
+    "name": "Сигаретный барон",
+    "pts": 6,
+    "threshold": 1000000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_5kk",
+    "cat": "cig_hoard",
+    "name": "Босс по табаку",
+    "pts": 8,
+    "threshold": 5000000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "cig_10kk",
+    "cat": "cig_hoard",
+    "name": "Легенда курилки",
+    "pts": 10,
+    "threshold": 10000000,
+    "statPath": [
+      "cig"
+    ]
+  },
+  {
+    "id": "coin_8",
+    "cat": "coins_hoard",
+    "name": "Мелочь",
+    "pts": 1,
+    "threshold": 8,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_18",
+    "cat": "coins_hoard",
+    "name": "Копейка рубль бережет",
+    "pts": 1,
+    "threshold": 18,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_50",
+    "cat": "coins_hoard",
+    "name": "Первый полтос",
+    "pts": 1,
+    "threshold": 50,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_100",
+    "cat": "coins_hoard",
+    "name": "Соточка на ход ноги",
+    "pts": 1,
+    "threshold": 100,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_500",
+    "cat": "coins_hoard",
+    "name": "Полосатый на кармане",
+    "pts": 2,
+    "threshold": 500,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_1k",
+    "cat": "coins_hoard",
+    "name": "Косарик",
+    "pts": 2,
+    "threshold": 1000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_5k",
+    "cat": "coins_hoard",
+    "name": "С Хабаровска",
+    "pts": 3,
+    "threshold": 5000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_10k",
+    "cat": "coins_hoard",
+    "name": "Десяточка",
+    "pts": 4,
+    "threshold": 10000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_25k",
+    "cat": "coins_hoard",
+    "name": "Получка",
+    "pts": 5,
+    "threshold": 25000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_50k",
+    "cat": "coins_hoard",
+    "name": "Получил зарплату",
+    "pts": 6,
+    "threshold": 50000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_100k",
+    "cat": "coins_hoard",
+    "name": "Пахан",
+    "pts": 7,
+    "threshold": 100000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_250k",
+    "cat": "coins_hoard",
+    "name": "Башлевый",
+    "pts": 8,
+    "threshold": 250000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_500k",
+    "cat": "coins_hoard",
+    "name": "Богач",
+    "pts": 9,
+    "threshold": 500000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "coin_1kk",
+    "cat": "coins_hoard",
+    "name": "Миллионер",
+    "pts": 10,
+    "threshold": 1000000,
+    "statPath": [
+      "coinsBalance"
+    ]
+  },
+  {
+    "id": "stew_10",
+    "cat": "stew_hoard",
+    "name": "Официант",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_50",
+    "cat": "stew_hoard",
+    "name": "Повар",
+    "pts": 1,
+    "threshold": 50,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_100",
+    "cat": "stew_hoard",
+    "name": "Любитель",
+    "pts": 2,
+    "threshold": 100,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_600",
+    "cat": "stew_hoard",
+    "name": "Кондитер",
+    "pts": 4,
+    "threshold": 600,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_1k",
+    "cat": "stew_hoard",
+    "name": "Дегустатор",
+    "pts": 5,
+    "threshold": 1000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_2k5",
+    "cat": "stew_hoard",
+    "name": "Су Шеф",
+    "pts": 6,
+    "threshold": 2500,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_5k",
+    "cat": "stew_hoard",
+    "name": "Шеф повар",
+    "pts": 7,
+    "threshold": 5000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_10k",
+    "cat": "stew_hoard",
+    "name": "Обжора",
+    "pts": 8,
+    "threshold": 10000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_25k",
+    "cat": "stew_hoard",
+    "name": "Богатый",
+    "pts": 10,
+    "threshold": 25000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_50k",
+    "cat": "stew_hoard",
+    "name": "Тушенки много не бывает",
+    "pts": 10,
+    "threshold": 50000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_100k",
+    "cat": "stew_hoard",
+    "name": "Анти-донатер",
+    "pts": 12,
+    "threshold": 100000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_150k",
+    "cat": "stew_hoard",
+    "name": "Баночный магнат",
+    "pts": 25,
+    "threshold": 150000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_200k",
+    "cat": "stew_hoard",
+    "name": "Пройдет не каждый",
+    "pts": 50,
+    "threshold": 200000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_300k",
+    "cat": "stew_hoard",
+    "name": "Король тушенки",
+    "pts": 100,
+    "threshold": 300000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_500k",
+    "cat": "stew_hoard",
+    "name": "Инвестор",
+    "pts": 150,
+    "threshold": 500000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "stew_1kk",
+    "cat": "stew_hoard",
+    "name": "Вот это и аппетит",
+    "pts": 200,
+    "threshold": 1000000,
+    "statPath": [
+      "stewBalance"
+    ]
+  },
+  {
+    "id": "gym_10",
+    "cat": "gym",
+    "name": "Первая прокачка",
+    "pts": 2,
+    "threshold": 10,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "gym_30",
+    "cat": "gym",
+    "name": "Подтянутый",
+    "pts": 3,
+    "threshold": 30,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "gym_50",
+    "cat": "gym",
+    "name": "Силач Зоны",
+    "pts": 5,
+    "threshold": 50,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "gym_100",
+    "cat": "gym",
+    "name": "Железные банки",
+    "pts": 10,
+    "threshold": 100,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "gym_500",
+    "cat": "gym",
+    "name": "Качок от Бога",
+    "pts": 15,
+    "threshold": 500,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "gym_1k",
+    "cat": "gym",
+    "name": "Зверюга",
+    "pts": 20,
+    "threshold": 1000,
+    "statPath": [
+      "gymInvitesSent"
+    ]
+  },
+  {
+    "id": "str_50",
+    "cat": "strength",
+    "name": "Крепкая хватка",
+    "pts": 2,
+    "threshold": 50,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_100",
+    "cat": "strength",
+    "name": "Сила Сталкера",
+    "pts": 3,
+    "threshold": 100,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_500",
+    "cat": "strength",
+    "name": "железные руки",
+    "pts": 5,
+    "threshold": 500,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_1k",
+    "cat": "strength",
+    "name": "Тяжеловес",
+    "pts": 10,
+    "threshold": 1000,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_2k5",
+    "cat": "strength",
+    "name": "Несгибаемый",
+    "pts": 10,
+    "threshold": 2500,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_10k",
+    "cat": "strength",
+    "name": "Сталкерская мощь",
+    "pts": 20,
+    "threshold": 10000,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_25k",
+    "cat": "strength",
+    "name": "Сила Зоны",
+    "pts": 25,
+    "threshold": 25000,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "str_50k",
+    "cat": "strength",
+    "name": "Стальной Сталкер",
+    "pts": 25,
+    "threshold": 50000,
+    "statPath": [
+      "strXp"
+    ]
+  },
+  {
+    "id": "pvp_10",
+    "cat": "pvp",
+    "name": "Первый выживший",
+    "pts": 2,
+    "threshold": 10,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "pvp_30",
+    "cat": "pvp",
+    "name": "Закаленный в боях",
+    "pts": 3,
+    "threshold": 30,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "pvp_50",
+    "cat": "pvp",
+    "name": "Опытный боец Зоны",
+    "pts": 5,
+    "threshold": 50,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "pvp_100",
+    "cat": "pvp",
+    "name": "Гроза мутантов и бандитов",
+    "pts": 8,
+    "threshold": 100,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "pvp_500",
+    "cat": "pvp",
+    "name": "Ветеран перестрелок",
+    "pts": 10,
+    "threshold": 500,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "pvp_1k",
+    "cat": "pvp",
+    "name": "Чемпион Зоны",
+    "pts": 15,
+    "threshold": 1000,
+    "statPath": [
+      "pvpWins"
+    ]
+  },
+  {
+    "id": "streak_7",
+    "cat": "streak",
+    "name": "Неделя в Зоне",
+    "pts": 5,
+    "threshold": 7,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_14",
+    "cat": "streak",
+    "name": "Привыкший к Зоне",
+    "pts": 5,
+    "threshold": 14,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_30",
+    "cat": "streak",
+    "name": "Месяц прожит",
+    "pts": 10,
+    "threshold": 30,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_60",
+    "cat": "streak",
+    "name": "Закалённый Зоной",
+    "pts": 15,
+    "threshold": 60,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_120",
+    "cat": "streak",
+    "name": "Постоянный Сталкер",
+    "pts": 50,
+    "threshold": 120,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_240",
+    "cat": "streak",
+    "name": "Житель Зоны",
+    "pts": 100,
+    "threshold": 240,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "streak_365",
+    "cat": "streak",
+    "name": "Старожитель Зоны",
+    "pts": 150,
+    "threshold": 365,
+    "statPath": [
+      "loginStreak"
+    ]
+  },
+  {
+    "id": "bp_50",
+    "cat": "bp",
+    "name": "Трудяга",
+    "pts": 2,
+    "threshold": 50,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "bp_100",
+    "cat": "bp",
+    "name": "Прошаренный",
+    "pts": 3,
+    "threshold": 100,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "bp_200",
+    "cat": "bp",
+    "name": "Крепкий орешек",
+    "pts": 5,
+    "threshold": 200,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "bp_300",
+    "cat": "bp",
+    "name": "Повелитель заданий",
+    "pts": 6,
+    "threshold": 300,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "bp_400",
+    "cat": "bp",
+    "name": "Уверенно",
+    "pts": 10,
+    "threshold": 400,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "bp_500",
+    "cat": "bp",
+    "name": "Геймер",
+    "pts": 15,
+    "threshold": 500,
+    "statPath": [
+      "bpLevel"
+    ]
+  },
+  {
+    "id": "vote_10",
+    "cat": "spend_votes",
+    "name": "Школьник",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_50",
+    "cat": "spend_votes",
+    "name": "Попрошайка",
+    "pts": 2,
+    "threshold": 50,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_100",
+    "cat": "spend_votes",
+    "name": "Процветающий",
+    "pts": 2,
+    "threshold": 100,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_250",
+    "cat": "spend_votes",
+    "name": "Не жалко",
+    "pts": 3,
+    "threshold": 250,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_500",
+    "cat": "spend_votes",
+    "name": "Закуп к рейду",
+    "pts": 4,
+    "threshold": 500,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_1k",
+    "cat": "spend_votes",
+    "name": "Слил пенсию",
+    "pts": 4,
+    "threshold": 1000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_2k",
+    "cat": "spend_votes",
+    "name": "Нашел заначку",
+    "pts": 5,
+    "threshold": 2000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_5k",
+    "cat": "spend_votes",
+    "name": "Богач",
+    "pts": 10,
+    "threshold": 5000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_10k",
+    "cat": "spend_votes",
+    "name": "Мужик",
+    "pts": 10,
+    "threshold": 10000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_12k",
+    "cat": "spend_votes",
+    "name": "Заводчанин",
+    "pts": 12,
+    "threshold": 12000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_15k",
+    "cat": "spend_votes",
+    "name": "Как новый айфон",
+    "pts": 12,
+    "threshold": 15000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_20k",
+    "cat": "spend_votes",
+    "name": "Семья подождет",
+    "pts": 15,
+    "threshold": 20000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_35k",
+    "cat": "spend_votes",
+    "name": "Кредитнулся",
+    "pts": 20,
+    "threshold": 35000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "vote_50k",
+    "cat": "spend_votes",
+    "name": "Антонов выручил",
+    "pts": 50,
+    "threshold": 50000,
+    "statPath": [
+      "votesSpent"
+    ]
+  },
+  {
+    "id": "spc_500",
+    "cat": "spend_coins",
+    "name": "Первый хабар",
+    "pts": 1,
+    "threshold": 500,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_1k",
+    "cat": "spend_coins",
+    "name": "Новичок у костра",
+    "pts": 1,
+    "threshold": 1000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_2k5",
+    "cat": "spend_coins",
+    "name": "Торговля с барыгой",
+    "pts": 1,
+    "threshold": 2500,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_5k",
+    "cat": "spend_coins",
+    "name": "Свой среди сталкеров",
+    "pts": 1,
+    "threshold": 5000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_10k",
+    "cat": "spend_coins",
+    "name": "Зона принимает",
+    "pts": 2,
+    "threshold": 10000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_25k",
+    "cat": "spend_coins",
+    "name": "Опытный ходок",
+    "pts": 3,
+    "threshold": 25000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_50k",
+    "cat": "spend_coins",
+    "name": "Сталкер со стажем",
+    "pts": 4,
+    "threshold": 50000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_100k",
+    "cat": "spend_coins",
+    "name": "Зона кормит",
+    "pts": 6,
+    "threshold": 100000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_150k",
+    "cat": "spend_coins",
+    "name": "Охотник за артефактами",
+    "pts": 8,
+    "threshold": 150000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_300k",
+    "cat": "spend_coins",
+    "name": "Тень Припяти",
+    "pts": 10,
+    "threshold": 300000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_500k",
+    "cat": "spend_coins",
+    "name": "Легенда Зоны",
+    "pts": 12,
+    "threshold": 500000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "spc_1kk",
+    "cat": "spend_coins",
+    "name": "Богач Зоны",
+    "pts": 15,
+    "threshold": 1000000,
+    "statPath": [
+      "coinsSpent"
+    ]
+  },
+  {
+    "id": "sps_10",
+    "cat": "spend_stew",
+    "name": "Первая банка",
+    "pts": 1,
+    "threshold": 10,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_50",
+    "cat": "spend_stew",
+    "name": "Запас на ночь",
+    "pts": 1,
+    "threshold": 50,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_100",
+    "cat": "spend_stew",
+    "name": "Не пропадешь",
+    "pts": 1,
+    "threshold": 100,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_500",
+    "cat": "spend_stew",
+    "name": "Мешок провизии",
+    "pts": 1,
+    "threshold": 500,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_1k",
+    "cat": "spend_stew",
+    "name": "Склад новичка",
+    "pts": 2,
+    "threshold": 1000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_5k",
+    "cat": "spend_stew",
+    "name": "Торговец у костра",
+    "pts": 2,
+    "threshold": 5000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_10k",
+    "cat": "spend_stew",
+    "name": "Затраты растут",
+    "pts": 3,
+    "threshold": 10000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_25k",
+    "cat": "spend_stew",
+    "name": "Барыга Зоны",
+    "pts": 3,
+    "threshold": 25000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_50k",
+    "cat": "spend_stew",
+    "name": "Серьезные затраты",
+    "pts": 5,
+    "threshold": 50000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_100k",
+    "cat": "spend_stew",
+    "name": "Король тушенки",
+    "pts": 5,
+    "threshold": 100000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_250k",
+    "cat": "spend_stew",
+    "name": "Оптовик Зоны",
+    "pts": 10,
+    "threshold": 250000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_500k",
+    "cat": "spend_stew",
+    "name": "Хозяин склада",
+    "pts": 20,
+    "threshold": 500000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "sps_1kk",
+    "cat": "spend_stew",
+    "name": "Легендарный снабженец",
+    "pts": 50,
+    "threshold": 1000000,
+    "statPath": [
+      "stewSpent"
+    ]
+  },
+  {
+    "id": "fr_50",
+    "cat": "friends",
+    "name": "Знают у костра",
+    "pts": 4,
+    "threshold": 50,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_100",
+    "cat": "friends",
+    "name": "Свои люди",
+    "pts": 5,
+    "threshold": 100,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_250",
+    "cat": "friends",
+    "name": "Ходишь не один",
+    "pts": 6,
+    "threshold": 250,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_500",
+    "cat": "friends",
+    "name": "Есть поддержка",
+    "pts": 7,
+    "threshold": 500,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_1k",
+    "cat": "friends",
+    "name": "Имя на слуху",
+    "pts": 8,
+    "threshold": 1000,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_2k5",
+    "cat": "friends",
+    "name": "Связи по всей Зоне",
+    "pts": 9,
+    "threshold": 2500,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "fr_5k",
+    "cat": "friends",
+    "name": "Легенда среди сталкеров",
+    "pts": 10,
+    "threshold": 5000,
+    "statPath": [
+      "friendsCount"
+    ]
+  },
+  {
+    "id": "meta_100",
+    "cat": "meta",
+    "name": "Первые шаги в Зоне",
+    "pts": 5,
+    "threshold": 100,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_500",
+    "cat": "meta",
+    "name": "Вошел в игру",
+    "pts": 10,
+    "threshold": 500,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_1k",
+    "cat": "meta",
+    "name": "Закаленный сталкер",
+    "pts": 20,
+    "threshold": 1000,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_1k5",
+    "cat": "meta",
+    "name": "Зона признает",
+    "pts": 30,
+    "threshold": 1500,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_2k",
+    "cat": "meta",
+    "name": "Опыт не пропьешь",
+    "pts": 40,
+    "threshold": 2000,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_2k5",
+    "cat": "meta",
+    "name": "Ветеран Зоны",
+    "pts": 50,
+    "threshold": 2500,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_3k",
+    "cat": "meta",
+    "name": "Имя на слуху",
+    "pts": 100,
+    "threshold": 3000,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_3k5",
+    "cat": "meta",
+    "name": "Легенда ходоков",
+    "pts": 200,
+    "threshold": 3500,
+    "statPath": [
+      "achPts"
+    ]
+  },
+  {
+    "id": "meta_4k",
+    "cat": "meta",
+    "name": "Нечисть не страшна",
+    "pts": 250,
+    "threshold": 4000,
+    "statPath": [
+      "achPts"
+    ]
+  }
+]

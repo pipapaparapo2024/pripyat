@@ -1,0 +1,35 @@
+{
+  "daily": [
+    {"id":"boss_hunter",   "icon":"⚔",  "name":"Победить Охотника",       "desc":"Победи босса Охотника",        "key":"boss_kills_0", "need":1,    "reward_type":"stew",  "reward_val":5,    "reward_lbl":"🥫 5"},
+    {"id":"boss_lucky",    "icon":"🔱", "name":"Победить Счастливчика",    "desc":"Победи босса Счастливчика",    "key":"boss_kills_1", "need":1,    "reward_type":"stew",  "reward_val":7,    "reward_lbl":"🥫 7"},
+    {"id":"boss_hawk",     "icon":"🦅", "name":"Победить Ястреба",         "desc":"Победи босса Ястреба",         "key":"boss_kills_2", "need":1,    "reward_type":"stew",  "reward_val":10,   "reward_lbl":"🥫 10"},
+    {"id":"habar_5",       "icon":"📦", "name":"Отправить 5 заначек",      "desc":"Собери хабар 5 дней",          "key":"habar_days_collected", "need":5,    "reward_type":"cig",   "reward_val":50,   "reward_lbl":"🚬 50"},
+    {"id":"habar_10",      "icon":"📦", "name":"Отправить 10 заначек",     "desc":"Собери хабар 10 дней",         "key":"habar_days_collected", "need":10,   "reward_type":"cig",   "reward_val":100,  "reward_lbl":"🚬 100"},
+    {"id":"energy_15",     "icon":"⚡", "name":"Потратить 15 энергии",     "desc":"Потрать 15 единиц энергии",    "key":"energy_spent", "need":15,   "reward_type":"coins", "reward_val":200,  "reward_lbl":"💰 200"},
+    {"id":"energy_25",     "icon":"⚡", "name":"Потратить 25 энергии",     "desc":"Потрать 25 единиц энергии",    "key":"energy_spent", "need":25,   "reward_type":"coins", "reward_val":400,  "reward_lbl":"💰 400"},
+    {"id":"energy_50",     "icon":"⚡", "name":"Потратить 50 энергии",     "desc":"Потрать 50 единиц энергии",    "key":"energy_spent", "need":50,   "reward_type":"coins", "reward_val":700,  "reward_lbl":"💰 700"},
+    {"id":"play_bj",       "icon":"🃏", "name":"Сыграть в блек-джек",      "desc":"Сыграй 1 раз в блек-джек",     "key":"bj_games",     "need":1,    "reward_type":"cig",   "reward_val":30,   "reward_lbl":"🚬 30"},
+    {"id":"play_dice",     "icon":"🎲", "name":"Сыграть в зарики",         "desc":"Сыграй 1 раз в зарики",        "key":"dice_games",   "need":1,    "reward_type":"cig",   "reward_val":30,   "reward_lbl":"🚬 30"},
+    {"id":"cig_30",        "icon":"🚬", "name":"Собрать 30 сигарет",       "desc":"Накопи 30 сигарет",            "key":"cigarettes",   "need":30,   "reward_type":"coins", "reward_val":100,  "reward_lbl":"💰 100"},
+    {"id":"cig_60",        "icon":"🚬", "name":"Собрать 60 сигарет",       "desc":"Накопи 60 сигарет",            "key":"cigarettes",   "need":60,   "reward_type":"coins", "reward_val":200,  "reward_lbl":"💰 200"},
+    {"id":"cig_90",        "icon":"🚬", "name":"Собрать 90 сигарет",       "desc":"Накопи 90 сигарет",            "key":"cigarettes",   "need":90,   "reward_type":"coins", "reward_val":350,  "reward_lbl":"💰 350"},
+    {"id":"cig_200",       "icon":"🚬", "name":"Собрать 200 сигарет",      "desc":"Накопи 200 сигарет",           "key":"cigarettes",   "need":200,  "reward_type":"coins", "reward_val":700,  "reward_lbl":"💰 700"},
+    {"id":"cig_500",       "icon":"🚬", "name":"Собрать 500 сигарет",      "desc":"Накопи 500 сигарет",           "key":"cigarettes",   "need":500,  "reward_type":"stew",  "reward_val":3,    "reward_lbl":"🥫 3"},
+    {"id":"cig_1000",      "icon":"🚬", "name":"Собрать 1000 сигарет",     "desc":"Накопи 1000 сигарет",          "key":"cigarettes",   "need":1000, "reward_type":"stew",  "reward_val":7,    "reward_lbl":"🥫 7"},
+    {"id":"resp_100",      "icon":"⭐", "name":"Заработать 100 уважения",  "desc":"Набери 100 авторитета",        "key":"respect",      "need":100,  "reward_type":"coins", "reward_val":300,  "reward_lbl":"💰 300"},
+    {"id":"resp_500",      "icon":"⭐", "name":"Заработать 500 уважения",  "desc":"Набери 500 авторитета",        "key":"respect",      "need":500,  "reward_type":"coins", "reward_val":800,  "reward_lbl":"💰 800"},
+    {"id":"resp_1000",     "icon":"⭐", "name":"Заработать 1000 уважения", "desc":"Набери 1000 авторитета",       "key":"respect",      "need":1000, "reward_type":"stew",  "reward_val":5,    "reward_lbl":"🥫 5"},
+    {"id":"zone_10",       "icon":"🗺", "name":"Зарубиться 10 раз",        "desc":"Проведи 10 схваток в Зоне",    "key":"zone_fights",  "need":10,   "reward_type":"cig",   "reward_val":50,   "reward_lbl":"🚬 50"},
+    {"id":"zone_20",       "icon":"🗺", "name":"Зарубиться 20 раз",        "desc":"Проведи 20 схваток в Зоне",    "key":"zone_fights",  "need":20,   "reward_type":"cig",   "reward_val":100,  "reward_lbl":"🚬 100"},
+    {"id":"train_10",      "icon":"💪", "name":"Позвать в качалку 10 раз", "desc":"Позови в качалку 10 раз",      "key":"train_count",  "need":10,   "reward_type":"coins", "reward_val":300,  "reward_lbl":"💰 300"},
+    {"id":"train_20",      "icon":"💪", "name":"Позвать в качалку 20 раз", "desc":"Позови в качалку 20 раз",      "key":"train_count",  "need":20,   "reward_type":"coins", "reward_val":600,  "reward_lbl":"💰 600"}
+  ],
+  "weekly": [
+    {"id":"w_boss_killer",  "icon":"🏆", "name":"Убийца боссов", "desc":"Победи 20 боссов за неделю", "key":"bosses_killed", "need":20, "reward_type":"cig",   "reward_val":5,    "reward_lbl":"🚬 5"},
+    {"id":"w_conqueror",    "icon":"🗺", "name":"Завоеватель",   "desc":"Захвати 10 точек в Зоне",    "key":"zone_fights",   "need":10, "reward_type":"coins", "reward_val":2000, "reward_lbl":"💰 2000"},
+    {"id":"w_collector",    "icon":"💎", "name":"Коллекционер",  "desc":"Собери хабар 5 дней",        "key":"habar_days_collected",  "need":5,  "reward_type":"cig",   "reward_val":10,   "reward_lbl":"🚬 10"}
+  ],
+  "special": [
+    {"id":"s_zone_trial", "icon":"🌟", "name":"Испытание Зоны", "desc":"Нанеси 10000 урона в сумме", "key":"total_damage", "need":10000, "reward_type":"cig", "reward_val":15, "reward_lbl":"🚬 15"}
+  ]
+}

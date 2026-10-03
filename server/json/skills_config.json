@@ -1,0 +1,28 @@
+{
+    "max_lvl": [10, 20, 10, 10, 10, 10, 10, 10, 10, 50, 30, 5, 8, 7, 10, 60, 70, 10, 10, 100],
+    "total_points": 460,
+    "point_base_cost": 1000,
+    "point_cost_step": 185,
+    "skills": [
+        {"type": "flat",   "weapon": "machete", "totalBonus": 10},
+        {"type": "flat",   "weapon": "gun",      "totalBonus": 20},
+        {"type": "flat",   "weapon": "auto",     "totalBonus": 10},
+        {"type": "crit",   "weapon": "machete",  "totalBonus": 10},
+        {"type": "crit",   "weapon": "gun",      "totalBonus": 10},
+        {"type": "crit",   "weapon": "auto",     "totalBonus": 10},
+        {"type": "crit",   "weapon": "knife",    "totalBonus": 10},
+        {"type": "crit",   "weapon": "chain",    "totalBonus": 10},
+        {"type": "crit",   "weapon": "bat",      "totalBonus": 10},
+        {"type": "energy", "weapon": null,       "totalBonus": 50},
+        {"type": "time",   "weapon": null,       "totalBonus": 60},
+        {"type": "flat",   "weapon": "knife",    "totalBonus": 5},
+        {"type": "flat",   "weapon": "chain",    "totalBonus": 8},
+        {"type": "flat",   "weapon": "bat",      "totalBonus": 7},
+        {"type": "flat",   "weapon": "auto",     "totalBonus": 20},
+        {"type": "flat",   "weapon": "machete",  "totalBonus": 58},
+        {"type": "flat",   "weapon": "gun",      "totalBonus": 70},
+        {"type": "crit",   "weapon": "gun",      "totalBonus": 10},
+        {"type": "crit",   "weapon": "auto",     "totalBonus": 10},
+        {"type": "flat",   "weapon": "auto",     "totalBonus": 100}
+    ]
+}

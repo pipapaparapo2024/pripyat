@@ -1,0 +1,17 @@
+{
+    "weapons": [
+        {"id": 0, "type": "melee", "cost": 0, "donate": false},
+        {"id": 1, "type": "melee", "cost": 500, "donate": false},
+        {"id": 2, "type": "melee", "cost": 1500, "donate": false},
+        {"id": 3, "type": "machete", "cost": 4, "donate": true},
+        {"id": 4, "type": "gun", "cost": 5, "donate": true},
+        {"id": 5, "type": "auto", "cost": 18, "donate": true}
+    ],
+    "upg_cost": [10, 20, 10, 10, 10, 10, 10, 10, 10, 50, 30, -5, 80, -7, 100, 60, 70, 10, 10, 100],
+    "max_upg": 20,
+    "weapon_key": ["knife", "chain", "bat", "machete", "gun", "auto"],
+    "base_damage": [5, 12, 20, 40, 50, 200],
+    "tier_damage": [0, 10, 30, 30, 30, 30, 30, 30, 30, 30, 80, 80, 85, 93, 100, 120, 178, 248, 248, 248, 348],
+    "mult_options": [1, 10, 50, 100, 500, 1000],
+    "free_cooldown_ms": 21600000
+}

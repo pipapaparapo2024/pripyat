@@ -1,0 +1,8 @@
+[
+  {"id":0, "donate_cost":{"stew":10,"coins":0}, "donate_xp":20, "max_level":10},
+  {"id":1, "donate_cost":{"stew":0,"coins":300}, "donate_xp":30, "max_level":10},
+  {"id":2, "donate_cost":{"stew":0,"coins":250}, "donate_xp":25, "max_level":10},
+  {"id":3, "donate_cost":{"stew":15,"coins":200}, "donate_xp":35, "max_level":10},
+  {"id":4, "donate_cost":{"stew":5,"coins":150}, "donate_xp":22, "max_level":10},
+  {"id":5, "donate_cost":{"stew":0,"coins":500}, "donate_xp":50, "max_level":10}
+]

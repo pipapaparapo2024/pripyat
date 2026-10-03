@@ -1,0 +1,373 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "layers": [
+    {
+      "name": "Слой 1",
+      "kind": "pixel",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": []
+    },
+    {
+      "name": "Прямоугольник 5",
+      "kind": "pixel",
+      "x": -18,
+      "y": -94,
+      "w": 802,
+      "h": 1425,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\01_Прямоугольник_5.png",
+      "children": []
+    },
+    {
+      "name": "Слой 4",
+      "kind": "pixel",
+      "x": 39,
+      "y": 19,
+      "w": 1501,
+      "h": 1023,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\02_Слой_4.png",
+      "children": []
+    },
+    {
+      "name": "Группа 1",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": [
+        {
+          "name": "2 стадия копия",
+          "kind": "pixel",
+          "x": 281,
+          "y": 460,
+          "w": 234,
+          "h": 78,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_00_2_стадия_копия.png",
+          "children": []
+        },
+        {
+          "name": "2 стадия копия",
+          "kind": "pixel",
+          "x": 281,
+          "y": 460,
+          "w": 234,
+          "h": 78,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_00_2_стадия_копия.png",
+          "children": []
+        },
+        {
+          "name": "2 стадия",
+          "kind": "pixel",
+          "x": 224,
+          "y": 524,
+          "w": 385,
+          "h": 187,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_01_2_стадия.png",
+          "children": []
+        },
+        {
+          "name": "2 стадия",
+          "kind": "pixel",
+          "x": 224,
+          "y": 524,
+          "w": 385,
+          "h": 187,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_01_2_стадия.png",
+          "children": []
+        },
+        {
+          "name": "3 стадия",
+          "kind": "pixel",
+          "x": 49,
+          "y": 180,
+          "w": 1226,
+          "h": 835,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_02_3_стадия.png",
+          "children": []
+        },
+        {
+          "name": "3 стадия",
+          "kind": "pixel",
+          "x": 49,
+          "y": 180,
+          "w": 1226,
+          "h": 835,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\03_02_3_стадия.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Прямоугольник 6",
+      "kind": "shape",
+      "x": -41,
+      "y": -44,
+      "w": 790,
+      "h": 1351,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\04_Прямоугольник_6.png",
+      "children": []
+    },
+    {
+      "name": "Слой 3",
+      "kind": "pixel",
+      "x": 0,
+      "y": 0,
+      "w": 720,
+      "h": 1280,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\05_Слой_3.png",
+      "children": []
+    },
+    {
+      "name": "свет",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": [
+        {
+          "name": "Эллипс 1",
+          "kind": "shape",
+          "x": 49,
+          "y": 1060,
+          "w": 6,
+          "h": 6,
+          "in_canvas": false,
+          "file": null,
+          "children": []
+        },
+        {
+          "name": "Эллипс 1",
+          "kind": "shape",
+          "x": 49,
+          "y": 1060,
+          "w": 6,
+          "h": 6,
+          "in_canvas": false,
+          "file": null,
+          "children": []
+        },
+        {
+          "name": "мигание света",
+          "kind": "pixel",
+          "x": 326,
+          "y": 635,
+          "w": 85,
+          "h": 40,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_01_мигание_света.png",
+          "children": []
+        },
+        {
+          "name": "мигание света",
+          "kind": "pixel",
+          "x": 326,
+          "y": 635,
+          "w": 85,
+          "h": 40,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_01_мигание_света.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 3",
+          "kind": "shape",
+          "x": 228,
+          "y": 323,
+          "w": 70,
+          "h": 18,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_02_Прямоугольник_3.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 3",
+          "kind": "shape",
+          "x": 228,
+          "y": 323,
+          "w": 70,
+          "h": 18,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_02_Прямоугольник_3.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 4",
+          "kind": "pixel",
+          "x": 117,
+          "y": 87,
+          "w": 404,
+          "h": 67,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_03_Прямоугольник_4.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 4",
+          "kind": "pixel",
+          "x": 117,
+          "y": 87,
+          "w": 404,
+          "h": 67,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_03_Прямоугольник_4.png",
+          "children": []
+        },
+        {
+          "name": "2 копия",
+          "kind": "pixel",
+          "x": 13,
+          "y": 302,
+          "w": 323,
+          "h": 618,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_04_2_копия.png",
+          "children": []
+        },
+        {
+          "name": "2 копия",
+          "kind": "pixel",
+          "x": 13,
+          "y": 302,
+          "w": 323,
+          "h": 618,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_04_2_копия.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 2",
+          "kind": "shape",
+          "x": 16,
+          "y": 529,
+          "w": 23,
+          "h": 225,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_05_Прямоугольник_2.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 2",
+          "kind": "shape",
+          "x": 16,
+          "y": 529,
+          "w": 23,
+          "h": 225,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_05_Прямоугольник_2.png",
+          "children": []
+        },
+        {
+          "name": "1",
+          "kind": "pixel",
+          "x": -159,
+          "y": 397,
+          "w": 395,
+          "h": 513,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_06_1.png",
+          "children": []
+        },
+        {
+          "name": "1",
+          "kind": "pixel",
+          "x": -159,
+          "y": 397,
+          "w": 395,
+          "h": 513,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_06_1.png",
+          "children": []
+        },
+        {
+          "name": "1 копия 2",
+          "kind": "pixel",
+          "x": -18,
+          "y": 397,
+          "w": 395,
+          "h": 513,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_07_1_копия_2.png",
+          "children": []
+        },
+        {
+          "name": "1 копия 2",
+          "kind": "pixel",
+          "x": -18,
+          "y": 397,
+          "w": 395,
+          "h": 513,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_07_1_копия_2.png",
+          "children": []
+        },
+        {
+          "name": "1 копия",
+          "kind": "pixel",
+          "x": 128,
+          "y": 154,
+          "w": 548,
+          "h": 444,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_08_1_копия.png",
+          "children": []
+        },
+        {
+          "name": "1 копия",
+          "kind": "pixel",
+          "x": 128,
+          "y": 154,
+          "w": 548,
+          "h": 444,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_08_1_копия.png",
+          "children": []
+        },
+        {
+          "name": "1 копия 3",
+          "kind": "pixel",
+          "x": 114,
+          "y": 712,
+          "w": 548,
+          "h": 444,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_09_1_копия_3.png",
+          "children": []
+        },
+        {
+          "name": "1 копия 3",
+          "kind": "pixel",
+          "x": 114,
+          "y": 712,
+          "w": 548,
+          "h": 444,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\preloader__2\\06_09_1_копия_3.png",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

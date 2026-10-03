@@ -1,0 +1,32 @@
+{
+    "ranks": ["двойка", "тройка", "четверка", "пятерка", "шестерка", "семерка", "восьмерка", "девятка", "десятка", "валет", "дама", "король", "туз"],
+    "suits": ["♠", "♥", "♦", "♣"],
+    "roll_table": [
+        {"key": "royal_flush",     "upto": 0.10},
+        {"key": "straight_flush",  "upto": 0.20},
+        {"key": "four_of_a_kind",  "upto": 0.35},
+        {"key": "full_house",      "upto": 0.42},
+        {"key": "flush",           "upto": 0.82},
+        {"key": "straight",        "upto": 1.07},
+        {"key": "three_of_a_kind", "upto": 2.57},
+        {"key": "two_pair",        "upto": 4.57},
+        {"key": "pair",            "upto": 14.57},
+        {"key": "high_card",       "upto": 100.0}
+    ],
+    "combos": {
+        "royal_flush":     {"lbl": "🔥 РОЯЛ-ФЛЕШ!", "type": "shmot",            "amt": 1,   "sp": 0,   "id": "rf"},
+        "straight_flush":  {"lbl": "СТРИТ-ФЛЕШ",         "type": "stew",             "amt": 100, "sp": 0,   "id": "sf"},
+        "four_of_a_kind":  {"lbl": "КАРЕ",                                        "type": "stew",             "amt": 60,  "sp": 0,   "id": "kare"},
+        "full_house":      {"lbl": "ФУЛЛ-ХАУЗ",               "type": "auto",             "amt": 40,  "sp": 0,   "id": "fh"},
+        "flush":           {"lbl": "ФЛЕШ",                                        "type": "stew",             "amt": 15,  "sp": 0,   "id": "flush"},
+        "straight":        {"lbl": "СТРИТ",                                  "type": "poker_spichki", "amt": 300, "sp": 300, "id": "straight"},
+        "three_of_a_kind": {"lbl": "ТРОЙКА",                            "type": "poker_spichki", "amt": 300, "sp": 300, "id": "trips"},
+        "two_pair":        {"lbl": "ДВЕ ПАРЫ",                     "type": "gun",              "amt": 5,   "sp": 0,   "id": "2pair"},
+        "pair":            {"lbl": "ПАРА",                                        "type": "coins",            "amt": 20,  "sp": 0,   "id": "pair"},
+        "high_card":       {"lbl": "Старшая карта", "type": "poker_spichki", "amt": 50,  "sp": 50,  "id": "hc"}
+    },
+    "play_cost_stew": 5,
+    "daily_stew_limit": 25,
+    "exp_reward": 2500,
+    "cig_reward": 1000
+}

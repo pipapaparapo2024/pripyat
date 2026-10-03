@@ -1,0 +1,41 @@
+{
+  "canvas": [
+    1536,
+    1024
+  ],
+  "layers": [
+    {
+      "name": "Слой 0",
+      "kind": "pixel",
+      "x": 44,
+      "y": 214,
+      "w": 703,
+      "h": 1109,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\облако_с_валютой__2\\00_Слой_0.png",
+      "children": []
+    },
+    {
+      "name": "количество валюты",
+      "kind": "type",
+      "x": 370,
+      "y": 379,
+      "w": 66,
+      "h": 730,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\облако_с_валютой__2\\01_количество_валюты.png",
+      "children": []
+    },
+    {
+      "name": "Описание валюты  и где ее взять",
+      "kind": "type",
+      "x": 496,
+      "y": 436,
+      "w": 189,
+      "h": 664,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\облако_с_валютой__2\\02_Описание_валюты__и_где_ее_взять.png",
+      "children": []
+    }
+  ]
+}

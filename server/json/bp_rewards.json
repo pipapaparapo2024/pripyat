@@ -1,0 +1,12 @@
+[
+  {"type":"coins", "amount":200},
+  {"type":"stew", "amount":5},
+  {"type":"energy", "amount":20},
+  {"type":"cig", "amount":2},
+  {"type":"coins", "amount":500},
+  {"type":"stew", "amount":15},
+  {"type":"energy", "amount":50},
+  {"type":"cig", "amount":5},
+  {"type":"coins", "amount":1000},
+  {"type":"coins", "amount":2000}
+]

@@ -1,0 +1,174 @@
+{
+  "canvas": [
+    853,
+    1280
+  ],
+  "layers": [
+    {
+      "name": "перс",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 1154,
+      "h": 853,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_перс_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 0,
+          "y": 0,
+          "w": 1154,
+          "h": 853,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 0,
+          "y": 0,
+          "w": 1154,
+          "h": 853,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": 534,
+          "y": 252,
+          "w": 144,
+          "h": 346,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_01_Слой_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": 534,
+          "y": 252,
+          "w": 144,
+          "h": 346,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_01_Слой_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 589,
+          "y": 213,
+          "w": 103,
+          "h": 286,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_02_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 589,
+          "y": 213,
+          "w": 103,
+          "h": 286,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_02_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 4",
+          "kind": "pixel",
+          "x": 188,
+          "y": 257,
+          "w": 431,
+          "h": 351,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_03_Слой_4.png",
+          "children": []
+        },
+        {
+          "name": "Слой 4",
+          "kind": "pixel",
+          "x": 188,
+          "y": 257,
+          "w": 431,
+          "h": 351,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_03_Слой_4.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 91,
+          "y": 374,
+          "w": 151,
+          "h": 105,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_04_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 91,
+          "y": 374,
+          "w": 151,
+          "h": 105,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_04_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 6",
+          "kind": "pixel",
+          "x": 128,
+          "y": 405,
+          "w": 10,
+          "h": 45,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_05_Слой_6.png",
+          "children": []
+        },
+        {
+          "name": "Слой 6",
+          "kind": "pixel",
+          "x": 128,
+          "y": 405,
+          "w": 10,
+          "h": 45,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_05_Слой_6.png",
+          "children": []
+        },
+        {
+          "name": "Слой 6 копия",
+          "kind": "pixel",
+          "x": 122,
+          "y": 415,
+          "w": 6,
+          "h": 26,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_06_Слой_6_копия.png",
+          "children": []
+        },
+        {
+          "name": "Слой 6 копия",
+          "kind": "pixel",
+          "x": 122,
+          "y": 415,
+          "w": 6,
+          "h": 26,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\перс__2\\00_06_Слой_6_копия.png",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+[
+  {"id":0, "key":"stat_str", "energy_cost":3, "max_level":50},
+  {"id":1, "key":"stat_end", "energy_cost":3, "max_level":50},
+  {"id":2, "key":"stat_agi", "energy_cost":3, "max_level":50}
+]

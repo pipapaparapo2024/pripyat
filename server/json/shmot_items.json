@@ -1,0 +1,794 @@
+[
+  {
+    "id": 0,
+    "price": {
+      "type": "coins",
+      "a": 200
+    },
+    "bk": "armor",
+    "bv": 5
+  },
+  {
+    "id": 1,
+    "price": {
+      "type": "coins",
+      "a": 1500
+    },
+    "bk": "armor",
+    "bv": 15
+  },
+  {
+    "id": 2,
+    "price": {
+      "type": "stew",
+      "a": 40
+    },
+    "bk": "anon",
+    "bv": 10
+  },
+  {
+    "id": 3,
+    "price": {
+      "type": "coins",
+      "a": 800
+    },
+    "bk": "drop",
+    "bv": 2
+  },
+  {
+    "id": 4,
+    "price": {
+      "type": "coins",
+      "a": 0
+    },
+    "bk": "armor",
+    "bv": 8
+  },
+  {
+    "id": 5,
+    "price": {
+      "type": "coins",
+      "a": 3000
+    },
+    "bk": "armor",
+    "bv": 20
+  },
+  {
+    "id": 6,
+    "price": {
+      "type": "cig",
+      "a": 5
+    },
+    "bk": "damage",
+    "bv": 5
+  },
+  {
+    "id": 7,
+    "price": {
+      "type": "coins",
+      "a": 15000
+    },
+    "bk": "armor",
+    "bv": 35
+  },
+  {
+    "id": 8,
+    "price": {
+      "type": "coins",
+      "a": 0
+    },
+    "bk": "armor",
+    "bv": 3
+  },
+  {
+    "id": 9,
+    "price": {
+      "type": "coins",
+      "a": 600
+    },
+    "bk": "armor",
+    "bv": 8
+  },
+  {
+    "id": 10,
+    "price": {
+      "type": "stew",
+      "a": 25
+    },
+    "bk": "armor",
+    "bv": 5
+  },
+  {
+    "id": 11,
+    "price": {
+      "type": "cig",
+      "a": 8
+    },
+    "bk": "damage",
+    "bv": 10
+  },
+  {
+    "id": 12,
+    "price": {
+      "type": "coins",
+      "a": 0
+    },
+    "bk": "armor",
+    "bv": 2
+  },
+  {
+    "id": 13,
+    "price": {
+      "type": "coins",
+      "a": 400
+    },
+    "bk": "armor",
+    "bv": 5
+  },
+  {
+    "id": 14,
+    "price": {
+      "type": "stew",
+      "a": 30
+    },
+    "bk": "rad",
+    "bv": -20
+  },
+  {
+    "id": 15,
+    "price": {
+      "type": "cig",
+      "a": 6
+    },
+    "bk": "speed",
+    "bv": 3
+  },
+  {
+    "id": 16,
+    "price": {
+      "type": "cig",
+      "a": 10
+    },
+    "bk": "max_e",
+    "bv": 20
+  },
+  {
+    "id": 17,
+    "price": {
+      "type": "coins",
+      "a": 1200
+    },
+    "bk": "contrib",
+    "bv": 3
+  },
+  {
+    "id": 18,
+    "price": {
+      "type": "coins",
+      "a": 2500
+    },
+    "bk": "drop",
+    "bv": 5
+  },
+  {
+    "id": 19,
+    "price": {
+      "type": "stew",
+      "a": 50
+    },
+    "bk": "detect",
+    "bv": 1
+  },
+  {
+    "id": 20,
+    "price": {
+      "type": "cig",
+      "a": 3
+    },
+    "bk": "damage",
+    "bv": 2
+  },
+  {
+    "id": 21,
+    "price": {
+      "type": "cig",
+      "a": 8
+    },
+    "bk": "armor",
+    "bv": 10
+  },
+  {
+    "id": 22,
+    "price": {
+      "type": "cig",
+      "a": 6
+    },
+    "bk": "speed",
+    "bv": 5
+  },
+  {
+    "id": 23,
+    "price": {
+      "type": "cig",
+      "a": 5
+    },
+    "bk": "drop",
+    "bv": 5
+  },
+  {
+    "id": 24,
+    "price": {
+      "type": "coins",
+      "a": 1000
+    },
+    "bk": "drop",
+    "bv": 3
+  },
+  {
+    "id": 25,
+    "price": {
+      "type": "coins",
+      "a": 700
+    },
+    "bk": "armor",
+    "bv": 5
+  },
+  {
+    "id": 26,
+    "price": {
+      "type": "coins",
+      "a": 300
+    },
+    "bk": "armor",
+    "bv": 2
+  },
+  {
+    "id": 27,
+    "price": {
+      "type": "coins",
+      "a": 500
+    },
+    "bk": "armor",
+    "bv": 4
+  },
+  {
+    "id": 28,
+    "price": {
+      "type": "cig",
+      "a": 5
+    },
+    "bk": "damage",
+    "bv": 5
+  },
+  {
+    "id": 29,
+    "price": {
+      "type": "cig",
+      "a": 7
+    },
+    "bk": "damage",
+    "bv": 7
+  },
+  {
+    "id": 30,
+    "price": {
+      "type": "coins",
+      "a": 400
+    },
+    "bk": "armor",
+    "bv": 3
+  },
+  {
+    "id": 31,
+    "price": {
+      "type": "coins",
+      "a": 600
+    },
+    "bk": "drop",
+    "bv": 3
+  },
+  {
+    "id": 32,
+    "price": {
+      "type": "cig",
+      "a": 6
+    },
+    "bk": "damage",
+    "bv": 5
+  },
+  {
+    "id": 33,
+    "price": {
+      "type": "coins",
+      "a": 100
+    },
+    "bk": "speed",
+    "bv": 1
+  },
+  {
+    "id": 34,
+    "price": {
+      "type": "coins",
+      "a": 800
+    },
+    "bk": "armor",
+    "bv": 4
+  },
+  {
+    "id": 35,
+    "price": {
+      "type": "cig",
+      "a": 6
+    },
+    "bk": "damage",
+    "bv": 5
+  },
+  {
+    "id": 36,
+    "price": {
+      "type": "coins",
+      "a": 2000
+    },
+    "bk": "armor",
+    "bv": 15
+  },
+  {
+    "id": 37,
+    "price": {
+      "type": "coins",
+      "a": 3500
+    },
+    "bk": "armor",
+    "bv": 20
+  },
+  {
+    "id": 38,
+    "price": {
+      "type": "cig",
+      "a": 9
+    },
+    "bk": "damage",
+    "bv": 8
+  },
+  {
+    "id": 39,
+    "price": {
+      "type": "coins",
+      "a": 2800
+    },
+    "bk": "damage",
+    "bv": 10
+  },
+  {
+    "id": 40,
+    "price": {
+      "type": "stew",
+      "a": 35
+    },
+    "bk": "armor",
+    "bv": 25
+  },
+  {
+    "id": 41,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "hunter_normal",
+    "fragments": 20
+  },
+  {
+    "id": 42,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 10,
+    "source": "lucky_normal",
+    "fragments": 20
+  },
+  {
+    "id": 43,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "hawk_normal",
+    "fragments": 20
+  },
+  {
+    "id": 44,
+    "cat": 3,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "hunter_solo"
+  },
+  {
+    "id": 45,
+    "cat": 6,
+    "bk": "machete_flat",
+    "bv": 10,
+    "source": "lucky_solo"
+  },
+  {
+    "id": 46,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 80,
+    "source": "hawk_solo"
+  },
+  {
+    "id": 47,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 80,
+    "source": "marked_normal"
+  },
+  {
+    "id": 48,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 80,
+    "source": "marked_normal"
+  },
+  {
+    "id": 49,
+    "cat": 3,
+    "bk": "auto_flat",
+    "bv": 80,
+    "source": "marked_solo"
+  },
+  {
+    "id": 50,
+    "cat": 0,
+    "bk": "gun_flat",
+    "bv": 30,
+    "source": "rat_normal"
+  },
+  {
+    "id": 51,
+    "cat": 1,
+    "bk": "max_e",
+    "bv": 10,
+    "source": "rat_normal"
+  },
+  {
+    "id": 52,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 120,
+    "source": "rat_normal"
+  },
+  {
+    "id": 53,
+    "cat": 3,
+    "bk": "auto_flat",
+    "bv": 180,
+    "source": "rat_solo"
+  },
+  {
+    "id": 54,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 120,
+    "source": "barkut_normal"
+  },
+  {
+    "id": 55,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 30,
+    "source": "barkut_normal"
+  },
+  {
+    "id": 56,
+    "cat": 3,
+    "bk": "auto_flat",
+    "bv": 120,
+    "source": "barkut_normal"
+  },
+  {
+    "id": 57,
+    "cat": 6,
+    "bk": "gun_flat",
+    "bv": 50,
+    "source": "barkut_solo"
+  },
+  {
+    "id": 58,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 150,
+    "source": "beard_solo"
+  },
+  {
+    "id": 59,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 150,
+    "source": "zhgut_normal"
+  },
+  {
+    "id": 60,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 100,
+    "source": "zhgut_normal"
+  },
+  {
+    "id": 61,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 200,
+    "source": "zhgut_solo"
+  },
+  {
+    "id": 62,
+    "cat": 6,
+    "bk": "gun_flat",
+    "bv": 50,
+    "source": "poker"
+  },
+  {
+    "id": 63,
+    "cat": 3,
+    "bk": "gun_flat",
+    "bv": 50,
+    "source": "poker"
+  },
+  {
+    "id": 64,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 50,
+    "source": "dice"
+  },
+  {
+    "id": 65,
+    "cat": 2,
+    "bk": "gun_flat",
+    "bv": 30,
+    "source": "dice"
+  },
+  {
+    "id": 66,
+    "cat": 3,
+    "bk": "machete_flat",
+    "bv": 20,
+    "source": "dice"
+  },
+  {
+    "id": 67,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 200,
+    "source": "blackjack"
+  },
+  {
+    "id": 68,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 150,
+    "source": "blackjack"
+  },
+  {
+    "id": 69,
+    "cat": 3,
+    "bk": "auto_flat",
+    "bv": 50,
+    "source": "lost_stash"
+  },
+  {
+    "id": 70,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 70,
+    "source": "lost_stash"
+  },
+  {
+    "id": 71,
+    "cat": 3,
+    "bk": "machete_flat",
+    "bv": 10,
+    "source": "lost_stash"
+  },
+  {
+    "id": 72,
+    "cat": 3,
+    "bk": "max_e",
+    "bv": 50,
+    "source": "lost_stash"
+  },
+  {
+    "id": 73,
+    "cat": 2,
+    "bk": "gun_flat",
+    "bv": 20,
+    "source": "marked_normal"
+  },
+  {
+    "id": 74,
+    "cat": 2,
+    "bk": "machete_flat",
+    "bv": 20,
+    "source": "barkut_normal"
+  },
+  {
+    "id": 75,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 120,
+    "source": "beard_normal"
+  },
+  {
+    "id": 76,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 120,
+    "source": "beard_normal"
+  },
+  {
+    "id": 77,
+    "cat": 3,
+    "bk": "machete_flat",
+    "bv": 30,
+    "source": "beard_normal"
+  },
+  {
+    "id": 78,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 100,
+    "source": "poker"
+  },
+  {
+    "id": 79,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 100,
+    "source": "poker"
+  },
+  {
+    "id": 80,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 50,
+    "source": "dice"
+  },
+  {
+    "id": 81,
+    "cat": 0,
+    "bk": "max_e",
+    "bv": 20,
+    "source": "lost_stash"
+  },
+  {
+    "id": 82,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 25,
+    "source": "lost_stash"
+  },
+  {
+    "id": 83,
+    "cat": 2,
+    "bk": "machete_flat",
+    "bv": 15,
+    "source": "lost_stash"
+  },
+  {
+    "id": 84,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 70,
+    "source": "lost_stash"
+  },
+  {
+    "id": 85,
+    "cat": 2,
+    "bk": "gun_flat",
+    "bv": 20,
+    "source": "lost_stash"
+  },
+  {
+    "id": 86,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 100,
+    "source": "lost_stash"
+  },
+  {
+    "id": 87,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 150,
+    "source": "lost_stash"
+  },
+  {
+    "id": 88,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 150,
+    "source": "lost_stash"
+  },
+  {
+    "id": 89,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 100,
+    "source": "blackjack"
+  },
+  {
+    "id": 90,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 50,
+    "source": "lost_stash"
+  },
+  {
+    "id": 91,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 90,
+    "source": "lost_stash"
+  },
+  {
+    "id": 92,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 100,
+    "source": "lost_stash"
+  },
+  {
+    "id": 94,
+    "cat": 3,
+    "price": {
+      "type": "cig",
+      "a": 150
+    },
+    "bk": "auto_flat",
+    "bv": 20
+  },
+  {
+    "id": 95,
+    "cat": 1,
+    "price": {
+      "type": "cig",
+      "a": 200
+    },
+    "bk": "machete_flat",
+    "bv": 4
+  },
+  {
+    "id": 96,
+    "cat": 0,
+    "bk": "gun_flat",
+    "bv": 40,
+    "source": "beard_normal"
+  },
+  {
+    "id": 97,
+    "cat": 2,
+    "price": {
+      "type": "cig",
+      "a": 100
+    },
+    "bk": "gun_flat",
+    "bv": 5
+  },
+  {
+    "id": 98,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 100,
+    "source": "poker"
+  },
+  {
+    "id": 99,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "dice"
+  },
+  {
+    "id": 100,
+    "cat": 6,
+    "source": "keyring"
+  }
+]

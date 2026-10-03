@@ -1,0 +1,596 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "layers": [
+    {
+      "name": "Группа 2",
+      "kind": "group",
+      "x": -27,
+      "y": -4,
+      "w": 776,
+      "h": 1333,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_Группа_2_GROUP.png",
+      "children": [
+        {
+          "name": "Прямоугольник 6",
+          "kind": "shape",
+          "x": -27,
+          "y": -4,
+          "w": 776,
+          "h": 1333,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_00_Прямоугольник_6.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 6",
+          "kind": "shape",
+          "x": -27,
+          "y": -4,
+          "w": 776,
+          "h": 1333,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_00_Прямоугольник_6.png",
+          "children": []
+        },
+        {
+          "name": "Слой 80",
+          "kind": "pixel",
+          "x": 229,
+          "y": 391,
+          "w": 238,
+          "h": 567,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_01_Слой_80.png",
+          "children": []
+        },
+        {
+          "name": "Слой 80",
+          "kind": "pixel",
+          "x": 229,
+          "y": 391,
+          "w": 238,
+          "h": 567,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_01_Слой_80.png",
+          "children": []
+        },
+        {
+          "name": "ПОдтвердить действие?",
+          "kind": "type",
+          "x": 311,
+          "y": 529,
+          "w": 34,
+          "h": 301,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_02_ПОдтвердить_действие.png",
+          "children": []
+        },
+        {
+          "name": "ПОдтвердить действие?",
+          "kind": "type",
+          "x": 311,
+          "y": 529,
+          "w": 34,
+          "h": 301,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_02_ПОдтвердить_действие.png",
+          "children": []
+        },
+        {
+          "name": "это действие будет невозможно отменить",
+          "kind": "type",
+          "x": 352,
+          "y": 502,
+          "w": 23,
+          "h": 363,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_03_это_действие_будет_невозможно_отменить.png",
+          "children": []
+        },
+        {
+          "name": "это действие будет невозможно отменить",
+          "kind": "type",
+          "x": 352,
+          "y": 502,
+          "w": 23,
+          "h": 363,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_03_это_действие_будет_невозможно_отменить.png",
+          "children": []
+        },
+        {
+          "name": "кнопка 2",
+          "kind": "group",
+          "x": 393,
+          "y": 683,
+          "w": 48,
+          "h": 227,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_кнопка_2_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 674,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 674,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "кнопка 2",
+          "kind": "group",
+          "x": 393,
+          "y": 683,
+          "w": 48,
+          "h": 227,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_кнопка_2_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 674,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 674,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 683,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_04_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "отмена",
+              "kind": "type",
+              "x": 403,
+              "y": 761,
+              "w": 20,
+              "h": 68,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "кнопка 1",
+          "kind": "group",
+          "x": 359,
+          "y": 448,
+          "w": 105,
+          "h": 236,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_кнопка_1_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 448,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 448,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_03_подтвердить_копия.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_03_подтвердить_копия.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия 2",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_04_подтвердить_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия 2",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_04_подтвердить_копия_2.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "кнопка 1",
+          "kind": "group",
+          "x": 359,
+          "y": 448,
+          "w": 105,
+          "h": 236,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_кнопка_1_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "Слой 81 копия 2",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_00_Слой_81_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 448,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "актив кнопка",
+              "kind": "pixel",
+              "x": 359,
+              "y": 448,
+              "w": 105,
+              "h": 236,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_01_актив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "неактив кнопка",
+              "kind": "pixel",
+              "x": 393,
+              "y": 457,
+              "w": 48,
+              "h": 227,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_02_неактив_кнопка.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_03_подтвердить_копия.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_03_подтвердить_копия.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия 2",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_04_подтвердить_копия_2.png",
+              "children": []
+            },
+            {
+              "name": "подтвердить копия 2",
+              "kind": "type",
+              "x": 403,
+              "y": 507,
+              "w": 23,
+              "h": 123,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Точно\\00_05_04_подтвердить_копия_2.png",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

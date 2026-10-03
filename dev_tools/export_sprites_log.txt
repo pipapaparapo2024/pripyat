@@ -1,0 +1,16 @@
+=== Ёкспорт спрайтов ===
+OK xp_bar_bg.png
+OK energy_panel.png
+OK name_level_panel.png
+OK down_panel_hud.png
+OK butt_back_psd.png
+OK right_btn_dvor.png
+OK right_btn_base.png
+OK right_btn_habar.png
+OK right_btn_top.png
+OK right_btn_svod.png
+OK right_btn_daily.png
+OK left_btn_hapuga.png
+OK left_btn_bot.png
+OK left_btn_bp.png
+OK compass_loader.png

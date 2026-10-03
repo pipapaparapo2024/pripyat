@@ -1,0 +1,40 @@
+{
+  "bosses": [
+    {"id":0, "name":"Охотник",     "keys_needed":0, "cig":100,   "exp":25,   "gives_keys":[1],   "boss_loc":0},
+    {"id":1, "name":"Счастливчик", "keys_needed":3, "cig":200,   "exp":30,   "gives_keys":[2],   "boss_loc":1},
+    {"id":2, "name":"Ястреб",      "keys_needed":3, "cig":300,   "exp":50,   "gives_keys":[3],   "boss_loc":2},
+    {"id":3, "name":"Меченный",    "keys_needed":3, "cig":500,   "exp":100,  "gives_keys":[4],   "boss_loc":3},
+    {"id":4, "name":"Крыс",        "keys_needed":3, "cig":5000,  "exp":200,  "gives_keys":[5],   "boss_loc":4},
+    {"id":5, "name":"Баркут",      "keys_needed":1, "key_slot":5, "cig":10000, "exp":500,  "gives_keys":[7],   "boss_loc":-1},
+    {"id":6, "name":"Борода",      "keys_needed":2, "key_slot":5, "cig":15000, "exp":750,  "gives_keys":[],    "boss_loc":-1},
+    {"id":7, "name":"Жгут",        "keys_needed":3, "cig":20000, "exp":1500, "gives_keys":[],    "boss_loc":-1}
+  ],
+  "diff_mult": [
+    {"exp":1.0, "cig":1.00},
+    {"exp":1.5, "cig":1.15},
+    {"exp":2.0, "cig":1.30},
+    {"exp":3.0, "cig":1.15}
+  ],
+  "ryukzak_pts": [5, 10, 20, 35, 60, 90, 110, 150],
+  "daily_kill_limit": 7,
+  "boss_shmot_normal_chance_pct": 50,
+  "boss_shmot_drop_pool": {
+    "0": {"normal":[41],          "solo":[44]},
+    "1": {"normal":[42],          "solo":[45]},
+    "2": {"normal":[43],          "solo":[46]},
+    "3": {"normal":[47,48,73],    "solo":[49]},
+    "4": {"normal":[50,51,52],    "solo":[53]},
+    "5": {"normal":[54,55,74,56], "solo":[57]},
+    "6": {"normal":[96,75,76,77], "solo":[58]},
+    "7": {"normal":[59,60],       "solo":[61]}
+  },
+  "fragment_items": {"41":20, "42":20, "43":20},
+  "gang_bonus": {
+    "0": {"max_energy":5,  "stew_bonus":10},
+    "1": {"armor":15,      "damage":10},
+    "2": {"speed":8,       "coins_bonus":10},
+    "3": {"damage":12,     "repair_cost":-20},
+    "4": {"exp_bonus":15,  "drop_bonus":5},
+    "5": {"damage":20,     "armor":10}
+  }
+}

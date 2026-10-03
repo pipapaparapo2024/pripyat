@@ -1,0 +1,14 @@
+[
+  {"name":"Тушёнка ×20","orig":400,"disc":30,"type":"stew","amount":20},
+  {"name":"Аптечки ×5","orig":300,"disc":25,"type":"heal","amount":150},
+  {"name":"Энергия ×50","orig":600,"disc":35,"type":"energy","amount":50},
+  {"name":"Папиросы ×5","orig":800,"disc":40,"type":"cig","amount":5},
+  {"name":"Монеты ×2000","orig":2400,"disc":20,"type":"coins","amount":2000},
+  {"name":"Хабар «Редкий»","orig":500,"disc":35,"type":"habar","amount":1},
+  {"name":"Артефакт «Душа»","orig":1500,"disc":50,"type":"max_energy","amount":20},
+  {"name":"Ремкомплект","orig":700,"disc":30,"type":"repair","amount":1},
+  {"name":"Патроны ×100","orig":350,"disc":25,"type":"coins","amount":500},
+  {"name":"Антирад ×3","orig":900,"disc":40,"type":"stew","amount":10},
+  {"name":"Карта аномалий","orig":2000,"disc":55,"type":"coins","amount":5000},
+  {"name":"Хабар «Эпик»","orig":1200,"disc":45,"type":"habar","amount":2}
+]

@@ -1,0 +1,594 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "layers": [
+    {
+      "name": "Фон копия",
+      "kind": "group",
+      "x": -87,
+      "y": -352,
+      "w": 874,
+      "h": 1632,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_Фон_копия_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": -9,
+          "y": 175,
+          "w": 736,
+          "h": 1105,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_00_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": -9,
+          "y": 175,
+          "w": 736,
+          "h": 1105,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_00_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "стенка",
+          "kind": "group",
+          "x": -87,
+          "y": -352,
+          "w": 874,
+          "h": 709,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_стенка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 555,
+              "y": 217,
+              "w": 40,
+              "h": 57,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_00_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 555,
+              "y": 217,
+              "w": 40,
+              "h": 57,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_00_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": -19,
+              "y": 165,
+              "w": 693,
+              "h": 104,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_01_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": -19,
+              "y": 165,
+              "w": 693,
+              "h": 104,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_01_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 595,
+              "y": 133,
+              "w": 144,
+              "h": 224,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_02_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 595,
+              "y": 133,
+              "w": 144,
+              "h": 224,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_02_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": -87,
+              "y": -352,
+              "w": 874,
+              "h": 582,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_03_Слой_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": -87,
+              "y": -352,
+              "w": 874,
+              "h": 582,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_03_Слой_6.png",
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1 копия",
+              "kind": "pixel",
+              "x": -750,
+              "y": -544,
+              "w": 2296,
+              "h": 750,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_04_Цветовой_тон_Насыщенность_1_копия.png",
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1 копия",
+              "kind": "pixel",
+              "x": -750,
+              "y": -544,
+              "w": 2296,
+              "h": 750,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_04_Цветовой_тон_Насыщенность_1_копия.png",
+              "children": []
+            },
+            {
+              "name": "Слой 10",
+              "kind": "pixel",
+              "x": 172,
+              "y": -121,
+              "w": 557,
+              "h": 344,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_05_Слой_10.png",
+              "children": []
+            },
+            {
+              "name": "Слой 10",
+              "kind": "pixel",
+              "x": 172,
+              "y": -121,
+              "w": 557,
+              "h": 344,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_05_Слой_10.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 4",
+              "kind": "pixel",
+              "x": 12,
+              "y": 34,
+              "w": 24,
+              "h": 198,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_06_Слой_157_копия_4.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 4",
+              "kind": "pixel",
+              "x": 12,
+              "y": 34,
+              "w": 24,
+              "h": 198,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_06_Слой_157_копия_4.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 5",
+              "kind": "pixel",
+              "x": 17,
+              "y": 211,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_07_Слой_157_копия_5.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 5",
+              "kind": "pixel",
+              "x": 17,
+              "y": 211,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_07_Слой_157_копия_5.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 6",
+              "kind": "pixel",
+              "x": 200,
+              "y": 212,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_08_Слой_157_копия_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 6",
+              "kind": "pixel",
+              "x": 200,
+              "y": 212,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_08_Слой_157_копия_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": -33,
+              "y": 170,
+              "w": 720,
+              "h": 145,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_09_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": -33,
+              "y": 170,
+              "w": 720,
+              "h": 145,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_09_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 4",
+              "kind": "shape",
+              "x": 642,
+              "y": -82,
+              "w": 207,
+              "h": 348,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_10_Прямоугольник_4.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 4",
+              "kind": "shape",
+              "x": 642,
+              "y": -82,
+              "w": 207,
+              "h": 348,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_10_Прямоугольник_4.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 3",
+              "kind": "shape",
+              "x": -24,
+              "y": 221,
+              "w": 754,
+              "h": 162,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_11_Прямоугольник_3.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 3",
+              "kind": "shape",
+              "x": -24,
+              "y": 221,
+              "w": 754,
+              "h": 162,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_11_Прямоугольник_3.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "стенка",
+          "kind": "group",
+          "x": -87,
+          "y": -352,
+          "w": 874,
+          "h": 709,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_стенка_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 555,
+              "y": 217,
+              "w": 40,
+              "h": 57,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_00_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 9",
+              "kind": "pixel",
+              "x": 555,
+              "y": 217,
+              "w": 40,
+              "h": 57,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_00_Слой_9.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": -19,
+              "y": 165,
+              "w": 693,
+              "h": 104,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_01_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 8",
+              "kind": "pixel",
+              "x": -19,
+              "y": 165,
+              "w": 693,
+              "h": 104,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_01_Слой_8.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 595,
+              "y": 133,
+              "w": 144,
+              "h": 224,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_02_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 595,
+              "y": 133,
+              "w": 144,
+              "h": 224,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_02_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": -87,
+              "y": -352,
+              "w": 874,
+              "h": 582,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_03_Слой_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 6",
+              "kind": "pixel",
+              "x": -87,
+              "y": -352,
+              "w": 874,
+              "h": 582,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_03_Слой_6.png",
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1 копия",
+              "kind": "pixel",
+              "x": -750,
+              "y": -544,
+              "w": 2296,
+              "h": 750,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_04_Цветовой_тон_Насыщенность_1_копия.png",
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1 копия",
+              "kind": "pixel",
+              "x": -750,
+              "y": -544,
+              "w": 2296,
+              "h": 750,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_04_Цветовой_тон_Насыщенность_1_копия.png",
+              "children": []
+            },
+            {
+              "name": "Слой 10",
+              "kind": "pixel",
+              "x": 172,
+              "y": -121,
+              "w": 557,
+              "h": 344,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_05_Слой_10.png",
+              "children": []
+            },
+            {
+              "name": "Слой 10",
+              "kind": "pixel",
+              "x": 172,
+              "y": -121,
+              "w": 557,
+              "h": 344,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_05_Слой_10.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 4",
+              "kind": "pixel",
+              "x": 12,
+              "y": 34,
+              "w": 24,
+              "h": 198,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_06_Слой_157_копия_4.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 4",
+              "kind": "pixel",
+              "x": 12,
+              "y": 34,
+              "w": 24,
+              "h": 198,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_06_Слой_157_копия_4.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 5",
+              "kind": "pixel",
+              "x": 17,
+              "y": 211,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_07_Слой_157_копия_5.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 5",
+              "kind": "pixel",
+              "x": 17,
+              "y": 211,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_07_Слой_157_копия_5.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 6",
+              "kind": "pixel",
+              "x": 200,
+              "y": 212,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_08_Слой_157_копия_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 157 копия 6",
+              "kind": "pixel",
+              "x": 200,
+              "y": 212,
+              "w": 198,
+              "h": 24,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_08_Слой_157_копия_6.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": -33,
+              "y": 170,
+              "w": 720,
+              "h": 145,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_09_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Слой 7",
+              "kind": "pixel",
+              "x": -33,
+              "y": 170,
+              "w": 720,
+              "h": 145,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_09_Слой_7.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 4",
+              "kind": "shape",
+              "x": 642,
+              "y": -82,
+              "w": 207,
+              "h": 348,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_10_Прямоугольник_4.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 4",
+              "kind": "shape",
+              "x": 642,
+              "y": -82,
+              "w": 207,
+              "h": 348,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_10_Прямоугольник_4.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 3",
+              "kind": "shape",
+              "x": -24,
+              "y": 221,
+              "w": 754,
+              "h": 162,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_11_Прямоугольник_3.png",
+              "children": []
+            },
+            {
+              "name": "Прямоугольник 3",
+              "kind": "shape",
+              "x": -24,
+              "y": 221,
+              "w": 754,
+              "h": 162,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\хата\\00_01_11_Прямоугольник_3.png",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

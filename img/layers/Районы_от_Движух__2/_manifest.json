@@ -1,0 +1,2481 @@
+{
+  "canvas": [
+    1587,
+    991
+  ],
+  "layers": [
+    {
+      "name": "Янтарь",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 24,
+          "y": 25,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_02_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Слой 5",
+          "kind": "pixel",
+          "x": 24,
+          "y": 25,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_02_Слой_5.png",
+          "children": []
+        },
+        {
+          "name": "Янтарь",
+          "kind": "type",
+          "x": 25,
+          "y": 673,
+          "w": 64,
+          "h": 232,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_03_Янтарь.png",
+          "children": []
+        },
+        {
+          "name": "Янтарь",
+          "kind": "type",
+          "x": 25,
+          "y": 673,
+          "w": 64,
+          "h": 232,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\00_03_Янтарь.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Агропром",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 4",
+          "kind": "pixel",
+          "x": 3,
+          "y": 34,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_02_Слой_4.png",
+          "children": []
+        },
+        {
+          "name": "Слой 4",
+          "kind": "pixel",
+          "x": 3,
+          "y": 34,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_02_Слой_4.png",
+          "children": []
+        },
+        {
+          "name": "Агропром",
+          "kind": "type",
+          "x": 25,
+          "y": 628,
+          "w": 64,
+          "h": 323,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_03_Агропром.png",
+          "children": []
+        },
+        {
+          "name": "Агропром",
+          "kind": "type",
+          "x": 25,
+          "y": 628,
+          "w": 64,
+          "h": 323,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\01_03_Агропром.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Темная долина",
+      "kind": "group",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "in_canvas": false,
+      "file": null,
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 3,
+          "y": 40,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_02_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 3",
+          "kind": "pixel",
+          "x": 3,
+          "y": 40,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_02_Слой_3.png",
+          "children": []
+        },
+        {
+          "name": "Темная долина",
+          "kind": "type",
+          "x": 29,
+          "y": 554,
+          "w": 62,
+          "h": 472,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_03_Темная_долина.png",
+          "children": []
+        },
+        {
+          "name": "Темная долина",
+          "kind": "type",
+          "x": 29,
+          "y": 554,
+          "w": 62,
+          "h": 472,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\02_03_Темная_долина.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Свалка",
+      "kind": "group",
+      "x": -24,
+      "y": 8,
+      "w": 1004,
+      "h": 1570,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_Свалка_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -24,
+          "y": 40,
+          "w": 930,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": -45,
+          "y": 34,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_02_Слой_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 2",
+          "kind": "pixel",
+          "x": -45,
+          "y": 34,
+          "w": 1024,
+          "h": 1536,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_02_Слой_2.png",
+          "children": []
+        },
+        {
+          "name": "Свалка",
+          "kind": "type",
+          "x": 25,
+          "y": 670,
+          "w": 64,
+          "h": 239,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_03_Свалка.png",
+          "children": []
+        },
+        {
+          "name": "Свалка",
+          "kind": "type",
+          "x": 25,
+          "y": 670,
+          "w": 64,
+          "h": 239,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\03_03_Свалка.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Кордон",
+      "kind": "group",
+      "x": 3,
+      "y": 8,
+      "w": 977,
+      "h": 1570,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_Кордон_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 0",
+          "kind": "pixel",
+          "x": 3,
+          "y": 8,
+          "w": 977,
+          "h": 1570,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_00_Слой_0.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -27,
+          "y": 48,
+          "w": 921,
+          "h": 1522,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Слой 1",
+          "kind": "pixel",
+          "x": -27,
+          "y": 48,
+          "w": 921,
+          "h": 1522,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_01_Слой_1.png",
+          "children": []
+        },
+        {
+          "name": "Кордон",
+          "kind": "type",
+          "x": 25,
+          "y": 664,
+          "w": 69,
+          "h": 250,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_02_Кордон.png",
+          "children": []
+        },
+        {
+          "name": "Кордон",
+          "kind": "type",
+          "x": 25,
+          "y": 664,
+          "w": 69,
+          "h": 250,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\04_02_Кордон.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Слой 6",
+      "kind": "pixel",
+      "x": 541,
+      "y": 158,
+      "w": 111,
+      "h": 127,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\05_Слой_6.png",
+      "children": []
+    },
+    {
+      "name": "Слой 7",
+      "kind": "pixel",
+      "x": 417,
+      "y": -4,
+      "w": 795,
+      "h": 1589,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\06_Слой_7.png",
+      "children": []
+    },
+    {
+      "name": "1 задание",
+      "kind": "group",
+      "x": 680,
+      "y": 69,
+      "w": 235,
+      "h": 1153,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_1_задание_GROUP.png",
+      "children": [
+        {
+          "name": "Слой 9",
+          "kind": "pixel",
+          "x": 710,
+          "y": 69,
+          "w": 198,
+          "h": 296,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_00_Слой_9.png",
+          "children": []
+        },
+        {
+          "name": "Слой 9",
+          "kind": "pixel",
+          "x": 710,
+          "y": 69,
+          "w": 198,
+          "h": 296,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_00_Слой_9.png",
+          "children": []
+        },
+        {
+          "name": "фон",
+          "kind": "pixel",
+          "x": 707,
+          "y": 332,
+          "w": 204,
+          "h": 626,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_01_фон.png",
+          "children": []
+        },
+        {
+          "name": "фон",
+          "kind": "pixel",
+          "x": 707,
+          "y": 332,
+          "w": 204,
+          "h": 626,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_01_фон.png",
+          "children": []
+        },
+        {
+          "name": "название движух",
+          "kind": "group",
+          "x": 747,
+          "y": 489,
+          "w": 67,
+          "h": 304,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_название_движух_GROUP.png",
+          "children": [
+            {
+              "name": "name",
+              "kind": "pixel",
+              "x": 747,
+              "y": 489,
+              "w": 67,
+              "h": 304,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_00_name.png",
+              "children": []
+            },
+            {
+              "name": "name",
+              "kind": "pixel",
+              "x": 747,
+              "y": 489,
+              "w": 67,
+              "h": 304,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_00_name.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "название движух",
+          "kind": "group",
+          "x": 747,
+          "y": 489,
+          "w": 67,
+          "h": 304,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_название_движух_GROUP.png",
+          "children": [
+            {
+              "name": "name",
+              "kind": "pixel",
+              "x": 747,
+              "y": 489,
+              "w": 67,
+              "h": 304,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_00_name.png",
+              "children": []
+            },
+            {
+              "name": "name",
+              "kind": "pixel",
+              "x": 747,
+              "y": 489,
+              "w": 67,
+              "h": 304,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_02_00_name.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "прогресс бар",
+          "kind": "group",
+          "x": 829,
+          "y": 348,
+          "w": 65,
+          "h": 592,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_прогресс_бар_GROUP.png",
+          "children": [
+            {
+              "name": "Прогресс бар",
+              "kind": "pixel",
+              "x": 829,
+              "y": 348,
+              "w": 65,
+              "h": 466,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_00_Прогресс_бар.png",
+              "children": []
+            },
+            {
+              "name": "Прогресс бар",
+              "kind": "pixel",
+              "x": 829,
+              "y": 348,
+              "w": 65,
+              "h": 466,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_00_Прогресс_бар.png",
+              "children": []
+            },
+            {
+              "name": "кол-во ходок",
+              "kind": "group",
+              "x": 829,
+              "y": 818,
+              "w": 63,
+              "h": 122,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_кол-во_ходок_GROUP.png",
+              "children": [
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "кол-во ходок",
+              "kind": "group",
+              "x": 829,
+              "y": 818,
+              "w": 63,
+              "h": 122,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_кол-во_ходок_GROUP.png",
+              "children": [
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "Желтые элементы",
+              "kind": "group",
+              "x": 847,
+              "y": 362,
+              "w": 29,
+              "h": 437,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_Желтые_элементы_GROUP.png",
+              "children": [
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "Желтые элементы",
+              "kind": "group",
+              "x": 847,
+              "y": 362,
+              "w": 29,
+              "h": 437,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_Желтые_элементы_GROUP.png",
+              "children": [
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "прогресс бар",
+          "kind": "group",
+          "x": 829,
+          "y": 348,
+          "w": 65,
+          "h": 592,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_прогресс_бар_GROUP.png",
+          "children": [
+            {
+              "name": "Прогресс бар",
+              "kind": "pixel",
+              "x": 829,
+              "y": 348,
+              "w": 65,
+              "h": 466,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_00_Прогресс_бар.png",
+              "children": []
+            },
+            {
+              "name": "Прогресс бар",
+              "kind": "pixel",
+              "x": 829,
+              "y": 348,
+              "w": 65,
+              "h": 466,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_00_Прогресс_бар.png",
+              "children": []
+            },
+            {
+              "name": "кол-во ходок",
+              "kind": "group",
+              "x": 829,
+              "y": 818,
+              "w": 63,
+              "h": 122,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_кол-во_ходок_GROUP.png",
+              "children": [
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "кол-во ходок",
+              "kind": "group",
+              "x": 829,
+              "y": 818,
+              "w": 63,
+              "h": 122,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_кол-во_ходок_GROUP.png",
+              "children": [
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "Слой 16",
+                  "kind": "pixel",
+                  "x": 829,
+                  "y": 818,
+                  "w": 63,
+                  "h": 122,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_00_Слой_16.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                },
+                {
+                  "name": "3/5",
+                  "kind": "type",
+                  "x": 846,
+                  "y": 856,
+                  "w": 31,
+                  "h": 46,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_01_01_3_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "Желтые элементы",
+              "kind": "group",
+              "x": 847,
+              "y": 362,
+              "w": 29,
+              "h": 437,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_Желтые_элементы_GROUP.png",
+              "children": [
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "Желтые элементы",
+              "kind": "group",
+              "x": 847,
+              "y": 362,
+              "w": 29,
+              "h": 437,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_Желтые_элементы_GROUP.png",
+              "children": [
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 1",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 362,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_00_Шкала_1.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 2",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 451,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_01_Шкала_2.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "Шкала 3",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 540,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_02_Шкала_3.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 4",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 629,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_03_инактив_4.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                },
+                {
+                  "name": "инактив 5",
+                  "kind": "pixel",
+                  "x": 847,
+                  "y": 718,
+                  "w": 29,
+                  "h": 81,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_03_02_04_инактив_5.png",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "награда",
+          "kind": "group",
+          "x": 680,
+          "y": 958,
+          "w": 226,
+          "h": 264,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_награда_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 680,
+              "y": 958,
+              "w": 226,
+              "h": 264,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 680,
+              "y": 958,
+              "w": 226,
+              "h": 264,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 12",
+              "kind": "pixel",
+              "x": 781,
+              "y": 1113,
+              "w": 57,
+              "h": 67,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 12",
+              "kind": "pixel",
+              "x": 781,
+              "y": 1113,
+              "w": 57,
+              "h": 67,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 13",
+              "kind": "pixel",
+              "x": 779,
+              "y": 1010,
+              "w": 62,
+              "h": 40,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 13",
+              "kind": "pixel",
+              "x": 779,
+              "y": 1010,
+              "w": 62,
+              "h": 40,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "награда",
+          "kind": "group",
+          "x": 680,
+          "y": 958,
+          "w": 226,
+          "h": 264,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_награда_GROUP.png",
+          "children": [
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 680,
+              "y": 958,
+              "w": 226,
+              "h": 264,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 11",
+              "kind": "pixel",
+              "x": 680,
+              "y": 958,
+              "w": 226,
+              "h": 264,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_04_00_Слой_11.png",
+              "children": []
+            },
+            {
+              "name": "Слой 12",
+              "kind": "pixel",
+              "x": 781,
+              "y": 1113,
+              "w": 57,
+              "h": 67,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 12",
+              "kind": "pixel",
+              "x": 781,
+              "y": 1113,
+              "w": 57,
+              "h": 67,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 13",
+              "kind": "pixel",
+              "x": 779,
+              "y": 1010,
+              "w": 62,
+              "h": 40,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Слой 13",
+              "kind": "pixel",
+              "x": 779,
+              "y": 1010,
+              "w": 62,
+              "h": 40,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Слой 8",
+          "kind": "pixel",
+          "x": 706,
+          "y": 79,
+          "w": 209,
+          "h": 270,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_05_Слой_8.png",
+          "children": []
+        },
+        {
+          "name": "Слой 8",
+          "kind": "pixel",
+          "x": 706,
+          "y": 79,
+          "w": 209,
+          "h": 270,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\07_05_Слой_8.png",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "Кнопки выполнения",
+      "kind": "group",
+      "x": 492,
+      "y": 268,
+      "w": 400,
+      "h": 1237,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_Кнопки_выполнения_GROUP.png",
+      "children": [
+        {
+          "name": "чекпоинты",
+          "kind": "group",
+          "x": 492,
+          "y": 268,
+          "w": 142,
+          "h": 1051,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_чекпоинты_GROUP.png",
+          "children": [
+            {
+              "name": "неактив",
+              "kind": "group",
+              "x": 492,
+              "y": 621,
+              "w": 142,
+              "h": 698,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_неактив_GROUP.png",
+              "children": [
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "неактив",
+              "kind": "group",
+              "x": 492,
+              "y": 621,
+              "w": 142,
+              "h": 698,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_неактив_GROUP.png",
+              "children": [
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "актив",
+              "kind": "pixel",
+              "x": 494,
+              "y": 445,
+              "w": 138,
+              "h": 164,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_01_актив.png",
+              "children": []
+            },
+            {
+              "name": "актив",
+              "kind": "pixel",
+              "x": 494,
+              "y": 445,
+              "w": 138,
+              "h": 164,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_01_актив.png",
+              "children": []
+            },
+            {
+              "name": "готово",
+              "kind": "pixel",
+              "x": 492,
+              "y": 268,
+              "w": 140,
+              "h": 165,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_02_готово.png",
+              "children": []
+            },
+            {
+              "name": "готово",
+              "kind": "pixel",
+              "x": 492,
+              "y": 268,
+              "w": 140,
+              "h": 165,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_02_готово.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "чекпоинты",
+          "kind": "group",
+          "x": 492,
+          "y": 268,
+          "w": 142,
+          "h": 1051,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_чекпоинты_GROUP.png",
+          "children": [
+            {
+              "name": "неактив",
+              "kind": "group",
+              "x": 492,
+              "y": 621,
+              "w": 142,
+              "h": 698,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_неактив_GROUP.png",
+              "children": [
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "неактив",
+              "kind": "group",
+              "x": 492,
+              "y": 621,
+              "w": 142,
+              "h": 698,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_неактив_GROUP.png",
+              "children": [
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "3 ",
+                  "kind": "pixel",
+                  "x": 494,
+                  "y": 621,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_00_3.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "4",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 798,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_01_4.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "5",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 975,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": true,
+                  "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_00_02_5.png",
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                },
+                {
+                  "name": "6",
+                  "kind": "pixel",
+                  "x": 492,
+                  "y": 1152,
+                  "w": 140,
+                  "h": 167,
+                  "in_canvas": false,
+                  "file": null,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "актив",
+              "kind": "pixel",
+              "x": 494,
+              "y": 445,
+              "w": 138,
+              "h": 164,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_01_актив.png",
+              "children": []
+            },
+            {
+              "name": "актив",
+              "kind": "pixel",
+              "x": 494,
+              "y": 445,
+              "w": 138,
+              "h": 164,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_01_актив.png",
+              "children": []
+            },
+            {
+              "name": "готово",
+              "kind": "pixel",
+              "x": 492,
+              "y": 268,
+              "w": 140,
+              "h": 165,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_02_готово.png",
+              "children": []
+            },
+            {
+              "name": "готово",
+              "kind": "pixel",
+              "x": 492,
+              "y": 268,
+              "w": 140,
+              "h": 165,
+              "in_canvas": true,
+              "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\08_00_02_готово.png",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Выполнить",
+          "kind": "group",
+          "x": 710,
+          "y": 1222,
+          "w": 182,
+          "h": 283,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Кнопка",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Кнопка",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Выполнить",
+          "kind": "group",
+          "x": 710,
+          "y": 1222,
+          "w": 182,
+          "h": 283,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Кнопка",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Кнопка",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Нельзя выполнить",
+          "kind": "group",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Кнопка копия",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Кнопка копия",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок копия",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок копия",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3 копия",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3 копия",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1",
+              "kind": "huesaturation",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1",
+              "kind": "huesaturation",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Нельзя выполнить",
+          "kind": "group",
+          "x": 0,
+          "y": 0,
+          "w": 0,
+          "h": 0,
+          "in_canvas": false,
+          "file": null,
+          "children": [
+            {
+              "name": "Кнопка копия",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Кнопка копия",
+              "kind": "pixel",
+              "x": 710,
+              "y": 1222,
+              "w": 182,
+              "h": 283,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок копия",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Энергия значок копия",
+              "kind": "pixel",
+              "x": 813,
+              "y": 1374,
+              "w": 40,
+              "h": 42,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3 копия",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "3 копия",
+              "kind": "type",
+              "x": 821,
+              "y": 1353,
+              "w": 25,
+              "h": 13,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1",
+              "kind": "huesaturation",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            },
+            {
+              "name": "Цветовой тон/Насыщенность 1",
+              "kind": "huesaturation",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "in_canvas": false,
+              "file": null,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Слой 17",
+      "kind": "pixel",
+      "x": 459,
+      "y": 116,
+      "w": 154,
+      "h": 165,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Районы_от_Движух__2\\09_Слой_17.png",
+      "children": []
+    }
+  ]
+}

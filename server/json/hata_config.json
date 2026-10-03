@@ -1,0 +1,12 @@
+{
+  "locations": [
+    {"id":0, "name":"Кубрик",      "bossReq":-1, "cost":0},
+    {"id":1, "name":"Шлюз",        "bossReq":1,  "cost":10000},
+    {"id":2, "name":"Канализация", "bossReq":2,  "cost":25000},
+    {"id":3, "name":"Двор",        "bossReq":3,  "cost":40000},
+    {"id":4, "name":"Мастерская",  "bossReq":4,  "cost":75000},
+    {"id":5, "name":"Железка",     "bossReq":5,  "cost":100000},
+    {"id":6, "name":"Станция",     "bossReq":6,  "cost":150000},
+    {"id":7, "name":"Заправка",    "bossReq":7,  "cost":1000000}
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "table": [
+    {"v":6,"n":4,"type":"shmot",      "amt":5},
+    {"v":6,"n":3,"type":"coins",      "amt":100},
+    {"v":6,"n":2,"type":"cig",        "amt":10000},
+    {"v":5,"n":4,"type":"coins",      "amt":50},
+    {"v":5,"n":3,"type":"cig",        "amt":5000},
+    {"v":5,"n":2,"type":"red_points", "amt":2},
+    {"v":4,"n":4,"type":"auto",       "amt":10},
+    {"v":4,"n":3,"type":"gun",        "amt":10},
+    {"v":4,"n":2,"type":"cig",        "amt":2000},
+    {"v":3,"n":4,"type":"machete",    "amt":10},
+    {"v":3,"n":3,"type":"exp",        "amt":1000},
+    {"v":3,"n":2,"type":"coins",      "amt":25},
+    {"v":2,"n":4,"type":"auto",       "amt":2},
+    {"v":2,"n":3,"type":"auto",       "amt":1},
+    {"v":2,"n":2,"type":"exp",        "amt":500},
+    {"v":1,"n":4,"type":"cig",        "amt":1000},
+    {"v":1,"n":3,"type":"exp",        "amt":250},
+    {"v":1,"n":2,"type":"cig",        "amt":500}
+  ],
+  "die_weights": [19, 19, 19, 19, 12, 12],
+  "consolation": {"type":"cig", "amt":50},
+  "swaps_by_level": [
+    {"min_level":100, "swaps":3},
+    {"min_level":60,  "swaps":2},
+    {"min_level":20,  "swaps":1},
+    {"min_level":0,   "swaps":0}
+  ],
+  "free_cooldown_ms": 86400000,
+  "buy_points": [
+    {"pts":10,  "price":100},
+    {"pts":25,  "price":250},
+    {"pts":55,  "price":550},
+    {"pts":115, "price":1150},
+    {"pts":250, "price":2500},
+    {"pts":550, "price":5500}
+  ]
+}

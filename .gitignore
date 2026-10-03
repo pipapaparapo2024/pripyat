@@ -1,0 +1,59 @@
+# Собранные ассеты (картинки/звуки/webpack-сборка) и node_modules — большие бинарники,
+# не код, не нужны для diff/истории. Живут локально и на сервере деплоя.
+_client/development/
+_client/node_modules/
+node_modules/
+__pycache__/
+
+# Сторонний инструмент (26.09.2026, перенесён с рабочего стола, чтобы не болтался) — клон
+# официального github.com/pixijs-userland/animate-extension, плагин для Adobe Animate CC,
+# публикующий FLA-документы в формат PixiJS. Свой .git, свои node_modules — не часть кода
+# проекта, не коммитить.
+dev_tools/animate-extension/
+
+# 28.09.2026 (аудит критичных проблем проекта, продолжено отдельной scrub-сессией): CLAUDE.md
+# и upload.sh раньше коммитились и накопили пароли (SSH root, MySQL) во множестве старых
+# ревизий — проще было вычистить оба файла из истории git целиком (git filter-repo), чем
+# редактировать каждую старую версию. Теперь оба — ТОЛЬКО локальные, никогда не коммитятся;
+# актуальные креды — см. SECRETS_LOCAL.md (тоже никогда не коммитится, см. ниже).
+CLAUDE.md
+upload.sh
+SECRETS_LOCAL.md
+
+# Боевые секреты существуют только локально и на production-сервере.
+# В репозиторий добавляется только server/core/models/registry.example.php.
+server/core/models/registry.php
+server/php_errors.log
+
+# Одноразовые операции выполняются по SSH/CLI и не должны быть доступны как URL PHP-файлы.
+server/migrate*.php
+server/dev_*.php
+server/reset_*.php
+
+# Локальные архивы истории, рабочие заметки и диагностические выгрузки.
+_security_history_scrub.git/
+SESSION_HANDOFF*.md
+*_HANDOFF*.md
+db_backups/
+
+# Одноразовые скрипты с зашитыми паролями (SFTP/MySQL) — см. SECRETS_LOCAL.md за актуальными
+# кредами при необходимости. НЕ коммитить, даже в приватный репозиторий.
+# 26.09.2026: сужено до общих масок check_*.py/deploy_*.py/upload_*.py — раньше список вёлся
+# поимённо и регулярно отставал от новых одноразовых скриптов каждой сессии (паромиko-скрипты
+# с паролем root:... создаются под новым именем почти каждый раз).
+_check_dice_bg.py
+check_*.py
+check_server_cards.py
+deploy_*.py
+download_check.py
+upload_*.py
+fetch_remote_models.py
+delete_migrate34.py
+
+# Диагностические текстовые дампы одноразовых проверок (БД/логи) — не код, не нужны в истории.
+*_output.txt
+save_trace.txt
+
+# Логи локальных прогонов
+deploy-test-failures.log
+*.log

@@ -1,0 +1,10 @@
+=== Ёкспорт кнопок панелей ===
+OK right_btn_dvor.png (236x57 at 1038,135)
+OK right_btn_base.png (236x57 at 1038,197)
+OK right_btn_habar.png (236x57 at 1038,259)
+OK right_btn_top.png (236x57 at 1038,322)
+OK right_btn_svod.png (371x305 at 909,238)
+OK right_btn_daily.png (236x57 at 1038,452)
+OK left_btn_hapuga.png (233x346 at 0,169)
+OK left_btn_bot.png (233x339 at 0,224)
+OK left_btn_bp.png (233x339 at 0,292)

@@ -1,0 +1,17 @@
+{
+    "scripts": {
+        "build": "webpack",
+        "predeploy": "npm run build",
+        "deploy": "vk-miniapps-deploy"
+    },
+    "homepage": ".",
+    "dependencies": {
+        "@vkontakte/vk-miniapps-deploy": "^0.1.9",
+        "global": "^4.4.0",
+        "webpack": "^5.98.0"
+    },
+    "devDependencies": {
+        "@esotericsoftware/spine-canvas": "^4.3.13",
+        "webpack-cli": "^6.0.1"
+    }
+}

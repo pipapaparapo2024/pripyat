@@ -1,0 +1,196 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "layers": [
+    {
+      "name": "Группа 1",
+      "kind": "group",
+      "x": -51,
+      "y": -48,
+      "w": 801,
+      "h": 1367,
+      "in_canvas": true,
+      "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_Группа_1_GROUP.png",
+      "children": [
+        {
+          "name": "Прямоугольник 7",
+          "kind": "shape",
+          "x": -51,
+          "y": -48,
+          "w": 801,
+          "h": 1367,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_00_Прямоугольник_7.png",
+          "children": []
+        },
+        {
+          "name": "Прямоугольник 7",
+          "kind": "shape",
+          "x": -51,
+          "y": -48,
+          "w": 801,
+          "h": 1367,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_00_Прямоугольник_7.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия 3",
+          "kind": "pixel",
+          "x": 104,
+          "y": 266,
+          "w": 462,
+          "h": 725,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_01_Слой_71_копия_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия 3",
+          "kind": "pixel",
+          "x": 104,
+          "y": 266,
+          "w": 462,
+          "h": 725,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_01_Слой_71_копия_3.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия 2",
+          "kind": "pixel",
+          "x": 116,
+          "y": 273,
+          "w": 453,
+          "h": 699,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_02_Слой_71_копия_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия 2",
+          "kind": "pixel",
+          "x": 116,
+          "y": 273,
+          "w": 453,
+          "h": 699,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_02_Слой_71_копия_2.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия",
+          "kind": "pixel",
+          "x": 115,
+          "y": 281,
+          "w": 442,
+          "h": 696,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_03_Слой_71_копия.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71 копия",
+          "kind": "pixel",
+          "x": 115,
+          "y": 281,
+          "w": 442,
+          "h": 696,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_03_Слой_71_копия.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71",
+          "kind": "pixel",
+          "x": 127,
+          "y": 289,
+          "w": 416,
+          "h": 678,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_04_Слой_71.png",
+          "children": []
+        },
+        {
+          "name": "Слой 71",
+          "kind": "pixel",
+          "x": 127,
+          "y": 289,
+          "w": 416,
+          "h": 678,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_04_Слой_71.png",
+          "children": []
+        },
+        {
+          "name": "Слой 72",
+          "kind": "pixel",
+          "x": 216,
+          "y": 147,
+          "w": 798,
+          "h": 428,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_05_Слой_72.png",
+          "children": []
+        },
+        {
+          "name": "Слой 72",
+          "kind": "pixel",
+          "x": 216,
+          "y": 147,
+          "w": 798,
+          "h": 428,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_05_Слой_72.png",
+          "children": []
+        },
+        {
+          "name": "Награда",
+          "kind": "type",
+          "x": 149,
+          "y": 536,
+          "w": 49,
+          "h": 198,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_06_Награда.png",
+          "children": []
+        },
+        {
+          "name": "Награда",
+          "kind": "type",
+          "x": 149,
+          "y": 536,
+          "w": 49,
+          "h": 198,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_06_Награда.png",
+          "children": []
+        },
+        {
+          "name": "Слой 73",
+          "kind": "pixel",
+          "x": 166,
+          "y": 327,
+          "w": 368,
+          "h": 614,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_07_Слой_73.png",
+          "children": []
+        },
+        {
+          "name": "Слой 73",
+          "kind": "pixel",
+          "x": 166,
+          "y": 327,
+          "w": 368,
+          "h": 614,
+          "in_canvas": true,
+          "file": "C:\\Users\\HONOR\\Desktop\\vk_game\\projects_2026\\pripat\\img\\layers\\Награда\\00_07_Слой_73.png",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

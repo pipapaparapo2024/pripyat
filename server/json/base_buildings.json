@@ -1,0 +1,6 @@
+[
+  {"id":0, "bonus_key":"max_energy", "bonus_per_lv":10, "upgrade_cost":{"coins":500}, "upgrade_xp":100, "max_level":10},
+  {"id":1, "bonus_key":"max_stew", "bonus_per_lv":100, "upgrade_cost":{"stew":20}, "upgrade_xp":80, "max_level":10},
+  {"id":2, "bonus_key":"repair_cost", "bonus_per_lv":-10, "upgrade_cost":{"coins":800}, "upgrade_xp":120, "max_level":10},
+  {"id":3, "bonus_key":"energy_regen", "bonus_per_lv":5, "upgrade_cost":{"coins":1200}, "upgrade_xp":150, "max_level":10}
+]

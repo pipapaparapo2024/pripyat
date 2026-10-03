@@ -1,0 +1,59 @@
+{
+    "cooldown_ms": 86400000,
+    "total_days": 30,
+    "containers": [
+        {
+            "id": 0,
+            "name": "Обычный",
+            "price": { "type": "stew", "amount": 100 },
+            "rewards": [
+                { "type": "damage", "amount": 100000 },
+                { "type": "dice_points", "amount": 1 },
+                { "type": "coins", "amount": 10 },
+                { "type": "cigarettes", "amount": 400 },
+                { "type": "ammo_machete", "amount": 10 }
+            ]
+        },
+        {
+            "id": 1,
+            "name": "Пацанский",
+            "price": { "type": "stew", "amount": 200 },
+            "rewards": [
+                { "type": "damage", "amount": 200000 },
+                { "type": "dice_points", "amount": 1 },
+                { "type": "coins", "amount": 20 },
+                { "type": "cigarettes", "amount": 800 },
+                { "type": "ammo_machete", "amount": 2 },
+                { "type": "ammo_gun", "amount": 3 }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Авторитетный",
+            "price": { "type": "stew", "amount": 300 },
+            "rewards": [
+                { "type": "damage", "amount": 300000 },
+                { "type": "coins", "amount": 30 },
+                { "type": "ammo_auto", "amount": 5 },
+                { "type": "ammo_gun", "amount": 5 },
+                { "type": "dice_points", "amount": 2 },
+                { "type": "blue_points", "amount": 2 },
+                { "type": "poker_chips", "amount": 1 }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Элитный",
+            "price": { "type": "stew", "amount": 500 },
+            "rewards": [
+                { "type": "damage", "amount": 500000 },
+                { "type": "coins", "amount": 50 },
+                { "type": "ammo_auto", "amount": 5 },
+                { "type": "ammo_gun", "amount": 10 },
+                { "type": "dice_points", "amount": 4 },
+                { "type": "blue_points", "amount": 4 },
+                { "type": "poker_chips", "amount": 4 }
+            ]
+        }
+    ]
+}

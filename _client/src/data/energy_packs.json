@@ -1,0 +1,10 @@
+[
+  {"votes": 3,   "energy": 50},
+  {"votes": 7,   "energy": 110},
+  {"votes": 10,  "energy": 180},
+  {"votes": 20,  "energy": 400},
+  {"votes": 40,  "energy": 850},
+  {"votes": 60,  "energy": 1300},
+  {"votes": 85,  "energy": 2000},
+  {"votes": 120, "energy": 3500}
+]

@@ -1,0 +1,33 @@
+{
+  "daily": [
+    {"name":"Охотник", "key":"total_damage", "need":500, "reward_type":"coins", "reward_val":300},
+    {"name":"Территория", "key":"zone_fights", "need":3, "reward_type":"stew", "reward_val":5},
+    {"name":"Удача на дворе", "key":"dvor_wins", "need":5, "reward_type":"coins", "reward_val":500},
+    {"name":"Хабарщик", "key":"habar_days_collected", "need":1, "reward_type":"cig", "reward_val":1},
+    {"name":"Тренировка", "key":"train_count", "need":2, "reward_type":"coins", "reward_val":200},
+    {"name":"Торговец", "key":"vassilich_buys", "need":1, "reward_type":"stew", "reward_val":3},
+    {"name":"Рубеж: Разведчик", "key":"zone_fights_0", "need":7, "reward_type":"cig_coins", "reward_val":[50,50]},
+    {"name":"Рубеж: Исследователь", "key":"zone_fights_0", "need":21, "reward_type":"cig_coins", "reward_val":[50,50]},
+    {"name":"Рубеж: Собиратель", "key":"habar_days_collected", "need":7, "reward_type":"cig_coins", "reward_val":[50,50]},
+    {"name":"Отстойник: Патрульный", "key":"zone_fights_1", "need":7, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Отстойник: Боевой", "key":"zone_fights_1", "need":21, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Отстойник: Профи", "key":"bosses_killed", "need":14, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Лощина: Прочный", "key":"zone_fights_2", "need":7, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Лощина: Настойчивый", "key":"zone_fights_2", "need":21, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Лощина: Тренер", "key":"train_count", "need":7, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Промзона: Разведчик", "key":"zone_fights_3", "need":7, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Промзона: Прочный", "key":"zone_fights_3", "need":21, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Промзона: Безопасный", "key":"dvor_wins", "need":7, "reward_type":"cig_coins", "reward_val":[70,70]},
+    {"name":"Очаг: Профессиональный", "key":"zone_fights_4", "need":7, "reward_type":"cig_coins", "reward_val":[80,80]},
+    {"name":"Очаг: Настойчивый", "key":"zone_fights_4", "need":21, "reward_type":"cig_coins", "reward_val":[80,80]},
+    {"name":"Очаг: Боевой", "key":"bosses_killed", "need":100, "reward_type":"cig_coins", "reward_val":[80,80]}
+  ],
+  "weekly": [
+    {"name":"Убийца боссов", "key":"bosses_killed", "need":20, "reward_type":"cig", "reward_val":5},
+    {"name":"Завоеватель", "key":"zone_fights", "need":10, "reward_type":"coins", "reward_val":2000},
+    {"name":"Коллекционер", "key":"habar_days_collected", "need":5, "reward_type":"cig", "reward_val":10}
+  ],
+  "special": [
+    {"name":"Испытание Зоны", "key":"total_damage", "need":10000, "reward_type":"cig", "reward_val":15}
+  ]
+}

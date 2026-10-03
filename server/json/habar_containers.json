@@ -1,0 +1,14 @@
+[
+  {
+    "id":0,"name":"Обычный","price":{"type":"stew","amount":100}
+  },
+  {
+    "id":1,"name":"Пацанский","price":{"type":"stew","amount":200}
+  },
+  {
+    "id":2,"name":"Авторитетный","price":{"type":"stew","amount":300}
+  },
+  {
+    "id":3,"name":"Элитный","price":{"type":"stew","amount":500}
+  }
+]
