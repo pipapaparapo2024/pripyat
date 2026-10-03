@@ -19,7 +19,9 @@ must(prefight, "ki === 5 ? 'Ключ Баркут / Борода'", 'общее 
 const zoneScreen = read('_client/src/game/shell/overlays/zone_screen.js');
 must(zoneScreen, "_ss(capBtn, 1.04)", 'кнопка захвата плавно увеличивается');
 must(zoneScreen, "new PIXI.Text(String(l.amount)", 'уважение не сокращается');
-must(zoneScreen, "fontWeight:'normal'", 'уважение выводится без жирного начертания');
+// 04.10.2026 (по прямому указанию, уточнено через AskUserQuestion — "Карточки лидеров
+// локации (amountTxt)"): начертание утончено ещё раз, 'normal' → '300'.
+must(zoneScreen, "fontWeight:'300'", 'уважение выводится тонким начертанием (300)');
 
 const energy = read('_client/src/game/shell/popups/energy_buy.js');
 ['x:348, y:263', 'x:548, y:263', 'x:748, y:263', 'x:948, y:263', 'x:348, y:463', 'x:548, y:463', 'x:748, y:463', 'x:948, y:463'].forEach(p => must(energy, p, 'положение карточки энергии'));

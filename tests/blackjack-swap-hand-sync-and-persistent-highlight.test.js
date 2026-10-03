@@ -13,6 +13,6 @@ check(/for\(let realIdx = 2; realIdx <= 3; realIdx\+\+\)/.test(client), 'both re
 const highlight = client.slice(client.indexOf('proto._bjShowComboHighlight'), client.indexOf('proto._updateBlackjackUI'));
 check(!/setTimeout/.test(highlight) && !/onComplete/.test(highlight), 'winning row does not auto-hide');
 check(/this\._bjComboHighlight\.visible = false/.test(client), 'old highlight is cleared when a new game starts');
-check(/'валет':\s+372/.test(client), 'JJ maps to its explicit payout row');
+check(/'валет':\s+352/.test(client), 'JJ maps to its explicit payout row');
 
 if(failed) process.exit(1);

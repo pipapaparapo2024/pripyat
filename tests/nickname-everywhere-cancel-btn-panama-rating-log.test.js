@@ -107,9 +107,14 @@ console.log('\nTest 5: клиент предпочитает игровой ни
     assert(/r\.nameTxt\.text = entry\.nick \|\| \('ID ' \+ entry\.id\);/.test(svodLbSrc),
         'Сводка (без резолва VK): entry.nick в приоритете');
 
-    // Рейтинг урона в бою с боссом
-    assert(/row\.nameTxt\.text = entry\.nick \|\| \(u && u\.name\) \|\| 'Сталкер';/.test(bossesFightSrc),
-        'Рейтинг урона в бою: entry.nick в приоритете');
+    // Рейтинг урона в бою с боссом — 04.10.2026: ник/урон теперь выставляются синхронно из
+    // top (entry.nick || '', не ждёт VK-резолва, см. incident про зависающий _resolveVkUsers),
+    // а VK-имя/'Сталкер' подставляются ТОЛЬКО если entry.nick пуст — тот же итоговый приоритет
+    // (nick → VK-имя → 'Сталкер'), просто в два шага вместо одного выражения.
+    assert(/row\.nameTxt\.text = entry\.nick \|\| '';/.test(bossesFightSrc),
+        'Рейтинг урона в бою: entry.nick выставляется синхронно (приоритет №1)');
+    assert(/if\(!row\.nameTxt\.text\) row\.nameTxt\.text = \(u && u\.name\) \|\| 'Сталкер';/.test(bossesFightSrc),
+        'Рейтинг урона в бою: VK-имя/Сталкер — fallback ТОЛЬКО когда entry.nick не пришёл');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

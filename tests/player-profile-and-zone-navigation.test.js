@@ -88,7 +88,10 @@ console.log('\nTest 4: клик открывает профиль в 4 мест�
         'bosses_select.js: фото "УБИВШИЙ" кликабельно, открывает профиль по k.id');
     assert(/rowHit\.on\('pointerdown', \(\)=>\{ if\(rowObj\.id && window\.iface\) iface\._openPlayerProfile\(rowObj\.id, rowObj\.nick\); \}\);/.test(bossesFightJs),
         'bosses_fight.js: строка рейтинга урона кликабельна, открывает профиль по актуальному id строки');
-    assert(/row\.id = entry\.id; row\.nick = entry\.nick \|\| \(u && u\.name\) \|\| null;/.test(bossesFightJs),
+    // 04.10.2026: id/nick теперь выставляются синхронно из top (не ждут VK-резолва, см.
+    // incident про зависающий _resolveVkUsers) — row.nick берёт только entry.nick (VK-имя как
+    // замена nick для клика по профилю не нужно, nick используется лишь как подпись).
+    assert(/row\.id = entry\.id; row\.nick = entry\.nick \|\| null;/.test(bossesFightJs),
         'bosses_fight.js: id/nick строки обновляются при каждом обновлении рейтинга (не залипают на старом игроке)');
     assert(/photoSpr\.on\('pointerdown', \(\)=>\{ if\(window\.iface\) iface\._openPlayerProfile\(l\.id, u && u\.name\); \}\);/.test(zoneScreenJs),
         'zone_screen.js: фото рекордсмена уважения кликабельно, открывает профиль по l.id');

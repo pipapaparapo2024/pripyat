@@ -129,7 +129,7 @@ console.log('\nTest 5: блэкджек — координаты таблицы 
     // 03.10.2026: новый фон letterbox-вписан (bg.x=86, bg.width=1108) — X/W пересчитаны (878/241).
     // 04.10.2026: letterbox отменён (фон вставлен в нативном размере, по прямому указанию) —
     // X/W/H пересчитаны под новый размер/позицию (820/182/31).
-    assert(/const BJ_ROW_X = 906, BJ_ROW_W = 276, BJ_ROW_H = 34;/.test(bj),
+    assert(/const BJ_ROW_X = 895, BJ_ROW_W = 279, BJ_ROW_H = 37;/.test(bj),
         'BJ_ROW_X/W/H — координаты пересчитаны под нативный (не letterbox) размер фона (см. blackjack-combo-highlight-point-data-and-error-popup-position.test.js)');
 }
 

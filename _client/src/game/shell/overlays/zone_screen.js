@@ -430,8 +430,12 @@ export function attachZoneScreen(proto){
 						// выше): Y и поворот уточнены (было frameSpr.y+RESPECT_FRAME_H / -3°,
 						// стало frameSpr.y+RESPECT_AMOUNT_REL_Y / -5°). Центрирование по X (anchor
 						// 0.5 + x = центр рамки) не менялось.
+						// 04.10.2026 (по прямому указанию — "сделай кол-во уважения меньше
+						// толщину шрифта"): 'normal' уже было минимальным стандартным весом
+						// (снижали 03.10.2026) — пробуем числовой вес '300' (легче normal/400),
+						// если у шрифта нет такой градации, canvas тихо откатится на обычный.
 						const amountTxt = new PIXI.Text(String(l.amount), {
-							fontFamily:'Southbank LT', fontSize:16, fill:'#000000', fontWeight:'normal',
+							fontFamily:'Southbank LT', fontSize:16, fill:'#000000', fontWeight:'300',
 							dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1,
 						});
 						amountTxt.anchor.set(0.5, 0);

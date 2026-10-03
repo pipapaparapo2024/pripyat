@@ -48,8 +48,10 @@ console.log('\nTest 2: описание достижений карт разли
     const body = ifaceAch.slice(start, start + 300);
     assert(/Достигни \$\{_fmtAchNum\(n\)\} уровня в игре в карты/.test(body), 'уровень карт — "в игре в карты", не "в «Сорви куш»"');
     assert(/Собери комбинацию \$\{CARD_COMBO_LABEL\[key\]/.test(body), 'комбинация карт — отдельная фраза "Собери комбинацию X"');
-    assert(/const CARD_COMBO_LABEL = \{77:'7\|7', 88:'8\|8', 99:'9\|9', tt:'10\|10', jj:'J\|J', qq:'Q\|Q', kk:'K\|K', aa:'A\|A'\};/.test(ifaceAch),
-        'таблица меток комбинаций карт (7|7..A|A) задана');
+    // 04.10.2026 (по прямому указанию — "комбинации прописывать буквами"): символьные метки
+    // (7|7..A|A) заменены словесными формами с учётом рода/числа.
+    assert(/CARD_COMBO_LABEL = \{[\s\S]{0,200}77:'две семёрки'[\s\S]{0,200}aa:'два туза'/.test(ifaceAch),
+        'таблица меток комбинаций карт задана словесными формами (две семёрки..два туза)');
 }
 
 console.log('\nTest 3: описание покера различает уровень/спички/комбинацию');
@@ -91,8 +93,8 @@ console.log('\nTest 7: очки/названия казино-достижени
         ["id:'crd_aa',  cat:'cards', name:'Тузы',     pts:3"],
         ["id:'pkr_l10',  cat:'poker', name:'Азартное начало',   pts:5"],
         ["id:'pkr_l100', cat:'poker', name:'Катала',            pts:30"],
-        ["id:'pkr_kare',   cat:'poker', name:'(покер) Каре',       pts:20"],
-        ["id:'pkr_rf',     cat:'poker', name:'(покер) Роял-Флеш',  pts:60"],
+        ["id:'pkr_kare',   cat:'poker', name:'Каре',       pts:20"],
+        ["id:'pkr_rf',     cat:'poker', name:'Роял-Флеш',  pts:60"],
         ["id:'pkr_sp10k', cat:'poker', name:'Поднялся на покере', pts:20"],
         ["id:'rul_l100', cat:'roulette', name:'Легенда фортуны',pts:50"],
         ["id:'rul_sp10k',  cat:'roulette', name:'Пироман',         pts:40"],

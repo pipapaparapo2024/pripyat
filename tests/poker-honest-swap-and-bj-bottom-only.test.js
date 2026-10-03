@@ -124,10 +124,10 @@ console.log('\nTest 7: блэкджек — все 9 строк (включая 
     // строк разом (22.09.2026) __nonpair стал обычной записью в общем объекте BJ_ROW_Y, без
     // отдельных размеров — см. blackjack-combo-highlight-point-data-and-error-popup-position.test.js.
     assert(!/BJ_NONPAIR_W|BJ_NONPAIR_H|BJ_NONPAIR_CY/.test(bjSrc), 'старые BJ_NONPAIR_* константы убраны целиком');
-    assert(/'__nonpair':\s*501,/.test(bjSrc), '__nonpair — обычная запись в BJ_ROW_Y (501, реальный замер строки "семерки" +26px, 04.10.2026), та же ширина/высота, что у остальных 8 строк');
+    assert(/'__nonpair':\s*522,/.test(bjSrc), '__nonpair — обычная запись в BJ_ROW_Y (522, реальный замер всех 9 строк 04.10.2026), та же ширина/высота, что у остальных 8 строк');
     // 26.09.2026: X/W/H уточнены после фикса бага сдвига подсветки вправо на ~140px
     // 03.10.2026: новый фон letterbox-вписан (bg.x=86, bg.width=1108) — X/W пересчитаны (878/241).
-    assert(/const BJ_ROW_X = 906, BJ_ROW_W = 276, BJ_ROW_H = 34;/.test(bjSrc), 'единые X/W/H для всех 9 строк таблицы выплат пересчитаны под нативный (не letterbox) размер фона 04.10.2026');
+    assert(/const BJ_ROW_X = 895, BJ_ROW_W = 279, BJ_ROW_H = 37;/.test(bjSrc), 'единые X/W/H для всех 9 строк таблицы выплат пересчитаны под нативный (не letterbox) размер фона 04.10.2026');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

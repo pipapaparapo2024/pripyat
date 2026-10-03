@@ -33,7 +33,7 @@ const pay = fs.readFileSync(
 
 console.log('\nTest 1: блэкджек — "ЛЮБАЯ НЕПАРНАЯ КОМБИНАЦИЯ" по ОБЩЕЙ формуле (22.09.2026: раньше была отдельными константами 293×38/y:511, теперь unified — см. blackjack-combo-highlight-point-data-and-error-popup-position.test.js)');
 {
-    assert(/'__nonpair':\s*501,/.test(bj), "__nonpair теперь ОБЫЧНАЯ запись в BJ_ROW_Y (475, нативный размер фона 04.10.2026), не отдельные BJ_NONPAIR_* константы");
+    assert(/'__nonpair':\s*522,/.test(bj), "__nonpair теперь ОБЫЧНАЯ запись в BJ_ROW_Y (522, реальный замер 04.10.2026), не отдельные BJ_NONPAIR_* константы");
     assert(!/BJ_NONPAIR_W|BJ_NONPAIR_H|BJ_NONPAIR_CY/.test(bj), 'старые BJ_NONPAIR_* константы убраны целиком');
     assert(!/const isNonpair = key === '__nonpair';/.test(bj), 'ветвление isNonpair убрано — все 9 строк (включая nonpair) используют одну и ту же ширину/высоту (BJ_ROW_W/BJ_ROW_H)');
 }

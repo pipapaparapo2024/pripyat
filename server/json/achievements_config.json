@@ -1789,7 +1789,7 @@
   {
     "id": "pkr_kare",
     "cat": "poker",
-    "name": "(покер) Каре",
+    "name": "Каре",
     "pts": 20,
     "threshold": 1,
     "statPath": [
@@ -1800,7 +1800,7 @@
   {
     "id": "pkr_sf",
     "cat": "poker",
-    "name": "(покер) Стрит-Флеш",
+    "name": "Стрит-Флеш",
     "pts": 40,
     "threshold": 1,
     "statPath": [
@@ -1811,7 +1811,7 @@
   {
     "id": "pkr_rf",
     "cat": "poker",
-    "name": "(покер) Роял-Флеш",
+    "name": "Роял-Флеш",
     "pts": 60,
     "threshold": 1,
     "statPath": [

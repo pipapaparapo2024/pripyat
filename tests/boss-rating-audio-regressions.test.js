@@ -12,8 +12,14 @@ for(const p of ['_client/src/modules/background-music.js','_client/src/game/dvor
 {const s=read('_client/src/game/shell/overlays/zone-ambient.js');assert(s.includes('applyAudioVolumes();'));assert(s.includes('volume: isFadeIn ? 0.001 : 1,'));}
 const popup=read('_client/src/game/shell/popups/sound.js');assert(popup.includes('applyAudioVolumes();'));assert(!popup.includes('volumeAll = soundVol'));
 const src=read('_client/src/game/shell/overlays/bosses_fight.js');const begin=src.indexOf('proto._fetchBossFightRating =');const end=src.indexOf('    // ── ТАЙМЕР',begin);
-let request,resolve,shown=0;const rows=[{nameTxt:{},dmgTxt:{},avSpr:{}}];const c={proto:{},bosses:{_bossStartMs:[[100]],_resolveVkUsers(ids,cb){resolve=cb;}},TS:{php(action,args,cb){request=cb;}},console:{log(){}},window:{},PIXI:{Texture:{EMPTY:'empty'}}};vm.createContext(c);vm.runInContext(src.slice(begin,end),c);
-const ui={...c.proto,_bossFightDiffIdx:0,_bossFightRatingRows:rows};ui._fetchBossFightRating(0);request({top:[{id:1,damage:1000,nick:'one'}]});c.bosses._bossStartMs[0][0]=200;resolve({});assert.equal(rows[0].dmgTxt.text,undefined,'old avatar callback must not overwrite new fight');
-ui._fetchBossFightRating(0);c.bosses._bossStartMs[0][0]=0;request({top:[{id:1,damage:12200}]});assert.equal(rows[0].dmgTxt.text,undefined,'late response after victory ignored');
+// 04.10.2026 (баг найден по прямому указанию — "урон засчитывается, но игроки не выводятся в
+// рейтинге урона"): ник/урон теперь выставляются СИНХРОННО из top (не ждут _resolveVkUsers) —
+// только АВАТАРКА по-прежнему приходит асинхронно и должна игнорировать устаревший ответ.
+let request,resolve;const rows=[{nameTxt:{},dmgTxt:{},avSpr:{}}];const c={proto:{},bosses:{_bossStartMs:[[100]],_resolveVkUsers(ids,cb){resolve=cb;}},TS:{php(action,args,cb){request=cb;}},console:{log(){}},window:{},PIXI:{Texture:{EMPTY:'empty'}}};vm.createContext(c);vm.runInContext(src.slice(begin,end),c);
+const ui={...c.proto,_bossFightDiffIdx:0,_bossFightRatingRows:rows};ui._fetchBossFightRating(0);request({top:[{id:1,damage:1000,nick:'one'}]});
+assert.equal(rows[0].dmgTxt.text,'× 1000','text/nick update synchronously from a legitimately-current response, no longer gated behind the avatar resolve callback');
+c.bosses._bossStartMs[0][0]=200;resolve({});
+assert.equal(rows[0].avSpr.texture,undefined,'stale avatar callback for an old fight must not touch the row once a new fight has started');
+ui._fetchBossFightRating(0);c.bosses._bossStartMs[0][0]=0;request({top:[{id:1,damage:12200}]});assert.equal(rows[0].dmgTxt.text,'× 1000','response for an already-ended fight (bossStartMs reset) must not overwrite the last legitimate value');
 ui._showBossFightRating([{id:1,damage:1000,nick:'one'}]);resolve({});assert.equal(rows[0].dmgTxt.text,'× 1000');
 console.log('PASS: independent music/effects, stale fight responses, final rating snapshot');

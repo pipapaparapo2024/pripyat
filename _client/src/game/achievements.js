@@ -203,9 +203,12 @@ export default class Achievements {
 			{id:'pkr_l70',  cat:'poker', name:'Опытный картёжник', pts:20, threshold:70, statPath:["pokerLvl"], check:s=>s.pokerLvl>=70},
 			{id:'pkr_l100', cat:'poker', name:'Катала',            pts:30, threshold:100, statPath:["pokerLvl"], check:s=>s.pokerLvl>=100},
 			// Покер — комбинации
-			{id:'pkr_kare',   cat:'poker', name:'(покер) Каре',       pts:20, threshold:1, statPath:["pokerCombos","kare"], check:s=>s.pokerCombos['kare']>=1},
-			{id:'pkr_sf',     cat:'poker', name:'(покер) Стрит-Флеш', pts:40, threshold:1, statPath:["pokerCombos","sf"], check:s=>s.pokerCombos['sf']>=1},
-			{id:'pkr_rf',     cat:'poker', name:'(покер) Роял-Флеш',  pts:60, threshold:1, statPath:["pokerCombos","rf"], check:s=>s.pokerCombos['rf']>=1},
+			// 04.10.2026 (по прямому указанию — "подписывать покер не нужно, просто пиши
+			// название"): префикс "(покер) " убран из name (аналогично cat 'cards' выше, где
+			// комбинации уже без префикса "(карты) ").
+			{id:'pkr_kare',   cat:'poker', name:'Каре',       pts:20, threshold:1, statPath:["pokerCombos","kare"], check:s=>s.pokerCombos['kare']>=1},
+			{id:'pkr_sf',     cat:'poker', name:'Стрит-Флеш', pts:40, threshold:1, statPath:["pokerCombos","sf"], check:s=>s.pokerCombos['sf']>=1},
+			{id:'pkr_rf',     cat:'poker', name:'Роял-Флеш',  pts:60, threshold:1, statPath:["pokerCombos","rf"], check:s=>s.pokerCombos['rf']>=1},
 			// Покер — фиолетовые спички
 			{id:'pkr_sp1k',  cat:'poker', name:'Непосильным трудом', pts:5,  threshold:1000, statPath:["pokerSpichki"], check:s=>s.pokerSpichki>=1000},
 			{id:'pkr_sp2k',  cat:'poker', name:'Азартное состояние', pts:6,  threshold:2000, statPath:["pokerSpichki"], check:s=>s.pokerSpichki>=2000},

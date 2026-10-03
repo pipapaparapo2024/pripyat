@@ -43,13 +43,21 @@ console.log('\nTest 2: новый ассет заливки уровня пок�
     assert(fs.existsSync(assetPath), 'файл "заливка желтыя уровень покера.png" существует в _client/development/images/');
 }
 
-console.log('\nTest 3: полоска уровня покера строится текстурным спрайтом на x:511 y:113, замаскированным');
+console.log('\nTest 3: полоска уровня покера строится текстурным спрайтом на x:511 y:115, замаскированным');
 {
     assert(screenJs.includes("new PIXI.Sprite(PIXI.Texture.from('./images/заливка желтыя уровень покера.png'))"),
         'barFillImg создаётся из нового файла');
-    assert(/barFillImg\.x = 511; barFillImg\.y = 113;/.test(screenJs), 'позиция x:511 y:113 задана явно');
+    // 04.10.2026 (повторная правка тем же днём, по прямому указанию — "полоску опыта стоит
+    // опустить вниз на пару пикселей"): y:113→115.
+    assert(/barFillImg\.x = 511; barFillImg\.y = 115;/.test(screenJs), 'позиция x:511 y:115 задана явно');
     assert(/barFillImg\.mask = barFill;/.test(screenJs), 'заливка замаскирована тем же Graphics-объектом barFill');
     assert(!/this\._pokerExpBarFill\.beginFill\(0xbd7101\)/.test(screenJs), 'старая плоская заливка (0xbd7101) убрана');
+    // 04.10.2026 (баг найден по прямому указанию — "полоску опыта что-то перекрывает"):
+    // barFill — Graphics, используемая ТОЛЬКО как маска, без renderable=false рисует сама
+    // себя (белую заливку из _updatePokerUI) поверх текстуры barFillImg — тот же паттерн,
+    // что уже учтён в dvor-dice-screen.js (_diceExpBarFill).
+    assert(/const barFill = new PIXI\.Graphics\(\);\s*\n\s*barFill\.renderable = false;/.test(screenJs),
+        'barFill.renderable = false сразу после создания — маска сама не рендерится');
 }
 
 console.log('\nTest 4: _updatePokerUI() заполняет маску по той же доле прогресса, что и раньше');
@@ -59,7 +67,7 @@ console.log('\nTest 4: _updatePokerUI() заполняет маску по то�
     const body = screenJs.slice(start, end);
     assert(/const ratio = lvl\.maxed \? 1 : \(lvl\.next > 0 \? Math\.min\(1, lvl\.cur \/ lvl\.next\) : 0\);/.test(body),
         'формула доли прогресса (cur/next, с учётом maxed) не изменилась');
-    assert(/this\._pokerExpBarFill\.drawRect\(511, 113, fw, 9\)/.test(body), 'маска рисуется на тех же координатах, что и сама заливка');
+    assert(/this\._pokerExpBarFill\.drawRect\(511, 115, fw, 9\)/.test(body), 'маска рисуется на тех же координатах, что и сама заливка (y:115)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

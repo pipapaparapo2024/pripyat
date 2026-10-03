@@ -804,7 +804,21 @@ export function attachBossesCombat(proto){
            window.pre_control && typeof pre_control._requestFriendsScope === 'function' &&
            !pre_control._friendsScopeRequestPending){
             console.log('[bosses._resolveVkUsers] VK_token отсутствует, но friends_scope_granted=1 — дозапрашиваю токен лениво');
-            pre_control._requestFriendsScope(() => _doBatchFetch());
+            // 04.10.2026 (баг найден по прямому указанию — "урон засчитывается, но игроки не
+            // выводятся в рейтинге, ни иконка"): _requestFriendsScope() зовёт done() во всех
+            // СВОИХ веток (success/save-fail/catch), но если сам bridge.sendPromise
+            // ('VKWebAppGetAuthToken') у VK просто не ответит (ни resolve, ни reject — такое
+            // бывает у postMessage-based мостов в "тихих" средах), done() не вызовется НИКОГДА
+            // — раньше это означало, что _doBatchFetch()/callback(out) вообще не наступал,
+            // и вся строка рейтинга (не только фото — см. фикс в bosses_fight.js) зависала
+            // пустой навсегда. Защитный таймер гарантирует, что callback() в любом случае
+            // получит хотя бы то, что уже накоплено в out (свои данные), если токен не пришёл
+            // за разумное время — doneOnce() не даёт сработать дважды, если настоящий done()
+            // всё же прилетит чуть позже таймера.
+            let settled = false;
+            const doneOnce = () => { if(settled) return; settled = true; _doBatchFetch(); };
+            setTimeout(doneOnce, 4000);
+            pre_control._requestFriendsScope(doneOnce);
             return;
         }
         _doBatchFetch();

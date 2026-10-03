@@ -77,9 +77,11 @@ export function attachPokerScreen(proto){
         win.addChild(levelTxt);
         this._pokerLevelTxt = levelTxt;
 
+        // 04.10.2026 (по прямому указанию — "полоску опыта... стоит опустить вниз на пару
+        // пикселей"): вся шкала (фон + заливка + маска в _updatePokerUI) сдвинута на +2px.
         const barBg = new PIXI.Graphics();
         barBg.beginFill(0x333333, 0.85);
-        barBg.drawRoundedRect(510, 116, 162, 10, 2);
+        barBg.drawRoundedRect(510, 118, 162, 10, 2);
         barBg.endFill();
         win.addChild(barBg);
 
@@ -89,11 +91,16 @@ export function attachPokerScreen(proto){
         // блэкджека: раньше заливка была плоским Graphics-прямоугольником (0xbd7101), теперь —
         // текстурный спрайт, раскрытый маской слева направо на долю прогресса.
         const barFillImg = new PIXI.Sprite(PIXI.Texture.from('./images/заливка желтыя уровень покера.png'));
-        barFillImg.x = 511; barFillImg.y = 113;
+        barFillImg.x = 511; barFillImg.y = 115;
         win.addChild(barFillImg);
         this._pokerExpBarFillImg = barFillImg;
 
+        // 04.10.2026 (баг найден по прямому указанию — "полоску опыта перекрывает что-то"):
+        // barFill используется ТОЛЬКО как маска для barFillImg, но без renderable=false
+        // Graphics сама по себе тоже рисуется (белая заливка из _updateUI ниже) поверх новой
+        // текстуры — тот же паттерн уже учтён в dvor-dice-screen.js (_diceExpBarFill).
         const barFill = new PIXI.Graphics();
+        barFill.renderable = false;
         win.addChild(barFill);
         barFillImg.mask = barFill;
         this._pokerExpBarFill = barFill;
@@ -439,7 +446,7 @@ export function attachPokerScreen(proto){
             const fw = Math.max(0, Math.floor(163 * ratio));
             if(fw > 0){
                 this._pokerExpBarFill.beginFill(0xffffff);
-                this._pokerExpBarFill.drawRect(511, 113, fw, 9);
+                this._pokerExpBarFill.drawRect(511, 115, fw, 9);
                 this._pokerExpBarFill.endFill();
             }
             if(this._pokerExpBarFillImg) this._pokerExpBarFillImg.visible = fw > 0;

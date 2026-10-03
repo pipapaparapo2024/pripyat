@@ -42,15 +42,19 @@ console.log('\nTest: _loadBossFightRating() НЕ сбрасывает avSpr.text
         'НЕ сбрасывает row.avSpr.texture заранее — устаревание закрывается downstream в _fetchBossFightRating (см. тесты ниже)');
 }
 
-console.log('\nTest: _fetchBossFightRating() сбрасывает avSpr.texture, когда сервер вернул пустой top[]');
+// 04.10.2026 (баг "урон засчитывается, но игроки не выводятся в рейтинге" — см.
+// bosses_fight.js._showBossFightRating): отдельная ветка "if(!top.length){...}" убрана —
+// теперь единый forEach по rows читает top[i] для КАЖДОЙ строки, и при пустом top[] это
+// everywhere даёт entry===undefined, то есть все строки проходят через ту же ветку "!entry"
+// (тест ниже), что и раньше делала отдельная top.length===0 ветка. Поведение то же, кода меньше.
+console.log('\nTest: _showBossFightRating() сбрасывает avSpr.texture для ВСЕХ строк, когда сервер вернул пустой top[] (через единую ветку "!entry")');
 {
-    const start = src.indexOf('proto._fetchBossFightRating = function(bossIdx){');
-    const emptyTopStart = src.indexOf('if(!top.length){', start);
-    const emptyTopEnd   = src.indexOf('}', src.indexOf('return;', emptyTopStart));
-    const body = src.slice(emptyTopStart, emptyTopEnd);
-    assert(!!body && emptyTopStart !== -1, 'ветка "top.length === 0" найдена');
-    assert(/row\.avSpr\.texture\s*=\s*PIXI\.Texture\.EMPTY/.test(body),
-        'сбрасывает row.avSpr.texture, когда рейтинг сервера пуст');
+    const start = src.indexOf('proto._showBossFightRating = function(top, isCurrent = () => true){');
+    assert(start !== -1, '_showBossFightRating() найден');
+    assert(!/if\(!top\.length\)\{/.test(src.slice(start, start + 2000)),
+        'отдельная ветка top.length===0 убрана — пустой top закрывается той же "!entry" веткой для каждой строки');
+    const forEachStart = src.indexOf('this._bossFightRatingRows.forEach((row, i) => {', start);
+    assert(forEachStart !== -1, 'единый forEach по строкам найден — top[i] читается для КАЖДОЙ строки без ранней отсечки');
 }
 
 console.log('\nTest: _fetchBossFightRating() сбрасывает avSpr.texture для строки без entry (top короче 3 строк)');

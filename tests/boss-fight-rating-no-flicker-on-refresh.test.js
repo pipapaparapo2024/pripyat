@@ -39,7 +39,7 @@ console.log('\nTest 1: _loadBossFightRating() больше не сбрасыва
 
 console.log('\nTest 2: _fetchBossFightRating() остаётся единственным местом, которое пишет в строки — только ПОСЛЕ ответа сервера');
 {
-    const m = src.match(/proto\._fetchBossFightRating = function\(bossIdx\)\{([\s\S]*?)\n    \};\s*proto\._showBossFightRating[\s\S]*?\n    \};/);
+    const m = src.match(/proto\._fetchBossFightRating = function\(bossIdx\)\{([\s\S]*?)\n    \};[\s\S]*?proto\._showBossFightRating[\s\S]*?\n    \};/);
     assert(!!m, '_fetchBossFightRating найдена');
     const body = m ? m[0] : '';
     assert(/TS\.php\('bosses\.rating', \{boss_id:bossIdx, diff_idx:diffIdx\}, \(res\)=>\{/.test(body), 'запрос идёт первым делом');

@@ -76,12 +76,14 @@ console.log('\nTest 5: bosses_fight.js — серые Graphics-фоны под �
     assert(!/const avBg = new PIXI\.Graphics\(\);/.test(fightSrc), 'переменная avBg удалена целиком');
 }
 
-console.log('\nTest 6: bosses_fight.js — плейсхолдеры "---"/"× —" заменены на пустую строку в обеих ветках _showBossFightRating');
+console.log('\nTest 6: bosses_fight.js — плейсхолдеры "---"/"× —" заменены на пустую строку в _showBossFightRating');
 {
     assert(!/row\.nameTxt\.text = '---';/.test(fightSrc), 'старый плейсхолдер имени убран');
     assert(!/row\.dmgTxt\.text = '× —';/.test(fightSrc), 'старый плейсхолдер урона убран');
+    // 04.10.2026: top.length===0 и !entry объединены в одну ветку (!entry внутри общего forEach
+    // по rows — top[i] тоже undefined, когда top пуст) — теперь ОДНО место очищает текст, не два.
     const count = (fightSrc.match(/row\.nameTxt\.text = ''; row\.dmgTxt\.text = '';/g) || []).length;
-    assert(count === 2, 'обе ветки (top.length===0 и !entry) теперь очищают текст пустой строкой (найдено: ' + count + ')');
+    assert(count === 1, 'единая ветка (!entry, покрывает и top.length===0, и "мест больше чем участников") очищает текст пустой строкой (найдено: ' + count + ')');
 }
 
 console.log('\nTest 7: bosses_fight.js — ник рейтинга: шрифт AA Bebas Neue, белый цвет (по CSS ".Имя_персонажа")');

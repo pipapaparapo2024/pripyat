@@ -101,14 +101,14 @@ console.log('\nTest 3: bosses_fight.js._loadBossFightRating — предвари
 
 console.log('\nTest 3b: _fetchBossFightRating использует новый формат ответа {top:[{id,damage}]}');
 {
-    const m = fightSrc.match(/proto\._fetchBossFightRating = function\(bossIdx\)\{([\s\S]*?)\n    \};\s*proto\._showBossFightRating[\s\S]*?\n    \};/);
+    const m = fightSrc.match(/proto\._fetchBossFightRating = function\(bossIdx\)\{([\s\S]*?)\n    \};[\s\S]*?proto\._showBossFightRating[\s\S]*?\n    \};/);
     assert(!!m, '_fetchBossFightRating найден');
     if (m) {
         const body = m[0];
         assert(/TS\.php\('bosses\.rating', \{boss_id:bossIdx, diff_idx:diffIdx\}/.test(body),
             'запрос идёт на bosses.rating (метод теперь реально существует на сервере) — с diff_idx (нужен серверу для соло-режима)');
-        assert(/bosses\._resolveVkUsers\(top\.map\(e=>e\.id\)/.test(body), 'id из ответа резолвятся в имя/фото через bosses._resolveVkUsers');
-        assert(/if\(!top\.length\)\{/.test(body), 'пустой ответ (никто ещё не нанёс урона) — откат на плейсхолдер, не падает');
+        assert(/bosses\._resolveVkUsers\(top\.map\(e=>e\.id\)/.test(body), 'id из ответа резолвятся в фото через bosses._resolveVkUsers (ник/урон — синхронно из top, см. 04.10.2026)');
+        assert(/if\(!entry\)\{/.test(body), 'пустой ответ (никто ещё не нанёс урона) — откат на плейсхолдер, не падает');
     }
 }
 

@@ -1132,48 +1132,61 @@ export function attachBossesFight(proto){
         }, (e)=>{ console.error('[bosses_fight._loadBossFightRating] ошибка запроса bosses.rating для boss='+bossIdx+':', e); });
     };
 
+    // 04.10.2026 (баг найден по прямому указанию — "урон засчитывается, но игроки не выводятся
+    // в рейтинге урона: ни никнейм, ни иконка, ни количество урона"): ник/урон раньше
+    // проставлялись ТОЛЬКО внутри колбэка bosses._resolveVkUsers() — если этот колбэк не
+    // вызывался (VK Bridge/VKWebAppGetAuthToken зависает без resolve/reject, см. ленивый
+    // дозапрос токена в _resolveVkUsers() — bosses-combat.js) ВСЯ строка оставалась пустой,
+    // хотя сервер (bosses.rating/claimKill) уже честно прислал top с готовыми id/nick/damage —
+    // проверено логами: server error_log стабильно отдаёт непустой top с никами участников,
+    // при этом панель оставалась пустой. Тот же разрыв, что уже был решён в boss_result.js
+    // (ник/урон там выставляются СРАЗУ из top, _resolveVkUsers только докидывает фото) —
+    // теперь тот же паттерн и здесь: ник/урон/id выставляются синхронно из top, фото обновляется
+    // отдельно, когда (и если) придёт ответ _resolveVkUsers.
     proto._showBossFightRating = function(top, isCurrent = () => true){
         if(!this._bossFightRatingRows) return;
-            if(!top.length){
-                // 24.09.2026: сброс avSpr на пустую текстуру — см. коммент в _loadBossFightRating()
-                // выше, тот же баг ("пустая строка показывает чужое фото с прошлого фетча").
-                this._bossFightRatingRows.forEach(row=>{
-                    // 26.09.2026 (по прямому указанию — "не пиши три черточки для имени и белую
-                    // линию для урона, если данных ещё нет — пусть будет пусто"): раньше '---'/
-                    // '× —' показывались как плейсхолдеры для пустых строк рейтинга.
-                    row.nameTxt.text = ''; row.dmgTxt.text = ''; row.id = null; row.nick = null;
-                    if(row.avSpr) row.avSpr.texture = PIXI.Texture.EMPTY;
-                });
+        this._bossFightRatingRows.forEach((row, i) => {
+            const entry = top[i];
+            if(!entry){
+                // 26.09.2026 (по прямому указанию — "не пиши три черточки для имени и белую
+                // линию для урона, если данных ещё нет — пусть будет пусто"): раньше '---'/
+                // '× —' показывались как плейсхолдеры для пустых строк рейтинга.
+                row.nameTxt.text = ''; row.dmgTxt.text = ''; row.id = null; row.nick = null;
+                if(row.avSpr) row.avSpr.texture = PIXI.Texture.EMPTY;
                 return;
             }
-            bosses._resolveVkUsers(top.map(e=>e.id), (users) => {
-                if(!isCurrent()) return;
-                console.log('[bosses_fight._fetchBossFightRating] _resolveVkUsers вернул:', JSON.stringify(users));
-                this._bossFightRatingRows.forEach((row, i) => {
-                    const entry = top[i];
-                    if(!entry){
-                        // 26.09.2026 (по прямому указанию — "не пиши три черточки для имени и белую
-                    // линию для урона, если данных ещё нет — пусть будет пусто"): раньше '---'/
-                    // '× —' показывались как плейсхолдеры для пустых строк рейтинга.
-                    row.nameTxt.text = ''; row.dmgTxt.text = ''; row.id = null; row.nick = null;
-                        if(row.avSpr) row.avSpr.texture = PIXI.Texture.EMPTY;
-                        return;
-                    }
-                    const u = users[String(entry.id)];
-                    console.log('[bosses_fight._fetchBossFightRating] строка', i, '| id:', entry.id, '| найден в users:', !!u,
-                        '| nick:', entry.nick, '| name:', u && u.name, '| photo:', u && u.photo);
-                    // Игровой ник (entry.nick, с сервера) — приоритет над именем VK.
-                    row.nameTxt.text = entry.nick || (u && u.name) || 'Сталкер';
-                    row.dmgTxt.text  = '× ' + (window.helper ? helper.formatKK(entry.damage||0) : entry.damage||0);
-                    // 24.09.2026: раньше текстура НЕ сбрасывалась в ветке "без фото" — если этот
-                    // индекс строки на предыдущем фетче принадлежал другому игроку С фото, чужая
-                    // фотография оставалась висеть поверх нового (безфотового) имени.
-                    if(row.avSpr) row.avSpr.texture = (u && u.photo) ? PIXI.Texture.from(u.photo) : PIXI.Texture.EMPTY;
-                    // 18.09.2026 (по прямому указанию): клик по строке открывает профиль этого
-                    // игрока — id/nick запоминаем на самой строке (см. rowHit выше).
-                    row.id = entry.id; row.nick = entry.nick || (u && u.name) || null;
-                });
+            // Игровой ник (entry.nick) и урон — прямо с сервера, не ждут VK-резолва. Если
+            // entry.nick пуст (редкий случай) — оставляем пустым здесь, а не сразу 'Сталкер':
+            // ниже, в колбэке _resolveVkUsers, есть шанс подставить настоящее имя VK ПЕРЕД
+            // тем, как упасть на общий fallback (тот же приоритет nick → VK-имя → 'Сталкер',
+            // что и раньше, см. nickname-everywhere-cancel-btn-panama-rating-log.test.js).
+            row.nameTxt.text = entry.nick || '';
+            row.dmgTxt.text  = '× ' + (window.helper ? helper.formatKK(entry.damage||0) : entry.damage||0);
+            row.id = entry.id; row.nick = entry.nick || null;
+        });
+        if(!top.length) return;
+
+        // Фото — отдельный, необязательный шаг поверх уже показанных ника/урона. Если
+        // _resolveVkUsers зависнет/ошибётся — строки всё равно останутся с корректными данными,
+        // просто без аватарки (вместо полностью пустой строки, как было раньше).
+        bosses._resolveVkUsers(top.map(e=>e.id), (users) => {
+            if(!isCurrent()) return;
+            console.log('[bosses_fight._fetchBossFightRating] _resolveVkUsers вернул:', JSON.stringify(users));
+            this._bossFightRatingRows.forEach((row, i) => {
+                const entry = top[i];
+                if(!entry) return;
+                const u = users[String(entry.id)];
+                console.log('[bosses_fight._fetchBossFightRating] строка', i, '| id:', entry.id, '| найден в users:', !!u,
+                    '| nick:', entry.nick, '| name:', u && u.name, '| photo:', u && u.photo);
+                // entry.nick (выставлен синхронно выше) в приоритете — VK-имя/'Сталкер'
+                // только если ник так и не пришёл с сервера.
+                if(!row.nameTxt.text) row.nameTxt.text = (u && u.name) || 'Сталкер';
+                // 24.09.2026: раньше текстура НЕ сбрасывалась в ветке "без фото" — если этот
+                // индекс строки на предыдущем фетче принадлежал другому игроку С фото, чужая
+                // фотография оставалась висеть поверх нового (безфотового) имени.
+                if(row.avSpr) row.avSpr.texture = (u && u.photo) ? PIXI.Texture.from(u.photo) : PIXI.Texture.EMPTY;
             });
+        });
     };
 
     // ── ТАЙМЕР ────────────────────────────────────────────────────
