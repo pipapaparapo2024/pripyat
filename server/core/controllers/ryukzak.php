@@ -47,6 +47,36 @@
             return $lvl;
         }
 
+        // 04.10.2026 (баг найден по прямому указанию — "ударил босса мачете, попап «оружие не
+        // куплено», хотя оно есть"): open() начислял ammo_machete/ammo_gun/ammo_auto напрямую
+        // через Gameops::add() — это ТОЛЬКО легаси-зеркало, не трогает weapons[id].owned в
+        // авторитетном JSON-блобе. bosses.php.attack() проверяет именно weapons[weaponId]
+        // ['owned'] — если игрок получил ПЕРВЫЕ патроны машете/ствола/автомата через рюкзак (не
+        // через weapons.buy()/покер/хабар, которые корректно зовут этот же приём), owned там
+        // навсегда оставался false. Клиент (weapons.js._loadFromUdata()) при этом подставляет
+        // owned=true локально по фолбэку "ammo>0 → owned" — поэтому в интерфейсе оружие
+        // выглядело доступным, а сервер на каждый удар отвечал кодом 89. Портировано 1-в-1 из
+        // poker.php._grantWeaponReward() (тот же приём, что уже применён в habar.php).
+        private function _grantWeaponReward(&$user, $type, $amount){
+            $wid = ['machete' => 3, 'gun' => 4, 'auto' => 5][$type] ?? null;
+            $amount = max(0, intval($amount));
+            if($wid === null || $amount === 0) return;
+            $data = $this->ops->j($user, 'weapons', []);
+            if(!is_array($data)) $data = [];
+            for($i = 0; $i < 6; $i++){
+                $data[$i] = array_merge(
+                    ['owned' => $i < 3, 'equipped' => false, 'upg' => 0, 'qty' => 0],
+                    isset($data[$i]) && is_array($data[$i]) ? $data[$i] : []
+                );
+            }
+            $ammoKey = 'ammo_' . $type;
+            $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
+            $data[$wid]['owned'] = true;
+            ksort($data);
+            $user['weapons'] = json_encode(array_values($data));
+            $user[$ammoKey] = strval($data[$wid]['qty']);
+        }
+
         function open(){
             $uid = intval($this->registry['uid']);
             $user = $this->ops->loadUser();
@@ -97,9 +127,9 @@
             } else {
                 $keyBoss = -1; $keyCount = 0;
             }
-            if($mach > 0) $this->ops->add($user, 'ammo_machete', $mach);
-            if($pist > 0) $this->ops->add($user, 'ammo_gun', $pist);
-            if($ak   > 0) $this->ops->add($user, 'ammo_auto', $ak);
+            if($mach > 0) $this->_grantWeaponReward($user, 'machete', $mach);
+            if($pist > 0) $this->_grantWeaponReward($user, 'gun', $pist);
+            if($ak   > 0) $this->_grantWeaponReward($user, 'auto', $ak);
 
             // 25.09.2026 (по прямому указанию — см. большой коммент у класса): обнуляем очки
             // СРАЗУ после розыгрыша награды текущего уровня, в той же записи в БД — атомарно,
@@ -113,7 +143,7 @@
 
             $patch = $this->ops->patchCurrencies($user, [
                 'stew', 'stew_spent', 'cigarettes', 'coins', 'exp', 'bosses_data',
-                'ammo_machete', 'ammo_gun', 'ammo_auto', 'ryukzak_points',
+                'ammo_machete', 'ammo_gun', 'ammo_auto', 'ryukzak_points', 'weapons',
             ]);
             $reward = [
                 'level' => $level, 'cig' => intval($tier['cig']), 'c' => intval($tier['c']),

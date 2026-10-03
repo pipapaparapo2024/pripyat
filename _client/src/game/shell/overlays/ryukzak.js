@@ -201,6 +201,11 @@ export function attachRyukzak(proto){
 					}
 					applyPatch(res.patch);
 					if(window.resumePlayerSave) resumePlayerSave('ryukzak_open');
+					// 04.10.2026 (фикс — "ударил босса мачете, попап «оружие не куплено»"):
+					// сервер теперь отдаёт weapons в patch (см. ryukzak.php._grantWeaponReward()),
+					// подтягиваем его в weapons.data — тот же приём, что уже делают
+					// poker.js/habar.js после выдачи оружия.
+					if(res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
 					const r = res.reward;
 					_renderRewardIcons(r);
 					_setKeyPreview(r.k || 0, r.key_boss);

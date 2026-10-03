@@ -114,7 +114,9 @@ export function attachZonePopup(proto){
             align: 'center',
         });
         this._locCpTask.anchor.set(0.5, 0.5);
-        this._locCpTask.x = 580; this._locCpTask.y = 571;
+        // 04.10.2026 (по прямому указанию, редактор позиций): y 571→565, добавлен scale 1.136.
+        this._locCpTask.x = 580; this._locCpTask.y = 565;
+        this._locCpTask.scale.set(1.136);
         win.addChild(this._locCpTask);
 
         // Кнопка ВЫПОЛНИТЬ — одна картинка, показывается/скрывается
@@ -342,7 +344,8 @@ export function attachZonePopup(proto){
             if(this._locCellsTxt){
                 this._locCellsTxt.text = cpFilled + '/' + cpCells;
                 this._locCellsTxt.x = CELLS_CENTER_X + totalCellW / 2 + 36.5;
-                this._locCellsTxt.y = CELLS_Y + CELL_H / 2 + 0.5;
+                // 04.10.2026 (по прямому указанию): опущено на 1px (было +0.5).
+                this._locCellsTxt.y = CELLS_Y + CELL_H / 2 + 1.5;
             }
         }
 
