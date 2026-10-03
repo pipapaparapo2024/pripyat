@@ -135,22 +135,55 @@ export function attachRyukzak(proto){
 		const KEY_BOSS_ICON_FILES = { 1:'ключ счастливчик.png', 2:'ключ ястреб.png', 3:'ключ меченный.png' };
 		const keyIconSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);
 		keyIconSpr.anchor.set(0.5, 0.5);
-		// 04.10.2026 (по прямому указанию, редактор позиций — x:320 y:410, фиксированная
-		// ширина 90px, высота по пропорциям): нативный размер файлов 'ключ *.png' — 272×362
-		// у всех 7 (см. AGENTS.md, уже проверено при downscale 27.09.2026) — высота по той же
-		// пропорции = 90 * 362/272 ≈ 120.
-		keyIconSpr.x = 320; keyIconSpr.y = 410;
-		keyIconSpr.width = 90; keyIconSpr.height = 120;
+		// 04.10.2026 (повторная правка, редактор позиций — x:366 y:392 scale:0.331, w:90 h:120):
+		// та же физическая высота/ширина, что и раньше (90×120 на нативных 272×362), просто
+		// заданы через scale вместо явных width/height — используем именно scale.set(), чтобы
+		// соответствовать тому, как редактор позиций сообщает координаты.
+		keyIconSpr.x = 366; keyIconSpr.y = 392;
+		keyIconSpr.scale.set(0.331);
 		keyIconSpr.visible = false;
+		keyIconSpr.interactive = true; keyIconSpr.buttonMode = true;
 		win.addChild(keyIconSpr);
+
+		// 04.10.2026 (по прямому указанию — "сделай так чтобы при наведении на ключ писалось на
+		// какого босса этот ключ"): тот же паттерн тултипа, что уже используется в skills.js —
+		// тёмная плашка с текстом, показывается на pointerover рядом с иконкой. Имя босса берём
+		// из уже существующего window.bosses.data (та же карта id→name, что рисует список
+		// боссов) — не дублируем отдельным массивом имён.
+		const keyTooltip = new PIXI.Container();
+		keyTooltip.visible = false;
+		const keyTooltipBg = new PIXI.Graphics();
+		const keyTooltipTxt = new PIXI.Text('', { fontFamily: 'Southbank LT', fontSize: 16, fill: '#ffffff' });
+		keyTooltipTxt.anchor.set(0.5, 0.5);
+		keyTooltip.addChild(keyTooltipBg);
+		keyTooltip.addChild(keyTooltipTxt);
+		win.addChild(keyTooltip);
+		let keyTooltipBossId = 0;
+		keyIconSpr.on('pointerover', () => {
+			const bossName = (window.bosses && window.bosses.data && window.bosses.data[keyTooltipBossId])
+				? window.bosses.data[keyTooltipBossId].name : null;
+			if(!bossName) return;
+			keyTooltipTxt.text = 'Ключ босса «' + bossName + '»';
+			const padX = 12, padY = 8;
+			keyTooltipBg.clear();
+			keyTooltipBg.beginFill(0x111111, 0.92); keyTooltipBg.lineStyle(1, 0x5a4a2a);
+			keyTooltipBg.drawRoundedRect(-keyTooltipTxt.width/2 - padX, -keyTooltipTxt.height/2 - padY,
+				keyTooltipTxt.width + padX*2, keyTooltipTxt.height + padY*2, 4);
+			keyTooltipBg.endFill();
+			keyTooltip.x = keyIconSpr.x; keyTooltip.y = keyIconSpr.y - 80;
+			keyTooltip.visible = true;
+		});
+		keyIconSpr.on('pointerout', () => { keyTooltip.visible = false; });
+
 		const _setKeyPreview = (count, bossId) => {
 			const file = KEY_BOSS_ICON_FILES[bossId];
+			keyTooltipBossId = bossId;
 			if(count > 0 && file){
 				keyIconSpr.texture = PIXI.Texture.from(KEY_BASE + file);
-				keyIconSpr.width = 90; keyIconSpr.height = 120;
 				keyIconSpr.visible = true;
 			} else {
 				keyIconSpr.visible = false;
+				keyTooltip.visible = false;
 			}
 		};
 		// Грубый ориентир СРАЗУ (нет сетевой задержки) — cig/c/exp фиксированы в тарифе, оружие
@@ -166,7 +199,15 @@ export function attachRyukzak(proto){
 		// заменяется ЧЕСТНЫМ сплитом с сервера (ryukzak.preview) — тот же детерминированный
 		// бросок, что реально применит open() при клике ЗАБРАТЬ (см. ryukzak.php._rollWeapons()),
 		// поэтому превью и фактическая награда гарантированно совпадают, а не просто похожи.
-		if(window.TS){
+		// 04.10.2026 (баг найден по прямому указанию — "забрал награду, следующая награда
+		// визуально никак не меняется, хотя уровень сброшен"): раньше этот запрос делался
+		// ТОЛЬКО один раз, при самом открытии экрана. После закрытия попапа награды уровень
+		// ОБНУЛЯЛСЯ (текст "УРОВЕНЬ РЮКЗАКА : 1" обновлялся корректно), но иконки/суммы награды
+		// на экране оставались от ПРЕДЫДУЩЕГО (уже забранного) розыгрыша — honest-превью для
+		// НОВОГО уровня ни разу не запрашивалось повторно. Вынесено в отдельную функцию, чтобы
+		// звать и при открытии, и сразу после сброса уровня (см. ниже, в колбэке закрытия попапа).
+		const _fetchHonestPreview = () => {
+			if(!window.TS) return;
 			TS.php('ryukzak.preview', {}, (res) => {
 				if(this._ryukzakWin !== win) return; // экран успели закрыть/переоткрыть — чужой ответ не трогаем
 				console.log('[ryukzak._openRyukzakReward] ← честное превью сервера:', JSON.stringify(res));
@@ -177,7 +218,8 @@ export function attachRyukzak(proto){
 			}, (err) => {
 				console.error('[ryukzak._openRyukzakReward] ошибка честного превью, остаётся грубый ориентир:', JSON.stringify(err));
 			});
-		}
+		};
+		_fetchHonestPreview();
 
 		// --- Прогресс-бар уровня рюкзака ---
 		const lvlTxt = new PIXI.Text('УРОВЕНЬ РЮКЗАКА : ' + previewLevel, {
@@ -269,6 +311,20 @@ export function attachRyukzak(proto){
 						console.log('[ryukzak._openRyukzakReward] попап награды закрыт, очки после сброса:', pointsAfter, '→ превью уровня:', resetLevel);
 						lvlTxt.text = 'УРОВЕНЬ РЮКЗАКА : ' + resetLevel;
 						_renderProgress(resetLevel);
+						// 04.10.2026 (баг найден по прямому указанию — "следующая награда визуально
+						// никак не меняется"): уровень выше уже сброшен, но иконки/суммы награды на
+						// экране — всё ещё от ТОЛЬКО ЧТО забранного розыгрыша (_renderRewardIcons/
+						// _setKeyPreview с тех пор ни разу не перерисовывались). Тот же двухфазный
+						// приём, что и при открытии экрана: сразу грубый локальный ориентир по
+						// новому уровню (без сетевой задержки), следом честное превью с сервера.
+						const resetLvIdx = Math.max(0, Math.min(19, resetLevel - 1));
+						const resetTier  = REWARDS[resetLvIdx];
+						_renderRewardIcons({
+							cig: resetTier.cig, c: resetTier.c, exp: resetTier.exp,
+							mach: 0, pist: 0, ak: resetTier.w,
+						});
+						_setKeyPreview(resetTier.k || 0, resetTier.key_boss);
+						_fetchHonestPreview();
 
 						// 25.09.2026 (баг найден по прямому указанию, скриншот 10/11 — "после
 						// открытия рюкзака и принятия награды ХУД появляется поверх попапа

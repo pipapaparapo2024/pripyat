@@ -51,7 +51,11 @@ console.log('\n1б) ryukzak.js — клиент пересчитывает пр�
     const src = read('_client/src/game/shell/overlays/ryukzak.js');
     assert(/this\._showRewardPopup\(rewards, \(\) => \{/.test(src), '_showRewardPopup вызывается с onClose-колбэком (раньше — без него)');
     const cbIdx = src.indexOf('this._showRewardPopup(rewards, () => {');
-    const cbChunk = src.slice(cbIdx, cbIdx + 2600);
+    // 04.10.2026: было фиксированное окно в 2600 символов — хрупко (сломалось от правки бага
+    // "следующая награда визуально не меняется", добавившей ~700 символов кода+коммента внутрь
+    // этого же колбэка). До конца callback'а ближайший устойчивый якорь — следующий addChild HUD.
+    const cbEndIdx = src.indexOf('if(window.iface){ iface.updateUp(); iface.updateNick(); }', cbIdx);
+    const cbChunk = src.slice(cbIdx, cbEndIdx !== -1 ? cbEndIdx : cbIdx + 4000);
     assert(/_ryukzakLevelFromPoints\(pointsAfter\)/.test(cbChunk), 'превью уровня пересчитывается по свежим очкам (0 после сброса)');
     assert(/lvlTxt\.text = 'УРОВЕНЬ РЮКЗАКА : ' \+ resetLevel;/.test(cbChunk), 'текст уровня обновляется на пересчитанный');
     assert(/_renderProgress\(resetLevel\)/.test(cbChunk), 'прогресс-бар тоже пересчитывается');

@@ -55,13 +55,16 @@ console.log('\nTest 4: оба текста (ОЧКИ / НОВЫЕ) центри�
 
     // 03.10.2026 (по прямому указанию — "кол-во новых очков и прокачанных опусти вниз на 1px,
     // сдвинь вправо на 1px, уменьши жирность"): +1/+1 к центру подложки, fontWeight bold → normal.
+    // 04.10.2026 (редактор позиций, повторная правка): центрирование относительно подложки
+    // заменено на явные абсолютные координаты + scale — PTS_BG/NEW_BG остаются только размером
+    // самих подложек (не участвуют в позиционировании текста).
     assert(/ptsTxt\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'ptsTxt имеет anchor(0.5,0.5)');
-    assert(/ptsTxt\.x = PTS_BG\.x \+ PTS_BG\.w \/ 2 \+ 1; ptsTxt\.y = PTS_BG\.y \+ PTS_BG\.h \/ 2 \+ 1;/.test(body),
-        'ptsTxt позиционируется в ЦЕНТР PTS_BG +1px вправо/вниз');
+    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639; ptsTxt\.scale\.set\(1\.521\);/.test(body),
+        'ptsTxt позиционируется по явным координатам редактора позиций (x:1080 y:639 scale:1.521)');
 
     assert(/newTxt\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'newTxt имеет anchor(0.5,0.5)');
-    assert(/newTxt\.x = NEW_BG\.x \+ NEW_BG\.w \/ 2 \+ 1; newTxt\.y = NEW_BG\.y \+ NEW_BG\.h \/ 2 \+ 1;/.test(body),
-        'newTxt позиционируется в ЦЕНТР NEW_BG +1px вправо/вниз');
+    assert(/newTxt\.x = 1220; newTxt\.y = 639; newTxt\.scale\.set\(1\.521\);/.test(body),
+        'newTxt позиционируется по явным координатам редактора позиций (x:1220 y:639 scale:1.521)');
 
     assert(/fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*ptsTxt\.anchor/.test(fightSrc),
         'ptsTxt fontWeight normal (было bold)');

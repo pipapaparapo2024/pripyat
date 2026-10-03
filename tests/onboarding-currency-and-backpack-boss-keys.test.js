@@ -60,11 +60,11 @@ console.log('\n3b) 04.10.2026: иконка ключа в награде рюк�
     assert(/keyIconSpr\.texture = PIXI\.Texture\.from\(KEY_BASE \+ file\);/.test(ryuk), '_setKeyPreview реально использует KEY_BASE, не старый BASE');
     assert(fs_.existsSync(path_.join(root, "_client/development/images/ключ меченный.png")), 'файл ключа реально существует по новому пути (KEY_BASE)');
     assert(!fs_.existsSync(path_.join(root, "_client/development/images/layers/popups/sidorovich/ключ меченный.png")), 'по старому пути (BASE) файла ключа действительно нет — подтверждает причину бага');
-    // 04.10.2026 (по прямому указанию, редактор позиций — x:320 y:410, фикс. ширина 90px,
-    // высота по пропорциям): нативный размер 272×362 у всех 7 файлов ключей (см. AGENTS.md,
-    // подтверждено при downscale 27.09.2026) → высота = 90 * 362/272 ≈ 120.
-    assert(/keyIconSpr\.x = 320; keyIconSpr\.y = 410;/.test(ryuk), 'ключ позиционирован на x:320 y:410');
-    assert(/keyIconSpr\.width = 90; keyIconSpr\.height = 120;/.test(ryuk), 'ключ — фиксированная ширина 90px, высота по пропорции нативного размера (120px)');
+    // 04.10.2026 (повторная правка, редактор позиций — x:366 y:392 scale:0.331, w:90 h:120):
+    // та же физическая высота/ширина (90×120 на нативных 272×362), задана через scale вместо
+    // явных width/height — редактор позиций сообщает координаты именно так.
+    assert(/keyIconSpr\.x = 366; keyIconSpr\.y = 392;/.test(ryuk), 'ключ позиционирован на x:366 y:392');
+    assert(/keyIconSpr\.scale\.set\(0\.331\);/.test(ryuk), 'ключ масштабируется scale:0.331 (90×120 на нативных 272×362)');
 }
 
 console.log('\n4) DEV-кнопка выставляет ровно 20-й уровень');

@@ -15,10 +15,18 @@ export function attachInterfacePanels(proto){
         if(this.up.butt_settings){
             this._addHoverGlow(this.up.butt_settings);
             this.up.butt_settings.on('pointerdown', ()=>this._openSoundPopup());
-            // 04.10.2026 (по прямому указанию — "кнопку иконку настроек опусти вниз на 2px"):
-            // база (x:1237 y:23) по-прежнему зашита в interface_elements.min.js (см. коммент
-            // выше) — не трогаем компилированный FLA, нудж применяем тут же, как раньше.
+            // 04.10.2026 (НАЙДЕНО по репорту "характеристики не принимаются" — редактор позиций
+            // продолжал показывать базовые x:1237 y:23 даже после правки 2px ниже): корень —
+            // `butt_settings` (этот объект) это ТОЛЬКО невидимый хитбокс (35×35 Graphics с
+            // alpha≈0, см. interface_elements.min.js: `f.addChild(b)` где `b` — прозрачный
+            // прямоугольник). Реальная ВИДИМАЯ иконка — отдельный спрайт `_bst`, созданный в том
+            // же месте компилированного файла (`PIXI.Texture.from("images/butt_settings.png")`),
+            // но раньше он НИКОГДА не получал имя и не был доступен отсюда — `.y += 2` двигал
+            // только хитбокс, то, что игрок РЕАЛЬНО видит на экране, оставалось на месте. Правка
+            // в interface_elements.min.js (см. коммент там же) добавила имя `butt_settings_icon`
+            // для этого спрайта — двигаем оба объекта вместе, чтобы хитбокс не разъехался с иконкой.
             this.up.butt_settings.y += 2;
+            if(this.up.butt_settings_icon) this.up.butt_settings_icon.y += 2;
         }
 
         if(this.up.butt_energy_plus){

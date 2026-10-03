@@ -34,12 +34,12 @@ const hataSrc = fs.readFileSync(
 // подложки (PTS_BG/NEW_BG), не хардкодом. Актуальный тест — boss-fight-points-badges-centered-text.test.js.
 console.log('\nTest 1: позиции ptsTxt (ОЧКИ) и newTxt (НОВЫЕ) считаются как центр присланных подложек');
 {
-    // 03.10.2026: +1px вправо/вниз добавлен поверх центрирования — см.
-    // boss-fight-points-badges-centered-text.test.js для полной проверки.
-    assert(/ptsTxt\.x = PTS_BG\.x \+ PTS_BG\.w \/ 2 \+ 1; ptsTxt\.y = PTS_BG\.y \+ PTS_BG\.h \/ 2 \+ 1;/.test(bossFightSrc),
-        'ptsTxt центрируется относительно PTS_BG, +1px (см. boss-fight-points-badges-centered-text.test.js)');
-    assert(/newTxt\.x = NEW_BG\.x \+ NEW_BG\.w \/ 2 \+ 1; newTxt\.y = NEW_BG\.y \+ NEW_BG\.h \/ 2 \+ 1;/.test(bossFightSrc),
-        'newTxt центрируется относительно NEW_BG, +1px (см. boss-fight-points-badges-centered-text.test.js)');
+    // 04.10.2026: центрирование относительно подложки заменено явными координатами редактора
+    // позиций — см. boss-fight-points-badges-centered-text.test.js для полной проверки.
+    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639; ptsTxt\.scale\.set\(1\.521\);/.test(bossFightSrc),
+        'ptsTxt позиционируется по явным координатам (см. boss-fight-points-badges-centered-text.test.js)');
+    assert(/newTxt\.x = 1220; newTxt\.y = 639; newTxt\.scale\.set\(1\.521\);/.test(bossFightSrc),
+        'newTxt позиционируется по явным координатам (см. boss-fight-points-badges-centered-text.test.js)');
 }
 
 // ── Test 2: buyHover в hata.js — УСТАРЕЛО (25.09.2026) ────────────────────────

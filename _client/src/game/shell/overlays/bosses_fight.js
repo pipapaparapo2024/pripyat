@@ -615,7 +615,8 @@ export function attachBossesFight(proto){
             fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',
         });
         ptsTxt.anchor.set(0.5, 0.5);
-        ptsTxt.x = PTS_BG.x + PTS_BG.w / 2 + 1; ptsTxt.y = PTS_BG.y + PTS_BG.h / 2 + 1;
+        // 04.10.2026 (редактор позиций — "кол-во прокачанных очков"): x:1080 y:639 scale:1.521.
+        ptsTxt.x = 1080; ptsTxt.y = 639; ptsTxt.scale.set(1.521);
         win.addChild(ptsTxt);
         this._bossFightPtsTxt = ptsTxt;
 
@@ -627,7 +628,8 @@ export function attachBossesFight(proto){
             fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',
         });
         newTxt.anchor.set(0.5, 0.5);
-        newTxt.x = NEW_BG.x + NEW_BG.w / 2 + 1; newTxt.y = NEW_BG.y + NEW_BG.h / 2 + 1;
+        // 04.10.2026 (редактор позиций — "кол-во новых очков"): x:1220 y:639 scale:1.521.
+        newTxt.x = 1220; newTxt.y = 639; newTxt.scale.set(1.521);
         win.addChild(newTxt);
 
         this._bossFightNewTxt = newTxt;
