@@ -35,6 +35,10 @@ const HOST = 'test-pripyat-game.ru';
 const API_ID = 54574178; // registry.php: 'api_id'
 const API_SECRET = 'NbEEnoAYijdh9yQACIHL'; // registry.php: 'api_secret' — уже публично в репозитории
 const TEST_UID = 999000001; // синтетический smoke-test аккаунт, НЕ реальный VK-игрок
+// 04.10.2026: второй синтетический аккаунт — для живой проверки "друг реально попадает в
+// rating/friendsDamage" (прямая живая защита бага 04.10.2026, см. AGENTS.md — друзьям сюда
+// передавался сырой $friendIds вместо карты $friendsSince). Тоже НЕ реальный VK-игрок.
+const TEST_FRIEND_UID = 999000002;
 
 // ── spec_encode — побуквенная подстановка, 1-в-1 копия modules/server.js (НЕ инверсия,
 // реализация самого encode, сверено построчно с клиентом) ──
@@ -61,14 +65,16 @@ function vkSign(paramsNoSign){
     return hmac.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function postToServer(method, yourParameters, token, reqKey){
+// 04.10.2026: добавлен параметр uid (раньше был захардкожен на TEST_UID) — нужен, чтобы вести
+// ВТОРОЙ синтетический аккаунт (TEST_FRIEND_UID) тем же протоколом в параллельном потоке шагов.
+function postToServer(method, yourParameters, token, reqKey, uid){
     return new Promise((resolve, reject) => {
         const body = new URLSearchParams();
         body.append('method', method);
         body.append('api_id', String(API_ID));
         body.append('params', encodeParams(yourParameters));
         body.append('token', token || '');
-        body.append('uid', String(TEST_UID));
+        body.append('uid', String(uid || TEST_UID));
         body.append('req_key', reqKey);
         body.append('platform', 'vk');
         const bodyStr = body.toString();
@@ -96,58 +102,119 @@ function check(cond, msg){
     else     { console.error('  ❌ FAIL:', msg); failed++; }
 }
 
-async function main(){
-    console.log(`Smoke-тест: https://${HOST} | TEST_UID=${TEST_UID}\n`);
-
-    console.log('Шаг 1: security.getToken — реальная VK-подпись (HMAC-SHA256, тот же api_secret, что проверяет сервер)');
+// 04.10.2026: вынесено из main() — нужно дважды, по разу на каждый синтетический аккаунт
+// (TEST_UID и TEST_FRIEND_UID), чтобы проверить живой друг-рейтинг (шаги ниже).
+async function login(uid, label){
+    console.log(`\n[${label}] security.getToken — реальная VK-подпись (HMAC-SHA256, тот же api_secret, что проверяет сервер)`);
     const vkParams = {
-        vk_user_id: String(TEST_UID), vk_app_id: String(API_ID),
+        vk_user_id: String(uid), vk_app_id: String(API_ID),
         vk_platform: 'desktop_web', vk_language: 'ru', vk_is_app_user: '1',
     };
     vkParams.sign = vkSign(vkParams);
     let reqKey = 'srUjnhko'; // стартовое значение — ровно как в конструкторе Server() на клиенте
-    const tokenRes = await postToServer('security.getToken', vkParams, '', reqKey);
-    check(!!tokenRes.token, 'getToken вернул token — HMAC-подпись прошла проверку сервера');
+    const tokenRes = await postToServer('security.getToken', vkParams, '', reqKey, uid);
+    check(!!tokenRes.token, `[${label}] getToken вернул token — HMAC-подпись прошла проверку сервера`);
     if(tokenRes.req_key) reqKey = tokenRes.req_key;
     const token = tokenRes.token;
-    if(!token){ console.error('Нет token — дальнейшие шаги невозможны, прерываю.'); process.exit(1); }
+    if(!token){ console.error(`[${label}] Нет token — дальнейшие шаги для этого аккаунта невозможны, прерываю.`); process.exit(1); }
 
-    console.log('\nШаг 2: users.get — аккаунт создаётся/читается, стартовые значения по ТЗ');
-    const userRes = await postToServer('users.get', {}, token, reqKey);
+    const userRes = await postToServer('users.get', {}, token, reqKey, uid);
     if(userRes.req_key) reqKey = userRes.req_key;
-    check(userRes.status !== 'error', 'users.get не вернул ошибку: ' + JSON.stringify(userRes).slice(0, 200));
-    check(userRes.udata && userRes.udata.id == TEST_UID, 'udata.id совпадает с TEST_UID');
+    check(userRes.status !== 'error', `[${label}] users.get не вернул ошибку: ` + JSON.stringify(userRes).slice(0, 200));
+    check(userRes.udata && userRes.udata.id == uid, `[${label}] udata.id совпадает с uid`);
+
+    return { token, reqKey: reqKey };
+}
+
+// Обёртка, прокидывающая uid и обновляющая session.reqKey по ответу — сокращает повторение
+// `if(res.req_key) reqKey = res.req_key` на каждом шаге для обоих аккаунтов ниже.
+async function call(session, uid, method, params){
+    const res = await postToServer(method, params, session.token, session.reqKey, uid);
+    if(res.req_key) session.reqKey = res.req_key;
+    return res;
+}
+
+async function main(){
+    console.log(`Smoke-тест: https://${HOST} | TEST_UID=${TEST_UID} | TEST_FRIEND_UID=${TEST_FRIEND_UID}\n`);
+
+    console.log('Шаг 1-2: логин обоих синтетических аккаунтов (security.getToken + users.get)');
+    const me = await login(TEST_UID, 'me');
+    const friend = await login(TEST_FRIEND_UID, 'friend');
+
+    // 04.10.2026: делает повторные ручные прогоны этого скрипта идемпотентными. Синтетические
+    // аккаунты — персистентные (та же БД между запусками), а бесплатное оружие (нож/цепь/бита)
+    // имеет ОБЩИЙ 6-часовой кулдаун (см. $FREE_WPN_CD_MS в bosses.php) — повторный прогон в
+    // пределах 6ч после предыдущего падал бы на Ошибка 88, даже если весь остальной код здоров.
+    // endFightSession() безусловно обнуляет freeWpnCdMs при ЛЮБОМ вызове с валидными
+    // boss_id/diff_idx (не только при реально активном бое, см. комментарий в bosses.php) —
+    // используем это как единственный легитимный (не dev-эндпоинт) способ сбросить кулдаун.
+    console.log('\nШаг 2.5: bosses.endFightSession — сброс общего КД бесплатного оружия (идемпотентность повторных прогонов)');
+    await call(me, TEST_UID, 'bosses.endFightSession', { boss_id: 0, diff_idx: 0 });
+    await call(friend, TEST_FRIEND_UID, 'bosses.endFightSession', { boss_id: 0, diff_idx: 3 });
 
     // Охотник (boss_id=0) требует зачищенную локацию 0 (boss_loc:0 в bosses.js) — свежий
     // синтетический аккаунт её не проходил. Это smoke-тест БОЁВКИ, не прогон полной воронки
     // онбординга — зачищаем локацию напрямую через users.save (whitelist-поле 'zone'), а не
     // симулируем реальный сбор локации через zone.php (отдельная, более тяжёлая механика, не
-    // то, что проверяет этот smoke-тест).
-    console.log('\nШаг 3: users.save — зачистка локации 0 (предусловие для боя с Охотником)');
-    const zoneRes = await postToServer('users.save', { udata_json: JSON.stringify({ zone: { '0': { cleared: 1 } } }) }, token, reqKey);
-    if(zoneRes.req_key) reqKey = zoneRes.req_key;
-    check(zoneRes.status !== 'error', 'users.save (zone) не вернул ошибку: ' + JSON.stringify(zoneRes).slice(0, 200));
+    // то, что проверяет этот smoke-тест). Зачищаем ОБОИМ — друг тоже должен бить Охотника.
+    console.log('\nШаг 3: users.save — зачистка локации 0 для обоих аккаунтов (предусловие для боя с Охотником)');
+    const zoneRes = await call(me, TEST_UID, 'users.save', { udata_json: JSON.stringify({ zone: { '0': { cleared: 1 } } }) });
+    check(zoneRes.status !== 'error', '[me] users.save (zone) не вернул ошибку: ' + JSON.stringify(zoneRes).slice(0, 200));
+    const zoneResFriend = await call(friend, TEST_FRIEND_UID, 'users.save', { udata_json: JSON.stringify({ zone: { '0': { cleared: 1 } } }) });
+    check(zoneResFriend.status !== 'error', '[friend] users.save (zone) не вернул ошибку: ' + JSON.stringify(zoneResFriend).slice(0, 200));
 
-    console.log('\nШаг 4: bosses.startFight (Охотник, соло) — старт боя на сервере');
-    const startRes = await postToServer('bosses.startFight', { boss_id: 0, diff_idx: 3 }, token, reqKey);
-    if(startRes.req_key) reqKey = startRes.req_key;
-    check(startRes.status !== 'error', 'startFight не вернул ошибку: ' + JSON.stringify(startRes).slice(0, 200));
-    check(typeof startRes.hp === 'number' && startRes.hp > 0, 'startFight вернул hp > 0, получено ' + JSON.stringify(startRes.hp));
+    // 04.10.2026: взаимная дружба ВК — _friendIds() (bosses.php) требует, чтобы КАЖДЫЙ считал
+    // другого другом в своём собственном 'friends' поле (не одностороннее добавление). Реальный
+    // путь записи этого поля — setFriendsScopeGranted (согласие) + setFriendsCache (сам список),
+    // тот же путь, что проходит настоящий клиент после VKWebAppGetAuthToken (modules/server.js).
+    console.log('\nШаг 4: setFriendsScopeGranted + setFriendsCache — взаимная дружба ВК между me и friend');
+    const scopeMe = await call(me, TEST_UID, 'users.setFriendsScopeGranted', {});
+    check(scopeMe.status !== 'error', '[me] setFriendsScopeGranted не вернул ошибку: ' + JSON.stringify(scopeMe).slice(0, 200));
+    const scopeFriend = await call(friend, TEST_FRIEND_UID, 'users.setFriendsScopeGranted', {});
+    check(scopeFriend.status !== 'error', '[friend] setFriendsScopeGranted не вернул ошибку: ' + JSON.stringify(scopeFriend).slice(0, 200));
+    const friendsCacheMe = await call(me, TEST_UID, 'users.setFriendsCache', { friends: String(TEST_FRIEND_UID) });
+    check(friendsCacheMe.status !== 'error', '[me] setFriendsCache не вернул ошибку: ' + JSON.stringify(friendsCacheMe).slice(0, 200));
+    const friendsCacheFriend = await call(friend, TEST_FRIEND_UID, 'users.setFriendsCache', { friends: String(TEST_UID) });
+    check(friendsCacheFriend.status !== 'error', '[friend] setFriendsCache не вернул ошибку: ' + JSON.stringify(friendsCacheFriend).slice(0, 200));
 
-    console.log('\nШаг 5: bosses.attack (нож, бесплатное оружие) — реальный удар, HP уменьшается');
+    console.log('\nШаг 5: bosses.startFight (Охотник, ГРУППОВОЙ режим diff_idx=0 — друг помогает ТОЛЬКО не в соло) — я');
+    const startRes = await call(me, TEST_UID, 'bosses.startFight', { boss_id: 0, diff_idx: 0 });
+    check(startRes.status !== 'error', '[me] startFight не вернул ошибку: ' + JSON.stringify(startRes).slice(0, 200));
+    check(typeof startRes.hp === 'number' && startRes.hp > 0, '[me] startFight вернул hp > 0, получено ' + JSON.stringify(startRes.hp));
+
+    console.log('\nШаг 6: bosses.attack (мой собственный удар ножом) — HP уменьшается');
     const beforeHp = startRes.hp;
-    const attackRes = await postToServer('bosses.attack', { boss_id: 0, diff_idx: 3, weapon_id: 0, mult: 1 }, token, reqKey);
-    if(attackRes.req_key) reqKey = attackRes.req_key;
-    check(attackRes.status !== 'error', 'attack не вернул ошибку: ' + JSON.stringify(attackRes).slice(0, 200));
-    check(typeof attackRes.hp === 'number' && attackRes.hp < beforeHp, `HP реально уменьшилось после удара (было ${beforeHp}, стало ${attackRes.hp})`);
-    check(typeof attackRes.damage === 'number' && attackRes.damage > 0, 'attack вернул damage > 0, получено ' + JSON.stringify(attackRes.damage));
+    const attackRes = await call(me, TEST_UID, 'bosses.attack', { boss_id: 0, diff_idx: 0, weapon_id: 0, mult: 1 });
+    check(attackRes.status !== 'error', '[me] attack не вернул ошибку: ' + JSON.stringify(attackRes).slice(0, 200));
+    check(typeof attackRes.hp === 'number' && attackRes.hp < beforeHp, `[me] HP реально уменьшилось после удара (было ${beforeHp}, стало ${attackRes.hp})`);
+    check(typeof attackRes.damage === 'number' && attackRes.damage > 0, '[me] attack вернул damage > 0, получено ' + JSON.stringify(attackRes.damage));
 
-    console.log('\nШаг 6: bosses.rating — СОБСТВЕННЫЙ урон реально попадает в топ (прямой smoke-тест сегодняшнего фикса)');
-    const ratingRes = await postToServer('bosses.rating', { boss_id: 0, diff_idx: 3 }, token, reqKey);
-    if(ratingRes.req_key) reqKey = ratingRes.req_key;
+    // Друг бьёт того же босса СВОИМ соло-боем (асимметричное правило — см. _friendsDamageSumSince()
+    // в bosses.php: диффа/босс друга не важны, важно только что ОН дружит со мной и Я не в соло).
+    console.log('\nШаг 7: друг начинает СВОЙ бой (соло) и бьёт того же Охотника — это и есть "помощь друга"');
+    const friendStartRes = await call(friend, TEST_FRIEND_UID, 'bosses.startFight', { boss_id: 0, diff_idx: 3 });
+    check(friendStartRes.status !== 'error', '[friend] startFight не вернул ошибку: ' + JSON.stringify(friendStartRes).slice(0, 200));
+    const friendAttackRes = await call(friend, TEST_FRIEND_UID, 'bosses.attack', { boss_id: 0, diff_idx: 3, weapon_id: 0, mult: 1 });
+    check(friendAttackRes.status !== 'error', '[friend] attack не вернул ошибку: ' + JSON.stringify(friendAttackRes).slice(0, 200));
+    check(typeof friendAttackRes.damage === 'number' && friendAttackRes.damage > 0, '[friend] attack вернул damage > 0, получено ' + JSON.stringify(friendAttackRes.damage));
+
+    console.log('\nШаг 8: bosses.rating (я, групповой режим) — СОБСТВЕННЫЙ урон И урон ДРУГА оба реально в топе (прямой smoke-тест фикса 04.10.2026)');
+    const ratingRes = await call(me, TEST_UID, 'bosses.rating', { boss_id: 0, diff_idx: 0 });
     const myEntry = Array.isArray(ratingRes.top) ? ratingRes.top.find(e => String(e.id) === String(TEST_UID)) : null;
-    check(!!myEntry, 'rating.top содержит мою собственную запись после реального удара (живой прогон бага с рейтингом урона): ' + JSON.stringify(ratingRes.top));
-    check(myEntry && myEntry.damage === attackRes.damage, `rating.top damage (${myEntry && myEntry.damage}) совпадает с уроном удара (${attackRes.damage})`);
+    const friendEntry = Array.isArray(ratingRes.top) ? ratingRes.top.find(e => String(e.id) === String(TEST_FRIEND_UID)) : null;
+    check(!!myEntry, 'rating.top содержит мою собственную запись после реального удара: ' + JSON.stringify(ratingRes.top));
+    check(myEntry && myEntry.damage === attackRes.damage, `rating.top мой damage (${myEntry && myEntry.damage}) совпадает с уроном моего удара (${attackRes.damage})`);
+    check(!!friendEntry, 'РЕГРЕСС-ПРУФ — rating.top содержит запись ДРУГА (баг 04.10.2026 — друг бил, но не появлялся в рейтинге): ' + JSON.stringify(ratingRes.top));
+    check(friendEntry && friendEntry.damage === friendAttackRes.damage, `rating.top damage друга (${friendEntry && friendEntry.damage}) совпадает с уроном его удара (${friendAttackRes.damage})`);
+
+    // Тот же живой прогон для friendsDamage() (периодический опрос экрана боя) — другой путь
+    // кода (кэш HP + курсор), тоже должен честно вычесть урон друга из моего производного HP.
+    console.log('\nШаг 9: bosses.friendsDamage (я) — производный HP учёл урон друга (другой путь кода, тот же баг-класс)');
+    const fdRes = await call(me, TEST_UID, 'bosses.friendsDamage', { boss_id: 0, diff_idx: 0 });
+    check(fdRes.status !== 'error', 'friendsDamage не вернул ошибку: ' + JSON.stringify(fdRes).slice(0, 200));
+    const expectedHp = Math.max(0, attackRes.hp - friendAttackRes.damage);
+    check(typeof fdRes.hp === 'number' && fdRes.hp === expectedHp,
+        `friendsDamage учёл урон друга в производном HP (ожидалось ${expectedHp} = ${attackRes.hp} - ${friendAttackRes.damage}, получено ${fdRes.hp})`);
 
     console.log(`\n${'─'.repeat(60)}`);
     if(failed === 0) console.log(`✅ SMOKE OK — ${passed} проверок прошли на живом ${HOST}`);
