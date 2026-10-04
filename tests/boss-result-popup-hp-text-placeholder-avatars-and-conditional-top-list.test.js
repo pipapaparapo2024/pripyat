@@ -108,13 +108,14 @@ console.log('\nTest 5: "УЧАСТНИКИ БОЯ" — недостающие с
     const body = applyMatch ? applyMatch[1] : '';
     assert(/if\(i >= topThree\.length\)\{/.test(body), 'заглушка ставится ТОЛЬКО для слотов без реального участника (i >= topThree.length)');
     assert(/spr\.texture = PIXI\.Texture\.from\(BASE \+ PLACEHOLDER_AVATARS\[i\]\);/.test(body), 'текстура слота меняется на заглушку по индексу');
-    // 02.10.2026 (найдено при разборе этого провала): подпись урона теперь считается через
-    // промежуточный shownDamage, а не напрямую entry.damage — добавлена поддержка "Седой помог"
-    // (см. tests/boss-result-popup-sedoy-damage-shown-separately.test.js): для СВОЕЙ записи на
-    // победе к damage прибавляется opts.sedoyDamage. Для entry=undefined (нет участника) итог
-    // тот же — shownDamage=0, t.text='' — смысл проверки не изменился.
-    assert(/const shownDamage = entry \? Number\(entry\.damage \|\| 0\) \+ \(isOwnEntry && isWin \? Number\(opts\.sedoyDamage \|\| 0\) : 0\) : 0;/.test(body),
-        'shownDamage учитывает entry.damage (и bonus Седого для своей записи на победе), 0 если участника нет');
+    // 02.10.2026: подпись урона считается через промежуточный shownDamage, а не напрямую
+    // entry.damage.
+    // 04.10.2026 (РЕВЕРС по прямому указанию — "в попапе должно быть 20, не 1000"): bonus Седого
+    // убран из shownDamage целиком — см. tests/boss-result-popup-sedoy-damage-shown-separately.
+    // test.js (Test 6) для полной проверки реверса. Для entry=undefined (нет участника) итог
+    // тот же — shownDamage=0, t.text='' — смысл ЭТОЙ проверки (заглушки без подписи) не изменился.
+    assert(/const shownDamage = entry \? Number\(entry\.damage \|\| 0\) : 0;/.test(body),
+        'shownDamage = entry.damage напрямую (без bonus Седого), 0 если участника нет');
     assert(/t\.text = entry \? \(_fmtDmg\(shownDamage\) \+ '\\nУРОНА'\) : '';/.test(body),
         'подпись урона пустая для слота без реального участника (entry undefined → t.text = "")');
 }

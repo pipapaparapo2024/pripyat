@@ -33,6 +33,18 @@
  * его урон в этот попап тоже больше не подмешивается. `sedoyDamage` теперь = ТОЛЬКО мой Седой
  * (`_sedoyDamageMineSince()`). См. tests/boss-sedoy-damage-not-shared-with-friends.test.js.
  *
+ * ⚠️⚠️ 04.10.2026 (ВТОРОЙ РЕВЕРС, по прямому указанию — "ударил битой 20, добил Седым 980, в
+ * попапе должно быть 20, не 1000; урон Седого не должен прописываться в попапе результата"):
+ * само СЛОЖЕНИЕ `entry.damage + sedoyDamage` в `shownDamage` (boss_result.js, цикл
+ * `avatarDmgTxts.forEach`) — убрано. Личная цифра под аватаром теперь ВСЕГДА только
+ * `entry.damage` (честный боевой урон, excludeSedoy=true), Седой на неё больше не влияет вообще
+ * — ни своей суммой, ни чужой. Серверная часть (`sedoyDamage` в ответе claimKill(),
+ * `_sedoyDamageMineSince()`) НЕ менялась — значение по-прежнему считается и уходит клиенту (на
+ * случай, если понадобится для чего-то ещё), просто клиент больше не добавляет его к
+ * отображаемой цифре. Синтетическая запись-подстановка (Test 5 ниже) ОСТАВЛЕНА без изменений —
+ * она про то, появится ли игрок в списке "УЧАСТНИКИ БОЯ" вообще (когда Седой добил без единого
+ * ручного удара), а не про саму цифру под его аватаром — см. Test 6.
+ *
  * Run: node tests/boss-result-popup-sedoy-damage-shown-separately.test.js
  */
 
@@ -154,6 +166,21 @@ console.log('\n5) boss_result.js: урон Седого отображён — �
     assert(shouldShow(true, 0, false)   === false, 'победа без Седого (0 урона) → подстановка НЕ происходит');
     assert(shouldShow(false, 800, false) === false, 'поражение (даже если Седой почему-то бил) → подстановка НЕ происходит');
     assert(shouldShow(true, undefined, false) === false, 'победа, sedoyDamage не передан (undefined) → подстановка НЕ происходит, не крашится');
+}
+
+console.log('\n6) 04.10.2026 (сам реверс): личная цифра под аватаром — ТОЛЬКО entry.damage, Седой НЕ прибавляется');
+{
+    const forEachIdx = resultSrc.indexOf('avatarDmgTxts.forEach((t, i) => {');
+    assert(forEachIdx !== -1, 'avatarDmgTxts.forEach найден');
+    const forEachEnd = resultSrc.indexOf('\n            });', forEachIdx);
+    const body = resultSrc.slice(forEachIdx, forEachEnd);
+
+    assert(/const shownDamage = entry \? Number\(entry\.damage \|\| 0\) : 0;/.test(body),
+        'shownDamage = entry.damage напрямую, без прибавления sedoyDamage');
+    assert(!/Number\(entry\.damage \|\| 0\) \+/.test(body),
+        'регресс-гвард: к entry.damage больше ничего не прибавляется (старая формула с sedoyDamage убрана целиком)');
+    assert(!/opts\.sedoyDamage/.test(body),
+        'регресс-гвард: opts.sedoyDamage не читается внутри цикла рендера цифры — используется только для гейта подстановки (Test 5), не для самой цифры');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

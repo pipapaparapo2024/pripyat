@@ -12,7 +12,11 @@ must(bosses, "// 28.09.2026: total_damage здесь БОЛЬШЕ НЕ раст�
 must(bosses, "$data['medalKills'][$bossId]", 'после победы должен расти отдельный прогресс медали');
 
 const result = read('_client/src/game/shell/popups/boss_result.js');
-must(result, 'Number(entry.damage || 0) + (isOwnEntry && isWin ? Number(opts.sedoyDamage || 0) : 0)', 'Седой должен быть только в личной цифре попапа');
+// 04.10.2026 (РЕВЕРС по прямому указанию — "ударил 20, добил Седым 980, в попапе должно быть
+// 20, не 1000"): личная цифра под аватаром больше НЕ прибавляет sedoyDamage — см.
+// tests/boss-result-popup-sedoy-damage-shown-separately.test.js (Test 6) для полной проверки.
+must(result, 'const shownDamage = entry ? Number(entry.damage || 0) : 0;', 'урон Седого НЕ должен прибавляться к личной цифре попапа');
+if(result.includes('Number(entry.damage || 0) + (isOwnEntry')) throw new Error('старая формула сложения с sedoyDamage вернулась — Седой снова прибавляется к личному урону');
 must(result, 'if(sedoyDamage > 0 && ownId && !hasOwnEntry)', 'добивший Седым игрок должен появляться в попапе даже без обычного удара');
 must(result, '_sedoyDisplayOnly: true', 'строка Седого должна быть только визуальной, не записью рейтинга');
 if(result.includes('Седой помог: +')) throw new Error('Седой не должен рисоваться отдельной строкой');
