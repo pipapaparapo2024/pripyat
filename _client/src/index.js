@@ -11,6 +11,7 @@ import { installPlayerPersistence } from './modules/player-save.js';
 import { startPreloaderVisual } from './modules/preloader-visual.js';
 import { installMobileViewport, viewportMetrics, onViewportChange } from './modules/mobile-viewport.js';
 import { applyRotatedCanvasStyle, clearRotatedCanvasStyle, mapPositionToPointRotated } from './modules/forced-landscape.js';
+import { showRotateHintOnce } from './modules/rotate-hint.js';
 import { installAppLifecyclePause } from './modules/app-lifecycle.js';
 import { registerLaunch, syncLaunchCountToServerStorage } from './modules/friends-scope-gate.js';
 
@@ -231,6 +232,10 @@ let initPreloader = () => {
 		let w, h;
 		if(needsRotate){
 			({ w, h } = applyRotatedCanvasStyle(canv, vp));
+			// 05.10.2026 (по прямому указанию, уточнено в разговоре — НЕ блокирующий экран,
+			// автоповорот остаётся как есть): одноразовая подсказка-тост при первом обнаружении
+			// портретной ориентации на мобильном, сама гасит себя внутри (см. rotate-hint.js).
+			showRotateHintOnce();
 		} else {
 			clearRotatedCanvasStyle(canv);
 			w = vp.w;
