@@ -38,6 +38,15 @@
             return $this->ops->catalog('ryukzak_config');
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
         private function _levelFromPoints($points, $thresholds){
             $lvl = 0;
             foreach($thresholds as $i => $t){
@@ -176,19 +185,83 @@
             } else {
                 $keyBoss = -1; $keyCount = 0;
             }
-            if($mach > 0) $this->_grantWeaponReward($user, 'machete', $mach);
-            if($pist > 0) $this->_grantWeaponReward($user, 'gun', $pist);
-            if($ak   > 0) $this->_grantWeaponReward($user, 'auto', $ak);
+            // 04.10.2026 (аудит гонок состояний): _grantWeaponReward() мутирует ТО ЖЕ поле
+            // weapons, что уже под SELECT...FOR UPDATE в weapons.php.buy()/upgrade() и
+            // bosses.php.attack() — без той же блокировки открытие рюкзака и покупка/удар
+            // боссу могли одновременно прочитать устаревший weapons, и один из saveUser()
+            // стёр бы изменения другого. Читаем АКТУАЛЬНОЕ значение под тем же локом строки,
+            // разыгрываем награду на ВРЕМЕННОЙ копии $user (легаси-поля ammo_* — отдельные
+            // колонки, не защищённые этим локом и никем параллельно не мутируемые — спокойно
+            // уезжают в $user и персистятся как раньше, обычным saveUser() ниже), и пишем
+            // итоговый weapons ОТДЕЛЬНЫМ UPDATE здесь же, под той же транзакцией.
+            $wpLink = $this->_rawLink();
+            $weaponsBase = $this->ops->j($user, 'weapons', []);
+            if($wpLink){
+                $wpLink->begin_transaction();
+                $wpRes = $wpLink->query("SELECT `weapons` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $wpRow = ($wpRes && $wpRes->num_rows > 0) ? $wpRes->fetch_assoc() : null;
+                if($wpRow !== null && is_array(json_decode($wpRow['weapons'], true))) $weaponsBase = $wpRow['weapons'];
+            }
+
+            $tempUser = $user;
+            $tempUser['weapons'] = $weaponsBase;
+            if($mach > 0) $this->_grantWeaponReward($tempUser, 'machete', $mach);
+            if($pist > 0) $this->_grantWeaponReward($tempUser, 'gun', $pist);
+            if($ak   > 0) $this->_grantWeaponReward($tempUser, 'auto', $ak);
+            $finalWeaponsJson = $tempUser['weapons'];
+            foreach(['ammo_machete', 'ammo_gun', 'ammo_auto'] as $ammoKey){
+                if(isset($tempUser[$ammoKey])) $user[$ammoKey] = $tempUser[$ammoKey];
+            }
+
+            if($wpLink){
+                $wpLink->query("UPDATE `{$this->registry['utb']}` SET `weapons`='".$wpLink->real_escape_string($finalWeaponsJson)."' WHERE `id`=$uid");
+                $wpLink->commit();
+                $wpLink->close();
+                // weapons уже записан отдельным UPDATE под локом — НЕ присваиваем его в $user
+                // здесь, иначе общий saveUser() ниже перезаписал бы его устаревшим снимком,
+                // загруженным в начале open() (тот же принцип, что в bosses.php.attack()/
+                // weapons.php.buy()); присвоение переносится ПОСЛЕ saveUser(), см. ниже.
+            } else {
+                // 04.10.2026 (баг найден при написании теста на этот же фикс — "если
+                // _rawLink() не смог открыть соединение, награда оружием считалась, но
+                // НИКОГДА не сохранялась": прямой UPDATE выше пропускался, а отложенное
+                // присвоение $user['weapons'] ниже происходило ПОСЛЕ saveUser(), то есть уже
+                // слишком поздно для этого же запроса). Без лока — сохраняем как раньше,
+                // обычным $user ДО saveUser() (лучше редкий шанс гонки, чем молча потерянная
+                // награда).
+                $user['weapons'] = $finalWeaponsJson;
+            }
 
             // 25.09.2026 (по прямому указанию — см. большой коммент у класса): обнуляем очки
-            // СРАЗУ после розыгрыша награды текущего уровня, в той же записи в БД — атомарно,
-            // без отдельного запроса, той же строкой saveUser() ниже.
-            $user['ryukzak_points'] = 0;
+            // СРАЗУ после розыгрыша награды текущего уровня, в той же записи в БД.
+            // 04.10.2026 (аудит гонок состояний): bosses.php.claimKill() начисляет ТЕ ЖЕ очки
+            // (ryukzak_points) обычным loadUser()/saveUser() — без лока здесь обнуление и
+            // начисление за килл могли столкнуться (игрок добивает босса ровно в момент
+            // открытия рюкзака). Та же SELECT...FOR UPDATE транзакция на строке — обнуляем
+            // ПРЯМЫМ UPDATE под локом, не через $user, чтобы общий saveUser() ниже не
+            // перезаписал уже закоммиченный 0 устаревшим предыдущим значением (тот же принцип,
+            // что у weapons выше).
+            $rpLink = $this->_rawLink();
+            if($rpLink){
+                $rpLink->begin_transaction();
+                $rpLink->query("SELECT `ryukzak_points` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $rpLink->query("UPDATE `{$this->registry['utb']}` SET `ryukzak_points`='0' WHERE `id`=$uid");
+                $rpLink->commit();
+                $rpLink->close();
+            } else {
+                // Фолбэк без лока (не удалось открыть отдельное соединение) — лучше редкий
+                // шанс гонки, чем полностью заблокированное открытие рюкзака.
+                $user['ryukzak_points'] = 0;
+            }
 
             if(!$this->ops->saveUser($user)){
                 error_log('[Ryukzak.open] saveUser() вернул false после начисления награды | uid=' . $uid . ' level=' . $level);
                 return $this->ops->fail(99);
             }
+            // $user['weapons'] уже выставлен ВЫШЕ (до saveUser()), если лок не удался — здесь
+            // присваиваем только в "залоченном" случае, когда запись уже ушла отдельным UPDATE.
+            if($wpLink) $user['weapons'] = $finalWeaponsJson;
+            $user['ryukzak_points'] = 0;
 
             $patch = $this->ops->patchCurrencies($user, [
                 'stew', 'stew_spent', 'cigarettes', 'coins', 'exp', 'bosses_data',

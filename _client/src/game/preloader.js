@@ -1,4 +1,4 @@
-import { shouldAskFriendsScope, markFriendsScopeAsked, markFriendsScopeGranted, hasFriendsScopeGrantedLocal } from '../modules/friends-scope-gate.js';
+import { shouldAskFriendsScopeAsync, markFriendsScopeAsked, markFriendsScopeGranted, hasFriendsScopeGrantedLocal } from '../modules/friends-scope-gate.js';
 import { applyPatch } from '../modules/patch.js';
 
 export default class Preloader{
@@ -285,7 +285,20 @@ export default class Preloader{
 			this._requestFriendsScope(() => {});
 			return;
 		}
-		if(document.getElementById('friends-scope-prompt') || (!options.force && !shouldAskFriendsScope())) return;
+		if(document.getElementById('friends-scope-prompt')) return;
+		// 04.10.2026 (модерация ОК, п.1): клик игрока (force:true — HUD-кнопка «Друзья»,
+		// вкладка «Друзья» в своде) показывает попап немедленно, без кулдауна — правило 2.6.3
+		// ограничивает только АВТОМАТИЧЕСКИЕ предложения. Для них — асинхронная проверка через
+		// VK Storage (см. friends-scope-gate.js), не localStorage напрямую.
+		if(options.force){ this._buildFriendsScopeModal(); return; }
+		shouldAskFriendsScopeAsync().then(should => {
+			if(!should) return;
+			if(document.getElementById('friends-scope-prompt')) return; // на случай гонки за время await
+			this._buildFriendsScopeModal();
+		});
+	}
+
+	_buildFriendsScopeModal(){
 		const modal = document.createElement('div');
 		modal.id = 'friends-scope-prompt';
 		modal.style.cssText = 'position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.7);font-family:Arial,sans-serif';

@@ -1,10 +1,10 @@
 [
-  {"votes": 3,   "energy": 50},
-  {"votes": 7,   "energy": 110},
-  {"votes": 10,  "energy": 180},
-  {"votes": 20,  "energy": 400},
-  {"votes": 40,  "energy": 850},
-  {"votes": 60,  "energy": 1300},
-  {"votes": 85,  "energy": 2000},
-  {"votes": 120, "energy": 3500}
+  {"votes": 3,   "price_ok": 20,  "energy": 50},
+  {"votes": 7,   "price_ok": 49,  "energy": 110},
+  {"votes": 10,  "price_ok": 70,  "energy": 180},
+  {"votes": 20,  "price_ok": 140, "energy": 400},
+  {"votes": 40,  "price_ok": 280, "energy": 850},
+  {"votes": 60,  "price_ok": 420, "energy": 1300},
+  {"votes": 85,  "price_ok": 595, "energy": 2000},
+  {"votes": 120, "price_ok": 840, "energy": 3500}
 ]

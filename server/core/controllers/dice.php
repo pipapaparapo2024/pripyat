@@ -51,6 +51,36 @@
             $this->permits = ['start', 'reroll', 'resolve', 'getSession', 'buyPoints'];
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
+        // 04.10.2026 (аудит гонок состояний): start()/reroll()/resolve() читают-мутируют-пишут
+        // dice_session обычным Gameops::loadUser()/saveUser() без лока — двойной клик/сетевой
+        // ретрай на reroll() мог прислать два параллельных запроса, оба прочитать одно и то же
+        // swapsUsed и оба независимо инкрементировать с одного и того же старого значения —
+        // лимит перебросов обходился бы фактически бесплатно. Тот же приём, что
+        // zone.php._withUserLock()/poker.php._withUserLock().
+        private function _withUserLock(callable $fn){
+            $link = $this->_rawLink();
+            if(!$link) return $fn();
+
+            $lockName = 'dice_user_' . intval($this->registry['uid']);
+            $escaped = $link->real_escape_string($lockName);
+            $link->query("SELECT GET_LOCK('{$escaped}', 5)");
+            try {
+                return $fn();
+            } finally {
+                $link->query("SELECT RELEASE_LOCK('{$escaped}')");
+                $link->close();
+            }
+        }
+
         // 25.09.2026 (по прямому указанию — "выбор сбрасывается при смене вкладки/перезагрузке,
         // игра уничтожается"): бросок уже писался в dice_session на сервере, но клиент никогда
         // не читал его обратно при повторном открытии экрана — только держал в JS-полях
@@ -222,6 +252,9 @@
         // писатель после переноса — раньше клиент сам ставил timestamp и мог просто обнулить его
         // консолью, получая бесплатные броски бесконечно).
         function start(){
+            // 04.10.2026: вся раздача (idempotency-проверка + списание + бросок + сохранение)
+            // под локом строки — см. _withUserLock() выше.
+            $this->_withUserLock(function(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -328,6 +361,7 @@
 
             $patch = $this->ops->patchCurrencies($user, ['dice_points', 'dice_free_ts']);
             $this->ops->ok(['patch' => $patch, 'rolls' => $rolls, 'swapsAllowed' => $swapsAllowed, 'swapsUsed' => 0, 'debug' => $debug]);
+            });
         }
 
         // Перебрасывает ОДНУ кость (idx 0-3). Докинуть джекпот 4×6 переброском МОЖНО — старый
@@ -339,6 +373,9 @@
             $idx = intval($this->registry['user_params']['idx'] ?? -1);
             if($idx < 0 || $idx > 3) return $this->ops->fail(54);
 
+            // 04.10.2026: вся замена (проверка лимита + переброс + сохранение) под локом
+            // строки — см. _withUserLock() выше (защита от двойного клика/сетевого ретрая).
+            $this->_withUserLock(function() use ($idx){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -380,6 +417,7 @@
                 . ($verify['mismatch'] ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
 
             $this->ops->ok(['value' => $v, 'swapsUsed' => $active['swapsUsed'], 'rolls' => $active['rolls'], 'debug' => $debug]);
+            });
         }
 
         // Итог партии: считает награду по итоговым костям (та же таблица и то же правило "за
@@ -387,6 +425,9 @@
         // 2 одновременных пары, см. dvor-dice-game.js._resolveDiceNewScreen), применяет валюту,
         // закрывает активную сессию.
         function resolve(){
+            // 04.10.2026: вся финализация (подсчёт награды + сохранение) под локом строки —
+            // см. _withUserLock() выше.
+            $this->_withUserLock(function(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -491,6 +532,7 @@
                 'shmotGranted' => $shmotGranted,
                 'debug' => $debug,
             ]);
+            });
         }
     }
 ?>

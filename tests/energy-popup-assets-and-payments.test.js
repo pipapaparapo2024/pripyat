@@ -17,7 +17,11 @@ expected.forEach(([file, x, y]) => {
   assert(new RegExp("\\{file:'" + escaped + "',\\s*x:" + x + ', y:' + y + "\\}").test(popup), file + ' имеет позицию ' + x + '×' + y);
   assert(fs.existsSync(path.join(root, '_client/development/images/layers/popups/Энергия', file)), file + ' скопирован в клиентские ассеты');
 });
-assert(popup.includes("item: 'item' + (100 + i)"), 'восемь карточек вызывают item100–item107');
+// 05.10.2026 (стале-пин, не регрессия — см. аудит модерации ОК, "платежи не работают"): клик
+// по карточке больше не зовёт bridge.send() напрямую — идёт через общий startPurchase()
+// (modules/iap.js), который для VK вызывает ТОТ ЖЕ bridge.send('VKWebAppShowOrderBox', {item})
+// внутри себя (без изменения поведения для VK-игроков). item100-107 по-прежнему адресуются.
+assert(popup.includes("startPurchase('item' + (100 + i)"), 'восемь карточек вызывают item100–item107 (через startPurchase())');
 assert(popup.includes('window._makeModalDimmer(null, 0.55)'), 'энергетический попап использует общий dimmer');
 const kit = read('_client/src/game/shell/ui_kit.js');
 assert(kit.includes('window._makeModalDimmer'), 'общий helper затемнения существует');

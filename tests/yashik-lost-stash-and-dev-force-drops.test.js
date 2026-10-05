@@ -108,7 +108,8 @@ console.log('\nTest 2: yashik.php.openBox() — Потерянный тайни�
     const body = yashikPhp.slice(start, end);
 
     assert(/\$sets = \$catalog\['lost_stash_sets'\] \?\? \[\];/.test(body), 'читает lost_stash_sets из каталога (не плоскую lost_stash_sequence)');
-    assert(/\$pity = \$this->ops->j\(\$user, 'lost_stash_pity', \[\]\);/.test(body), 'читает server-only поле lost_stash_pity');
+    // 05.10.2026 (стале-пин, не регрессия — yashik.php получил SELECT...FOR UPDATE, $lockedUser вместо $user).
+    assert(/\$pity = \$this->ops->j\(\$lockedUser, 'lost_stash_pity', \[\]\);/.test(body), 'читает server-only поле lost_stash_pity');
     assert(/\$idx = intval\(\$pity\['idx'\] \?\? 0\);/.test(body), 'idx — индекс ТЕКУЩЕГО СЕТА (не отдельного предмета)');
     assert(/if\(\$idx < count\(\$sets\)\)\{/.test(body), 'ничего не делает, если все 3 сета уже собраны (idx вышел за пределы sets)');
     assert(/if\(empty\(\$pity\['threshold'\]\)\)\{/.test(body), 'если для текущего сета порог ещё не рождён — рождает новый');
@@ -147,7 +148,9 @@ console.log('\nTest 4: yashik.php.collect() — исправлен баг: вл�
     const body  = yashikPhp.slice(start, end);
     assert(/if\(\$shmotGranted !== null\)\{/.test(body), 'проверяет наличие выпавшей вещи перед записью');
     assert(/\$shmotArr\[\$shmotGranted\]\['owned'\] = true;/.test(body), 'выставляет owned=true напрямую через Gameops::saveUser (в обход whitelist-guard, тот же паттерн, что bosses.php.claimKill())');
-    assert(/\$user\['shmot'\] = json_encode\(\$shmotArr\);/.test(body), 'обновлённый shmot сохраняется в $user перед saveUser()');
+    // 05.10.2026 (стале-пин, не регрессия — collect() получил SELECT...FOR UPDATE, пишет на
+    // залоченную копию $lockedUser; синхронизация в $user происходит ПОСЛЕ saveUser()).
+    assert(/\$lockedUser\['shmot'\] = json_encode\(\$shmotArr\);/.test(body), 'обновлённый shmot сохраняется в $lockedUser перед записью в БД под локом');
 
     const patchStart = body.indexOf('$patch = $this->ops->patchCurrencies($user, [');
     const patchEnd   = body.indexOf(']);', patchStart);

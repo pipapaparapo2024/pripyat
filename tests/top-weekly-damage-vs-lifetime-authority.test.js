@@ -52,8 +52,13 @@ console.log('\n3) Границы недели — понедельник 00:00 �
     const start = src.indexOf('private function _getWeeklyDamageTop(){');
     const end   = src.indexOf('\n    }', src.indexOf('$this->ops->ok([\'rows\'=>$out, \'my_value\'=>$my_value, \'my_place\'=>$my_place, \'cat\'=>0', start));
     const body = src.slice(start, end);
-    assert(/\$weekStartTs = strtotime\('monday this week 00:00:00'\);/.test(body),
-        'начало недели вычисляется через PHP strtotime — "monday this week" корректно не перескакивает на следующий понедельник, если сегодня и есть понедельник');
+    // 05.10.2026 (стале-пин, не регрессия — баг по репорту "топ не обновился на новой неделе"):
+    // сырой strtotime('monday this week...') вычислялся в де-факто UTC-контексте PHP-процесса,
+    // а не в МСК — каждый понедельник 00:00-02:59 МСК (ещё воскресенье по UTC-календарю) топ не
+    // разворачивался. Заменён на Gameops::mskWeekStartTs(), см.
+    // tests/gameops-msk-week-start-real-exec-05-10.test.js.
+    assert(/\$weekStartTs = \$this->ops->mskWeekStartTs\(\);/.test(body),
+        'начало недели вычисляется через Gameops::mskWeekStartTs() — корректно учитывает МСК, не сырое время сервера');
     const usages = (body.match(/\$weekStartTs/g) || []).length;
     assert(usages >= 4, '$weekStartTs используется во всех местах (объявление + 3 запроса) — нашлось упоминаний: ' + usages);
 }

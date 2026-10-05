@@ -97,14 +97,21 @@ console.log('\nTest 5: skills.js — _endSession() обнуляет прогре
 
 console.log('\nTest 6: bosses.php._finalizeSkillSession() — тот же безусловный сброс на сервере (источник правды)');
 {
-    const start = bossesPhp.indexOf('private function _finalizeSkillSession(&$user){');
-    const end   = bossesPhp.indexOf('\n        }', start);
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): сигнатура сменилась с
+    // "(&$user)" на "($user)" — функция больше не мутирует $user по ссылке, сама лочит строку
+    // и возвращает {json,locked} (см. tests/boss-finalize-skill-session-pass-by-reference-
+    // fix.test.js). Безусловный сброс (нет "sessionStart"/условной ветки) теперь встречается
+    // ДВАЖДЫ — в залоченной и в фолбэк-ветке — regex ниже должен совпасть хотя бы раз в каждой.
+    const start = bossesPhp.indexOf('private function _finalizeSkillSession($user){');
+    const end   = bossesPhp.indexOf('\n        }\n\n        // Фиксирует ИСТИННОЕ окончание боя', start);
     const body  = bossesPhp.slice(start, end);
     assert(!/sessionStart/.test(body), 'sessionStartPoints больше не читается и не сравнивается в этой функции');
     assert(!/if\(\$earned <= /.test(body), 'условная ветка убрана');
-    assert(/\$earned = \$this->_skillEarnedPoints\(\$sCatalog, intval\(\$state\['dmgSpent'\]\)\);/.test(body), 'earned по-прежнему считается по текущему dmgSpent');
-    assert(/\$state\['dmgSpent'\] = \$this->_skillTotalDmgForPoints\(\$sCatalog, \$earned\);/.test(body),
-        'dmgSpent безусловно откатывается до пола текущего уровня — эта строка больше не внутри if');
+    const earnedCount = (body.match(/\$earned = \$this->_skillEarnedPoints\(\$sCatalog, intval\(\$state\['dmgSpent'\]\)\);/g) || []).length;
+    assert(earnedCount === 2, `earned по-прежнему считается по текущему dmgSpent — в обеих ветках (лок/фолбэк), найдено ${earnedCount}`);
+    const rollbackCount = (body.match(/\$state\['dmgSpent'\] = \$this->_skillTotalDmgForPoints\(\$sCatalog, \$earned\);/g) || []).length;
+    assert(rollbackCount === 2,
+        `dmgSpent безусловно откатывается до пола текущего уровня — в обеих ветках, ни одна строка не внутри if, найдено ${rollbackCount}`);
 }
 
 console.log('\nTest 7: sanity — _finalizeSkillSession() по-прежнему вызывается из claimKill() (победа) и endFightSession() (таймаут/форфейт), sessionStartPoints в startFight() не тронут (формат данных не менялся)');

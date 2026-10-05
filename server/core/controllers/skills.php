@@ -43,6 +43,15 @@
             return $this->ops->catalog('skills_config');
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
         // Та же арифметическая прогрессия, что _pointCost/_totalDmgForPoints/_calcPoints в
         // skills.js — сверено построчно, при изменении формулы на клиенте обязательно менять
         // и здесь одновременно.
@@ -137,10 +146,31 @@
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
-            $state  = $this->_loadState($user);
+            // 04.10.2026 (аудит гонок состояний): bosses.php.attack()/claimKill()/
+            // endFightSession() мутируют ТО ЖЕ самое skills_levels (прогресс урона на
+            // следующее очко, финализация сессии) обычным loadUser()/saveUser() без лока — если
+            // игрок прокачивает навык параллельно с ударом по боссу, $user['skills_levels'],
+            // загруженный строкой выше, может устареть за время между ним и записью ниже.
+            // SELECT...FOR UPDATE на строке (тот же лок, что теперь в bosses.php — общая
+            // строка игрока) держит её до COMMIT, второй параллельный запрос реально ждёт и
+            // видит уже обновлённое значение вместо гонки lost update.
+            $link = $this->_rawLink();
+            if($link){
+                $link->begin_transaction();
+                $res = $link->query("SELECT `skills_levels` FROM `{$this->registry['utb']}` WHERE `id`=".intval($this->registry['uid'])." FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                $userForState = $row ? array_merge($user, ['skills_levels' => $row['skills_levels']]) : $user;
+            } else {
+                $userForState = $user; // фолбэк без лока — лучше редкий шанс гонки, чем полностью заблокированный апгрейд
+            }
+
+            $state  = $this->_loadState($userForState);
             $levels = $state['levels'];
 
-            if(intval($levels[$sid]) >= $maxLvl) return $this->ops->fail(77); // уже максимальный уровень скилла
+            if(intval($levels[$sid]) >= $maxLvl){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(77); // уже максимальный уровень скилла
+            }
 
             // 18.09.2026 (по прямому указанию): бесплатная прокачка первого уровня скилла 0
             // убрана целиком — теперь ЛЮБОЙ апгрейд, включая этот, требует доступное очко.
@@ -150,14 +180,31 @@
             // лету): _syncSkillPoints() подтягивает любые новые очки, пересёкшие порог со
             // времени последней синхронизации, затем тратим напрямую из $state['points'].
             $this->_syncSkillPoints($state, $catalog);
-            if(intval($state['points'] ?? 0) < 1) return $this->ops->fail(78); // недостаточно очков скиллов
+            if(intval($state['points'] ?? 0) < 1){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(78); // недостаточно очков скиллов
+            }
             $state['points'] = intval($state['points']) - 1;
             $levels[$sid] = intval($levels[$sid]) + 1;
 
             // Сохраняем levels В ТОМ ЖЕ объекте state — dmgSpent/sessionStartPoints остаются
             // как были, upgrade() их не трогает (иначе перезаписал бы прогресс урона нулём).
             $state['levels'] = $levels;
-            $user['skills_levels'] = json_encode($state);
+            $finalSkillsJson = json_encode($state);
+
+            if($link){
+                $link->query("UPDATE `{$this->registry['utb']}` SET `skills_levels`='".$link->real_escape_string($finalSkillsJson)."' WHERE `id`=".intval($this->registry['uid']));
+                $link->commit();
+                $link->close();
+            } else {
+                // 04.10.2026 (баг найден при написании теста на этот же фикс — "если
+                // _rawLink() не смог открыть соединение, прокачка считалась, но НИКОГДА не
+                // сохранялась": прямой UPDATE выше пропускался, а отложенное присвоение
+                // $user['skills_levels'] происходило бы уже ПОСЛЕ saveUser(), то есть
+                // слишком поздно для этого же запроса). Без лока — сохраняем как раньше, ДО
+                // saveUser().
+                $user['skills_levels'] = $finalSkillsJson;
+            }
 
             // 28.09.2026 (по прямому указанию — перенос источников max_energy на сервер):
             // "Адреналин" (id:9) — единственный скилл типа 'energy', +1 макс. энергии за
@@ -168,7 +215,12 @@
             // апгрейд" корректно применять аддитивно, без риска задвоения.
             if($sid === 9) $this->ops->add($user, 'max_energy', 1);
 
+            // skills_levels уже выставлен в $user ВЫШЕ, если лока не было (чтобы saveUser()
+            // ниже реально его сохранил) — если лок был, он уже записан отдельным UPDATE, и
+            // здесь безопасно переприсвоить то же значение (идемпотентно, saveUser() его либо
+            // пропустит как неизменившееся, либо перезапишет тем же самым).
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            $user['skills_levels'] = $finalSkillsJson;
 
             $patch = $this->ops->patchCurrencies($user, ['skills_levels', 'max_energy']);
             $this->ops->ok(['patch' => $patch, 'levels' => $levels, 'newLevel' => $levels[$sid]]);

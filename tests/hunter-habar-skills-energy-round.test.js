@@ -80,7 +80,11 @@ console.log('\nTest 2: скиллы — платные для ВСЕХ случ�
     assert(!/usedFreeFirstSkill/.test(skillsPhp), 'льгота на скилл 0 (usedFreeFirstSkill) удалена с сервера целиком');
     // 25.09.2026: доступные очки читаются из персистентного $state['points'], не пересчитываются
     // earned-spent на лету — см. tests/skills-server-authoritative.test.js Test 10.
-    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\) return \$this->ops->fail\(78\);/.test(skillsPhp), 'upgrade() требует очко безусловно, для любого skill_id (сервер)');
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): проверка стала
+    // многострочным блоком (добавлен rollback/close лока строки перед return), однострочный
+    // regex больше не матчится — сам инвариант (нужно >=1 очко, безусловно) не менялся.
+    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\)\{/.test(skillsPhp), 'upgrade() требует очко безусловно, для любого skill_id (сервер)');
+    assert(/return \$this->ops->fail\(78\); \/\/ недостаточно очков скиллов/.test(skillsPhp), 'отказ при нехватке очков возвращает код 78');
     assert(!/idx === 0 \|\| this\.availablePoints >= 1/.test(skills), 'автоапгрейд на клиенте не пропускает проверку очков для skill 0 локально');
     assert(!/si === 0 \? '0' : ''/.test(skills), 'costTxt не показывает "0" для skill 0');
 }

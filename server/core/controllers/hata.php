@@ -42,6 +42,15 @@
             return $this->ops->i($user, 'boss_kills_' . $bossReq, 0) > 0;
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
         function buy(){
             $locId = intval($this->registry['user_params']['loc_id'] ?? -1);
             $loc = $this->_findLoc($locId);
@@ -52,17 +61,55 @@
 
             if(!$this->_isUnlocked($user, $loc)) return $this->ops->fail(94); // нужный босс ещё не побеждён
 
-            $owned = $this->ops->j($user, 'base_bg_owned', [0]);
-            if(in_array($locId, $owned)) return $this->ops->fail(52); // уже куплено
+            $uid = intval($this->registry['uid']);
+            // 04.10.2026 (аудит гонок состояний): без лока два параллельных клика buy() могли
+            // оба прочитать base_bg_owned устаревшим (без только что купленной локации), оба
+            // пройти проверку "уже куплено" и оба списать сигареты со своего устаревшего
+            // баланса — лишнее списание теряется (lost update), игрок эффективно получает
+            // локацию за половину цены. Та же техника $lockedUser, что в habar.php.buy().
+            $lockCols = ['base_bg_owned', 'base_bg_active', 'cigarettes'];
+            $link = $this->_rawLink();
+            $lockedUser = $user;
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
+                $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+            }
+
+            $owned = $this->ops->j($lockedUser, 'base_bg_owned', [0]);
+            if(in_array($locId, $owned)){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(52); // уже куплено
+            }
 
             $cost = intval($loc['cost']);
-            if($cost > 0 && !$this->ops->deduct($user, 'cigarettes', $cost)) return $this->ops->fail(50); // не хватает сигарет
+            if($cost > 0 && !$this->ops->deduct($lockedUser, 'cigarettes', $cost)){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(50); // не хватает сигарет
+            }
 
             $owned[] = $locId;
-            $user['base_bg_owned']  = json_encode($owned);
-            $user['base_bg_active'] = strval($locId);
+            $lockedUser['base_bg_owned']  = json_encode($owned);
+            $lockedUser['base_bg_active'] = strval($locId);
+
+            if($link){
+                $sets = [];
+                foreach($lockCols as $c) $sets[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
+                $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid");
+                $link->commit();
+                $link->close();
+                // Залоченные поля уже записаны отдельным UPDATE под локом — присвоение в $user
+                // переносится ПОСЛЕ saveUser() (тот же принцип, что в weapons.php.buy()).
+            } else {
+                // Без лока — сохраняем как раньше, обычным $user ДО saveUser() (тот же баг-класс,
+                // что уже находили в bosses/weapons/ryukzak/habar).
+                foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+            }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
             $patch = $this->ops->patchCurrencies($user, ['cigarettes', 'base_bg_owned', 'base_bg_active']);
             $this->ops->ok(['patch' => $patch]);

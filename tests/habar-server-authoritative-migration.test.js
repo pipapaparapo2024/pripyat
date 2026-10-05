@@ -52,18 +52,28 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     assert(/function collectDay\(\)\{/.test(src), 'collectDay() определён');
     assert(/\$boughtIdx = \$this->ops->i\(\$user, 'habar_bought'\) - 1;/.test(src), 'читает habar_bought из ПОЛНОЙ строки (loadUser), не из client-writable whitelist');
     assert(/if\(\$boughtIdx < 0\) return \$this->ops->fail\(57\);/.test(src), 'отклоняет сбор, если хабар не куплен');
-    assert(/if\(\$collected >= \$totalDays\) return \$this->ops->fail\(58\);/.test(src), 'отклоняет сбор сверх лимита дней (сервер считает сам, не доверяя клиенту)');
-    assert(/if\(\$lastTs > 0 && \(\$now - \$lastTs\) < \$cooldownMs\) return \$this->ops->fail\(59\);/.test(src), 'отклоняет сбор до истечения кулдауна — СЕРВЕРНЫМ временем (microtime), не клиентским Date.now()');
-    assert(/\$user\['habar_days_collected'\]  = \$collected \+ 1;/.test(src), 'инкремент дней пишется на сервере');
-    assert(/\$user\['habar_last_collect_ts'\] = \$now;/.test(src), 'таймер кулдауна пишется на сервере, серверным временем');
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026, параллельная
+    // сессия добавила SELECT...FOR UPDATE в collectDay(): проверки/инкременты теперь идут на
+    // залоченной копии $lockedUser, фейл-ветки обёрнуты в rollback/close перед return).
+    assert(/if\(\$collected >= \$totalDays\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(src), 'отклоняет сбор сверх лимита дней (сервер считает сам, не доверяя клиенту)');
+    assert(/if\(\$lastTs > 0 && \(\$now - \$lastTs\) < \$cooldownMs\)\{[\s\S]{0,120}?return \$this->ops->fail\(59\);/.test(src), 'отклоняет сбор до истечения кулдауна — СЕРВЕРНЫМ временем (microtime), не клиентским Date.now()');
+    assert(/\$lockedUser\['habar_days_collected'\]  = \$collected \+ 1;/.test(src), 'инкремент дней пишется на сервере');
+    assert(/\$lockedUser\['habar_last_collect_ts'\] = \$now;/.test(src), 'таймер кулдауна пишется на сервере, серверным временем');
     assert(/if\(!\$this->ops->saveUser\(\$user\)\) return \$this->ops->fail\(99\);/.test(src), 'реально сохраняет через Gameops::saveUser (полная строка, не whitelist)');
 
     console.log('\nhabar.php — buy() тоже считает stew_spent на сервере (раньше это делал клиент)');
-    assert(/if\(\$cur === 'stew'\) \$user\['stew_spent'\] = \$this->ops->i\(\$user, 'stew_spent'\) \+ \$price;/.test(src),
-        'stew_spent инкрементируется на сервере при покупке (нужно для достижения spend_stew)');
+    // 05.10.2026 (стале-пин, не регрессия — раньше buy() инкрементировал stew_spent отдельной
+    // явной строкой; теперь достаточно Gameops::deduct(), которая сама инкрементит stew_spent
+    // для currency==='stew' (см. gameops.php:80-82) — отдельная строка здесь задвоила бы счёт.
+    // Проверяем, что явного дублирующего инкремента НЕТ и что deduct() реально вызывается на
+    // валюте 'stew' внутри buy() (единственный путь, которым stew_spent теперь растёт здесь).
+    assert(!/\$lockedUser\['stew_spent'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'stew_spent'\)\s*\+/.test(src.slice(src.indexOf('function buy()'), src.indexOf('function collectDay()'))),
+        'buy() не дублирует инкремент stew_spent отдельной строкой — доверяет Gameops::deduct()');
+    assert(/if\(!\$this->ops->deduct\(\$lockedUser, \$cur, \$price\)\)/.test(src),
+        'stew_spent инкрементируется на сервере при покупке через deduct(..., $cur, ...) (нужно для достижения spend_stew)');
 
     console.log('\nhabar.php — перенос награды урона Седого и оружия (та же семантика, что была в клиенте)');
-    assert(/\$sedoyMax = max\(\$this->ops->i\(\$user, 'sedoy_dmg_total'\), \$amount\);/.test(src),
+    assert(/\$sedoyMax = max\(\$this->ops->i\(\$lockedUser, 'sedoy_dmg_total'\), \$amount\);/.test(src),
         'пул урона Седого перезаполняется до максимума (не накапливается бесконечно) — та же формула, что была в клиенте');
     assert(/private function _grantWeaponReward\(&\$user, \$type, \$amount\)\{/.test(src),
         '_grantWeaponReward портирован (тот же приём, что в poker.php) — начисляет и qty в weapons-блобе, и ammo_* поле');

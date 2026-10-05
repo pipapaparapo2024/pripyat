@@ -56,8 +56,11 @@ console.log('\nTest 2: skills.php.upgrade() — льготы для скилла
         assert(!/\$sid === 0 && intval\(\$levels\[0\]\)/.test(body), 'спец-случай "sid===0 && levels[0]===0" удалён — скилл 0 не выделен из общей логики');
         // 25.09.2026: доступные очки читаются из персистентного $state['points'], не earned-spent
         // на лету — см. tests/skills-server-authoritative.test.js Test 10.
-        assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\) return \$this->ops->fail\(78\);/.test(body),
+        // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): проверка стала
+        // многострочным блоком (rollback/close лока строки перед return), сам инвариант не менялся.
+        assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\)\{/.test(body),
             'проверка доступных очков применяется безусловно — для ЛЮБОГО skill_id, включая 0');
+        assert(/return \$this->ops->fail\(78\); \/\/ недостаточно очков скиллов/.test(body), 'отказ при нехватке очков возвращает код 78');
         assert(/\$levels\[\$sid\] = intval\(\$levels\[\$sid\]\) \+ 1;/.test(body),
             'оплаченная прокачка увеличивает уровень ровно на 1 — единственный путь в функции теперь');
     }

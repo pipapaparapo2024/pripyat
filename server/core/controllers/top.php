@@ -118,15 +118,22 @@ Class Top {
         $this->ops->ok(['rows'=>$out, 'my_value'=>$my_value, 'my_place'=>$my_place, 'cat'=>$cat, 'scope'=>$scope, 'limit'=>$limit]);
     }
 
-    // 25.09.2026: топ урона за ТЕКУЩУЮ календарную неделю (понедельник 00:00 серверных часов —
-    // 'monday this week' в PHP корректно возвращает СЕГОДНЯ, если сегодня и есть понедельник,
-    // а не перескакивает на следующий). Считает СУММУ реального урона по логу ударов, не
-    // lifetime-поле total_damage.
+    // 25.09.2026: топ урона за ТЕКУЩУЮ календарную неделю (понедельник 00:00 МСК). Считает
+    // СУММУ реального урона по логу ударов, не lifetime-поле total_damage.
+    //
+    // 05.10.2026 (баг по репорту — "топ не обновился на новой неделе, хотя должен был"):
+    // раньше здесь был сырой strtotime('monday this week 00:00:00') — вычислялся в де-факто
+    // UTC-контексте PHP-процесса (нигде не стоит date_default_timezone_set()), а не в МСК.
+    // Понедельник 00:00-02:59 МСК — это ещё ВОСКРЕСЕНЬЕ по UTC-календарю, так что strtotime()
+    // в эти три часа каждую неделю интерпретировал "эту неделю" как прошлую — топ не разворачивался
+    // ровно тогда, когда игрок ждал сброса по московской полуночи. Заменено на
+    // Gameops::mskWeekStartTs() — тот же +3ч-трюк, что уже применён к дневным лимитам
+    // (mskDailyDate()/mskNextResetMs()).
     private function _getWeeklyDamageTop(){
         $link = $this->_rawLink();
         if(!$link) return $this->ops->fail(99);
 
-        $weekStartTs = strtotime('monday this week 00:00:00');
+        $weekStartTs = $this->ops->mskWeekStartTs();
         $uid = abs(intval($this->registry['uid']));
         $utb = $this->registry['utb'];
 

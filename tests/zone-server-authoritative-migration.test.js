@@ -168,11 +168,19 @@ console.log('\nTest 9: zone.php — collectIncome проверяет 8-часо�
     assert(/if\(\$cooldownLeft > 0\) return \$this->ops->fail\(59\);/.test(body), 'кулдаун проверяется до начисления дохода');
 }
 
-console.log('\nTest 10: users.php — zone_collect_0..4 добавлены в whitelist (были потеряны полностью)');
+// 04.10.2026 (аудит по прямому указанию — "найди дыры"): РЕВЕРС Test 10 — zone_collect_0..4
+// снова убраны из whitelist, на этот раз НАВСЕГДА. 17.09.2026 их добавили сюда, чтобы кулдаун
+// переживал перезагрузку страницы — но без guard'а это само стало дырой (users.save с
+// zone_collect_N:'0' сбрасывал 8ч-кулдаун сбора дохода бизнеса на ноль). Персистентность
+// кулдауна не ломается: zone.php.collectIncome()/collectAllIncome() сами пишут эти поля через
+// Gameops::saveUser(), полностью в обход этого whitelist (см. users-php-real-exec-save-
+// whitelist-holes-closed.test.js — прямое исполнение подтверждает, что эксплойт-значение не
+// проходит, а легитимные поля всё ещё сохраняются).
+console.log('\nTest 10: users.php — zone_collect_0..4 УБРАНЫ из whitelist (сами стали дырой без guard, см. 04.10.2026)');
 {
     const allowedBlock = usersPhp.match(/\$allowed = \[[\s\S]*?\];/)[0];
     ['zone_collect_0','zone_collect_1','zone_collect_2','zone_collect_3','zone_collect_4'].forEach(f => {
-        assert(new RegExp("'" + f + "'").test(allowedBlock), `'${f}' в whitelist`);
+        assert(!new RegExp("'" + f + "'").test(allowedBlock), `'${f}' отсутствует в whitelist (не client-writable)`);
     });
 }
 

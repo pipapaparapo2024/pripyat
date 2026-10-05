@@ -1,0 +1,120 @@
+/**
+ * Test: 05.10.2026, модерация ОК п.4 ("цена не в валюте площадки"). donuts.json/
+ * energy_packs.json теперь содержат price_ok рядом с VK-ценой (price/votes) — bank.js и
+ * energy_buy.js должны реально использовать его на площадке ОК, а не только название валюты
+ * ("ОК"/"ОКа"/"ОКов", которое уже было подключено раньше через currencyNames()).
+ *
+ * Run: node tests/ok-price-display-wired-05-10.test.js
+ */
+const fs = require('fs');
+const path = require('path');
+
+let passed = 0, failed = 0;
+function assert(cond, msg) {
+    if (cond) { console.log('  ✅', msg); passed++; }
+    else       { console.error('  ❌ FAIL:', msg); failed++; }
+}
+
+const root = path.join(__dirname, '..');
+const read = p => fs.readFileSync(path.join(root, p), 'utf-8');
+
+console.log('\nTest 1: donuts.json содержит price_ok для всех трёх категорий, суммы совпадают с тем, что продиктовал пользователь');
+{
+    const donuts = JSON.parse(read('server/json/donuts.json'));
+    const expected = {
+        stew:       [7, 20, 42, 140, 350, 700, 3500, 7000],
+        coins:      [7, 14, 20, 35, 210, 700, 3500, 7000],
+        cigarettes: [7, 14, 20, 28, 35, 70, 350, 700],
+    };
+    for (const key of Object.keys(expected)) {
+        assert(Array.isArray(donuts[key].price_ok), `${key}.price_ok — массив`);
+        assert(JSON.stringify(donuts[key].price_ok) === JSON.stringify(expected[key]), `${key}.price_ok совпадает с продиктованным прайсом`);
+        assert(donuts[key].price_ok.length === donuts[key].price.length, `${key}: price_ok и price (VK) — одинаковая длина (те же 8 пакетов)`);
+        assert(donuts[key].price_ok.length === donuts[key].default.length, `${key}: price_ok и default (количество товара) — одинаковая длина`);
+    }
+}
+
+console.log('\nTest 2: energy_packs.json содержит price_ok для всех 8 пакетов, суммы совпадают с продиктованными');
+{
+    const packs = JSON.parse(read('_client/src/data/energy_packs.json'));
+    const expected = [20, 49, 70, 140, 280, 420, 595, 840];
+    assert(packs.length === 8, 'ровно 8 пакетов энергии');
+    packs.forEach((p, i) => {
+        assert(p.price_ok === expected[i], `пакет ${i} (${p.energy} энергии): price_ok=${expected[i]}, получено ${p.price_ok}`);
+    });
+}
+
+console.log('\nTest 3: bank.js._displayPrice() реально ветвится по платформе (ОК — price_ok напрямую, VK — price/7 как раньше)');
+{
+    const bankSrc = read('_client/src/game/bank.js');
+    assert(/import \{ isOk \} from '\.\.\/modules\/platform\.js';/.test(bankSrc), 'bank.js импортирует isOk()');
+    assert(/_displayPrice\(name, i\)\{/.test(bankSrc), '_displayPrice() определён');
+    const start = bankSrc.indexOf('_displayPrice(name, i){');
+    const end = bankSrc.indexOf('\n\t}', start);
+    const body = bankSrc.slice(start, end);
+    assert(/isOk\(\) \? donuts_info\[name\]\['price_ok'\]\[i\] : donuts_info\[name\]\['price'\]\[i\] \/ 7/.test(body),
+        '_displayPrice() возвращает price_ok напрямую для ОК, price/7 для VK (без изменений в формуле VK)');
+}
+
+console.log('\nTest 4: bank.js.genSlots() реально использует _displayPrice() для текста цены (не захардкоженную VK-формулу напрямую)');
+{
+    const bankSrc = read('_client/src/game/bank.js');
+    const start = bankSrc.indexOf('genSlots(name){');
+    const end = bankSrc.indexOf('\n\t}', start);
+    const body = bankSrc.slice(start, end);
+    assert(/const price = this\._displayPrice\(name, i\);/.test(body), 'price_txt строится через _displayPrice()');
+    assert(/price_txt\.text = price \+ ' ' \+ helper\.numberEnd\(price, 'votes'\);/.test(body), 'текст цены использует вычисленный price (платформо-зависимый), не price/7 напрямую');
+}
+
+console.log('\nTest 5: bank.js.genSlots() запускает покупку через общий startPurchase() (modules/iap.js), не напрямую bridge.send');
+{
+    const bankSrc = read('_client/src/game/bank.js');
+    assert(/import \{ startPurchase \} from '\.\.\/modules\/iap\.js';/.test(bankSrc), 'bank.js импортирует startPurchase()');
+    const start = bankSrc.indexOf('genSlots(name){');
+    const end = bankSrc.indexOf('\n\t}', start);
+    const body = bankSrc.slice(start, end);
+    // 05.10.2026 (стале-пин, не регрессия — "давай сделаем через FAPI UI Show Payment": startPurchase()
+    // получил 3-й опциональный аргумент label, нужный ОК-ветке для окна FAPI.UI.showPayment).
+    assert(/startPurchase\('item' \+ this\.set_donut\.toString\(\), price, count \+ ' ' \+ helper\.numberEnd\(count, name\)\);/.test(body), 'клик по слоту вызывает startPurchase(), не bridge.send(VKWebAppShowOrderBox) напрямую');
+    assert(!/bridge\.send\("VKWebAppShowOrderBox"/.test(body), 'прямой вызов VKWebAppShowOrderBox убран из genSlots() (теперь внутри iap.js, только для VK-ветки)');
+}
+
+console.log('\nTest 6: energy_buy.js — покупка энергии и на VK, и на ОК идёт через startPurchase() с price_ok, карточки видны на обеих платформах');
+{
+    const src = read('_client/src/game/shell/popups/energy_buy.js');
+    assert(/import \{ isOk \} from '\.\.\/\.\.\/\.\.\/modules\/platform\.js';/.test(src), 'energy_buy.js импортирует isOk()');
+    assert(/import \{ startPurchase \} from '\.\.\/\.\.\/\.\.\/modules\/iap\.js';/.test(src), 'energy_buy.js импортирует startPurchase()');
+    // 05.10.2026 (стале-пин, не регрессия — "давай сделаем через FAPI UI Show Payment"):
+    // 3-й аргумент label добавлен для окна FAPI.UI.showPayment на ОК; "Вариант А" (полное
+    // скрытие карточек на ОК, тестировавшееся отдельным файлом ok-hide-purchases-scenario-a-
+    // 05-10.test.js тем же днём) отменён в пользу реальной попытки оплаты — карточки снова
+    // строятся на обеих платформах, плашка цены в ОКах на ОК вернулась.
+    assert(/startPurchase\('item' \+ \(100 \+ i\), opt\.price_ok, opt\.energy \+ ' энергии'\);/.test(src), 'клик по карточке энергии вызывает startPurchase() с itemId/price_ok/label');
+    const handlerStart = src.indexOf("slot.on('pointerdown'");
+    const handlerEnd = src.indexOf('});', handlerStart);
+    const handlerBody = src.slice(handlerStart, handlerEnd);
+    assert(!/bridge\.send\('VKWebAppShowOrderBox'/.test(handlerBody), 'прямой вызов VKWebAppShowOrderBox убран из самого обработчика клика (комментарий выше его не считает)');
+    assert(/if\(isOk\(\)\)\{/.test(src), 'плашка цены в ОКах рисуется только на площадке ОК (у VK — родная картинка с ценой)');
+    assert(/opt\.price_ok \+ ' ' \+ helper\.numberEnd\(opt\.price_ok, 'votes'\)/.test(src),
+        'плашка показывает именно price_ok, не votes (VK-поле) — снова нарисована, см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js');
+}
+
+console.log('\nTest 7: modules/iap.js — реальная попытка оплаты на ОК через FAPI (см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js), VK-ветка не регрессировала');
+{
+    const src = read('_client/src/modules/iap.js');
+    assert(/function _startVkPurchase\(itemId\)\{/.test(src), '_startVkPurchase() определён');
+    assert(/bridge\.send\('VKWebAppShowOrderBox', \{ type: 'item', item: itemId \}\);/.test(src), 'VK-ветка — тот же вызов, что был в bank.js раньше (1-в-1, без изменения поведения)');
+    // 05.10.2026 (стале-пин, не регрессия — переход от честной заглушки к реальному FAPI.UI.
+    // showPayment() добавил 3-й параметр label и опрос баланса, сигнатура расширилась).
+    assert(/function _startOkPurchase\(itemId, priceOk, label\)\{/.test(src), '_startOkPurchase() определён, теперь с label');
+    assert(/export function startPurchase\(itemId, priceOk, label\)\{/.test(src), 'startPurchase() — единая точка входа, с label');
+    const dispatchStart = src.indexOf('export function startPurchase(itemId, priceOk, label){');
+    const dispatchEnd = src.indexOf('\n}', dispatchStart);
+    const dispatchBody = src.slice(dispatchStart, dispatchEnd);
+    assert(/if\(isOk\(\)\) return _startOkPurchase\(itemId, priceOk, label\);/.test(dispatchBody), 'ОК-ветка проверяется первой');
+    assert(/return _startVkPurchase\(itemId\);/.test(dispatchBody), 'иначе — VK-ветка (безопасный дефолт)');
+}
+
+console.log(`\n${'─'.repeat(50)}`);
+if (failed === 0) console.log(`✅ All ${passed} tests passed`);
+else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

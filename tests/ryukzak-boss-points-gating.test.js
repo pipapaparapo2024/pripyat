@@ -32,8 +32,13 @@ console.log('\nTest 1: очки рюкзака начисляются на се�
         'таблица очков по индексу босса (0=Охотник..7=Жгут) заведена ровно как прислал пользователь — теперь в bosses_config.json');
     assert(/\$ryukzakPts = intval\(\$catalog\['ryukzak_pts'\]\[\$bossId\] \?\? 0\);/.test(bossesPhp),
         'claimKill() читает очки по индексу убитого босса из каталога');
-    assert(/\$user\['ryukzak_points'\] = \$this->ops->i\(\$user, 'ryukzak_points'\) \+ \$ryukzakPts;/.test(bossesPhp),
-        'claimKill() реально прибавляет очки к ryukzak_points');
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): начисление теперь
+    // идёт под SELECT...FOR UPDATE (защита от гонки с ryukzak.php.open(), который обнуляет
+    // это же поле) — прямое присвоение $user['ryukzak_points'] заменено на фолбэк-ветку
+    // (без лока) + отдельный UPDATE (с локом). Сам факт начисления ($ryukzakPts) не менялся,
+    // см. tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js.
+    assert(/\$freshRyukzakPts = \(\$rpRow !== null \? intval\(\$rpRow\['ryukzak_points'\]\) : \$this->ops->i\(\$user, 'ryukzak_points'\)\) \+ \$ryukzakPts;/.test(bossesPhp),
+        'claimKill() реально прибавляет очки к ryukzak_points (под локом строки)');
     assert(!/RYUKZAK_PTS/.test(combatSrc),
         'клиент (_onDefeat) больше не хранит собственную копию таблицы очков — единственный источник теперь сервер');
 }

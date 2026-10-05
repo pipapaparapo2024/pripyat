@@ -93,15 +93,18 @@ console.log('\nTest 3: остальные 6 прямых мест выдачи �
     assert(/\$shmotState\[\$itemId\]\['owned'\] = true;\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$itemId\);/.test(rewardlinksPhp),
         'rewardlinks.php: applyShmotOwnBonus($user, $itemId) сразу после owned=true');
 
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026: yashik.php/
+    // shmot.php получили SELECT...FOR UPDATE, вся бизнес-логика (включая owned=true/applyShmot-
+    // OwnBonus) теперь идёт на залоченной копии $lockedUser, не на $user напрямую).
     // yashik.php — 2 места (lost_stash, обычный ящик)
-    assert(/\$shmotArr\[\$lostStashItemId\]\['owned'\] = true;\s*\n\s*\$user\['shmot'\] = json_encode\(\$shmotArr\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$lostStashItemId\);/.test(yashikPhp),
-        'yashik.php: lost_stash — applyShmotOwnBonus($user, $lostStashItemId)');
-    assert(/\$shmotArr\[\$shmotGranted\]\['owned'\] = true;\s*\n\s*\$user\['shmot'\] = json_encode\(\$shmotArr\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$shmotGranted\);/.test(yashikPhp),
-        'yashik.php: обычный ящик — applyShmotOwnBonus($user, $shmotGranted)');
+    assert(/\$shmotArr\[\$lostStashItemId\]\['owned'\] = true;\s*\n\s*\$lockedUser\['shmot'\] = json_encode\(\$shmotArr\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$lockedUser, \$lostStashItemId\);/.test(yashikPhp),
+        'yashik.php: lost_stash — applyShmotOwnBonus($lockedUser, $lostStashItemId)');
+    assert(/\$shmotArr\[\$shmotGranted\]\['owned'\] = true;\s*\n\s*\$lockedUser\['shmot'\] = json_encode\(\$shmotArr\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$lockedUser, \$shmotGranted\);/.test(yashikPhp),
+        'yashik.php: обычный ящик — applyShmotOwnBonus($lockedUser, $shmotGranted)');
 
     // shmot.php — прямая покупка в магазине
-    assert(/\$shmot\[\$item_id\]\['owned'\] = true;\s*\n\s*\$user\['shmot'\] = json_encode\(\$shmot\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$item_id\);/.test(shmotPhp),
-        'shmot.php: покупка — applyShmotOwnBonus($user, $item_id)');
+    assert(/\$shmot\[\$item_id\]\['owned'\] = true;\s*\n\s*\$lockedUser\['shmot'\] = json_encode\(\$shmot\);\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$lockedUser, \$item_id\);/.test(shmotPhp),
+        'shmot.php: покупка — applyShmotOwnBonus($lockedUser, $item_id)');
 }
 
 console.log('\nTest 4: max_energy убрано из client-writable списков в users.php (та же дыра — client-writable + перезапись стирала серверные начисления)');

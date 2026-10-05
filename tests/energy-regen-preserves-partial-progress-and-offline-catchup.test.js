@@ -131,7 +131,10 @@ console.log('\nTest 5: zone.php.fillCheckpoint() — спенд через Gameo
 
 console.log('\nTest 6: base.php.train() — тратит энергию с учётом уже накопленной регенерации, не сырого значения из БД');
 {
-    assert(/if\(!\$this->ops->spendEnergy\(\$user, \$energyCost\)\) return \$this->ops->fail\(50\);/.test(baseSrc),
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в base.php.train(), см.
+    // tests/base-server-authoritative-upgrade-and-train.test.js): spendEnergy() теперь зовётся
+    // на залоченной копии $lockedUser.
+    assert(/if\(!\$this->ops->spendEnergy\(\$lockedUser, \$energyCost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(baseSrc),
         'train() использует Gameops::spendEnergy() вместо обычного deduct() — учитывает регенерацию с последнего сохранения');
     assert(!/\$this->ops->deduct\(\$user, 'energy', \$energyCost\)/.test(baseSrc),
         'старый deduct(\'energy\') (сырое значение, без регенерации) убран из train()');

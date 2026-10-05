@@ -206,8 +206,14 @@ test('Размашистый: льготы больше нет — первый 
 test('Размашистый: каждый уровень (включая первый скилла 0) расходует одно очко (skills.php)', () => {
     // 25.09.2026: доступные очки читаются из персистентного $state['points'] (см.
     // tests/skills-server-authoritative.test.js Test 10), не пересчитываются earned-spent на лету.
-    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\) return \$this->ops->fail\(78\);/.test(skillsPhp),
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): проверка стала
+    // многострочным блоком (добавлен rollback/close лока строки перед return при нехватке
+    // очков, см. tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js), поэтому
+    // старый однострочный regex больше не матчится — сам инвариант (нужно >=1 очко) не менялся.
+    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\)\{/.test(skillsPhp),
         'проверка доступных очков не найдена в skills.php.upgrade()');
+    assert(/return \$this->ops->fail\(78\); \/\/ недостаточно очков скиллов/.test(skillsPhp),
+        'отказ при нехватке очков возвращает код 78');
     assert(/\$levels\[\$sid\] = intval\(\$levels\[\$sid\]\) \+ 1;/.test(skillsPhp),
         'оплаченная прокачка должна увеличивать уровень ровно на 1');
 });

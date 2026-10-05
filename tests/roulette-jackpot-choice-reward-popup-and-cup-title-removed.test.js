@@ -41,8 +41,14 @@ console.log('\nTest 2: кнопка ЗАБРАТЬ (гарантированны
 
     assert(/TS\.php\('roulette\.claimPrize'/.test(takeBtnBody), 'по-прежнему честно запрашивает приз у сервера');
     assert(/applyPatch\(res\.patch\)/.test(takeBtnBody), 'применяет патч сервера');
-    assert(/if\(window\.iface\) iface\._showRewardPopup\(\[\{type:'coins', amount: jackpotAmount\}\]\);/.test(takeBtnBody),
-        'показывает стандартный попап награды (iface._showRewardPopup) с типом coins и суммой jackpotAmount');
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит проекта, "хардкод jackpotAmount мимо
+    // ответа сервера"): попап награды теперь показывает amount, вычисленный из res.amount
+    // (с фолбэком на jackpotAmount, если поле вдруг отсутствует), а не саму константу
+    // напрямую — см. tests/buy-points-dedup-and-roulette-jackpot-amount-04-10.test.js.
+    assert(/const amount = \(res && typeof res\.amount !== 'undefined'\) \? res\.amount : jackpotAmount;/.test(takeBtnBody),
+        'сумма вычисляется из res.amount с фолбэком на jackpotAmount');
+    assert(/if\(window\.iface\) iface\._showRewardPopup\(\[\{type:'coins', amount\}\]\);/.test(takeBtnBody),
+        'показывает стандартный попап награды (iface._showRewardPopup) с типом coins и вычисленным amount');
     assert(/else if\(this\._roulResultTxt\)/.test(takeBtnBody),
         'старое обновление this._roulResultTxt оставлено как фолбэк, если iface недоступен, не как основной путь');
 }

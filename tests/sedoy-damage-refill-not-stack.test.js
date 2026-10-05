@@ -40,10 +40,11 @@ console.log('\nTest 1: сбор хабара с наградой type=\'damage\'
     if (m) {
         const body = m[1];
         assert(!/sedoy_dmg_total'\]\s*\+=/.test(body), 'старая аддитивная формула (total += amount) отсутствует');
-        assert(/\$sedoyMax = max\(\$this->ops->i\(\$user, 'sedoy_dmg_total'\), \$amount\);/.test(body),
+        // 05.10.2026 (стале-пин, не регрессия — блокировка строки в collectDay(), $lockedUser вместо $user).
+        assert(/\$sedoyMax = max\(\$this->ops->i\(\$lockedUser, 'sedoy_dmg_total'\), \$amount\);/.test(body),
             'новый максимум = max(текущий total, новая награда)');
-        assert(/\$user\['sedoy_dmg_total'\] = \$sedoyMax;/.test(body), 'total устанавливается в sedoyMax (не складывается)');
-        assert(/\$user\['sedoy_dmg_left'\]\s*= \$sedoyMax;/.test(body),
+        assert(/\$lockedUser\['sedoy_dmg_total'\] = \$sedoyMax;/.test(body), 'total устанавливается в sedoyMax (не складывается)');
+        assert(/\$lockedUser\['sedoy_dmg_left'\]\s*= \$sedoyMax;/.test(body),
             'left тоже полностью рефиллится до sedoyMax (использованное ранее сгорает — полный рефилл)');
     }
 }

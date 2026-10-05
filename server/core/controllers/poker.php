@@ -32,6 +32,37 @@
             $this->permits = ['deal', 'swap', 'resolve', 'openBag', 'getSession'];
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
+        // 04.10.2026 (аудит гонок состояний): deal()/swap()/resolve() читают-мутируют-пишут
+        // poker_session обычным Gameops::loadUser()/saveUser() без лока — двойной клик/сетевой
+        // ретрай на swap() мог прислать два параллельных запроса, оба прочитать одно и то же
+        // swapsUsed, оба пройти проверку "<swapsAllowed" и оба независимо инкрементировать с
+        // одного и того же старого значения — лимит смен карт обходился бы фактически бесплатно.
+        // Тот же приём, что zone.php._withUserLock() — GET_LOCK на ОТДЕЛЬНОМ соединении
+        // сериализует все мутации poker_session ОДНОГО игрока.
+        private function _withUserLock(callable $fn){
+            $link = $this->_rawLink();
+            if(!$link) return $fn();
+
+            $lockName = 'poker_user_' . intval($this->registry['uid']);
+            $escaped = $link->real_escape_string($lockName);
+            $link->query("SELECT GET_LOCK('{$escaped}', 5)");
+            try {
+                return $fn();
+            } finally {
+                $link->query("SELECT RELEASE_LOCK('{$escaped}')");
+                $link->close();
+            }
+        }
+
         // 25.09.2026 (по прямому указанию — "если во время выбора свернуть вкладку/
         // перезагрузить страницу, раздача пропадает, деньги потрачены впустую"): раздача уже
         // писалась в poker_session на сервере, но клиент никогда не читал её обратно при
@@ -301,6 +332,9 @@
         function deal(){
             $useChip = !empty($this->registry['user_params']['use_chip']);
 
+            // 04.10.2026: вся раздача (idempotency-проверка активной сессии + списание +
+            // генерация + сохранение) теперь под локом строки — см. _withUserLock() выше.
+            $this->_withUserLock(function() use ($useChip){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -412,6 +446,7 @@
 
             $patch = $this->ops->patchCurrencies($user, ['poker_chips', 'stew', 'stew_spent', $dailyKey]);
             $this->ops->ok(['patch' => $patch, 'hand' => $hand, 'swapsAllowed' => $swapsAllowed, 'swapsUsed' => 0, 'debug' => $debug]);
+            });
         }
 
         // Честная замена одной карты — тот же принцип, что dvor-poker-game.js._togglePokerSwap():
@@ -420,6 +455,9 @@
             $idx = intval($this->registry['user_params']['idx'] ?? -1);
             if($idx < 0 || $idx > 4) return $this->ops->fail(54);
 
+            // 04.10.2026: вся замена (проверка лимита + инкремент + сохранение) под локом
+            // строки — см. _withUserLock() выше (защита от двойного клика/сетевого ретрая).
+            $this->_withUserLock(function() use ($idx){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -477,6 +515,7 @@
                 . ($verify['mismatch'] ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
 
             $this->ops->ok(['card' => $replacement, 'swapsLeft' => intval($session['swapsAllowed']) - intval($session['swapsUsed']), 'debug' => $debug]);
+            });
         }
 
         // Награда записывается вместе с завершением партии. users.save запрещает
@@ -504,6 +543,9 @@
         // Итог — честно оценивает РЕАЛЬНУЮ руку на столе (замены могли увести итог от
         // изначально задуманной комбинации, как и на клиенте) и начисляет награду.
         function resolve(){
+            // 04.10.2026: вся финализация (оценка руки + выплата + сохранение) под локом
+            // строки — см. _withUserLock() выше.
+            $this->_withUserLock(function(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -568,6 +610,7 @@
                 'hand' => $session['hand'],
                 'debug' => $debug,
             ]);
+            });
         }
     }
 ?>

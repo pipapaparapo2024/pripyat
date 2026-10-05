@@ -45,7 +45,9 @@ console.log('\nTest 1: bosses.php — permits содержит endFightSession, 
 {
     assert(/\$this->permits = \[.*'endFightSession'.*\];/.test(bossesPhp), "'endFightSession' добавлен в permits");
     assert(bossesPhp.indexOf('private function _loadSkillsState($user){') !== -1, '_loadSkillsState() определена');
-    assert(bossesPhp.indexOf('private function _finalizeSkillSession(&$user){') !== -1, '_finalizeSkillSession() определена');
+    // 04.10.2026 (стале-пин, не регрессия): сигнатура сменилась с "(&$user)" на "($user)" —
+    // см. tests/boss-finalize-skill-session-pass-by-reference-fix.test.js.
+    assert(bossesPhp.indexOf('private function _finalizeSkillSession($user){') !== -1, '_finalizeSkillSession() определена');
     assert(bossesPhp.indexOf('function endFightSession(){') !== -1, 'endFightSession() определена');
 }
 
@@ -93,8 +95,12 @@ console.log('\nTest 4: bosses.php.startFight() замораживает sessionS
 
 console.log('\nTest 5: bosses.php._finalizeSkillSession() откатывает прогресс до пола уровня БЕЗУСЛОВНО (22.09.2026: было "только если левелапа не было", убрано по прямому указанию — см. skills-always-reset-progress-on-new-fight.test.js)');
 {
-    const start = bossesPhp.indexOf('private function _finalizeSkillSession(&$user){');
-    const end   = bossesPhp.indexOf('\n        }', start);
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): сигнатура сменилась с
+    // "(&$user)" на "($user)" (функция сама лочит строку и возвращает {json,locked}, см.
+    // tests/boss-finalize-skill-session-pass-by-reference-fix.test.js). Безусловный откат
+    // теперь встречается ДВАЖДЫ (залоченная + фолбэк ветки) — проверяем хотя бы одно совпадение.
+    const start = bossesPhp.indexOf('private function _finalizeSkillSession($user){');
+    const end   = bossesPhp.indexOf('\n        }\n\n        // Фиксирует ИСТИННОЕ окончание боя', start);
     const body  = bossesPhp.slice(start, end);
     assert(/\$earned = \$this->_skillEarnedPoints\(\$sCatalog, intval\(\$state\['dmgSpent'\]\)\);/.test(body), 'earned считается по ТЕКУЩЕМУ dmgSpent');
     assert(!/\$sessionStart = intval\(\$state\['sessionStartPoints'\]\);/.test(body), 'sessionStart больше не читается здесь — условная проверка левелапа убрана');
@@ -126,9 +132,13 @@ console.log('\nTest 7: skills.php.upgrade() читает dmgSpent из server-on
 {
     assert(skillsPhp.indexOf('private function _loadState($user){') !== -1, '_loadState() определена (объединила levels+dmgSpent+sessionStartPoints)');
     const upStart = skillsPhp.indexOf('function upgrade(){');
-    const upEnd   = skillsPhp.indexOf('\n        }', upStart);
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): наивная граница
+    // "\n        }" находила ЗАКРЫВАЮЩУЮ скобку одного из новых if-блоков лока (rollback/
+    // close), а не конец самой upgrade() — функция стала длиннее. Используем конец файла
+    // (upgrade() — последний метод класса) как надёжную границу.
+    const upEnd   = skillsPhp.indexOf('\n    }\n?>', upStart);
     const upBody  = skillsPhp.slice(upStart, upEnd);
-    assert(/\$state  = \$this->_loadState\(\$user\);/.test(upBody), 'upgrade() читает единое состояние через _loadState()');
+    assert(/\$state  = \$this->_loadState\(\$userForState\);/.test(upBody), 'upgrade() читает единое состояние через _loadState() (теперь из $userForState — локального снимка под локом/фолбэком, не из исходного $user напрямую, см. tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js)');
     // 25.09.2026: earned больше не считается прямо в upgrade() — переехал внутрь
     // _syncSkillPoints() (persist points-баланс, см. tests/skills-server-authoritative.test.js
     // Test 10), но по-прежнему читает server-only state.dmgSpent — подделать нечем.
@@ -139,7 +149,12 @@ console.log('\nTest 7: skills.php.upgrade() читает dmgSpent из server-on
     assert(/\$earned = \$this->_calcPoints\(\$catalog, intval\(\$state\['dmgSpent'\] \?\? 0\)\);/.test(syncBody),
         'earned считается по server-only state.dmgSpent — подделать через users.save/skills_data больше нельзя');
     assert(!/\$this->_skillsDmgSpent\(\$user\)/.test(upBody), 'старый вызов _skillsDmgSpent(), читавший client-writable skills_data, убран');
-    assert(/\$state\['levels'\] = \$levels;\s*\n\s*\$user\['skills_levels'\] = json_encode\(\$state\);/.test(upBody),
+    // 04.10.2026 (стале-пин, не регрессия): итог теперь кодируется в $finalSkillsJson (пишется
+    // отдельным UPDATE под локом или напрямую в $user в фолбэк-ветке), а не прямым
+    // "$user['skills_levels'] = json_encode($state)" — см. tests/race-conditions-skills-
+    // weapons-ryukzak-casino-04-10.test.js. Сохранение levels ВНУТРИ того же state-объекта
+    // (не отдельным полем) не менялось.
+    assert(/\$state\['levels'\] = \$levels;\s*\n\s*\$finalSkillsJson = json_encode\(\$state\);/.test(upBody),
         'сохраняет levels ВНУТРИ того же state-объекта — dmgSpent/sessionStartPoints не перезаписываются нулём при апгрейде');
 }
 

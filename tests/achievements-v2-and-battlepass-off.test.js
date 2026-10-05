@@ -59,9 +59,12 @@ console.log('\nTest 2: новые счётчики достижений заве
     // этих двух мест списания больше НЕ считает клиент локально (убран вместе со старым
     // локальным списанием валюты) — счётчик переехал на сервер, в base.php.upgrade()/
     // vassilich.php.buy(), тем же приёмом, что уже применён в habar.php.buy() для stew_spent.
-    assert(/if\(isset\(\$cost\['coins'\]\)\) \$user\['coins_spent'\] = \$this->ops->i\(\$user, 'coins_spent'\) \+ intval\(\$cost\['coins'\]\);/.test(basePhpSrc),
+    // 05.10.2026 (стале-пин, не регрессия — параллельная сессия добавила блокировку строки в
+    // base.php/vassilich.php, см. tests/base-server-authoritative-upgrade-and-train.test.js):
+    // счётчик теперь копится на залоченной копии $lockedUser, не на $user напрямую.
+    assert(/if\(isset\(\$cost\['coins'\]\)\) \$lockedUser\['coins_spent'\] = \$this->ops->i\(\$lockedUser, 'coins_spent'\) \+ intval\(\$cost\['coins'\]\);/.test(basePhpSrc),
         'coins_spent проведён в base.php (апгрейд зданий, server-authoritative)');
-    assert(/if\(\$type === 'coins'\) \$user\['coins_spent'\] = \$this->ops->i\(\$user, 'coins_spent'\) \+ \$amount;/.test(vassilichPhpSrc),
+    assert(/if\(\$type === 'coins'\) \$lockedUser\['coins_spent'\] = \$this->ops->i\(\$lockedUser, 'coins_spent'\) \+ \$amount;/.test(vassilichPhpSrc),
         'coins_spent проведён в vassilich.php (server-authoritative, было только stew_spent)');
     // 27.09.2026 (аудит whitelist-гонки — см. tests/coins-stew-spent-server-authoritative-
     // whitelist-and-race.test.js): gangs.js/hapuga.js больше НЕ пишут coins_spent локально —

@@ -75,13 +75,18 @@ console.log('\nTest 5: skills.php.upgrade() — та же арифметика �
     const body  = skillsPhp.slice(start, end);
 
     assert(/if\(\$sid < 0 \|\| \$sid > 19\) return \$this->ops->fail\(76\);/.test(body), 'отклоняет id вне диапазона 0-19');
-    assert(/if\(intval\(\$levels\[\$sid\]\) >= \$maxLvl\) return \$this->ops->fail\(77\);/.test(body),
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): обе проверки стали
+    // многострочными блоками (добавлен rollback/close лока строки перед return) — сами
+    // инварианты (maxLvl конкретного скилла, минимум 1 очко безусловно) не менялись.
+    assert(/if\(intval\(\$levels\[\$sid\]\) >= \$maxLvl\)\{/.test(body),
         'отклоняет апгрейд сверх maxLvl этого конкретного скилла (у каждого свой потолок, не общий)');
+    assert(/return \$this->ops->fail\(77\); \/\/ уже максимальный уровень скилла/.test(body), 'код отказа 77 сохранён');
     assert(!/usedFreeFirstSkill/.test(body), '18.09.2026: льгота "первый уровень скилла 0 бесплатно" удалена целиком — usedFreeFirstSkill не встречается');
     // 25.09.2026: доступные очки читаются из персистентного $state['points'] (см. Test 10),
     // не пересчитываются earned-spent на лету — сама проверка "минимум 1" осталась.
-    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\) return \$this->ops->fail\(78\);/.test(body),
+    assert(/if\(intval\(\$state\['points'\] \?\? 0\) < 1\)\{/.test(body),
         'требует минимум 1 доступное очко БЕЗУСЛОВНО, для любого skill_id, включая 0');
+    assert(/return \$this->ops->fail\(78\); \/\/ недостаточно очков скиллов/.test(body), 'код отказа 78 сохранён');
 
     // Сверяем формулу spentPoints (18.09.2026: льготы больше нет, все уровни считаются одинаково).
     const spentStart = skillsPhp.indexOf('private function _spentPoints($levels){');

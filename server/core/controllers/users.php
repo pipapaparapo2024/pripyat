@@ -232,8 +232,28 @@
                 // devGrantCurrency() ниже (тот же паттерн, что devGrantWeapons()/devGrantShmot()).
                 // users.get()/patch по-прежнему отдают клиенту актуальное значение на чтение —
                 // whitelist влияет только на save().
-                'zone','base_buildings','base_stats','base_location',
-                'gang_id','gang_data','weapons','inventory',
+                //
+                // 04.10.2026 (аудит по прямому указанию — "найди дыры"): 'zone','base_buildings',
+                // 'base_stats','gang_id' УБРАНЫ отсюда (были здесь раньше, БЕЗ какого-либо guard —
+                // в отличие от weapons/inventory чуть ниже). Все четыре давно полностью
+                // server-authoritative через выделенные permit-ы: zone.fillCheckpoint/
+                // captureLocation/upgradeBusiness/collectIncome, base.upgrade/train,
+                // gangs.join (все пишут через Gameops::saveUser(), в обход этого whitelist).
+                // Пока поля оставались здесь БЕЗ guard, читер мог одним users.save подложить
+                // zone:{biz:[10,10,10],cleared:999} (макс. бизнес/разблокировка боссов без
+                // реальной зачистки), base_buildings/base_stats с level:10 (бесплатная мгновенная
+                // прокачка базы/качалки) или gang_id:'5' (постоянный +20% урона — ЕДИНСТВЕННОЕ
+                // реальное применение gang_id, bosses.php._gangBonus()/zone.php._gangBonus(),
+                // БЕЗ проверки, что gangs.join() вообще разрешил вступление — сам join()
+                // сейчас заблокирован $BETA_LOCKED, но это не защищало от прямой записи сюда).
+                // Побочный эффект: gangs.js._toggleJoin()/base.js._upgradeBuilding()/
+                // zone.js._saveToUdata() всё ещё ОПТИМИСТИЧНО пишут эти поля в udata локально
+                // (эхо уже подтверждённого сервером значения, не новый вектор) — теперь это
+                // безвредный no-op при автосейве, сервер молча игнорирует ключ, как и для
+                // остальных полей в этом списке. users.get()/patch по-прежнему отдают клиенту
+                // актуальное значение на чтение.
+                'base_location',
+                'gang_data','weapons','inventory',
                 'hapuga_items','hapuga_sold','hapuga_refreshes','hapuga_avail','hapuga_next_ts',
                 'svod_claimed',
                 'habar_counts','bot_settings','bot_running',
@@ -408,7 +428,15 @@
                 // каждом users.save, поэтому кулдаун никогда не переживал перезагрузку страницы
                 // (можно было собирать доход бизнеса без ожидания, просто обновив вкладку).
                 // Колонки — см. migrate16.php.
-                'zone_collect_0','zone_collect_1','zone_collect_2','zone_collect_3','zone_collect_4',
+                //
+                // 04.10.2026 (аудит по прямому указанию — "найди дыры", см. парный коммент у
+                // 'zone'/'base_buildings'/'gang_id' выше): УБРАНЫ отсюда обратно — тот самый
+                // кулдаун, который добавили сюда 17.09.2026, сам стал дырой без guard: читер мог
+                // одним users.save({zone_collect_0:'0', ...}) сбросить все 5 таймеров и собирать
+                // доход бизнеса бесконечно, без ожидания 8ч. zone.php.collectIncome()/
+                // collectAllIncome() уже пишут эти поля сами через Gameops::saveUser() (в обход
+                // этого whitelist) — client-writable путь был не нужен ни для чего легитимного,
+                // клиент эти ключи никогда не записывает напрямую (только читает на экране).
                 // 30.09.2026 (обучение, по прямому указанию): onboarding_step — текущий шаг
                 // пошагового тура (intro/dvor/zone/baza/habar/bosses/svod/shmot/sidorovich/
                 // currency/final/done). Не экономика/RNG — читерство здесь означало бы разве
@@ -686,6 +714,16 @@
                 // случай, урон седого выдаётся тем же habar.php.collectDay()).
                 'sedoy_dmg_total'        => 0,
                 'sedoy_dmg_left'         => 0,
+                // 04.10.2026 (баг найден по живому репорту — "сбросил аккаунт, а энергии 370
+                // вместо 50"): 'max_energy' убрано из client-writable $allowed в save() 28.09.2026
+                // (теперь пишут только shmot/skills/vassilich/hapuga/zone-бонусы) — но сюда,
+                // в единственный server-only путь личного сброса, его тогда не добавили.
+                // _resetAccount() (dev_panel.js) и resetAllPlayers() оба шлют max_energy:'50' в
+                // ОБЫЧНОМ users.save()/UPDATE — resetAllPlayers() пишет прямым UPDATE в обход
+                // whitelist и поэтому срабатывает, а личный сброс идёт через этот же users.save(),
+                // где whitelist теперь молча отбрасывает max_energy — старое накопленное значение
+                // (бонусы шмота/скиллов/банды до сброса) оставалось висеть нетронутым навсегда.
+                'max_energy'             => '50',
             ];
             $result = $this->registry['udb']->saveData($this->registry['utb'], $update);
             if(isset($result['error']) && $result['error']){

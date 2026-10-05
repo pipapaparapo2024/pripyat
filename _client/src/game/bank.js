@@ -1,3 +1,6 @@
+import { isOk } from '../modules/platform.js';
+import { startPurchase } from '../modules/iap.js';
+
 export default class Bank{
 	constructor(atm_movie){
 		//Регистрация ключевых переменных класса
@@ -116,6 +119,20 @@ export default class Bank{
 		if(!this._bankMoved){ this._bankMoved=true; this.atm.y-=20; }
 	}
 
+	// 05.10.2026 (модерация ОК, п.4 отказа — "цена не в валюте площадки"): цена в "голосах"
+	// (donuts_info[name].price[i] / 7) — формула, специфичная ТОЛЬКО для VK Pay (сам товар
+	// item0-23 продаётся по цене, настроенной отдельно в кабинете VK, это число — только для
+	// отображения). На ОК реальных "голосов" не существует — показываем price_ok[i] напрямую,
+	// без деления на 7 (это уже готовая сумма в ОКах, см. server/json/donuts.json).
+	_displayPrice(name, i){
+		return isOk() ? donuts_info[name]['price_ok'][i] : donuts_info[name]['price'][i] / 7;
+	}
+
+	// 05.10.2026 (по прямому указанию — "давай сделаем через FAPI UI Show Payment, посмотрим
+	// что скажет модерация"): прежний "Вариант А" (прятать покупки на ОК целиком) заменён
+	// реальной попыткой оплаты — slot'ы снова показываются на ОК, клик идёт через тот же
+	// startPurchase() (modules/iap.js), который на ОК теперь зовёт FAPI.UI.showPayment() вместо
+	// честного "недоступно" (см. докблок iap.js про степень уверенности в этой реализации).
 	genSlots(name){
 		let stew_len = name == 'stew' ? 0 : donuts_info['stew']['price'].length;
 		let coins_len = name == 'stew' || name == 'coins' ? 0 : donuts_info['coins']['price'].length;
@@ -124,18 +141,20 @@ export default class Bank{
 			this.atm.win['slot'+i].icon.gotoAndStop(name);
 			this.atm.win['slot'+i].img.gotoAndStop(name+i);
 
-			this.atm.win['slot'+i].count_txt.text = donuts_info[name]['default'][i] + ' ' + helper.numberEnd(donuts_info[name]['default'][i], name);
-			this.atm.win['slot'+i].price_txt.text = (donuts_info[name]['price'][i] / 7) + ' ' + helper.numberEnd((donuts_info[name]['price'][i] / 7), 'votes');
+			const count = donuts_info[name]['default'][i];
+			this.atm.win['slot'+i].count_txt.text = count + ' ' + helper.numberEnd(count, name);
+			const price = this._displayPrice(name, i);
+			this.atm.win['slot'+i].price_txt.text = price + ' ' + helper.numberEnd(price, 'votes');
 
 			helper.clearButton(this.atm.win['slot'+i], true);
 
 			this.atm.win['slot'+i].on('pointerdown', (e) => {
 				this.set_donut = stew_len + coins_len + i;
 				console.log('[bank.genSlots] клик по слоту покупки | вкладка:', name, '| индекс в вкладке:', i,
-					'| итоговый item:', 'item' + this.set_donut, '| цена (голоса):', donuts_info[name]['price'][i] / 7,
-					'| количество товара:', donuts_info[name]['default'][i]);
+					'| итоговый item:', 'item' + this.set_donut, '| цена отображения:', price, '| платформа:', isOk() ? 'ok' : 'vk',
+					'| количество товара:', count);
 
-				bridge.send("VKWebAppShowOrderBox", { type: 'item', item: 'item' + this.set_donut.toString()});
+				startPurchase('item' + this.set_donut.toString(), price, count + ' ' + helper.numberEnd(count, name));
 			});
 		}
 	}

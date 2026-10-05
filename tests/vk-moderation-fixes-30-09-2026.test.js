@@ -46,8 +46,14 @@ console.log('\nTest 1 (п.1 — фоновый запрос scope friends): ге
     assert(/THIRTY_DAYS_MS\s*=\s*30 \* 24 \* 60 \* 60 \* 1000/.test(gate), 'окно повторного запроса — 30 дней');
 
     const preloader = read(path.join('game', 'preloader.js'));
-    assert(/import \{[^}]*\bshouldAskFriendsScope\b[^}]*\} from '\.\.\/modules\/friends-scope-gate\.js';/.test(preloader),
-        'preloader.js импортирует shouldAskFriendsScope из гейта');
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит модерации ОК, "localStorage ненадёжен в
+    // embed-обёртках площадок"): preloader.js теперь импортирует АСИНХРОННУЮ версию
+    // (shouldAskFriendsScopeAsync — источник истины VKWebAppStorageGet, не localStorage), см.
+    // tests/friends-scope-gate-vk-storage-04-10.test.js. Синхронная shouldAskFriendsScope()
+    // осталась в гейте как фолбэк (проверено Test 1 строкой 42), просто больше не используется
+    // этим конкретным вызывающим местом.
+    assert(/import \{[^}]*\bshouldAskFriendsScopeAsync\b[^}]*\} from '\.\.\/modules\/friends-scope-gate\.js';/.test(preloader),
+        'preloader.js импортирует shouldAskFriendsScopeAsync из гейта');
     assert(/import \{[^}]*\bmarkFriendsScopeAsked\b[^}]*\} from '\.\.\/modules\/friends-scope-gate\.js';/.test(preloader),
         'preloader.js импортирует markFriendsScopeAsked из гейта');
 
@@ -82,7 +88,9 @@ console.log('\nTest 1 (п.1 — фоновый запрос scope friends): ге
     const promptBody  = preloader.slice(promptStart, promptEnd);
     assert(promptStart !== -1 && promptEnd !== -1, '_showFriendsScopePrompt() найден целиком');
     assert(/this\._requestFriendsScope\(/.test(promptBody), '_showFriendsScopePrompt() вызывает единую точку входа this._requestFriendsScope()');
-    assert(/shouldAskFriendsScope\(\)/.test(promptBody), '_showFriendsScopePrompt() проверяет shouldAskFriendsScope() для нового запроса (не чаще раза в 30 дней, не раньше 2-го запуска)');
+    // 05.10.2026 (стале-пин, не регрессия): проверка теперь асинхронная (shouldAskFriendsScopeAsync),
+    // см. комментарий у импорта выше.
+    assert(/shouldAskFriendsScopeAsync\(\)/.test(promptBody), '_showFriendsScopePrompt() проверяет shouldAskFriendsScopeAsync() для нового запроса (не чаще раза в 30 дней, не раньше 2-го запуска)');
 
     const scheduleStart = preloader.indexOf('_scheduleFriendsScopePrompt(){');
     const scheduleEnd   = preloader.indexOf('\n\t_showFriendsScopePrompt(options = {}){');
@@ -93,7 +101,11 @@ console.log('\nTest 1 (п.1 — фоновый запрос scope friends): ге
     assert((preloader.match(/markFriendsScopeAsked\(\);/g) || []).length >= 1, 'markFriendsScopeAsked() вызывается хотя бы при одном из путей запроса доступа');
 
     const indexJs = read('index.js');
-    assert(/import \{ registerLaunch \} from '\.\/modules\/friends-scope-gate\.js';/.test(indexJs), 'index.js импортирует registerLaunch');
+    // 05.10.2026 (стале-пин, не регрессия): index.js теперь импортирует ещё и
+    // syncLaunchCountToServerStorage (зеркалирует счётчик запусков в VK Storage после
+    // VKWebAppInit) — registerLaunch() сам остался синхронным/localStorage-only и вызывается
+    // как раньше, просто импорт больше не единственное имя в фигурных скобках.
+    assert(/import \{ registerLaunch, syncLaunchCountToServerStorage \} from '\.\/modules\/friends-scope-gate\.js';/.test(indexJs), 'index.js импортирует registerLaunch (и syncLaunchCountToServerStorage)');
     assert(/registerLaunch\(\);/.test(indexJs), 'index.js вызывает registerLaunch() при старте сессии');
 }
 

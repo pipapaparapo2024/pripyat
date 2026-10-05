@@ -82,12 +82,17 @@ console.log('\nTest 4: weapons.php.upgrade() — прокачка любого �
     const end   = weaponsPhp.indexOf('\n        }', weaponsPhp.indexOf('$this->ops->ok', start));
     const body  = weaponsPhp.slice(start, end);
 
-    assert(/if\(\$curUpg >= \$maxUpg\) return \$this->ops->fail\(75\);/.test(body),
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): обе проверки стали
+    // многострочными блоками (добавлен rollback/close лока строки weapons перед return) —
+    // сами инварианты (maxUpg, списание через deduct) не менялись.
+    assert(/if\(\$curUpg >= \$maxUpg\)\{/.test(body),
         'отклоняет апгрейд сверх max_upg (клиент такой проверки не делал вообще — баг, из-за которого apg_cost[20] давал NaN)');
+    assert(/return \$this->ops->fail\(75\); \/\/ уже максимальный уровень прокачки/.test(body), 'код отказа 75 сохранён');
     assert(/\$useStew = \$rawCost < 0;/.test(body), 'отрицательное значение в upg_cost — это тушёнка (тот же знак, что на клиенте)');
     assert(/\$cost\s*=\s*abs\(\$rawCost\);/.test(body), 'берётся модуль (реальная стоимость всегда положительна)');
-    assert(/if\(!\$this->ops->deduct\(\$user, \$resKey, \$cost\)\) return \$this->ops->fail\(74\);/.test(body),
+    assert(/if\(!\$this->ops->deduct\(\$user, \$resKey, \$cost\)\)\{/.test(body),
         'списание через Gameops::deduct — работает и для coins, и для stew без дублирования логики');
+    assert(/return \$this->ops->fail\(74\); \/\/ недостаточно рублей\/тушёнки/.test(body), 'код отказа 74 сохранён');
 }
 
 console.log('\nTest 5: клиент weapons.js — _buy()/_upgrade() зовут сервер, не считают сами');

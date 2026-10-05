@@ -1,4 +1,5 @@
 import { applyPatch } from '../../modules/patch.js';
+import buyPointsPackages from '../../data/buy_points_packages.json';
 
 /** Рулетка — экраны покупки поинтов и кейса. */
 export function attachRouletteBuy(proto){
@@ -46,14 +47,10 @@ export function attachRouletteBuy(proto){
         ptsTxt.x = 453; ptsTxt.y = 545;
         win.addChild(ptsTxt);
 
-        const ROUL_PKGS = [
-            {pts:10,  price:100,  img:'рулетка 100.png'},
-            {pts:25,  price:250,  img:'рулетка 250.png'},
-            {pts:55,  price:550,  img:'рулетка 550.png'},
-            {pts:115, price:1150, img:'рулетка 1150.png'},
-            {pts:250, price:2500, img:'рулетка 2500.png'},
-            {pts:550, price:5500, img:'рулетка 5500.png'},
-        ];
+        // 04.10.2026 (аудит проекта — убрали дубль таблицы цен с dvor-dice-screen.js/
+        // roulette.php/dice_config.json): единый источник — buy_points_packages.json (тот же
+        // прайс по ТЗ для обеих валют поинтов, рулетка и зарики).
+        const ROUL_PKGS = buyPointsPackages;
         const PKG_POS = [
             {x:573, y:330}, {x:713, y:330}, {x:856, y:330},
             {x:574, y:504}, {x:713, y:503}, {x:857, y:504},

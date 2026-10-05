@@ -1,5 +1,7 @@
 /** Energy buy HUD button + VK IAP energy packs popup. */
 import energyPacks from '../../../data/energy_packs.json';
+import { isOk } from '../../../modules/platform.js';
+import { startPurchase } from '../../../modules/iap.js';
 
 export function attachEnergyBuy(proto){
 	proto._initEnergyBuyBtn = function(){
@@ -51,6 +53,10 @@ export function attachEnergyBuy(proto){
 			{file:'кнопка энергии 3500.png.png', x:948, y:463},
 		];
 
+		// 05.10.2026 (по прямому указанию — "давай сделаем через FAPI UI Show Payment, посмотрим
+		// что скажет модерация"): прежний "Вариант А" (прятать покупки на ОК целиком) заменён
+		// реальной попыткой оплаты — карточки снова показываются на ОК, клик идёт через тот же
+		// startPurchase() (modules/iap.js), который на ОК теперь зовёт FAPI.UI.showPayment().
 		options.forEach((opt, i) => {
 			const card = cards[i];
 			const slot = new PIXI.Sprite(PIXI.Texture.from('./images/layers/popups/Энергия/' + card.file));
@@ -69,9 +75,31 @@ export function attachEnergyBuy(proto){
 			// VK Bridge, из-за чего VK показывал свой собственный попап
 			// "Произошла ошибка" поверх уже корректно выданной энергии.
 			slot.on('pointerdown', ()=>{
-				bridge.send('VKWebAppShowOrderBox', { type: 'item', item: 'item' + (100 + i) });
+				startPurchase('item' + (100 + i), opt.price_ok, opt.energy + ' энергии');
 			});
 			win.addChild(slot);
+
+			// 05.10.2026 (модерация ОК, п.4 — "цена не в валюте площадки"): цена "N голосов"
+			// нарисована ПРЯМО НА картинке карточки (художник рисовал под VK) — для ОК
+			// художественного ассета нет, поэтому накладываем текстовую плашку с ценой в ОКах
+			// поверх нижней части карточки. ⚠️ Координата offsetY подобрана приблизительно
+			// (карточка ~170px высотой, цена обычно внизу) — ТРЕБУЕТ сверки со скриншотом
+			// реальной карточки и правки через редактор позиций, если не совпадёт.
+			if(isOk()){
+				const priceBg = new PIXI.Graphics();
+				priceBg.beginFill(0x1a1410, 0.85);
+				priceBg.drawRoundedRect(-60, 58, 120, 30, 6);
+				priceBg.endFill();
+				priceBg.x = card.x; priceBg.y = card.y;
+				win.addChild(priceBg);
+				const priceTxt = new PIXI.Text(opt.price_ok + ' ' + helper.numberEnd(opt.price_ok, 'votes'), {
+					fontFamily:'Southbank LT', fontSize:20, fill:'#ffdd44',
+					dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
+				});
+				priceTxt.anchor.set(0.5, 0.5);
+				priceTxt.x = card.x; priceTxt.y = card.y + 73;
+				win.addChild(priceTxt);
+			}
 		});
 
 		const closeHit = new PIXI.Graphics();

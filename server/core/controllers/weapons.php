@@ -31,6 +31,15 @@
             return $this->ops->catalog('weapons_config');
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
         // Тот же формат и тот же порядок, что weapons.js._saveToUdata()/_loadFromUdata():
         // [{owned,equipped,upg,qty}, ×6] — 0=нож,1=цепь,2=бита,3=мачете,4=ствол,5=автомат.
         // Бесплатное оружие (0-2) всегда owned=true, как и на клиенте.
@@ -69,7 +78,24 @@
             $totalCost = intval($cfg['cost']) * $mult;
             if(!$this->ops->deduct($user, 'coins', $totalCost)) return $this->ops->fail(74); // недостаточно рублей
 
+            // 04.10.2026 (аудит гонок состояний): bosses.php.attack() списывает патроны из ТОГО
+            // ЖЕ поля weapons через SELECT...FOR UPDATE на строке игрока — без такой же
+            // блокировки здесь покупка и удар боссу могли одновременно прочитать устаревший
+            // weapons, и один из двух saveUser() тёр бы изменения другого (lost update). Тот же
+            // приём, тот же физический лок строки (любая другая FOR UPDATE транзакция на этой
+            // строке — из ЛЮБОГО файла — реально ждёт COMMIT, это настоящий лок уровня БД, а
+            // не просто совпадение имён).
+            $link = $this->_rawLink();
             $weapons = $this->_loadWeapons($user);
+            if($link){
+                $link->begin_transaction();
+                $res = $link->query("SELECT `weapons` FROM `{$this->registry['utb']}` WHERE `id`=".intval($this->registry['uid'])." FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null && is_array(json_decode($row['weapons'], true))){
+                    $weapons = $this->_loadWeapons(array_merge($user, ['weapons' => $row['weapons']]));
+                }
+            }
+
             $weapons[$wid]['owned'] = true;
             $weapons[$wid]['qty']   = intval($weapons[$wid]['qty']) + $mult;
 
@@ -79,10 +105,29 @@
             foreach($weapons as $w){ if(!empty($w['equipped'])){ $hasEquipped = true; break; } }
             if(!$hasEquipped) $weapons[$wid]['equipped'] = true;
 
-            $this->ops->add($user, 'coins_spent', $totalCost);
-            $user['weapons'] = json_encode($weapons);
+            $finalWeaponsJson = json_encode($weapons);
+            if($link){
+                $link->query("UPDATE `{$this->registry['utb']}` SET `weapons`='".$link->real_escape_string($finalWeaponsJson)."' WHERE `id`=".intval($this->registry['uid']));
+                $link->commit();
+                $link->close();
+                // weapons уже записан отдельным UPDATE под локом — НЕ присваиваем его в $user
+                // здесь, иначе общий saveUser() ниже перезаписал бы его устаревшим снимком,
+                // загруженным в начале функции (тот же принцип, что в bosses.php.attack());
+                // присвоение переносится ПОСЛЕ saveUser(), см. ниже.
+            } else {
+                // 04.10.2026 (баг найден при написании теста на этот же фикс — "если
+                // _rawLink() не смог открыть соединение, купленное оружие считалось, но
+                // НИКОГДА не сохранялось": прямой UPDATE выше пропускался, а отложенное
+                // присвоение $user['weapons'] происходило бы уже ПОСЛЕ saveUser(), то есть
+                // слишком поздно для этого же запроса). Без лока — сохраняем как раньше,
+                // обычным $user ДО saveUser().
+                $user['weapons'] = $finalWeaponsJson;
+            }
 
-            // Легаси-поля патронов — клиент их тоже читает как fallback (weapons.js._loadFromUdata).
+            $this->ops->add($user, 'coins_spent', $totalCost);
+            // Легаси-поле патрона (ammo_machete/gun/auto) — ОТДЕЛЬНАЯ колонка, не защищённая
+            // этим локом (её не трогает ни attack(), ни ryukzak.php) — можно присвоить и
+            // сохранить как раньше, до saveUser(), по уже известному СВЕЖЕМУ значению qty.
             $ammoKeys = [3 => 'ammo_machete', 4 => 'ammo_gun', 5 => 'ammo_auto'];
             $patchKeys = ['coins', 'coins_spent', 'weapons'];
             if(isset($ammoKeys[$wid])){
@@ -92,6 +137,7 @@
             }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) $user['weapons'] = $finalWeaponsJson;
 
             $patch = $this->ops->patchCurrencies($user, $patchKeys);
             $this->ops->ok(['patch' => $patch, 'qty' => $weapons[$wid]['qty']]);
@@ -111,21 +157,51 @@
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
+            // 04.10.2026 (аудит гонок состояний): тот же лок строки, что buy()/bosses.php.
+            // attack() — см. подробный комментарий в buy() выше.
+            $link = $this->_rawLink();
             $weapons = $this->_loadWeapons($user);
+            if($link){
+                $link->begin_transaction();
+                $res = $link->query("SELECT `weapons` FROM `{$this->registry['utb']}` WHERE `id`=".intval($this->registry['uid'])." FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null && is_array(json_decode($row['weapons'], true))){
+                    $weapons = $this->_loadWeapons(array_merge($user, ['weapons' => $row['weapons']]));
+                }
+            }
+
             $curUpg = intval($weapons[$wid]['upg']);
-            if($curUpg >= $maxUpg) return $this->ops->fail(75); // уже максимальный уровень прокачки
+            if($curUpg >= $maxUpg){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(75); // уже максимальный уровень прокачки
+            }
 
             $rawCost = intval($upgCost[$curUpg]);
             $useStew = $rawCost < 0;
             $cost    = abs($rawCost);
             $resKey  = $useStew ? 'stew' : 'coins';
 
-            if(!$this->ops->deduct($user, $resKey, $cost)) return $this->ops->fail(74); // недостаточно рублей/тушёнки
+            if(!$this->ops->deduct($user, $resKey, $cost)){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(74); // недостаточно рублей/тушёнки
+            }
 
             $weapons[$wid]['upg'] = $curUpg + 1;
-            $user['weapons'] = json_encode($weapons);
+            $finalWeaponsJson = json_encode($weapons);
+            if($link){
+                $link->query("UPDATE `{$this->registry['utb']}` SET `weapons`='".$link->real_escape_string($finalWeaponsJson)."' WHERE `id`=".intval($this->registry['uid']));
+                $link->commit();
+                $link->close();
+                // weapons уже записан отдельным UPDATE под локом — присваиваем в $user только
+                // ПОСЛЕ saveUser() ниже (тот же принцип, что в buy()/bosses.php.attack()).
+            } else {
+                // 04.10.2026 (тот же баг, что в buy() — см. комментарий там): без лока
+                // присваиваем как раньше, ДО saveUser(), иначе прокачка молча не сохранится.
+                $user['weapons'] = $finalWeaponsJson;
+            }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) $user['weapons'] = $finalWeaponsJson;
 
             $patchKeys = [$resKey, 'weapons'];
             if($useStew) $patchKeys[] = 'stew_spent'; // deduct() сам ведёт stew_spent для тушёнки

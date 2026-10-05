@@ -46,7 +46,9 @@ console.log('\nTest 1: заначка из ящика начисляется с�
     assert(!/udata\['stash_count'\]\s*=\s*String\(parseInt\(udata\['stash_count'\]/.test(src),
         'yashik.js больше не начисляет stash_count напрямую — только через applyPatch(res.patch)');
     assert(/applyPatch\(res\.patch\);/.test(src), 'применяет патч сервера');
-    assert(/\$this->ops->add\(\$user, 'stash_count', intval\(\$session\['stash'\]\)\);/.test(yashikPhp),
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в yashik.php.collect(), см.
+    // tests/yashik-server-authoritative-lootbox.test.js): $lockedUser вместо $user.
+    assert(/\$this->ops->add\(\$lockedUser, 'stash_count', intval\(\$session\['stash'\]\)\);/.test(yashikPhp),
         'сервер (yashik.php.collect) начисляет именно stash_count, не habar_counts');
     assert(!/'habar_counts'/.test(yashikPhp), 'yashik.php вообще не трогает habar_counts (нет той же коллизии на новом месте)');
 }
@@ -94,11 +96,14 @@ console.log('\nTest 6: preloader.js и dev_panel.js — дефолты ново�
     assert(/stash_count:'0'/.test(devPanel), 'dev_panel.js: полный сброс аккаунта содержит stash_count');
 }
 
-console.log('\nTest 7: регресс-гвард — habar.php/hapuga.php НЕ трогались, по-прежнему используют habar_counts как JSON-массив');
+console.log('\nTest 7: регресс-гвард — habar.php/hapuga.php по-прежнему используют habar_counts как JSON-массив (не переименовано в stash_count)');
 {
     const habarPhp  = readSrc('server/core/controllers/habar.php');
     const hapugaPhp = readSrc('server/core/controllers/hapuga.php');
-    assert(/\$this->ops->j\(\$user, 'habar_counts', \[0,0,0,0\]\)/.test(habarPhp),
+    // 05.10.2026 (стале-пин, не регрессия — habar.php (не hapuga.php) получил блокировку
+    // строки 04.10.2026, см. tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js
+    // стиль фикса): habar.php теперь читает это поле на залоченной копии $lockedUser.
+    assert(/\$this->ops->j\(\$lockedUser, 'habar_counts', \[0,0,0,0\]\)/.test(habarPhp),
         'habar.php по-прежнему читает habar_counts как JSON-массив [0,0,0,0] — не переименовано');
     assert(/\$this->ops->j\(\$user, 'habar_counts', \[0,0,0,0\]\)/.test(hapugaPhp),
         'hapuga.php по-прежнему читает habar_counts как JSON-массив [0,0,0,0] — не переименовано');

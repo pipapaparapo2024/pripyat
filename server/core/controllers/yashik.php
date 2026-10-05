@@ -39,6 +39,15 @@
             return is_array($data) ? $data : [];
         }
 
+        // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+        // (04.10.2026, аудит гонок состояний).
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
         // Списывает 1 патрон (bullets) ИЛИ, если патронов нет, bullet_cost_ach очков достижений
         // (та же логика, что было в yashik.js obyskat pointerdown), катает награду и
         // откладывает её в yashik_session — НЕ начисляет сразу (см. collect() ниже).
@@ -46,15 +55,37 @@
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
             $catalog = $this->_catalog();
+            $uid = intval($this->registry['uid']);
 
-            $bullets = $this->ops->i($user, 'bullets', 0);
+            // 04.10.2026 (аудит гонок состояний): без лока два параллельных клика openBox()
+            // могли оба прочитать bullets/ach_score устаревшими, оба пройти проверку и оба
+            // списать — лишнее открытие сверх реально доступных попыток, плюс pity-счётчик
+            // lost_stash_pity мог потерять инкремент (lost update). Ведём всю бизнес-логику на
+            // копии $lockedUser с АКТУАЛЬНЫМИ значениями под SELECT...FOR UPDATE (та же техника,
+            // что в habar.php.buy()) — $user[поле] для залоченных колонок остаётся НЕТРОНУТЫМ до
+            // конца функции.
+            $lockCols = ['bullets', 'ach_score', 'yashik_session', 'lost_stash_pity', 'shmot', 'max_energy'];
+            $link = $this->_rawLink();
+            $lockedUser = $user;
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
+                $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+            }
+
+            $bullets = $this->ops->i($lockedUser, 'bullets', 0);
             if($bullets > 0){
-                $user['bullets'] = $bullets - 1;
+                $lockedUser['bullets'] = $bullets - 1;
             } else {
                 $achCost = intval($catalog['bullet_cost_ach']);
-                $ach = $this->ops->i($user, 'ach_score', 0);
-                if($ach < $achCost) return $this->ops->fail(70); // нет патрона и не хватает очков достижений
-                $user['ach_score'] = $ach - $achCost;
+                $ach = $this->ops->i($lockedUser, 'ach_score', 0);
+                if($ach < $achCost){
+                    if($link){ $link->rollback(); $link->close(); }
+                    return $this->ops->fail(70); // нет патрона и не хватает очков достижений
+                }
+                $lockedUser['ach_score'] = $ach - $achCost;
             }
 
             // 22.09.2026 (по прямому указанию — "добавь в dev кнопку которая делает 100% шанс
@@ -72,7 +103,7 @@
             $shmotId = null;
 
             $session = ['stash' => $stash, 'cig' => $cig, 'coins' => $coins, 'exp' => $exp, 'shmotId' => $shmotId];
-            $user['yashik_session'] = json_encode($session);
+            $lockedUser['yashik_session'] = json_encode($session);
 
             // Индивидуальный прогресс Потерянного тайника: предмет выдаётся через случайные
             // 100–150 открытий. Сеты не перескакиваются; внутри текущего сета первые четыре
@@ -85,7 +116,7 @@
             // после 100+ открытий, в отличие от обычной награды ящика).
             $lostStashItemId = null;
             $sets = $catalog['lost_stash_sets'] ?? [];
-            $pity = $this->ops->j($user, 'lost_stash_pity', []);
+            $pity = $this->ops->j($lockedUser, 'lost_stash_pity', []);
             $idx = intval($pity['idx'] ?? 0);
             if($idx < count($sets)){
                 if(empty($pity['threshold'])){
@@ -95,7 +126,7 @@
                 $pity['count'] = intval($pity['count'] ?? 0) + 1;
 
                 if($devForceDrops || $pity['count'] >= intval($pity['threshold'])){
-                    $shmotArr = $this->_decodeShmot($user);
+                    $shmotArr = $this->_decodeShmot($lockedUser);
                     $set = $sets[$idx];
                     $available = [];
                     foreach(($set['items'] ?? []) as $itemId){
@@ -107,8 +138,8 @@
                         : intval($set['hand']);
                     while(count($shmotArr) <= $lostStashItemId) $shmotArr[] = ['owned' => false, 'equipped' => false];
                     $shmotArr[$lostStashItemId]['owned'] = true;
-                    $user['shmot'] = json_encode($shmotArr);
-                    $this->ops->applyShmotOwnBonus($user, $lostStashItemId);
+                    $lockedUser['shmot'] = json_encode($shmotArr);
+                    $this->ops->applyShmotOwnBonus($lockedUser, $lostStashItemId);
 
                     // Переходим к следующему сету только после выдачи руки.
                     if($lostStashItemId === intval($set['hand'])) $idx++;
@@ -118,10 +149,25 @@
                         ? rand(intval($catalog['lost_stash_pity_min'] ?? 100), intval($catalog['lost_stash_pity_max'] ?? 150))
                         : 0;
                 }
-                $user['lost_stash_pity'] = json_encode($pity);
+                $lockedUser['lost_stash_pity'] = json_encode($pity);
+            }
+
+            if($link){
+                $setsSql = [];
+                foreach($lockCols as $c) $setsSql[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
+                $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $setsSql)." WHERE `id`=$uid");
+                $link->commit();
+                $link->close();
+                // Залоченные поля уже записаны отдельным UPDATE под локом — присвоение в $user
+                // переносится ПОСЛЕ saveUser() (тот же принцип, что в weapons.php.buy()).
+            } else {
+                // Без лока — сохраняем как раньше, обычным $user ДО saveUser() (тот же баг-класс,
+                // что уже находили в bosses/weapons/ryukzak/habar).
+                foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
             }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
             $patch = $this->ops->patchCurrencies($user, ['bullets', 'ach_score', 'shmot', 'lost_stash_pity', 'max_energy']);
             $this->ops->ok(['patch' => $patch, 'reward' => $session, 'lostStashItemId' => $lostStashItemId]);
@@ -132,10 +178,28 @@
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
             $catalog = $this->_catalog();
+            $uid = intval($this->registry['uid']);
 
             $cost = intval($catalog['patron_cost_stew']);
-            $have = $this->ops->i($user, 'stew');
+
+            // 04.10.2026 (аудит гонок состояний): без лока два параллельных клика buyPatron()
+            // могли оба прочитать stew устаревшим, оба пройти проверку и оба списать со своего
+            // локального баланса — лишняя покупка патрона проходит бесплатно (lost update). Та
+            // же техника $lockedUser, что в openBox() выше.
+            $lockCols = ['stew', 'bullets', 'stew_spent'];
+            $link = $this->_rawLink();
+            $lockedUser = $user;
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
+                $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+            }
+
+            $have = $this->ops->i($lockedUser, 'stew');
             if($have < $cost){
+                if($link){ $link->rollback(); $link->close(); }
                 // 24.09.2026 (баг найден по прямому указанию — репорт "ошибка: нужно 50, у меня
                 // 104"): раньше клиент при отказе (fail(71), только код ошибки, без данных)
                 // сам рисовал текст "Нужно: 50 • У вас: X" из СВОЕГО udata['stew'] — если
@@ -150,11 +214,21 @@
                     'code'=>71, 'need'=>$cost, 'have'=>$have]);
                 return;
             }
-            $this->ops->deduct($user, 'stew', $cost);
+            $this->ops->deduct($lockedUser, 'stew', $cost);
+            $lockedUser['bullets'] = $this->ops->i($lockedUser, 'bullets') + 1;
 
-            $user['bullets'] = $this->ops->i($user, 'bullets') + 1;
+            if($link){
+                $sets = [];
+                foreach($lockCols as $c) $sets[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
+                $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid");
+                $link->commit();
+                $link->close();
+            } else {
+                foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+            }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
             $patch = $this->ops->patchCurrencies($user, ['stew', 'bullets']);
             $this->ops->ok(['patch' => $patch]);
@@ -166,15 +240,37 @@
         function collect(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
+            $uid = intval($this->registry['uid']);
 
-            $raw = $user['yashik_session'] ?? null;
+            // 04.10.2026 (аудит гонок состояний — САМЫЙ серьёзный риск этого файла): без лока
+            // два параллельных клика collect() могли оба прочитать ОДНУ И ТУ ЖЕ отложенную
+            // yashik_session, оба пройти проверку "есть что забрать" и оба начислить
+            // stash/cig/coins/exp/shmot — то есть игрок получал бы НАГРАДУ ДВАЖДЫ за один
+            // открытый ящик (двойная трата одной и той же сессии). Ведём всю бизнес-логику на
+            // копии $lockedUser с АКТУАЛЬНЫМИ значениями под SELECT...FOR UPDATE — та же
+            // техника, что в openBox()/buyPatron() выше.
+            $lockCols = ['stash_count', 'cigarettes', 'coins', 'exp', 'shmot', 'yashik_session', 'max_energy'];
+            $link = $this->_rawLink();
+            $lockedUser = $user;
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
+                $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+            }
+
+            $raw = $lockedUser['yashik_session'] ?? null;
             $session = is_array($raw) ? $raw : (is_string($raw) && $raw !== '' ? json_decode($raw, true) : null);
-            if(!is_array($session)) return $this->ops->fail(72); // нечего забирать (уже забрано или не открывали)
+            if(!is_array($session)){
+                if($link){ $link->rollback(); $link->close(); }
+                return $this->ops->fail(72); // нечего забирать (уже забрано или не открывали)
+            }
 
-            $this->ops->add($user, 'stash_count', intval($session['stash']));
-            $this->ops->add($user, 'cigarettes', intval($session['cig']));
-            $this->ops->add($user, 'coins', intval($session['coins']));
-            $this->ops->add($user, 'exp', intval($session['exp']));
+            $this->ops->add($lockedUser, 'stash_count', intval($session['stash']));
+            $this->ops->add($lockedUser, 'cigarettes', intval($session['cig']));
+            $this->ops->add($lockedUser, 'coins', intval($session['coins']));
+            $this->ops->add($lockedUser, 'exp', intval($session['exp']));
 
             $shmotGranted = isset($session['shmotId']) && $session['shmotId'] !== null ? intval($session['shmotId']) : null;
 
@@ -187,16 +283,27 @@
             // Пишем владение здесь напрямую через Gameops::saveUser() (полная строка, в обход
             // whitelist) — тот же паттерн, что уже применяется в bosses.php.claimKill().
             if($shmotGranted !== null){
-                $shmotArr = $this->_decodeShmot($user);
+                $shmotArr = $this->_decodeShmot($lockedUser);
                 while(count($shmotArr) <= $shmotGranted) $shmotArr[] = ['owned' => false, 'equipped' => false];
                 $shmotArr[$shmotGranted]['owned'] = true;
-                $user['shmot'] = json_encode($shmotArr);
-                $this->ops->applyShmotOwnBonus($user, $shmotGranted);
+                $lockedUser['shmot'] = json_encode($shmotArr);
+                $this->ops->applyShmotOwnBonus($lockedUser, $shmotGranted);
             }
 
-            $user['yashik_session'] = null;
+            $lockedUser['yashik_session'] = null;
+
+            if($link){
+                $sets = [];
+                foreach($lockCols as $c) $sets[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
+                $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid");
+                $link->commit();
+                $link->close();
+            } else {
+                foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+            }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
             $patch = $this->ops->patchCurrencies($user, ['stash_count', 'cigarettes', 'coins', 'exp', 'shmot', 'max_energy']);
             $this->ops->ok(['patch' => $patch, 'reward' => $session, 'shmotGranted' => $shmotGranted]);

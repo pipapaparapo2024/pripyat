@@ -10,6 +10,15 @@ Class Shmot {
         $this->permits = ['buy', 'equip'];
     }
 
+    // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
+    // (04.10.2026, аудит гонок состояний).
+    private function _rawLink(){
+        $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+        if($link->connect_error) return null;
+        $link->set_charset('utf8mb4');
+        return $link;
+    }
+
     function buy(){
         $item_id = intval($this->registry['user_params']['item_id'] ?? -1);
         $catalog = $this->ops->catalog('shmot_items');
@@ -29,13 +38,6 @@ Class Shmot {
         $user = $this->ops->loadUser();
         if(!$user) return $this->ops->fail(99);
 
-        $shmot = $this->ops->j($user, 'shmot', []);
-        while(count($shmot) <= $item_id) $shmot[] = ['owned'=>false,'equipped'=>false];
-        if(!empty($shmot[$item_id]['owned'])){
-            error_log('[shmot.buy] fail(52) уже куплено | uid='.$uid.' item_id='.$item_id);
-            return $this->ops->fail(52);
-        }
-
         $map = ['coins'=>'coins','stew'=>'stew','cig'=>'cigarettes'];
         $cur = $map[$item['price']['type']] ?? null;
         if(!$cur){
@@ -43,8 +45,34 @@ Class Shmot {
             return $this->ops->fail(54);
         }
         $cost = intval($item['price']['a']);
-        if($cost > 0 && !$this->ops->deduct($user, $cur, $cost)){
-            error_log('[shmot.buy] fail(50) недостаточно средств | uid='.$uid.' item_id='.$item_id.' cur='.$cur.' cost='.$cost.' have='.$this->ops->i($user, $cur));
+
+        // 04.10.2026 (аудит гонок состояний): без лока два параллельных клика buy() могли оба
+        // прочитать "не куплено" устаревшим и оба списать валюту со своего локального
+        // устаревшего баланса (lost update) — та же техника $lockedUser, что в habar.php.buy().
+        $lockCols = [$cur, 'shmot', 'max_energy'];
+        if($cur === 'stew')  $lockCols[] = 'stew_spent';
+        if($cur === 'coins') $lockCols[] = 'coins_spent';
+        $link = $this->_rawLink();
+        $lockedUser = $user;
+        if($link){
+            $link->begin_transaction();
+            $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
+            $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+            $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+            if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+        }
+
+        $shmot = $this->ops->j($lockedUser, 'shmot', []);
+        while(count($shmot) <= $item_id) $shmot[] = ['owned'=>false,'equipped'=>false];
+        if(!empty($shmot[$item_id]['owned'])){
+            if($link){ $link->rollback(); $link->close(); }
+            error_log('[shmot.buy] fail(52) уже куплено | uid='.$uid.' item_id='.$item_id);
+            return $this->ops->fail(52);
+        }
+
+        if($cost > 0 && !$this->ops->deduct($lockedUser, $cur, $cost)){
+            if($link){ $link->rollback(); $link->close(); }
+            error_log('[shmot.buy] fail(50) недостаточно средств | uid='.$uid.' item_id='.$item_id.' cur='.$cur.' cost='.$cost.' have='.$this->ops->i($lockedUser, $cur));
             return $this->ops->fail(50);
         }
 
@@ -53,14 +81,30 @@ Class Shmot {
         // (этим занимается каждый вызывающий контроллер отдельно, см. weapons.php/blackjack.php).
         // shmot.php был единственным местом трат монет, которое этого не делало вообще.
         if($cost > 0 && $item['price']['type'] === 'coins'){
-            $this->ops->add($user, 'coins_spent', $cost);
+            $this->ops->add($lockedUser, 'coins_spent', $cost);
         }
 
         $shmot[$item_id]['owned'] = true;
-        $user['shmot'] = json_encode($shmot);
-        $this->ops->applyShmotOwnBonus($user, $item_id);
+        $lockedUser['shmot'] = json_encode($shmot);
+        $this->ops->applyShmotOwnBonus($lockedUser, $item_id);
+
+        if($link){
+            $sets = [];
+            foreach($lockCols as $c) $sets[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
+            $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid");
+            $link->commit();
+            $link->close();
+            // Залоченные поля уже записаны отдельным UPDATE под локом — присвоение в $user
+            // переносится ПОСЛЕ saveUser() (тот же принцип, что в weapons.php.buy()).
+        } else {
+            // Без лока — сохраняем как раньше, обычным $user ДО saveUser() (тот же баг-класс,
+            // что уже находили в bosses/weapons/ryukzak/habar).
+            foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+        }
 
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+        if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+
         // patchCurrencies() без аргументов уже отдаёт coins/stew/cigarettes/stew_spent/shmot по
         // умолчанию — coins_spent в этот дефолтный список не входит (его не трогал никто, кроме
         // weapons.php/blackjack.php), поэтому дописываем его отдельно, не переопределяя весь список.

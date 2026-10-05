@@ -89,9 +89,11 @@ console.log('\nTest 2: _openLoot() больше не катает RNG и не п
 console.log('\nTest 3: server/core/controllers/vassilich.php — buy()/open_loot() остаются единственным источником начисления (server-authoritative)');
 {
     assert(/\$this->permits = \['buy', 'open_loot'\];/.test(phpSrc), "permits ограничены ['buy','open_loot']");
-    assert(/if\(!\$this->ops->deduct\(\$user, \$type, \$amount\)\) return \$this->ops->fail\(50\);/.test(phpSrc),
+    // 05.10.2026 (стале-пин, не регрессия — vassilich.php получил SELECT...FOR UPDATE, см.
+    // tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js стиль фикса).
+    assert(/if\(!\$this->ops->deduct\(\$lockedUser, \$type, \$amount\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
         'buy() списывает валюту через Gameops::deduct с проверкой баланса (не даёт уйти в минус)');
-    assert(/if\(!\$this->ops->deduct\(\$user, 'cigarettes', 5\)\) return \$this->ops->fail\(50\);/.test(phpSrc),
+    assert(/if\(!\$this->ops->deduct\(\$lockedUser, 'cigarettes', 5\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
         "open_loot() списывает 5 сигарет через Gameops::deduct");
     assert(/\$pick = \$pool\[array_rand\(\$pool\)\];/.test(phpSrc), 'open_loot() катает RNG по своей копии server/json/vassilich_loot.json');
     assert(/'loot' => \['name'=>\$pick\['name'\], 'rarity'=>intval\(\$pick\['rarity'\]\?\?0\)\]/.test(phpSrc),

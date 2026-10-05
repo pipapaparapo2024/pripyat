@@ -76,12 +76,15 @@ console.log('\nTest 4: hata.php.buy() — проверяет разблокир�
     const body  = hataPhp.slice(start, end);
 
     assert(/if\(!\$this->_isUnlocked\(\$user, \$loc\)\) return \$this->ops->fail\(94\);/.test(body), 'нужный босс ещё не побеждён → код 94');
-    assert(/if\(in_array\(\$locId, \$owned\)\) return \$this->ops->fail\(52\);/.test(body), 'уже куплено → код 52 (тот же код, что shmot.php использует для повторной покупки)');
-    assert(/if\(\$cost > 0 && !\$this->ops->deduct\(\$user, 'cigarettes', \$cost\)\) return \$this->ops->fail\(50\);/.test(body),
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026: hata.php.buy()
+    // получил SELECT...FOR UPDATE — бизнес-логика теперь на залоченной копии $lockedUser,
+    // фейл-ветки обёрнуты в rollback/close перед return).
+    assert(/if\(in_array\(\$locId, \$owned\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(52\);/.test(body), 'уже куплено → код 52 (тот же код, что shmot.php использует для повторной покупки)');
+    assert(/if\(\$cost > 0 && !\$this->ops->deduct\(\$lockedUser, 'cigarettes', \$cost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(body),
         'не хватает сигарет → код 50, списание через Gameops::deduct (с проверкой баланса)');
-    assert(/\$owned\[\] = \$locId;/.test(body) && /\$user\['base_bg_owned'\]\s*= json_encode\(\$owned\);/.test(body),
+    assert(/\$owned\[\] = \$locId;/.test(body) && /\$lockedUser\['base_bg_owned'\]\s*= json_encode\(\$owned\);/.test(body),
         'владение добавляется и сохраняется в base_bg_owned');
-    assert(/\$user\['base_bg_active'\] = strval\(\$locId\);/.test(body), 'купленная локация сразу становится активной (та же логика, что была на клиенте)');
+    assert(/\$lockedUser\['base_bg_active'\] = strval\(\$locId\);/.test(body), 'купленная локация сразу становится активной (та же логика, что была на клиенте)');
 }
 
 console.log('\nTest 5: hata.php.select() — требует владения (кроме Кубрика id0), бесплатный "переезд"');

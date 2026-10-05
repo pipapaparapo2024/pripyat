@@ -75,14 +75,21 @@ console.log('\nTest 2: dice.php — buyPoints() существует, валид
     assert(/\$this->ops->ok\(\['patch' => \$patch/.test(body), 'ok() отдаёт patch клиенту');
 }
 
-console.log('\nTest 3: roulette.php — BUY_POINTS_TABLE (те же 6 пакетов) + buyPoints() зеркально dice.php');
+console.log('\nTest 3: roulette.php — _buyPointsTable() (те же 6 пакетов) + buyPoints() зеркально dice.php');
 {
-    assert(/private \$BUY_POINTS_TABLE = \[/.test(roulettePhp), 'приватный массив BUY_POINTS_TABLE объявлен в классе (нет отдельного roulette_config.json)');
-    const tableStart = roulettePhp.indexOf('private $BUY_POINTS_TABLE = [');
-    const tableEnd   = roulettePhp.indexOf('\n    ];', tableStart);
-    const tableBody  = roulettePhp.slice(tableStart, tableEnd);
-    [[10,100],[25,250],[55,550],[115,1150],[250,2500],[550,5500]].forEach(([pts, price]) => {
-        assert(new RegExp(`'pts'=>${pts},\\s*'price'=>${price}`).test(tableBody), `пакет pts=${pts}/price=${price} присутствует`);
+    // 04.10.2026 (стале-пин, НЕ регрессия — см. аудит проекта, "дубль таблицы донат-цен"):
+    // приватный массив $BUY_POINTS_TABLE убран — был 3-й копией одной и той же таблицы
+    // (клиентские ROUL_PKGS/PKGS — 4-я и 5-я копии до дедупа). Теперь _buyPointsTable()
+    // читает dice_config.json.buy_points — ЕДИНЫЙ источник для обеих игр (см.
+    // tests/buy-points-dedup-and-roulette-jackpot-amount-04-10.test.js — там же проверены
+    // клиентские копии и сам dice_config.json). Сам факт "одна таблица, одна цена" не менялся.
+    assert(!/private \$BUY_POINTS_TABLE = \[/.test(roulettePhp), 'приватного $BUY_POINTS_TABLE больше нет (дедуп)');
+    assert(/private function _buyPointsTable\(\)\{/.test(roulettePhp), '_buyPointsTable() определён');
+    assert(/return \$this->ops->catalog\('dice_config'\)\['buy_points'\];/.test(roulettePhp), '_buyPointsTable() читает dice_config.json.buy_points');
+
+    const diceConfig = JSON.parse(fs.readFileSync(path.join(root, 'server/json/dice_config.json'), 'utf-8'));
+    [[10,100],[25,250],[55,550],[115,1150],[250,2500],[550,5500]].forEach(([pts, price], i) => {
+        assert(diceConfig.buy_points[i].pts === pts && diceConfig.buy_points[i].price === price, `пакет pts=${pts}/price=${price} присутствует в dice_config.json`);
     });
 
     // 29.09.2026: 'claimKeyring' удалён из permits (был эксплойтом — вызываемым напрямую из
@@ -95,8 +102,9 @@ console.log('\nTest 3: roulette.php — BUY_POINTS_TABLE (те же 6 пакет
     const end   = roulettePhp.indexOf('\n    // Отдельное прямое подключение к БД', start);
     const body  = roulettePhp.slice(start, end);
 
+    assert(/\$table = \$this->_buyPointsTable\(\);/.test(body), 'buyPoints() берёт таблицу через _buyPointsTable()');
     assert(/\$idx = intval\(\$this->registry\['user_params'\]\['pkg_idx'\] \?\? -1\);/.test(body), 'читает pkg_idx из user_params');
-    assert(/if\(\$idx < 0 \|\| \$idx >= count\(\$this->BUY_POINTS_TABLE\)\) return \$this->ops->fail\(54\);/.test(body), 'вне диапазона — fail(54)');
+    assert(/if\(\$idx < 0 \|\| \$idx >= count\(\$table\)\) return \$this->ops->fail\(54\);/.test(body), 'вне диапазона — fail(54)');
     assert(/if\(!\$this->ops->deduct\(\$user, 'coins', \$price\)\) return \$this->ops->fail\(50\);/.test(body), 'deduct(coins, price), недостаточно средств — fail(50)');
     assert(/\$this->ops->add\(\$user, 'blue_points', \$pts\);/.test(body), 'add(blue_points, pts)');
     assert(/if\(!\$this->ops->saveUser\(\$user\)\) return \$this->ops->fail\(99\);/.test(body), 'saveUser() с проверкой результата');

@@ -89,9 +89,10 @@ console.log('\nTest 3: habar.php.collectDay() — семантика "не на�
     const end   = habarPhp.indexOf('} else if(', start + 10);
     const branch = habarPhp.slice(start, end);
     assert(start >= 0, "ветка type==='damage' найдена в collectDay()");
-    assert(/\$sedoyMax = max\(\$this->ops->i\(\$user, 'sedoy_dmg_total'\), \$amount\);/.test(branch),
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в collectDay(), $lockedUser вместо $user).
+    assert(/\$sedoyMax = max\(\$this->ops->i\(\$lockedUser, 'sedoy_dmg_total'\), \$amount\);/.test(branch),
         'sedoyMax = max(старый общий максимум, новая выдача) — не складывается с накопленным остатком');
-    assert(/\$user\['sedoy_dmg_total'\] = \$sedoyMax;/.test(branch) && /\$user\['sedoy_dmg_left'\]\s*=\s*\$sedoyMax;/.test(branch),
+    assert(/\$lockedUser\['sedoy_dmg_total'\] = \$sedoyMax;/.test(branch) && /\$lockedUser\['sedoy_dmg_left'\]\s*=\s*\$sedoyMax;/.test(branch),
         "sedoy_dmg_left ПЕРЕЗАПИСЫВАЕТСЯ на sedoyMax при каждом сборе — старый остаток (например 300к) отбрасывается, а не складывается с новой выдачей (500к => 500к, не 800к)");
 }
 

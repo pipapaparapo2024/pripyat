@@ -62,7 +62,11 @@ const nickJs      = readSrc('_client/src/game/shell/popups/nick.js');
 
 console.log('\nTest 1: weapons остаётся в whitelist с content-валидацией; shmot убран из whitelist ПОЛНОСТЬЮ (25.09.2026, шаг дальше)');
 {
-    assert(/'gang_id','gang_data','weapons','inventory',/.test(usersPhp), 'weapons всё ещё в $allowed (нужен для легитимного расхода патронов)');
+    // 04.10.2026: было /'gang_id','gang_data','weapons','inventory',/ — 'gang_id' убран из
+    // этой же строки в том же аудите (own dedicated test: users-php-real-exec-save-whitelist-
+    // holes-closed.test.js), regex ломался на изменившемся соседстве, а не на реальном
+    // отсутствии 'weapons' (оно всё ещё здесь, просто без 'gang_id' перед собой).
+    assert(/'gang_data','weapons','inventory',/.test(usersPhp), 'weapons всё ещё в $allowed (нужен для легитимного расхода патронов)');
     assert(!/'weapons','shmot'/.test(usersPhp.replace(/\s+/g,'')), "'shmot' больше НЕ рядом с weapons в whitelist — убран целиком");
     assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory'\];/.test(usersPhp),
         'jsonBlobGuards содержит weapons и inventory — запись для shmot убрана вместе с самим полем');

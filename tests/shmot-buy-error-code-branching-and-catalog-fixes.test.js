@@ -55,7 +55,9 @@ console.log('\nTest 2: shmot.php.buy() — каждая отказная вет�
     assert(/error_log\('\[shmot\.buy\] fail\(52\)/.test(body), 'fail(52) логирует uid/item_id');
     assert(/error_log\('\[shmot\.buy\] fail\(54\)/.test(body), 'fail(54) логирует uid/item_id/тип цены');
     assert(/error_log\('\[shmot\.buy\] fail\(50\)/.test(body), 'fail(50) логирует uid/item_id/валюту/стоимость/реальный баланс — именно то, чего не хватало в живом репорте');
-    assert(/have='\.\$this->ops->i\(\$user, \$cur\)/.test(body), 'fail(50) логирует РЕАЛЬНЫЙ баланс на сервере (не то, что думает клиент)');
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в shmot.php.buy(), баланс в
+    // этом логе теперь читается с залоченной копии $lockedUser, не $user).
+    assert(/have='\.\$this->ops->i\(\$lockedUser, \$cur\)/.test(body), 'fail(50) логирует РЕАЛЬНЫЙ баланс на сервере (не то, что думает клиент)');
 }
 
 console.log('\nTest 3: каталог id41+ — сверка с полным списком сетов пользователя');

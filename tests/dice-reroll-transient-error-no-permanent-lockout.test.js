@@ -43,7 +43,11 @@ console.log('\nTest 1: dvor-dice-game.js — reroll обнуляет swapsLeft �
 console.log('\nTest 2: dice.php.reroll() — код 69 действительно означает "заряды переброса кончились"');
 {
     const rerollStart = dicePhpSrc.indexOf('function reroll()');
-    const body = dicePhpSrc.slice(rerollStart, rerollStart + 800);
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): окно расширено, т.к.
+    // reroll() теперь целиком обёрнут в _withUserLock(function(){...}) (tests/race-conditions-
+    // skills-weapons-ryukzak-casino-04-10.test.js) — сама проверка кода 69 отъехала дальше по
+    // файлу, инвариант (код 69 = заряды кончились) не менялся.
+    const body = dicePhpSrc.slice(rerollStart, rerollStart + 1200);
     assert(/swapsUsed'\]\) >= intval\(\$active\['swapsAllowed'\]\)\) return \$this->ops->fail\(69\);/.test(body),
         'code 69 — единственный код исчерпания зарядов переброса в reroll()');
 }

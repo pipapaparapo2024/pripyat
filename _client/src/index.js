@@ -12,7 +12,7 @@ import { startPreloaderVisual } from './modules/preloader-visual.js';
 import { installMobileViewport, viewportMetrics, onViewportChange } from './modules/mobile-viewport.js';
 import { applyRotatedCanvasStyle, clearRotatedCanvasStyle, mapPositionToPointRotated } from './modules/forced-landscape.js';
 import { installAppLifecyclePause } from './modules/app-lifecycle.js';
-import { registerLaunch } from './modules/friends-scope-gate.js';
+import { registerLaunch, syncLaunchCountToServerStorage } from './modules/friends-scope-gate.js';
 
 const _VER = (() => {
     const s = document.querySelector('script[src*="index.js"]');
@@ -110,6 +110,10 @@ for(let i = 0; i < partsData.length; i++) {
 }
 
 bridge.send("VKWebAppInit").then(e => window.VKinit = true).catch(() => { window.VKinit = true; });
+// 04.10.2026 (модерация ОК, п.1 — см. friends-scope-gate.js): зеркалируем счётчик запусков в
+// VK Storage (серверно, не привязано к устройству) ПОСЛЕ инициализации bridge — не блокирует
+// старт игры, выполняется в фоне.
+syncLaunchCountToServerStorage();
 
 // 28.09.2026 (адаптив под мобильные): в iOS-клиенте VK горизонтальный свайп от левого края
 // экрана — системный жест "назад", который сворачивает/закрывает мини-приложение. В игре

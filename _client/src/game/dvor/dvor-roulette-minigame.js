@@ -19,6 +19,14 @@ export function attachRouletteMinigame(proto){
     // редактором позиций: попап (231,83), кнопка ЗАБРАТЬ (423,487), кнопка РИСКНУТЬ (714,488) —
     // все три top-left (anchor 0,0), масштаб не менялся (native).
     proto._openJackpotChoice = function(){
+        // 04.10.2026 (аудит проекта — хардкод мимо реального ответа сервера): раньше это было
+        // ЕДИНСТВЕННЫМ источником суммы в попапе награды — реально начисленные рубли шли через
+        // applyPatch(res.patch) (сервер-авторитетно), но ТЕКСТ попапа брался из этой локальной
+        // константы. Если сумму приза когда-нибудь поменяют только в roulette.php.claimPrize()
+        // (там же захардкожено 500 — см. комментарий там), эта константа молча разойдётся с
+        // реальным начислением. Теперь — фолбэк на случай, если ответ сервера не содержит
+        // 'amount' (не ожидается при штатной работе) — реальное значение берётся из res.amount
+        // ниже, см. pointerdown.
         const jackpotAmount = 500;
         const win = new PIXI.Container();
         win.interactive = true;
@@ -43,12 +51,16 @@ export function attachRouletteMinigame(proto){
             TS.php('roulette.claimPrize', {}, (res)=>{
                 if(res && res.patch) applyPatch(res.patch);
                 if(win.parent) win.parent.removeChild(win);
+                // 04.10.2026: сумма — из ответа сервера (res.amount, roulette.php.claimPrize()
+                // уже возвращает её), а не из локальной константы выше — текст попапа теперь
+                // не может разойтись с тем, что реально начислено через patch.
+                const amount = (res && typeof res.amount !== 'undefined') ? res.amount : jackpotAmount;
                 // 26.09.2026 (по прямому репорту — "попап награды не появляется при заборе
                 // приза"): раньше подтверждение было только тихим обновлением this._roulResultTxt
                 // (мелкий текст на основном экране рулетки, легко не заметить). Теперь — тот же
                 // стандартный попап награды, что и везде в игре (iface._showRewardPopup).
-                if(window.iface) iface._showRewardPopup([{type:'coins', amount: jackpotAmount}]);
-                else if(this._roulResultTxt) this._roulResultTxt.text = 'Приз: +' + jackpotAmount.toLocaleString('ru') + 'р';
+                if(window.iface) iface._showRewardPopup([{type:'coins', amount}]);
+                else if(this._roulResultTxt) this._roulResultTxt.text = 'Приз: +' + amount.toLocaleString('ru') + 'р';
             }, ()=>{ if(this._roulResultTxt) this._roulResultTxt.text = 'Не удалось забрать приз'; });
         });
         win.addChild(takeBtn);

@@ -59,7 +59,9 @@ console.log('\nTest 3: shmot.php.buy() увеличивает coins_spent при
     assert(!!buyMatch, 'buy() найден в shmot.php');
     const body = buyMatch[1];
     assert(/\$item\['price'\]\['type'\] === 'coins'/.test(body), 'проверяется, что тип цены именно монеты');
-    assert(/\$this->ops->add\(\$user, 'coins_spent', \$cost\);/.test(body), "coins_spent увеличивается на \$cost при покупке за монеты");
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в shmot.php.buy(), $lockedUser
+    // вместо $user внутри лока; $patch строится уже после saveUser() из реального $user).
+    assert(/\$this->ops->add\(\$lockedUser, 'coins_spent', \$cost\);/.test(body), "coins_spent увеличивается на \$cost при покупке за монеты");
     assert(/\$patch\['coins_spent'\] = \$this->ops->i\(\$user, 'coins_spent'\);/.test(body),
         'обновлённый coins_spent явно попадает в patch, отправляемый клиенту');
 }

@@ -69,20 +69,20 @@ Class Roulette {
     private $KEYRING_CHANCE_DENOM  = 1000000; // 1 к миллиону — независимый ролл на каждую попытку, когда КД истёк
 
     // 26.09.2026 (по прямому указанию — аудит "покупка поинтов зариков/рулетки за рубли
-    // напрямую вызывает users.save", см. buyPoints() ниже) — 1-в-1 порт ROUL_PKGS[] из
-    // dvor-roulette-buy.js (те же 6 пакетов, что уже использует dice_config.json.buy_points
-    // для зеркальной покупки зариков). У рулетки нет собственного roulette_config.json (в
-    // отличие от dice_config.json) — константы этого контроллера (CUP_POOL/SPIN_SLOTS/
-    // KUSH_AMOUNT выше) уже хранятся прямо в классе, не в JSON-каталоге, поэтому таблица цены
-    // добавлена туда же, тем же стилем, а не заведён новый одноключевой JSON-файл ради 6 строк.
-    private $BUY_POINTS_TABLE = [
-        ['pts'=>10,  'price'=>100],
-        ['pts'=>25,  'price'=>250],
-        ['pts'=>55,  'price'=>550],
-        ['pts'=>115, 'price'=>1150],
-        ['pts'=>250, 'price'=>2500],
-        ['pts'=>550, 'price'=>5500],
-    ];
+    // напрямую вызывает users.save", см. buyPoints() ниже): таблица пакетов для синих поинтов
+    // рулетки по ТЗ — ТА ЖЕ самая (10/25/55/115/250/550 → 100/250/550/1150/2500/5500), что уже
+    // использует dice_config.json.buy_points для зариков.
+    //
+    // 04.10.2026 (аудит проекта — найден дубль в 4 местах: этот массив, dice_config.json.
+    // buy_points, и клиентские ROUL_PKGS[]/PKGS[] в dvor-roulette-buy.js/dvor-dice-screen.js):
+    // раньше здесь была СОБСТВЕННАЯ копия той же таблицы (аргумент был — "у рулетки нет
+    // roulette_config.json") — вместо того, чтобы заводить новый одноключевой JSON-файл ради
+    // 6 строк ИЛИ плодить третью копию, читаем её прямо из dice_config.json (единственный
+    // источник правды для ЭТОЙ конкретной таблицы — обе игры используют один и тот же прайс).
+    // Если когда-нибудь цены разъедутся — тогда и завести отдельный roulette_config.json, не раньше.
+    private function _buyPointsTable(){
+        return $this->ops->catalog('dice_config')['buy_points'];
+    }
 
     // Обычные (не эксклюзивные) слоты обычного спина рулетки — 1-в-1 порт SLOTS[] из
     // dvor-roulette-screen.js._resolveRouletteNewScreen() (23.09.2026, перенос награды спина
@@ -186,16 +186,17 @@ Class Roulette {
     // напрямую вызывает users.save"): dvor-roulette-buy.js.buyBluePoints() зеркально dice.php.
     // buyPoints() — раньше писала coins/blue_points оптимистично на клиенте (с откатом при
     // сетевой ошибке), но реальное сохранение шло через общий whitelist users.save, сервер
-    // верил присланным числам целиком. Таблица цены/количества — BUY_POINTS_TABLE выше (та же
-    // роль, что dice_config.json.buy_points у зариков, просто без отдельного JSON-файла).
+    // верил присланным числам целиком. Таблица цены/количества — _buyPointsTable() выше
+    // (04.10.2026: читает dice_config.json.buy_points — единый источник для обеих игр).
     function buyPoints(){
+        $table = $this->_buyPointsTable();
         $idx = intval($this->registry['user_params']['pkg_idx'] ?? -1);
-        if($idx < 0 || $idx >= count($this->BUY_POINTS_TABLE)) return $this->ops->fail(54); // некорректный индекс пакета
+        if($idx < 0 || $idx >= count($table)) return $this->ops->fail(54); // некорректный индекс пакета
 
         $user = $this->ops->loadUser();
         if(!$user) return $this->ops->fail(99);
 
-        $pkg = $this->BUY_POINTS_TABLE[$idx];
+        $pkg = $table[$idx];
         $price = intval($pkg['price']);
         $pts = intval($pkg['pts']);
 

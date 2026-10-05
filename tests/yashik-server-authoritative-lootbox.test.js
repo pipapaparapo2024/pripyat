@@ -87,10 +87,13 @@ console.log('\nTest 2: yashik.php.openBox() — списывает патрон 
     const end   = yashikPhp.indexOf('\n        function buyPatron(){', start);
     const body  = yashikPhp.slice(start, end);
 
-    assert(/if\(\$bullets > 0\)\{\s*\n\s*\$user\['bullets'\] = \$bullets - 1;/.test(body), 'при наличии патрона списывает именно его (приоритет над очками достижений)');
-    assert(/if\(\$ach < \$achCost\) return \$this->ops->fail\(70\);/.test(body), 'без патрона и очков достижений — fail(70)');
-    assert(/\$user\['ach_score'\] = \$ach - \$achCost;/.test(body), 'без патрона списывает очки достижений');
-    assert(/\$user\['yashik_session'\] = json_encode\(\$session\);/.test(body),
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026: openBox()
+    // получил SELECT...FOR UPDATE, вся бизнес-логика теперь на залоченной копии $lockedUser,
+    // фейл-ветки обёрнуты в rollback/close перед return).
+    assert(/if\(\$bullets > 0\)\{\s*\n\s*\$lockedUser\['bullets'\] = \$bullets - 1;/.test(body), 'при наличии патрона списывает именно его (приоритет над очками достижений)');
+    assert(/if\(\$ach < \$achCost\)\{[\s\S]{0,120}?return \$this->ops->fail\(70\);/.test(body), 'без патрона и очков достижений — fail(70)');
+    assert(/\$lockedUser\['ach_score'\] = \$ach - \$achCost;/.test(body), 'без патрона списывает очки достижений');
+    assert(/\$lockedUser\['yashik_session'\] = json_encode\(\$session\);/.test(body),
         'награда откладывается в yashik_session, а НЕ начисляется сразу в этом методе — сохраняет UX "НАЗАД сжигает награду"');
     assert(!/->add\(\$user, 'cigarettes'/.test(body) && !/->add\(\$user, 'coins'/.test(body) && !/->add\(\$user, 'exp'/.test(body),
         'openBox() не начисляет валюту напрямую (нет Gameops::add на cigarettes/coins/exp) — это делает только collect()');
@@ -106,7 +109,8 @@ console.log('\nTest 3: yashik.php.buyPatron() — списывает тушён�
     // ещё и реальные цифры (см. yashik-full-report тест ниже или сам yashik.php).
     assert(/if\(\$have < \$cost\)\{/.test(body) && /'code'=>71, 'need'=>\$cost, 'have'=>\$have/.test(body),
         'недостаточно тушёнки — явная проверка балансa (сервер сам проверяет, не доверяя клиенту), код 71 + реальные need/have');
-    assert(/\$user\['bullets'\] = \$this->ops->i\(\$user, 'bullets'\) \+ 1;/.test(body), 'патрон реально выдаётся после списания');
+    // 05.10.2026 (стале-пин, не регрессия — buyPatron() получил SELECT...FOR UPDATE, $lockedUser вместо $user).
+    assert(/\$lockedUser\['bullets'\] = \$this->ops->i\(\$lockedUser, 'bullets'\) \+ 1;/.test(body), 'патрон реально выдаётся после списания');
 }
 
 console.log('\nTest 4: yashik.php.collect() — начисляет отложенную награду ровно один раз, закрывает сессию');
@@ -115,12 +119,13 @@ console.log('\nTest 4: yashik.php.collect() — начисляет отложе�
     const end   = yashikPhp.lastIndexOf('}');
     const body  = yashikPhp.slice(start, end);
 
-    assert(/if\(!is_array\(\$session\)\) return \$this->ops->fail\(72\);/.test(body), 'нечего забирать (не открывали / уже забрали) — fail(72)');
-    assert(/\$this->ops->add\(\$user, 'stash_count', intval\(\$session\['stash'\]\)\);/.test(body), 'начисляет нычки в stash_count (не habar_counts — та же коллизия полей, что уже чинили)');
-    assert(/\$this->ops->add\(\$user, 'cigarettes', intval\(\$session\['cig'\]\)\);/.test(body), 'начисляет сигареты');
-    assert(/\$this->ops->add\(\$user, 'coins', intval\(\$session\['coins'\]\)\);/.test(body), 'начисляет рубли');
-    assert(/\$this->ops->add\(\$user, 'exp', intval\(\$session\['exp'\]\)\);/.test(body), 'начисляет опыт');
-    assert(/\$user\['yashik_session'\] = null;/.test(body), 'сессия закрывается после начисления — повторный collect() ничего не даст (fail(72))');
+    // 05.10.2026 (стале-пин, не регрессия — collect() получил SELECT...FOR UPDATE, $lockedUser вместо $user).
+    assert(/if\(!is_array\(\$session\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(72\);/.test(body), 'нечего забирать (не открывали / уже забрали) — fail(72)');
+    assert(/\$this->ops->add\(\$lockedUser, 'stash_count', intval\(\$session\['stash'\]\)\);/.test(body), 'начисляет нычки в stash_count (не habar_counts — та же коллизия полей, что уже чинили)');
+    assert(/\$this->ops->add\(\$lockedUser, 'cigarettes', intval\(\$session\['cig'\]\)\);/.test(body), 'начисляет сигареты');
+    assert(/\$this->ops->add\(\$lockedUser, 'coins', intval\(\$session\['coins'\]\)\);/.test(body), 'начисляет рубли');
+    assert(/\$this->ops->add\(\$lockedUser, 'exp', intval\(\$session\['exp'\]\)\);/.test(body), 'начисляет опыт');
+    assert(/\$lockedUser\['yashik_session'\] = null;/.test(body), 'сессия закрывается после начисления — повторный collect() ничего не даст (fail(72))');
 }
 
 console.log('\nTest 5: обычная награда ящика больше не включает случайную одежду из общего пула (редизайн 02.10.2026) — единственный источник шмота из ящика теперь Потерянный тайник, с собственным owned-фильтром');

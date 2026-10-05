@@ -93,7 +93,9 @@ console.log('\nTest 3: пороги задач (1/5/7/10) реально дос�
 console.log('\nTest 4: habar_days_collected — реальный писатель есть (habar.php.collectDay()), habar_opened больше никем не пишется');
 {
     const habarPhp = fs.readFileSync(path.join(root, 'server/core/controllers/habar.php'), 'utf-8');
-    assert(/\$user\['habar_days_collected'\]\s*=\s*\$collected \+ 1;/.test(habarPhp),
+    // 05.10.2026 (стале-пин, не регрессия — collectDay() получил SELECT...FOR UPDATE, см.
+    // tests/habar-server-authoritative-migration.test.js — $lockedUser вместо $user).
+    assert(/\$lockedUser\['habar_days_collected'\]\s*=\s*\$collected \+ 1;/.test(habarPhp),
         'habar.php.collectDay() реально инкрементирует habar_days_collected при каждом сборе — задачи теперь двигаются вместе с игровым прогрессом');
     assert(!/habar_opened/.test(habarPhp), 'habar.php больше нигде не упоминает habar_opened (мёртвое поле, писателя не осталось)');
 }

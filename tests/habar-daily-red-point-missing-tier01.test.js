@@ -100,7 +100,8 @@ console.log('\nTest 4: server/core/controllers/habar.php — collectDay() по-�
     const body  = src.slice(start, end);
     assert(/in_array\(\$type, \['coins','cigarettes','dice_points','blue_points','poker_chips'\], true\)/.test(body),
         'whitelist типов collectDay() включает dice_points — сама выдача не менялась, менялся только конфиг');
-    assert(/\$this->ops->add\(\$user, \$type, \$amount\);/.test(body), 'добавление валюты идёт через Gameops::add() — тот же путь для dice_points, что и для coins/cigarettes');
+    // 05.10.2026 (стале-пин, не регрессия — блокировка строки в collectDay(), $lockedUser вместо $user).
+    assert(/\$this->ops->add\(\$lockedUser, \$type, \$amount\);/.test(body), 'добавление валюты идёт через Gameops::add() — тот же путь для dice_points, что и для coins/cigarettes');
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────

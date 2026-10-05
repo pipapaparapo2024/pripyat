@@ -1019,14 +1019,56 @@
         // следующего очка скилла было no-op с самого начала, для ВСЕХ 4 путей выхода из боя
         // (победа/поражение/таймаут/форфейт/крестик) — не только для крестика, который чинили
         // вчера отдельно (тот фикс был правильным и нужным, но не мог сработать без этого).
-        // Мутирует $user['skills_levels'] НА МЕСТЕ (теперь по-настоящему) — сохранение (saveUser)
-        // остаётся за вызывающим.
-        private function _finalizeSkillSession(&$user){
+        // 04.10.2026 (аудит гонок состояний — то же, что уже исправлено в attack() выше):
+        // раньше читала skills_levels из $user, загруженного В НАЧАЛЕ claimKill()/
+        // endFightSession() — если параллельный attack() того же игрока успевал сохранить
+        // новый dmgSpent МЕЖДУ тем loadUser() и этим вызовом, финализация пересчитывала откат
+        // от устаревшего снимка и теряла реальный прогресс последнего удара (или наоборот —
+        // откатывала его дважды). Теперь читает АКТУАЛЬНОЕ значение под SELECT...FOR UPDATE
+        // (тот же лок, что и в attack()/skills.upgrade() — одна и та же строка игрока) и пишет
+        // результат ОТДЕЛЬНЫМ UPDATE прямо здесь. Больше НЕ мутирует $user по ссылке и ничего
+        // не сохраняет через общий saveUser() вызывающего — возвращает готовую JSON-строку,
+        // которую вызывающий код должен присвоить в $user['skills_levels'] ПОСЛЕ своего
+        // saveUser(), иначе тот saveUser() перезапишет поле устаревшим снимком (тот же принцип,
+        // что у boss_fight_session/weapons — см. комментарии в attack()).
+        //
+        // 04.10.2026 (баг найден при написании теста на этот же фикс — "если _rawLink() не
+        // смог открыть соединение, финализация считалась, но НИКОГДА не сохранялась": в
+        // фолбэк-случае функция просто возвращала JSON, ничего не записывая — а вызывающий
+        // код (claimKill()/endFightSession()) присваивал его в $user ТОЛЬКО ПОСЛЕ своего
+        // saveUser(), то есть слишком поздно для этого же запроса). Теперь возврат — массив
+        // ['json'=>…, 'locked'=>bool]: 'locked'=true — уже записано отдельным UPDATE,
+        // вызывающий присваивает в $user ПОСЛЕ своего saveUser(); 'locked'=false — лока не
+        // было, вызывающий ОБЯЗАН присвоить в $user ДО своего saveUser(), иначе результат
+        // потеряется молча.
+        private function _finalizeSkillSession($user){
             $sCatalog = $this->ops->catalog('skills_config');
+            $uid = intval($this->registry['uid']);
+
+            $link = $this->_rawLink();
+            if($link){
+                $link->begin_transaction();
+                $res = $link->query("SELECT `skills_levels` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                $userForState = $row ? array_merge($user, ['skills_levels' => $row['skills_levels']]) : $user;
+                $state = $this->_loadSkillsState($userForState);
+
+                $earned = $this->_skillEarnedPoints($sCatalog, intval($state['dmgSpent']));
+                $state['dmgSpent'] = $this->_skillTotalDmgForPoints($sCatalog, $earned);
+                $json = json_encode($state);
+
+                $link->query("UPDATE `{$this->registry['utb']}` SET `skills_levels`='".$link->real_escape_string($json)."' WHERE `id`=$uid");
+                $link->commit();
+                $link->close();
+                return ['json' => $json, 'locked' => true];
+            }
+
+            // Фолбэк без лока (не удалось открыть отдельное соединение) — лучше редкий шанс
+            // гонки, чем полностью заблокированный выход из боя.
             $state = $this->_loadSkillsState($user);
             $earned = $this->_skillEarnedPoints($sCatalog, intval($state['dmgSpent']));
             $state['dmgSpent'] = $this->_skillTotalDmgForPoints($sCatalog, $earned);
-            $user['skills_levels'] = json_encode($state);
+            return ['json' => json_encode($state), 'locked' => false];
         }
 
         // Фиксирует ИСТИННОЕ окончание боя без победы (таймаут/форфейт "выйти из боя") — client
@@ -1097,8 +1139,14 @@
                 $patchKeys[] = 'bosses_data';
             }
 
-            $this->_finalizeSkillSession($user);
+            // 04.10.2026: _finalizeSkillSession() теперь сама лочит строку и пишет
+            // skills_levels отдельным UPDATE (не мутирует $user) — присваиваем результат В
+            // $user ДО saveUser() ТОЛЬКО если лока не было (иначе результат потеряется), см.
+            // комментарий в самой функции.
+            $skillsResult = $this->_finalizeSkillSession($user);
+            if(!$skillsResult['locked']) $user['skills_levels'] = $skillsResult['json'];
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            $user['skills_levels'] = $skillsResult['json'];
             $patch = $this->ops->patchCurrencies($user, $patchKeys);
             $this->ops->ok(['patch' => $patch, 'top' => $top]);
         }
@@ -1337,19 +1385,62 @@
             // Прогресс скиллов (22.09.2026) — растёт ТОЛЬКО здесь, на реальный только что
             // посчитанный урон. Кап на total_points (460, ~20кк урона) — дальше копить смысла
             // нет, тот же принцип, что у skills.js.addFightDamage() был на клиенте.
-            if($this->_skillEarnedPoints($sCatalog, intval($skillsState['dmgSpent'])) < intval($sCatalog['total_points'])){
-                $skillsState['dmgSpent'] = intval($skillsState['dmgSpent']) + $damage;
+            //
+            // 04.10.2026 (аудит гонок состояний): skills.php.upgrade() мутирует ТО ЖЕ самое
+            // skills_levels обычным loadUser()/saveUser() без лока — $skillsState выше прочитан
+            // в начале attack() ДО удара и мог устареть, если игрок параллельно прокачал навык
+            // (или если второй attack() того же игрока прилетел почти одновременно). Тот же
+            // приём, что уже применён к weapons чуть выше в этой же функции — SELECT...FOR
+            // UPDATE на строке держит её до COMMIT, второй параллельный запрос (другой attack()
+            // ИЛИ skills.upgrade() — оба теперь используют одноимённую блокировку строки)
+            // реально ждёт и видит уже обновлённое значение, а не гонит lost update. НЕ
+            // присваиваем $user['skills_levels'] здесь — присвоение переносится ПОСЛЕ saveUser()
+            // ниже (см. тот же приём у boss_fight_session чуть ниже), иначе общий saveUser()
+            // перезаписал бы поле устаревшим снимком, загруженным в начале функции.
+            $skLink = $this->_rawLink();
+            if($skLink){
+                $skLink->begin_transaction();
+                $skRes = $skLink->query("SELECT `skills_levels` FROM `{$this->registry['utb']}` WHERE `id`=".intval($this->registry['uid'])." FOR UPDATE");
+                $skRow = ($skRes && $skRes->num_rows > 0) ? $skRes->fetch_assoc() : null;
+                $skUserForState = $skRow ? array_merge($user, ['skills_levels' => $skRow['skills_levels']]) : $user;
+                $skillsState = $this->_loadSkillsState($skUserForState);
+
+                if($this->_skillEarnedPoints($sCatalog, intval($skillsState['dmgSpent'])) < intval($sCatalog['total_points'])){
+                    $skillsState['dmgSpent'] = intval($skillsState['dmgSpent']) + $damage;
+                }
+                $this->_syncSkillPoints($skillsState, $sCatalog);
+                $finalSkillsJson = json_encode($skillsState);
+
+                $skLink->query("UPDATE `{$this->registry['utb']}` SET `skills_levels`='".$skLink->real_escape_string($finalSkillsJson)."' WHERE `id`=".intval($this->registry['uid']));
+                $skLink->commit();
+                $skLink->close();
+            } else {
+                // 04.10.2026 (баг найден при написании теста на этот же фикс — "если
+                // _rawLink() не смог открыть соединение, прогресс скиллов считался, но
+                // НИКОГДА не сохранялся": прямой UPDATE выше пропускался, а отложенное
+                // присвоение $user['skills_levels'] происходило бы уже ПОСЛЕ saveUser(), то
+                // есть слишком поздно для этого же запроса). Без лока — сохраняем как раньше:
+                // лучше редкий шанс гонки, чем полностью потерянный прогресс.
+                if($this->_skillEarnedPoints($sCatalog, intval($skillsState['dmgSpent'])) < intval($sCatalog['total_points'])){
+                    $skillsState['dmgSpent'] = intval($skillsState['dmgSpent']) + $damage;
+                }
+                $this->_syncSkillPoints($skillsState, $sCatalog);
+                $finalSkillsJson = json_encode($skillsState);
+                $user['skills_levels'] = $finalSkillsJson;
             }
-            // 25.09.2026: сразу подтягиваем в персистентный баланс points любые новые очки,
-            // пересёкшие порог этим ударом — см. _syncSkillPoints().
-            $this->_syncSkillPoints($skillsState, $sCatalog);
-            $user['skills_levels'] = json_encode($skillsState);
 
             // boss_fight_session уже атомарно сохранён выше (_commitFightSession) — НЕ
             // присваиваем его здесь, иначе этот saveUser() перезаписал бы его значением,
             // загруженным ДО блокировки (устаревшим относительно только что закоммиченного).
             $user['bosses_data'] = json_encode($data);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+            // skills_levels — тот же принцип, что bosses_data/boss_fight_session выше: только
+            // ТЕПЕРЬ, после saveUser(), можно безопасно подставить свежее значение в $user для
+            // patch/debug ниже — сам saveUser() уже прошёл и не может перезаписать его заново.
+            // Если лок не удался, $user['skills_levels'] уже выставлен ВЫШЕ (до saveUser()) —
+            // переприсвоение того же значения здесь безвредно (идемпотентно).
+            $user['skills_levels'] = $finalSkillsJson;
 
             $verifyUser = $this->ops->loadUser(['id', 'bosses_data']);
             $verifyRaw  = $verifyUser ? ($verifyUser['bosses_data'] ?? null) : '!!! loadUser() ПОСЛЕ save вернул null !!!';
@@ -1654,8 +1745,36 @@
             if($bossId <= 2) $user['boss_kills_'.$bossId] = $this->ops->i($user, 'boss_kills_'.$bossId) + 1;
 
             // Очки рюкзака (по каталогу — те же RYUKZAK_PTS, что в bosses-combat.js._onDefeat).
+            //
+            // 04.10.2026 (аудит гонок состояний): ryukzak.php.open() читает ryukzak_points и
+            // обнуляет его отдельным loadUser()/saveUser() без лока — если игрок открывает
+            // рюкзак ровно в момент получения награды за килл, одно из двух сохранений
+            // (начисление здесь или обнуление там) могло затереть другое. SELECT...FOR UPDATE
+            // на строке держит её до COMMIT — второй параллельный запрос реально ждёт и видит
+            // уже актуальное значение. НЕ присваиваем $user['ryukzak_points'] здесь — это
+            // сделает общий saveUser() ниже перезаписать поле устаревшим снимком (тот же
+            // принцип, что у skills_levels/boss_fight_session выше); присвоение переносится
+            // ПОСЛЕ saveUser(), только для patch/debug.
             $ryukzakPts = intval($catalog['ryukzak_pts'][$bossId] ?? 0);
-            $user['ryukzak_points'] = $this->ops->i($user, 'ryukzak_points') + $ryukzakPts;
+            $rpLink = $this->_rawLink();
+            if($rpLink){
+                $rpLink->begin_transaction();
+                $rpRes = $rpLink->query("SELECT `ryukzak_points` FROM `{$this->registry['utb']}` WHERE `id`=".intval($this->registry['uid'])." FOR UPDATE");
+                $rpRow = ($rpRes && $rpRes->num_rows > 0) ? $rpRes->fetch_assoc() : null;
+                $freshRyukzakPts = ($rpRow !== null ? intval($rpRow['ryukzak_points']) : $this->ops->i($user, 'ryukzak_points')) + $ryukzakPts;
+                $rpLink->query("UPDATE `{$this->registry['utb']}` SET `ryukzak_points`='".intval($freshRyukzakPts)."' WHERE `id`=".intval($this->registry['uid']));
+                $rpLink->commit();
+                $rpLink->close();
+            } else {
+                // 04.10.2026 (баг найден при написании теста на этот же фикс — "если
+                // _rawLink() не смог открыть соединение, начисление считалось, но НИКОГДА не
+                // сохранялось": прямой UPDATE выше пропускался, а отложенное присвоение
+                // $user['ryukzak_points'] происходило бы уже ПОСЛЕ saveUser(), то есть
+                // слишком поздно для этого же запроса). Без лока — сохраняем как раньше: лучше
+                // редкий шанс гонки, чем полностью потерянное начисление.
+                $freshRyukzakPts = $this->ops->i($user, 'ryukzak_points') + $ryukzakPts;
+                $user['ryukzak_points'] = $freshRyukzakPts;
+            }
 
             // Прогресс хаты — максимальный побеждённый босс (та же логика, что hata_progress в клиенте).
             $curHataProg = intval($this->ops->i($user, 'hata_progress', -1));
@@ -1806,9 +1925,16 @@
             // 22.09.2026: победа завершает попытку — та же финализация сессии скиллов (откат
             // прогресса до пола уровня, если левелапа не было ЗА ЭТУ попытку), что
             // endFightSession() делает для таймаута/форфейта/крестика (см. _finalizeSkillSession()).
-            $this->_finalizeSkillSession($user);
+            // 04.10.2026: функция теперь сама лочит строку и пишет skills_levels отдельным
+            // UPDATE (не мутирует $user) — присваиваем результат в $user ДО saveUser() ТОЛЬКО
+            // если лока не было (иначе результат потеряется), см. комментарий в самой функции.
+            $skillsResult = $this->_finalizeSkillSession($user);
+            if(!$skillsResult['locked']) $user['skills_levels'] = $skillsResult['json'];
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+            $user['skills_levels'] = $skillsResult['json'];
+            $user['ryukzak_points'] = $freshRyukzakPts;
 
             $verifyUser = $this->ops->loadUser(['id', 'bosses_data']);
             $verifyRaw  = $verifyUser ? ($verifyUser['bosses_data'] ?? null) : '!!! loadUser() ПОСЛЕ save вернул null !!!';

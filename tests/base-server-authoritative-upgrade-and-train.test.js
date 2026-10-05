@@ -92,13 +92,18 @@ console.log('\nTest 2: _trainStat(idx) больше не мутирует energy
 
 console.log('\nTest 3: server/core/controllers/base.php — upgrade()/train() остаются единственным источником списания валюты/энергии');
 {
-    assert(/if\(isset\(\$cost\['coins'\]\) && !\$this->ops->deduct\(\$user, 'coins', intval\(\$cost\['coins'\]\)\)\) return \$this->ops->fail\(50\);/.test(phpSrc),
+    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026, параллельная
+    // сессия добавила SELECT...FOR UPDATE в base.php.upgrade()/train(), тот же приём, что уже
+    // применён в habar.php/weapons.php/skills.php): списание теперь идёт на отдельной копии
+    // $lockedUser (залоченной под FOR UPDATE), не на $user напрямую, и обёрнуто в rollback/close
+    // на фейл-ветке — проверяем суть (какая валюта/формула списывается), не точный синтаксис if.
+    assert(/if\(isset\(\$cost\['coins'\]\) && !\$this->ops->deduct\(\$lockedUser, 'coins', intval\(\$cost\['coins'\]\)\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
         'upgrade() списывает coins через Gameops::deduct с проверкой баланса');
-    assert(/if\(isset\(\$cost\['stew'\]\) && !\$this->ops->deduct\(\$user, 'stew', intval\(\$cost\['stew'\]\)\)\) return \$this->ops->fail\(50\);/.test(phpSrc),
+    assert(/if\(isset\(\$cost\['stew'\]\) && !\$this->ops->deduct\(\$lockedUser, 'stew', intval\(\$cost\['stew'\]\)\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
         'upgrade() списывает stew через Gameops::deduct с проверкой баланса');
     // 28.09.2026 (фикс собственного теста после централизации списания энергии в
     // Gameops::spendEnergy() — сохраняет остаток прогресса регенерации, deduct() этого не умел):
-    assert(/\$energyCost = 3;/.test(phpSrc) && /if\(!\$this->ops->spendEnergy\(\$user, \$energyCost\)\) return \$this->ops->fail\(50\);/.test(phpSrc),
+    assert(/\$energyCost = 3;/.test(phpSrc) && /if\(!\$this->ops->spendEnergy\(\$lockedUser, \$energyCost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
         'train() списывает фиксированные 3 энергии через Gameops::spendEnergy() с проверкой баланса (не сырой deduct)');
     assert(!/str_xp_total/.test(phpSrc),
         'подтверждено: base.php вообще не знает о str_xp_total — это поле осознанно остаётся целиком клиент-авторитетным');

@@ -1,4 +1,5 @@
 import { applyPatch } from '../../modules/patch.js';
+import buyPointsPackages from '../../data/buy_points_packages.json';
 
 /** Зарики — построение нового экрана и экран покупки поинтов. */
 export function attachDiceScreen(proto){
@@ -278,14 +279,10 @@ export function attachDiceScreen(proto){
 
         const PKG_COLS = [{x:548},{x:689},{x:832}];
         const PKG_ROWS = [{y:324},{y:498}];
-        const PKGS = [
-            {pts:10,  price:100,  img:'рулетка 100.png'},
-            {pts:25,  price:250,  img:'рулетка 250.png'},
-            {pts:55,  price:550,  img:'рулетка 550.png'},
-            {pts:115, price:1150, img:'рулетка 1150.png'},
-            {pts:250, price:2500, img:'рулетка 2500.png'},
-            {pts:550, price:5500, img:'рулетка 5500.png'},
-        ];
+        // 04.10.2026 (аудит проекта — убрали дубль таблицы цен с dvor-roulette-buy.js/
+        // roulette.php/dice_config.json): единый источник — buy_points_packages.json (тот же
+        // прайс по ТЗ для обеих валют поинтов, рулетка и зарики).
+        const PKGS = buyPointsPackages;
         const PKG_W = 152;
 
         let purchasePending = false;

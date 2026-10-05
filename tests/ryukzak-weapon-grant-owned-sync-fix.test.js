@@ -62,9 +62,14 @@ console.log('\nTest 2: open() больше не начисляет ammo_* нап
     assert(!/ops->add\(\$user, 'ammo_machete'/.test(body), 'прямой add(ammo_machete) убран');
     assert(!/ops->add\(\$user, 'ammo_gun'/.test(body), 'прямой add(ammo_gun) убран');
     assert(!/ops->add\(\$user, 'ammo_auto'/.test(body), 'прямой add(ammo_auto) убран');
-    assert(/this->_grantWeaponReward\(\$user, 'machete', \$mach\);/.test(body), 'мачете начисляется через _grantWeaponReward()');
-    assert(/this->_grantWeaponReward\(\$user, 'gun', \$pist\);/.test(body), 'ствол начисляется через _grantWeaponReward()');
-    assert(/this->_grantWeaponReward\(\$user, 'auto', \$ak\);/.test(body), 'автомат начисляется через _grantWeaponReward()');
+    // 04.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний): вызовы теперь идут на
+    // $tempUser (временная копия с АКТУАЛЬНЫМ под локом weapons), не на $user напрямую — тот
+    // же приём, что защищает weapons от гонки с weapons.php.buy()/upgrade()/bosses.php.attack()
+    // (см. tests/race-conditions-skills-weapons-ryukzak-casino-04-10.test.js). Сам факт вызова
+    // _grantWeaponReward() для каждого типа оружия не менялся.
+    assert(/this->_grantWeaponReward\(\$tempUser, 'machete', \$mach\);/.test(body), 'мачете начисляется через _grantWeaponReward()');
+    assert(/this->_grantWeaponReward\(\$tempUser, 'gun', \$pist\);/.test(body), 'ствол начисляется через _grantWeaponReward()');
+    assert(/this->_grantWeaponReward\(\$tempUser, 'auto', \$ak\);/.test(body), 'автомат начисляется через _grantWeaponReward()');
 }
 
 console.log('\nTest 3: patch клиенту содержит weapons');
