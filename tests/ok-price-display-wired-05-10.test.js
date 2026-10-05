@@ -99,13 +99,13 @@ console.log('\nTest 6: energy_buy.js — покупка энергии и на V
         'плашка показывает именно price_ok, не votes (VK-поле) — снова нарисована, см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js');
 }
 
-console.log('\nTest 7: modules/iap.js — startPurchase() одинаков для VK и ОК (05.10.2026, живой лог ОК показал, что Launcher площадки сам перехватывает VKWebAppShowOrderBox — прямой вызов FAPI.UI.showPayment() убран)');
+console.log('\nTest 7: modules/iap.js — ВОЗВРАЩЁН прямой FAPI.UI.showPayment() для ОК (05.10.2026, живой тест показал "item за null OK": VKWebAppShowOrderBox не передаёт цену, Launcher ОК не нашёл её в своём каталоге — у FAPI.UI.showPayment() цена явный параметр, каталог не нужен)');
 {
     const src = read('_client/src/modules/iap.js');
-    assert(/export function startPurchase\(itemId\)\{/.test(src), 'startPurchase() — единственная функция, без ветвления по платформе');
-    assert(/bridge\.send\('VKWebAppShowOrderBox', \{ type: 'item', item: itemId \}\);/.test(src), 'вызывает bridge.send(VKWebAppShowOrderBox) — тот же путь, что и раньше у VK, теперь общий для обеих площадок');
-    assert(!/isOk\(\)/.test(src), 'платформенное ветвление убрано — ОК Launcher сам транслирует VK Bridge-вызов в свою оплату');
-    assert(!/FAPI\.UI\.showPayment\(name/.test(src), 'реальный вызов FAPI.UI.showPayment(name,...) убран из кода (в докблоке остаётся только упоминание в прозе истории решения) — серверный колбэк ok_pay_callback.php по-прежнему нужен, см. его собственный тест');
+    assert(/export function startPurchase\(itemId, priceOk, label\)\{/.test(src), 'startPurchase() снова принимает priceOk/label — нужны для явной передачи цены в FAPI');
+    assert(/if\(isOk\(\)\) return _startOkPurchase\(itemId, priceOk, label\);/.test(src), 'ОК снова ветвится отдельно — VKWebAppShowOrderBox для ОК не годится (нет цены)');
+    assert(/bridge\.send\('VKWebAppShowOrderBox', \{ type: 'item', item: itemId \}\);/.test(src), 'VK по-прежнему на VKWebAppShowOrderBox (у VK цена настроена в его собственном кабинете, путь годами работал)');
+    assert(/FAPI\.UI\.showPayment\(name, desc, numericId, priceOk, null, null, 'ok', 'true', null\);/.test(src), 'ОК вызывает FAPI.UI.showPayment() с ЯВНОЙ ценой (priceOk) — не зависит от каталога цен площадки');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

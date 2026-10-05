@@ -128,12 +128,11 @@ export default class Bank{
 		return isOk() ? donuts_info[name]['price_ok'][i] : donuts_info[name]['price'][i] / 7;
 	}
 
-	// 05.10.2026 (по прямому указанию, после разбора живого консольного лога ОК — таблица
-	// совместимости apiok.ru оказалась неверной для кросспостинг-приложений, VKWebAppShowOrderBox
-	// реально перехватывается и обслуживается "VK Mini App Launcher" площадки ОК): прежний
-	// "Вариант А" (прятать покупки на ОК целиком) заменён обычной покупкой — slot'ы показываются
-	// на ОК так же, как на VK, клик идёт через тот же startPurchase() (modules/iap.js), который
-	// теперь одинаков для обеих площадок (см. докблок iap.js).
+	// 05.10.2026 (по прямому указанию, после ДВУХ живых тестов за день — см. докблок iap.js для
+	// полной истории): прежний "Вариант А" (прятать покупки на ОК целиком) заменён реальной
+	// покупкой через FAPI.UI.showPayment() с явной ценой — slot'ы снова показываются на ОК, клик
+	// идёт через тот же startPurchase() (modules/iap.js), который платформо-зависим (ОК — FAPI
+	// с priceOk, VK — VKWebAppShowOrderBox как раньше).
 	genSlots(name){
 		let stew_len = name == 'stew' ? 0 : donuts_info['stew']['price'].length;
 		let coins_len = name == 'stew' || name == 'coins' ? 0 : donuts_info['coins']['price'].length;

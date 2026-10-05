@@ -4,12 +4,12 @@
  * локальный PHP — подпись/каталог товаров/санитизация transaction_id/идемпотентный ключ, не
  * просто grep по тексту файла.
  *
- * Поток целиком (обновлено 05.10.2026 после живого лога ОК — см. Test 5 ниже): игрок жмёт
- * "Купить" → modules/iap.js.startPurchase() зовёт bridge.send('VKWebAppShowOrderBox', ...),
- * тот же вызов, что и на VK → ОК-овский "VK Mini App Launcher" сам перехватывает его и
- * показывает своё окно оплаты → игрок подтверждает → ОК шлёт подписанный GET на
+ * Поток целиком (дважды обновлено 05.10.2026 — см. Test 5 ниже для полной истории): игрок жмёт
+ * "Купить" → modules/iap.js._startOkPurchase() зовёт FAPI.UI.showPayment() с явной ценой →
+ * ОК показывает своё окно оплаты → игрок подтверждает → ОК шлёт подписанный GET на
  * server/ok_pay_callback.php → сервер проверяет подпись (OkPayCallback::checkSig(), тот же
- * md5(sorted_params+secret), что у VK-webhook) и начисляет товар.
+ * md5(sorted_params+secret), что у VK-webhook) и начисляет товар. (Промежуточная версия в тот же
+ * день пробовала VKWebAppShowOrderBox — живой тест показал "цена: null OK", см. Test 5.)
  *
  * Секрет для проверки подписи — общий с VK (registry.php['api_secret']), отдельного секрета
  * ОК не существует для кросспостинг-приложений (см. Test 8 ниже).
@@ -82,18 +82,24 @@ console.log('\nTest 4: исполняемая часть — идемпотен�
     assertRegex(/respondOk\(\);/.test(body), 'уже обработанный transaction_id отвечает успехом (идемпотентно), но без повторного начисления');
 }
 
-console.log('\nTest 5: modules/iap.js — 05.10.2026 (живой консольный лог ОК): прямой вызов FAPI.init()/FAPI.UI.showPayment() убран, покупка идёт через VKWebAppShowOrderBox для обеих площадок');
+console.log('\nTest 5: modules/iap.js — 05.10.2026, финальная версия ЗА ОДИН ДЕНЬ прошла два живых теста: FAPI.UI.showPayment() с явной ценой ВОЗВРАЩЁН, VKWebAppShowOrderBox для ОК отменён повторно');
 {
-    // Живой лог сессии внутри реальной ОК показал "[VK MINI APP] Launcher v. 0.1.136" с
-    // handlers:-списком, явно включающим VKWebAppShowOrderBox — площадка сама перехватывает этот
-    // VK Bridge-вызов и транслирует его в FAPI внутри себя. Таблица совместимости apiok.ru,
-    // на которую опирались раньше ("VKWebAppShowOrderBox — не поддерживается"), для
-    // кросспостинг-приложений оказалась неверной/устаревшей. См. tests/ok-price-display-wired-
+    // Полная цепочка живых тестов 05.10.2026:
+    // 1) Прямой FAPI.UI.showPayment() — первая версия, без живой проверки.
+    // 2) Живой лог показал "[VK MINI APP] Launcher v. 0.1.136" с VKWebAppShowOrderBox в
+    //    handlers: — показалось, что Launcher площадки сам всё обслуживает, прямой FAPI убрали.
+    // 3) ЖИВОЙ ТЕСТ этой версии показал реальную поломку: попап "item за null OK" / "Цена
+    //    функции: null OK", затем страница ОК "платёжная система на профилактике". Причина:
+    //    VKWebAppShowOrderBox не передаёт цену вообще (ни в протоколе VK, ни в нашем вызове) —
+    //    для VK её подтягивает сам VK из своего прайс-листа, Launcher ОК пытался сделать то же
+    //    самое в СВОЁМ каталоге, где цена для этого item не настроена → null.
+    // Итог: FAPI.UI.showPayment() возвращён — у него цена ЯВНЫЙ параметр (priceOk), каталог
+    // площадки для определения цены не нужен в принципе. См. tests/ok-price-display-wired-
     // 05-10.test.js Test 7 — там же проверено итоговое содержимое startPurchase().
     const src = read('_client/src/modules/iap.js');
-    assertRegex(!/FAPI\.init\(/.test(src), 'FAPI.init() больше не вызывается из клиентского кода');
-    assertRegex(!/FAPI\.UI\.showPayment\(name/.test(src), 'FAPI.UI.showPayment(name,...) больше не вызывается из клиентского кода (в докблоке остаётся только упоминание в прозе истории решения)');
-    assertRegex(!/_okUnavailable/.test(src), 'честная заглушка "недоступно" убрана — покупка больше не деградирует отдельно для ОК');
+    assertRegex(/FAPI\.init\(rParams\['api_server'\], rParams\['apiconnection'\],/.test(src), 'FAPI.init() снова вызывается из клиентского кода');
+    assertRegex(/FAPI\.UI\.showPayment\(name, desc, numericId, priceOk, null, null, 'ok', 'true', null\);/.test(src), 'FAPI.UI.showPayment() снова вызывается — ЯВНО с priceOk, не полагаясь на каталог цен площадки');
+    assertRegex(/_okUnavailable\(itemId, 'FAPI\.init\(\) не удался или FAPI недоступен'\);/.test(src), 'честная заглушка "недоступно" возвращена — на случай, если FAPI всё же не пробросится в сессии');
 }
 
 console.log('\nTest 7: index.html — подключён скрипт FAPI SDK, VK-путь не задет');
