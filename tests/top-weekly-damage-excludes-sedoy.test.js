@@ -43,21 +43,24 @@ function weeklyBody(){
 console.log('\n1) Список топа (leaderboard rows) — подзапрос по boss_damage_log исключает is_sedoy=1');
 {
     const body = weeklyBody();
-    assert(/WHERE `time` >= \{\$weekStartTs\} AND `is_sedoy`=0\s*\n\s*GROUP BY `uid`/.test(body),
+    // 06.10.2026: переменная переименована в $weekStartMs (boss_damage_log.time — миллисекунды,
+    // см. tests/top-weekly-damage-ms-vs-seconds-unit-mismatch-06-10.test.js) — сам фильтр и его
+    // позиция относительно is_sedoy=0 не изменились, обновлено только имя.
+    assert(/WHERE `time` >= \{\$weekStartMs\} AND `is_sedoy`=0\s*\n\s*GROUP BY `uid`/.test(body),
         'подзапрос d (список топа) фильтрует is_sedoy=0 вместе с временны́м окном недели');
 }
 
 console.log('\n2) my_value (моя недельная сумма) — тот же фильтр is_sedoy=0');
 {
     const body = weeklyBody();
-    assert(/SELECT SUM\(`damage`\) AS s FROM `boss_damage_log` WHERE `uid` = \{\$uid\} AND `time` >= \{\$weekStartTs\} AND `is_sedoy`=0/.test(body),
+    assert(/SELECT SUM\(`damage`\) AS s FROM `boss_damage_log` WHERE `uid` = \{\$uid\} AND `time` >= \{\$weekStartMs\} AND `is_sedoy`=0/.test(body),
         'my_value считается БЕЗ урона Седого — согласовано с leaderboard выше');
 }
 
 console.log('\n3) my_place (моё место) — тот же фильтр is_sedoy=0, включая ветку scope=friends');
 {
     const body = weeklyBody();
-    assert(/WHERE bl\.`time` >= \{\$weekStartTs\} AND bl\.`is_sedoy`=0/.test(body),
+    assert(/WHERE bl\.`time` >= \{\$weekStartMs\} AND bl\.`is_sedoy`=0/.test(body),
         'подзапрос для места тоже исключает is_sedoy=1 — три запроса (rows/my_value/my_place) согласованы друг с другом');
 }
 

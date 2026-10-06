@@ -133,7 +133,17 @@ Class Top {
         $link = $this->_rawLink();
         if(!$link) return $this->ops->fail(99);
 
+        // 06.10.2026 (баг по репорту — "топ не сбросился на новой неделе"): mskWeekStartTs()
+        // возвращает СЕКУНДЫ (как time()/strtotime()), а `boss_damage_log`.`time` хранится в
+        // МИЛЛИСЕКУНДАХ (bosses.php.attack(): $now = intval(round(microtime(true)*1000)) перед
+        // INSERT'ом). Сравнение `time` >= $weekStartTs (без *1000) сравнивало мс-значение с
+        // порогом, который в 1000 раз меньше — порог оказывался меньше ЛЮБОГО реального мс-
+        // штампа (хоть недельной, хоть годовой давности), поэтому фильтр пропускал вообще всё:
+        // топ фактически был lifetime, а не недельным, и никогда не "сбрасывался". Баг не
+        // пойман тестами 05.10, т.к. они проверяли только формулу mskWeekStartTs() (секунды) и
+        // то, что переменная упоминается в SQL — не реальную фильтрацию строк по миллисекундам.
         $weekStartTs = $this->ops->mskWeekStartTs();
+        $weekStartMs = $weekStartTs * 1000;
         $uid = abs(intval($this->registry['uid']));
         $utb = $this->registry['utb'];
 
@@ -161,7 +171,7 @@ Class Top {
              LEFT JOIN (
                 SELECT `uid`, SUM(`damage`) AS dmg
                 FROM `boss_damage_log`
-                WHERE `time` >= {$weekStartTs} AND `is_sedoy`=0
+                WHERE `time` >= {$weekStartMs} AND `is_sedoy`=0
                 GROUP BY `uid`
              ) d ON d.`uid` = u.`id`
              WHERE ({$userWhere}) AND u.`id` != " . self::HIDDEN_FROM_TOP_UID . "
@@ -172,7 +182,7 @@ Class Top {
             $out[] = ['id'=>intval($row['id']), 'value'=>intval($row['dmg']), 'exp'=>intval($row['exp'] ?? 0), 'nick'=>strval($row['nick'] ?? '')];
         }
 
-        $myRes = $link->query("SELECT SUM(`damage`) AS s FROM `boss_damage_log` WHERE `uid` = {$uid} AND `time` >= {$weekStartTs} AND `is_sedoy`=0");
+        $myRes = $link->query("SELECT SUM(`damage`) AS s FROM `boss_damage_log` WHERE `uid` = {$uid} AND `time` >= {$weekStartMs} AND `is_sedoy`=0");
         $myRow = $myRes ? $myRes->fetch_assoc() : null;
         $my_value = $myRow ? intval($myRow['s']) : 0;
 
@@ -182,7 +192,7 @@ Class Top {
         $placeRes = $link->query(
             "SELECT COUNT(*)+1 AS place FROM (
                 SELECT bl.`uid`, SUM(bl.`damage`) AS dmg FROM `boss_damage_log` bl
-                WHERE bl.`time` >= {$weekStartTs} AND bl.`is_sedoy`=0 AND bl.`uid` != " . self::HIDDEN_FROM_TOP_UID . ($scope === 'friends' ? " AND bl.`uid` IN(" . implode(',', $ids) . ")" : '') . "
+                WHERE bl.`time` >= {$weekStartMs} AND bl.`is_sedoy`=0 AND bl.`uid` != " . self::HIDDEN_FROM_TOP_UID . ($scope === 'friends' ? " AND bl.`uid` IN(" . implode(',', $ids) . ")" : '') . "
                 GROUP BY bl.`uid` HAVING dmg > {$my_value}
              ) t"
         );
@@ -191,7 +201,7 @@ Class Top {
 
         $link->close();
 
-        $this->ops->ok(['rows'=>$out, 'my_value'=>$my_value, 'my_place'=>$my_place, 'cat'=>0, 'scope'=>$scope, 'week_start'=>$weekStartTs]);
+        $this->ops->ok(['rows'=>$out, 'my_value'=>$my_value, 'my_place'=>$my_place, 'cat'=>0, 'scope'=>$scope, 'week_start'=>$weekStartMs]);
     }
 }
 ?>

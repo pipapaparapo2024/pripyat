@@ -59,8 +59,18 @@ console.log('\n3) Границы недели — понедельник 00:00 �
     // tests/gameops-msk-week-start-real-exec-05-10.test.js.
     assert(/\$weekStartTs = \$this->ops->mskWeekStartTs\(\);/.test(body),
         'начало недели вычисляется через Gameops::mskWeekStartTs() — корректно учитывает МСК, не сырое время сервера');
-    const usages = (body.match(/\$weekStartTs/g) || []).length;
-    assert(usages >= 4, '$weekStartTs используется во всех местах (объявление + 3 запроса) — нашлось упоминаний: ' + usages);
+    // 06.10.2026 (баг по репорту — "топ не сбросился на новой неделе", см.
+    // tests/top-weekly-damage-ms-vs-seconds-unit-mismatch-06-10.test.js для реальной проверки
+    // фильтрации): mskWeekStartTs() отдаёт СЕКУНДЫ, а boss_damage_log.time хранится в
+    // МИЛЛИСЕКУНДАХ — SQL-сравнения обязаны использовать $weekStartMs (= $weekStartTs*1000), не
+    // сырой $weekStartTs, иначе порог оказывается в 1000 раз меньше любого реального мс-штампа и
+    // фильтр пропускает вообще всё (топ превращается в lifetime).
+    assert(/\$weekStartMs = \$weekStartTs \* 1000;/.test(body),
+        '$weekStartTs переводится в миллисекунды ($weekStartMs) перед использованием в SQL');
+    const sqlUsages = (body.match(/`time`\s*>=\s*\{\$weekStartMs\}/g) || []).length;
+    assert(sqlUsages === 3, 'все 3 SQL-запроса (leaderboard/my_value/my_place) фильтруют по `time` >= {$weekStartMs} (в мс) — нашлось: ' + sqlUsages);
+    assert(!/`time`\s*>=\s*\{\$weekStartTs\}/.test(body),
+        'ни один SQL-запрос больше не сравнивает `time` (мс) напрямую с $weekStartTs (сек) — такой баг уже был');
 }
 
 console.log('\n4) my_value/my_place считаются ТЕМ ЖЕ способом (тот же фильтр по неделе), что и сам leaderboard — не рассинхронизированы с ним');
@@ -69,7 +79,7 @@ console.log('\n4) my_value/my_place считаются ТЕМ ЖЕ способ�
     const end   = src.indexOf('\n    }', src.indexOf('$this->ops->ok([\'rows\'=>$out, \'my_value\'=>$my_value, \'my_place\'=>$my_place, \'cat\'=>0', start));
     const body = src.slice(start, end);
     // 29.09.2026: добавлен AND `is_sedoy`=0 — см. tests/top-weekly-damage-excludes-sedoy.test.js.
-    assert(/SELECT SUM\(`damage`\) AS s FROM `boss_damage_log` WHERE `uid` = \{\$uid\} AND `time` >= \{\$weekStartTs\} AND `is_sedoy`=0/.test(body),
+    assert(/SELECT SUM\(`damage`\) AS s FROM `boss_damage_log` WHERE `uid` = \{\$uid\} AND `time` >= \{\$weekStartMs\} AND `is_sedoy`=0/.test(body),
         'my_value — сумма урона игрока за ТУ ЖЕ неделю');
     assert(/HAVING dmg > \{\$my_value\}/.test(body),
         'my_place считает игроков со строго БОЛЬШЕЙ недельной суммой (стандартная формула места +1)');

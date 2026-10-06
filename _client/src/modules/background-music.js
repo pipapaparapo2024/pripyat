@@ -45,6 +45,44 @@ export function startBackgroundMusic(){
     _playNextTrack();
 }
 
+// 06.10.2026 (баг по репорту — "зашёл в игру, через минуту-две музыка начинает дублироваться,
+// двоиться"): корень — _watchdog тикает по wall-clock setTimeout, который НЕ связан с паузой
+// AudioContext (app-lifecycle.js._pauseApp() вызывает PIXI.sound.pauseAll(), это приостанавливает
+// звук, но не трогает уже запущенные JS-таймеры). Если приложение свёрнуто дольше, чем
+// оставшаяся длительность трека, _watchdog всё равно срабатывает ПОКА мы в фоне и форсит
+// _advance() → новый PIXI.sound.play() стартует ВТОРОЙ трек поверх первого — а когда
+// AudioContext потом разворачивается (resumeAll() или автовозврат браузера), первый трек, чья
+// ссылка (_instance) уже перезаписана вторым, продолжает звучать параллельно и никогда не
+// останавливается (stopBackgroundMusic() видит только актуальный _instance). Фикс — app-lifecycle
+// отключает этот таймер на время сворачивания и перевзводит его заново (с полным запасом) при
+// разворачивании, не давая ему сработать вхолостую, пока звук реально не играет.
+export function pauseBackgroundMusicWatchdog(){
+    if(!_watchdog) return;
+    console.log('[background-music.pauseBackgroundMusicWatchdog] приложение свёрнуто — отключаю сторож-таймер трека на время паузы');
+    clearTimeout(_watchdog);
+    _watchdog = null;
+}
+
+export function resumeBackgroundMusicWatchdog(){
+    if(!_playing || !_instance) return;
+    const idx   = _trackIdx % TRACKS.length;
+    const alias = 'bg_music_' + idx;
+    const myGen = _gen;
+    const _sound = PIXI.sound.find(alias);
+    const _durationMs = (_sound && _sound.duration) ? _sound.duration * 1000 : 60000;
+    console.log('[background-music.resumeBackgroundMusicWatchdog] приложение развёрнуто — перевзвожаю сторож-таймер трека', idx + 1, 'с полным запасом (время в фоне не засчитывается)');
+    clearTimeout(_watchdog);
+    _watchdog = setTimeout(() => {
+        if(myGen !== _gen){
+            console.log('[background-music.resumeBackgroundMusicWatchdog] устаревший watchdog (gen', myGen, '≠ текущий', _gen + ') — трек уже сменился легитимно, игнорирую');
+            return;
+        }
+        console.error('[background-music.resumeBackgroundMusicWatchdog] трек', idx + 1, 'не долетел до complete/error за', Math.round(_durationMs / 1000) + 5, 'сек после возврата из фона — принудительно переключаюсь');
+        _trackIdx = idx + 1;
+        _playNextTrack();
+    }, _durationMs + 5000);
+}
+
 export function stopBackgroundMusic(){
     if(!_playing){
         console.log('[background-music.stopBackgroundMusic] музыка уже остановлена, ничего не делаю');

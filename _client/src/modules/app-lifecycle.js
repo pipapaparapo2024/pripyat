@@ -17,8 +17,21 @@
  * таймеры/лимиты (они считаются от временных меток на сервере, см. CLAUDE.md "серверно-
  * авторитетная экономика"), только визуальный рендер и звук в свёрнутом состоянии.
  */
+import { pauseBackgroundMusicWatchdog, resumeBackgroundMusicWatchdog } from './background-music.js';
+
 let _paused = false;
 
+// 06.10.2026 (баг по репорту — "зашёл в игру, через минуту-две музыка начинает дублироваться,
+// двоится"): PIXI.sound.pauseAll()/resumeAll() приостанавливают ОБЩИЙ AudioContext, но не трогают
+// JS-таймеры (watchdog треков в background-music.js/dvor-music.js, интервал между звуками в
+// zone-ambient.js) — те тикают по wall-clock и могут сработать ВХОЛОСТУЮ, пока приложение
+// свёрнуто дольше оставшейся длительности трека, форсируя переключение на следующий трек поверх
+// ещё не остановленного текущего (который потом "оживает" параллельно при возврате из фона —
+// отсюда двоение). Три канала отключают/перевзводят свои таймеры здесь же, синхронно с
+// pauseAll()/resumeAll() — watchdog Двора живёт на window.dvor, watchdog атмосферы Зоны (она
+// примешана к Interface.prototype, interface.js:420, не к классу Zone) — на window.iface,
+// оба глобальные синглтоны (см. module_control.js); их методы могут отсутствовать, если
+// экран ни разу не открывался в этой сессии, поэтому вызовы защищены проверкой наличия метода.
 function _pauseApp(source){
     if(_paused) return;
     _paused = true;
@@ -33,6 +46,12 @@ function _pauseApp(source){
             console.error('[app-lifecycle._pauseApp] ошибка PIXI.Ticker.shared.stop:', e.message);
         }
     }
+    pauseBackgroundMusicWatchdog();
+    if(window.dvor && typeof dvor._pauseDvorMusicWatchdog === 'function') dvor._pauseDvorMusicWatchdog();
+    // attachZoneAmbient() примешан к Interface.prototype (interface.js:420), не к Zone — живой
+    // держатель _zoneAmbientTimer это глобальный синглтон window.iface (module_control.js), не
+    // window.zone (та модель данных локаций, другой класс).
+    if(window.iface && typeof iface._pauseZoneAmbientWatchdog === 'function') iface._pauseZoneAmbientWatchdog();
 }
 
 function _resumeApp(source){
@@ -49,6 +68,9 @@ function _resumeApp(source){
             console.error('[app-lifecycle._resumeApp] ошибка PIXI.Ticker.shared.start:', e.message);
         }
     }
+    resumeBackgroundMusicWatchdog();
+    if(window.dvor && typeof dvor._resumeDvorMusicWatchdog === 'function') dvor._resumeDvorMusicWatchdog();
+    if(window.iface && typeof iface._resumeZoneAmbientWatchdog === 'function') iface._resumeZoneAmbientWatchdog();
 }
 
 export function installAppLifecyclePause(){

@@ -40,6 +40,31 @@ export function attachZoneAmbient(proto){
         this._playNextZoneAmbient();
     };
 
+    // 06.10.2026 (тот же баг-класс, что чинили в background-music.js/dvor-music.js — "музыка
+    // дублируется" после возврата из фона): this._zoneAmbientTimer — это пауза МЕЖДУ звуками
+    // (INTERVAL_MS), тоже wall-clock setTimeout, не связанный с паузой AudioContext. Если Зона
+    // остаётся открытой, пока приложение свёрнуто дольше INTERVAL_MS, таймер срабатывает вхолостую
+    // ПОКА мы в фоне и запускает следующий звук раньше, чем реально прошло воспринимаемое время.
+    // app-lifecycle.js отключает его на время сворачивания и перевзводит заново при разворачивании
+    // (не наследуя время, проведённое в фоне).
+    proto._pauseZoneAmbientWatchdog = function(){
+        if(!this._zoneAmbientTimer) return;
+        console.log('[zone-ambient._pauseZoneAmbientWatchdog] приложение свёрнуто — отключаю таймер паузы между звуками Зоны');
+        clearTimeout(this._zoneAmbientTimer);
+        this._zoneAmbientTimer = null;
+    };
+
+    proto._resumeZoneAmbientWatchdog = function(){
+        if(!this._zoneAmbientPlaying) return;
+        const myGen = this._zoneAmbientGen;
+        console.log('[zone-ambient._resumeZoneAmbientWatchdog] приложение развёрнуто — перевзвожаю таймер паузы между звуками Зоны с полным интервалом');
+        clearTimeout(this._zoneAmbientTimer);
+        this._zoneAmbientTimer = setTimeout(() => {
+            if(myGen !== this._zoneAmbientGen) return;
+            this._playNextZoneAmbient();
+        }, INTERVAL_MS);
+    };
+
     proto._stopZoneAmbient = function(){
         if(!this._zoneAmbientPlaying){
             console.log('[zone-ambient._stopZoneAmbient] уже остановлено, ничего не делаю');

@@ -34,6 +34,39 @@ export function attachDvorMusic(proto){
         this._playNextDvorTrack();
     };
 
+    // 06.10.2026 (тот же баг-класс, что чинили в background-music.js — "музыка дублируется,
+    // двоится" после возврата из фона): this._dvorMusicWatchdog тикает по wall-clock setTimeout,
+    // не связанному с паузой AudioContext — если Двор остаётся открытым, пока приложение
+    // свёрнуто дольше оставшейся длительности трека, watchdog форсит _advance() вхолостую ПОКА
+    // мы в фоне, запуская второй трек поверх первого. app-lifecycle.js отключает этот таймер на
+    // время сворачивания и перевзводит заново при разворачивании.
+    proto._pauseDvorMusicWatchdog = function(){
+        if(!this._dvorMusicWatchdog) return;
+        console.log('[dvor-music._pauseDvorMusicWatchdog] приложение свёрнуто — отключаю сторож-таймер трека Двора на время паузы');
+        clearTimeout(this._dvorMusicWatchdog);
+        this._dvorMusicWatchdog = null;
+    };
+
+    proto._resumeDvorMusicWatchdog = function(){
+        if(!this._dvorMusicPlaying || !this._dvorMusicInstance) return;
+        const idx   = this._dvorMusicTrackIdx % TRACKS.length;
+        const alias = 'dvor_music_' + idx;
+        const myGen = this._dvorMusicGen;
+        const _sound = PIXI.sound.find(alias);
+        const _durationMs = (_sound && _sound.duration) ? _sound.duration * 1000 : 60000;
+        console.log('[dvor-music._resumeDvorMusicWatchdog] приложение развёрнуто — перевзвожаю сторож-таймер трека Двора', idx + 1, 'с полным запасом');
+        clearTimeout(this._dvorMusicWatchdog);
+        this._dvorMusicWatchdog = setTimeout(() => {
+            if(myGen !== this._dvorMusicGen){
+                console.log('[dvor-music._resumeDvorMusicWatchdog] устаревший watchdog (gen', myGen, '≠ текущий', this._dvorMusicGen + ') — трек уже сменился легитимно, игнорирую');
+                return;
+            }
+            console.error('[dvor-music._resumeDvorMusicWatchdog] трек', idx + 1, 'не долетел до complete/error за', Math.round(_durationMs / 1000) + 5, 'сек после возврата из фона — принудительно переключаюсь');
+            this._dvorMusicTrackIdx = idx + 1;
+            this._playNextDvorTrack();
+        }, _durationMs + 5000);
+    };
+
     proto._stopDvorMusic = function(){
         if(!this._dvorMusicPlaying){
             console.log('[dvor-music._stopDvorMusic] музыка уже остановлена, ничего не делаю');
