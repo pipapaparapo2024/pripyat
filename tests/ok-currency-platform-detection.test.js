@@ -35,6 +35,13 @@ function loadPlatform(referrer, ancestorOrigins){
     assert.equal(ctx.detectPlatform(), 'ok', 'ancestorOrigins с odnoklassniki.ru должен давать площадку ok');
 }
 
+// 2a. ОК Launcher реально встраивает игру из своего CDN-домена st.okcdn.ru. Он не содержит
+// подстроку ok.ru, поэтому это отдельный обязательный случай, иначе покупка идёт в VK-ветку.
+{
+    const ctx = loadPlatform('', ['https://st.okcdn.ru']);
+    assert.equal(ctx.detectPlatform(), 'ok', 'ancestorOrigins с st.okcdn.ru должен давать площадку ok');
+}
+
 // 3. VK — обычный referrer vk.com
 {
     const ctx = loadPlatform('https://vk.com/app54574178_438953352', undefined);

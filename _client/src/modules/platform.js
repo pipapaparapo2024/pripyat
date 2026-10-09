@@ -10,7 +10,8 @@
  * бандл, тот же VK Bridge (см. memory project_stalker_ok_audit, «Путь A»), поэтому сами
  * launch-параметры (vk_app_id, sign и т.п.) не отличают площадку. Надёжный сигнал —
  * document.referrer/ancestorOrigins родительской страницы, которая грузит iframe: это
- * домен ok.ru/odnoklassniki.ru либо vk.com/vk.ru/web.vk.me.
+ * домен ok.ru/odnoklassniki.ru либо технический домен оболочки ОК st.okcdn.ru, или
+ * vk.com/vk.ru/web.vk.me.
  *
  * ⚠️ Это первое боевое использование сигнала — проверено только логически, не вживую в ОК.
  * При первом тесте на тестовом стенде ОБЯЗАТЕЛЬНО сверить console-лог ниже (включить
@@ -35,7 +36,10 @@ export function detectPlatform(){
 
     const haystack = (referrer + ' ' + ancestors.join(' ')).toLowerCase();
 
-    if(haystack.indexOf('ok.ru') !== -1 || haystack.indexOf('odnoklassniki.ru') !== -1){
+    // ОК Mini Apps на вебе нередко ставит в ancestorOrigins не ok.ru, а статику Launcher'а
+    // st.okcdn.ru. Живой лог 09.10.2026 подтвердил именно этот origin. Без него сессия ОК
+    // уходила в VK-ветку startPurchase() и FAPI.UI.showPayment вообще не вызывался.
+    if(haystack.indexOf('ok.ru') !== -1 || haystack.indexOf('odnoklassniki.ru') !== -1 || haystack.indexOf('st.okcdn.ru') !== -1){
         _platform = 'ok';
     } else {
         // VK по умолчанию — безопасный фолбэк: если сигнал неоднозначен (прямой заход в
