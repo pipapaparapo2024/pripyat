@@ -96,8 +96,14 @@ console.log('\nTest 4: сам код dev_panel.js/universal_pos_editor.js/shmot_
 
 console.log('\nTest 5: index.js — console.* глушится для игрока, если window.debug_mode !== true, без удаления существующих console.log по коду');
 {
-    const start = indexJs.indexOf('window.debug_mode = false;');
-    assert(start !== -1, 'window.debug_mode остаётся единой точкой включения отладки (уже использовалась для GIVE_MILLION/RUN_TESTS)');
+    // 08.10.2026 (диагностика "бесконечная загрузка на тесте"): window.debug_mode больше не
+    // жёсткая константа false — на test-pripyat-game.ru включается автоматически по hostname,
+    // чтобы детальные [game-boot.../spine-boss...] логи (правило №8) были видны в консоли игрока
+    // ИМЕННО на тестовом домене (где это безопасно — отдельная БД stalker_test, реальных
+    // игроков нет), на проде поведение не меняется (hostname не совпадает → false, как раньше).
+    const start = indexJs.indexOf("window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');");
+    assert(start !== -1, 'window.debug_mode остаётся единой точкой включения отладки, теперь self-gating по hostname теста (не жёсткая false)');
+    assert(!/window\.debug_mode = true;/.test(indexJs), 'debug_mode НЕ включён безусловно (это дало бы GIVE_MILLION/RUN_TESTS всем игрокам на проде)');
     const body = indexJs.slice(start, start + 1500);
     assert(/if\(!window\.debug_mode\)\{/.test(body), 'глушение обёрнуто в проверку debug_mode — легко включить обратно локально');
     assert(/console\.log = _noop;/.test(body), 'console.log глушится');

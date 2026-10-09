@@ -95,7 +95,10 @@ console.log('\nTest 4: ryukzak.js — бирка/иконка тушёнки/ч�
     assert(/tushenkaIconSpr\.scale\.set\(1\.054\);/.test(ryukzakSrc), 'иконка тушёнки — scale 1.054');
     assert(/tushenkaIconSpr\.rotation = 52 \* Math\.PI \/ 180;/.test(ryukzakSrc), 'иконка тушёнки повёрнута на 52°');
     assert(/tushenkaQtyTxt\.x = 810; tushenkaQtyTxt\.y = 594;/.test(ryukzakSrc), 'число "20" — x:810 y:594');
-    assert(/tushenkaQtyTxt\.scale\.set\(1\.328\);/.test(ryukzakSrc), 'число "20" — scale 1.328');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:24×scale(1.328) заменены на итоговый
+    // fontSize:32 без scale.
+    assert(/fontSize: 32,/.test(ryukzakSrc) && !/tushenkaQtyTxt\.scale\.set\(/.test(ryukzakSrc),
+        'число "20" — fontSize:32 (24×1.328), без scale');
     assert(/tushenkaQtyTxt\.rotation = 52 \* Math\.PI \/ 180;/.test(ryukzakSrc), 'число "20" повёрнуто на 52° (в паре с иконкой)');
 }
 

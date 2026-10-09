@@ -143,6 +143,27 @@ Class Roulette {
         if(!$user) return $this->ops->fail(99);
         if(!$this->ops->deduct($user, 'roulette_spichki', $cost)) return $this->ops->fail(50); // не хватает спичек
 
+        // 09.10.2026 (аудит гонок состояний по всему проекту): openCase() не брал НИКАКОГО
+        // лока, хотя пишет stash_count/shmot/max_energy — все три уже защищены в ДРУГИХ файлах
+        // (stash_count — yashik.php.collect(); shmot/max_energy — shmot.php.buy(), yashik.php)
+        // через SELECT...FOR UPDATE. Конкурентный запрос к любому из них между чтением выше и
+        // общим сохранением ниже мог затереть начисленную здесь награду устаревшим снимком (тот
+        // же класс гонки, что чинили в rewardlinks.php/poker.php — см. комментарий там же, это
+        // зеркальная пара poker.php::openBag(), один и тот же баг в обоих копипастах).
+        $lockFields = ['stash_count', 'shmot', 'max_energy'];
+        $link = $this->_rawLink();
+        if($link){
+            $link->begin_transaction();
+            $colList = implode(',', array_map(function($col){ return "`$col`"; }, $lockFields));
+            $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
+            $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
+            if($lockRow !== null){
+                foreach($lockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+            }
+        }
+        $lockBefore = [];
+        foreach($lockFields as $f) $lockBefore[$f] = $user[$f] ?? null;
+
         $reward = [
             'exp'   => mt_rand(1000, 2000),
             'cig'   => mt_rand(500, 1000),
@@ -170,7 +191,23 @@ Class Roulette {
         $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'roulette') : null;
         $hasTatu = $tatuItemId !== null;
 
+        $lockedUpdates = [];
+        foreach($lockFields as $f){
+            if(isset($user[$f]) && $user[$f] !== $lockBefore[$f]) $lockedUpdates[$f] = strval($user[$f]);
+        }
+        if($link){
+            if(!empty($lockedUpdates)){
+                $setParts = [];
+                foreach($lockedUpdates as $col => $val) $setParts[] = "`$col`='" . $link->real_escape_string($val) . "'";
+                $link->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $setParts) . " WHERE `id`=" . intval($this->registry['uid']));
+            }
+            $link->commit();
+            $link->close();
+            foreach(array_keys($lockedUpdates) as $col) unset($user[$col]);
+        }
+
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+        foreach($lockedUpdates as $col => $val) $user[$col] = $val;
 
         $debug = ['fn' => 'openCase', 'uid' => abs(intval($this->registry['uid'])),
             'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true), 'cost' => $cost, 'reward' => $reward,

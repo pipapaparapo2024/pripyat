@@ -111,9 +111,10 @@ export function attachSvodAchievements(proto){
     // названия ячейки"): было 102/14, стало 95/11.
     const NAME_X = 95;
     const NAME_Y = 11;
-    // 22.09.2026 (по прямому указанию — "уменьшил размер текста [описания]"): снято редактором
-    // позиций как scale игрового объекта, применяется поверх fontSize:13 (не меняет сам fontSize).
-    const DESC_SCALE = 0.965;
+    // 22.09.2026 (по прямому указанию — "уменьшил размер текста [описания]"): было снято
+    // редактором позиций как scale:0.965 поверх fontSize:13 — 08.10.2026 (фикс пикселизации
+    // текста, по прямому указанию дизайнера) свёрнуто прямо в wordWrapWidth descTxt ниже
+    // (*0.965), сам scale.set() убран.
     const DESC_Y          = 29;
     const PTS_Y           = 50;
     // 23.09.2026 (по прямому указанию — координаты X:518 Y:258 из PSD-макета карточки
@@ -223,10 +224,9 @@ export function attachSvodAchievements(proto){
             // строка внутри него).
             const descTxt = new PIXI.Text('', {
                 fontFamily:'Southbank LT', fontSize:13, fill:'#1a1c1c', align:'center',
-                wordWrap:true, wordWrapWidth: CARD_W - 260,
+                wordWrap:true, wordWrapWidth: (CARD_W - 260) * 0.965,
             });
             descTxt.anchor.set(0.5, 0);
-            descTxt.scale.set(DESC_SCALE);
             descTxt.x = DESC_CENTER_X; descTxt.y = DESC_Y;
             card.addChild(descTxt);
 

@@ -99,12 +99,11 @@ export function attachWeaponReloadPopup(proto){
         // Подпись «Ускорить за» — над ценой/кнопкой. Позиция снята пользователем через
         // редактор позиций (26.09.2026, второй снимок в тот же день — было 537/398/0.721).
         const rushLabelTxt = new PIXI.Text('Ускорить за', {
-            fontFamily: 'Southbank LT', fontSize: 20, fontWeight: 'normal', fill: '#ffee88',
+            fontFamily: 'Southbank LT', fontSize: 18, fontWeight: 'normal', fill: '#ffee88',
             dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
         });
         rushLabelTxt.anchor.set(0, 0.5);
         rushLabelTxt.x = 541; rushLabelTxt.y = 415;
-        rushLabelTxt.scale.set(0.908);
         win.addChild(rushLabelTxt);
 
         // Цена ускорения: "20" + иконка монет — слева от кнопки «Ускорить». Позиция снята

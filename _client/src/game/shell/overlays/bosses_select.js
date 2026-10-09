@@ -150,7 +150,7 @@ export function attachBossesSelect(proto){
 		const KILLER_ROTATION = -3 * Math.PI / 180;
 		// Все подписи привязаны к левому верхнему углу карточки. Значения сняты
 		// пользователем с карточки Баркута и применяются к каждому боссу одинаково.
-		const KILLED_X = 310, KILLED_DY = 124, KILLED_SCALE = 1.083;
+		const KILLED_X = 310, KILLED_DY = 124;
 		const DAILY_X = 380, DAILY_DY = 126;
 		const TIMER_X = 380, TIMER_DY = 148;
 
@@ -207,7 +207,7 @@ export function attachBossesSelect(proto){
 
 				// Только цифра, без слова "КЛЮЧЕЙ" — по прямому указанию.
 				const keysTxt = new PIXI.Text(String(shownKeys), {
-					fontFamily: 'Southbank LT', fontSize: 18, fill: '#e8e0d0',
+					fontFamily: 'Southbank LT', fontSize: 24, fill: '#e8e0d0',
 					dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
 				});
 				// Позиция уточнена пользователем через редактор позиций (15.09.2026) — текст
@@ -219,7 +219,6 @@ export function attachBossesSelect(proto){
 				const KEY_TEXT_X_BY_DIGITS = { 1: 296, 2: 293, 3: 286 };
 				keysTxt.x = KEY_TEXT_X_BY_DIGITS[String(shownKeys).length] || 286;
 				keysTxt.y = cardY + 20;
-				keysTxt.scale.set(1.333);
 				cardsContainer.addChild(keysTxt);
 			}
 
@@ -268,12 +267,11 @@ export function attachBossesSelect(proto){
 			cardsContainer.addChild(dailyTxt);
 
 			const killedTxt = new PIXI.Text(String(killed), {
-				fontFamily: 'Southbank LT', fontSize: 20, fill: '#e8e0d0',
+				fontFamily: 'Southbank LT', fontSize: 22, fill: '#e8e0d0',
 				dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
 			});
 			killedTxt.x = KILLED_X + BOSS_SHIFT_X;
 			killedTxt.y = cardY + KILLED_DY;
-			killedTxt.scale.set(KILLED_SCALE);
 			cardsContainer.addChild(killedTxt);
 
 			const timerTxt = new PIXI.Text('', {

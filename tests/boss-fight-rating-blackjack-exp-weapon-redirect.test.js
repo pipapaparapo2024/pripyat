@@ -90,8 +90,10 @@ console.log('\nTest 7: bosses_fight.js — ник рейтинга: шрифт A
 {
     // 02.10.2026: цвет подтверждён пользователем напрямую как коричневый (не белый) — см.
     // комментарий у nameTxt в bosses_fight.js.
-    assert(/fontFamily:'AA Bebas Neue', fontSize:14, fill:'#8a7157',/.test(fightSrc),
-        'nameTxt использует AA Bebas Neue (ближайший доступный аналог BebasNeueBook) и коричневый цвет (подтверждено пользователем)');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:14×NAME_SCALE(1.280) заменены на
+    // итоговый fontSize:18 без scale.
+    assert(/fontFamily:'AA Bebas Neue', fontSize:18, fill:'#8a7157',/.test(fightSrc),
+        'nameTxt использует AA Bebas Neue (ближайший доступный аналог BebasNeueBook) и коричневый цвет (подтверждено пользователем), fontSize:18 (14×1.280)');
     assert(!/fontFamily:'Southbank LT', fontSize:14, fill:'#e8c877',/.test(fightSrc),
         'старый стиль (Southbank LT, золотой) убран');
 }

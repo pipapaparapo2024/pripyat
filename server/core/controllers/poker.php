@@ -133,6 +133,27 @@
             if(!$user) return $this->ops->fail(99);
             if(!$this->ops->deduct($user, 'poker_spichki', $cost)) return $this->ops->fail(50); // не хватает спичек
 
+            // 09.10.2026 (аудит гонок состояний по всему проекту): openBag() не брал НИКАКОГО
+            // лока (ни GET_LOCK, ни FOR UPDATE), хотя пишет stash_count/shmot/max_energy — все
+            // три уже защищены в ДРУГИХ файлах (stash_count — yashik.php.collect(); shmot/
+            // max_energy — shmot.php.buy(), yashik.php) через SELECT...FOR UPDATE. Конкурентный
+            // запрос к любому из них между чтением выше и общим сохранением ниже мог затереть
+            // начисленную здесь награду устаревшим снимком (тот же класс гонки, что чинили в
+            // rewardlinks.php/poker.php::resolve() — см. комментарий там). Берём тот же лок.
+            $lockFields = ['stash_count', 'shmot', 'max_energy'];
+            $link = $this->_rawLink();
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($col){ return "`$col`"; }, $lockFields));
+                $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
+                $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
+                if($lockRow !== null){
+                    foreach($lockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+                }
+            }
+            $lockBefore = [];
+            foreach($lockFields as $f) $lockBefore[$f] = $user[$f] ?? null;
+
             $reward = [
                 'exp'   => mt_rand(1000, 2000),
                 'cig'   => mt_rand(500, 1000),
@@ -157,7 +178,23 @@
             $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'poker') : null;
             $hasTatu = $tatuItemId !== null;
 
+            $lockedUpdates = [];
+            foreach($lockFields as $f){
+                if(isset($user[$f]) && $user[$f] !== $lockBefore[$f]) $lockedUpdates[$f] = strval($user[$f]);
+            }
+            if($link){
+                if(!empty($lockedUpdates)){
+                    $setParts = [];
+                    foreach($lockedUpdates as $col => $val) $setParts[] = "`$col`='" . $link->real_escape_string($val) . "'";
+                    $link->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $setParts) . " WHERE `id`=" . intval($this->registry['uid']));
+                }
+                $link->commit();
+                $link->close();
+                foreach(array_keys($lockedUpdates) as $col) unset($user[$col]);
+            }
+
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            foreach($lockedUpdates as $col => $val) $user[$col] = $val;
 
             $debug = [
                 'fn' => 'openBag', 'uid' => abs(intval($this->registry['uid'])),
@@ -558,6 +595,34 @@
             $combo = $this->_evaluateHand($catalog, $session['hand']);
             $c = $catalog['combos'][$combo];
 
+            // 09.10.2026 (аудит гонок состояний по всему проекту, по прямому запросу —
+            // "посмотри, есть ли ещё такие же места несинхронизированности"): _withUserLock()
+            // выше — GET_LOCK (именованный advisory-лок на ОТДЕЛЬНОМ соединении), а weapons
+            // защищён В ДРУГИХ файлах (bosses.php/weapons.php/ryukzak.php/habar.php) через
+            // SELECT...FOR UPDATE — физический лок СТРОКИ. Это разные примитивы MySQL, они НЕ
+            // блокируют друг друга. shmot (ниже, grantShmotFromSource()) и max_energy (может
+            // начислить ВНУТРИ неё же applyShmotOwnBonus(), см. gameops.php) защищены тем же
+            // способом в shmot.php/yashik.php. Конкурентная покупка оружия/шмотки в ДРУГОМ
+            // эндпоинте во время резолва покера могла прочитать устаревший weapons/shmot/
+            // max_energy и затереть их своим более поздним saveUser() — тот же класс гонки
+            // ("lost update"), что уже чинили в rewardlinks.php/habar.php. Берём ДОПОЛНИТЕЛЬНЫЙ
+            // физический лок строки на этих трёх колонках (та же техника — SELECT...FOR UPDATE,
+            // перечитывание ПЕРЕД начислением, отдельный UPDATE под локом, исключение из общего
+            // saveUser() — см. комментарий там же в rewardlinks.php).
+            $lockFields = ['weapons', 'shmot', 'max_energy'];
+            $link = $this->_rawLink();
+            if($link){
+                $link->begin_transaction();
+                $colList = implode(',', array_map(function($col){ return "`$col`"; }, $lockFields));
+                $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
+                $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
+                if($lockRow !== null){
+                    foreach($lockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+                }
+            }
+            $lockBefore = [];
+            foreach($lockFields as $f) $lockBefore[$f] = $user[$f] ?? null;
+
             // AchievementEngine reads poker_spichki for poker thresholds.  It must
             // be awarded here, rather than reconstructed from a browser callback.
             $currencyMap = ['coins','stew','cigarettes','exp','respect','poker_chips','poker_spichki','roulette_spichki'];
@@ -578,7 +643,29 @@
 
             $session['active'] = false;
             $user['poker_session'] = json_encode($session, JSON_UNESCAPED_UNICODE);
+
+            // Залоченные поля пишем ОТДЕЛЬНЫМ UPDATE под тем же локом (если соединение удалось
+            // открыть) и исключаем их из $user ДО общего saveUser() — иначе он затёр бы их
+            // устаревшим снимком из loadUser() в начале функции (тот же принцип, что в
+            // rewardlinks.php/weapons.php/habar.php). Если _rawLink() не смог подключиться —
+            // фолбэк: сохраняем как раньше, обычным $user, без лока на этот конкретный запрос.
+            $lockedUpdates = [];
+            foreach($lockFields as $f){
+                if(isset($user[$f]) && $user[$f] !== $lockBefore[$f]) $lockedUpdates[$f] = strval($user[$f]);
+            }
+            if($link){
+                if(!empty($lockedUpdates)){
+                    $setParts = [];
+                    foreach($lockedUpdates as $col => $val) $setParts[] = "`$col`='" . $link->real_escape_string($val) . "'";
+                    $link->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $setParts) . " WHERE `id`=" . intval($this->registry['uid']));
+                }
+                $link->commit();
+                $link->close();
+                foreach(array_keys($lockedUpdates) as $col) unset($user[$col]);
+            }
+
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            foreach($lockedUpdates as $col => $val) $user[$col] = $val;
             $verify = $this->_verifySaved($user['poker_session']);
 
             $debug = [

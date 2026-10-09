@@ -261,14 +261,22 @@ export function attachBossesFight(proto){
         win.addChild(bg);
         this._bossFightBg = bg;
 
+        // 08.10.2026: Spine-анимация босса — ровно здесь, сразу после фона и ДО любого другого
+        // UI ниже (имя/ХП/таймер/рейтинг/оружие/тултипы) — порядок addChild определяет Z-порядок
+        // в PIXI, поэтому место вызова и есть требование "поверх фона, но под всем остальным"
+        // (см. spine-boss.js — раньше была отдельная DOM-оверлей-канва с тем же требованием,
+        // решённым хрупкой проверкой "кто сверху", теперь обычный PIXI-спрайт в нужном месте).
+        this._spineBossMount(win);
+
         // ── ЛЕВАЯ ПАНЕЛЬ: имя босса, HP, таймер ─────────────────────────────
         // 25.09.2026 (по прямому указанию, редактор позиций): x/y/scale сняты точно, цвет
         // #F0F0F0 (десятое присланное изображение), шрифт чуть тоньше (bold → normal).
         const bossNameTxt = new PIXI.Text('', {
-            fontFamily:'Southbank LT', fontSize:24, fill:'#f0f0f0', fontWeight:'normal',
+            fontFamily:'Southbank LT', fontSize:34, fill:'#f0f0f0', fontWeight:'normal',
             dropShadow:true, dropShadowColor:'#000', dropShadowDistance:2,
         });
-        bossNameTxt.x = 92; bossNameTxt.y = 92; bossNameTxt.scale.set(1.404);
+        bossNameTxt.anchor.set(0.5, 0);
+        bossNameTxt.x = 137.5; bossNameTxt.y = 95;
         win.addChild(bossNameTxt);
         this._bossFightNameTxt = bossNameTxt;
 
@@ -289,18 +297,48 @@ export function attachBossesFight(proto){
         this._bossFightHpBar = hpBar;
 
         const hpTxt = new PIXI.Text('', {
-            fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff',
+            fontFamily:'Southbank LT', fontSize:21, fill:'#ffffff',
         });
         // 03.10.2026 (редактор позиций): было y:156, scale:1.314.
-        hpTxt.anchor.set(0.5, 0.5); hpTxt.x = 136; hpTxt.y = 157; hpTxt.scale.set(1.710);
+        hpTxt.anchor.set(0.5, 0.5); hpTxt.x = 136; hpTxt.y = 157;
         win.addChild(hpTxt);
         this._bossFightHpTxt = hpTxt;
 
+        // 09.10.2026 (по прямому указанию — "друзья нанесли урон, полоска ХП в бою всё ещё
+        // 100к/100к, нужно видеть точное число при наведении"): округлённый "к"-текст выше
+        // (даже с точностью до десятых) всё равно не показывает ТОЧНОЕ оставшееся ХП — тултип
+        // по наведению на полоску/прогрессию ХП. Тот же паттерн тултипа, что keyTooltip в
+        // ryukzak.js (Container: Graphics-фон + Text, visible toggle по pointerover/pointerout).
+        // Наведение повешено на hpBarBg (прогрессия, см. выше) — она ВСЕГДА полной ширины 248px,
+        // в отличие от hpBar, которая сжимается по % ХП и не покроет всю зону при низком ХП.
+        const hpTooltip = new PIXI.Container();
+        hpTooltip.visible = false;
+        const hpTooltipBg = new PIXI.Graphics();
+        const hpTooltipTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:16, fill:'#ffffff' });
+        hpTooltipTxt.anchor.set(0.5, 0.5);
+        hpTooltip.addChild(hpTooltipBg);
+        hpTooltip.addChild(hpTooltipTxt);
+        win.addChild(hpTooltip);
+        this._bossFightHpTooltip = hpTooltip;
+        this._bossFightHpTooltipTxt = hpTooltipTxt;
+        this._bossFightHpTooltipBg = hpTooltipBg;
+
+        hpBarBg.interactive = true;
+        hpBarBg.on('pointerover', () => this._showBossFightHpTooltip());
+        hpBarBg.on('pointerout',  () => { hpTooltip.visible = false; });
+
+        // 08.10.2026 (по прямому указанию дизайнера — "шрифт просто расплющил, пошёл
+        // пикселями, а не сделал так, чтоб шрифт поменял размер"): PIXI.Text рендерится в
+        // растровую текстуру под fontSize, дальнейший scale.set() растягивает уже готовый
+        // bitmap (было fontSize:24 + scale:1.624 — визуально ~39px, но блочно). Теперь
+        // итоговый размер задан прямо в fontSize (24×1.624≈39) — текст рендерится сразу в
+        // нужном разрешении, scale не нужен. dropShadowDistance отмасштабирован тем же
+        // коэффициентом (1×1.624), чтобы тень осталась визуально той же, не "похудела".
         const timerTxt = new PIXI.Text('09:00:00', {
-            fontFamily:'Southbank LT', fontSize:24, fill:'#f0f0f0', fontWeight:'normal',
-            dropShadow:true, dropShadowColor:'#000', dropShadowDistance:1,
+            fontFamily:'Southbank LT', fontSize:39, fill:'#f0f0f0', fontWeight:'normal',
+            dropShadow:true, dropShadowColor:'#000', dropShadowDistance:1.624,
         });
-        timerTxt.x = 80; timerTxt.y = 203; timerTxt.scale.set(1.624);
+        timerTxt.x = 80; timerTxt.y = 203;
         win.addChild(timerTxt);
         this._bossFightTimerTxt = timerTxt;
 
@@ -337,11 +375,12 @@ export function attachBossesFight(proto){
         // 03.10.2026 (редактор позиций, по прямому указанию): LBL_X было 257, VAL_X было 281,
         // VAL_Y было [560,620,680] — та же дельта строки 0 (единственной измеренной) перенесена
         // на строки 1-2, как и раньше в этом файле (см. комментарий выше про FRAME_X/AV_X).
-        // Плюс добавлен масштаб имени/подписи/значения (NAME_SCALE/LBL_SCALE/VAL_SCALE ниже).
+        // Масштаб имени/подписи/значения добавлен тем же днём отдельными NAME_SCALE/LBL_SCALE/
+        // VAL_SCALE — 08.10.2026 (фикс пикселизации текста) эти три константы убраны, те же
+        // коэффициенты свёрнуты прямо в fontSize ниже (nameTxt:18, dmgLbl:15, dmgTxt:16).
         const NAME_X = 92,  NAME_Y = [535, 597, 659];
         const LBL_X = 256, LBL_Y  = [535, 597, 659]; // на одной линии с NAME (было ниже, rowY+22)
         const VAL_X = 282, VAL_Y  = [558, 618, 678];
-        const NAME_SCALE = 1.280, LBL_SCALE = 1.210, VAL_SCALE = 1.159;
         for(let r = 0; r < 3; r++){
             const avX = AV_X, avY = AV_Y[r];
             const frameX = FRAME_X, frameY = FRAME_Y[r];
@@ -386,22 +425,22 @@ export function attachBossesFight(proto){
             // белым". Старые комментарии/доки, описывающие белый цвет, сами устарели — не
             // доверять им больше, чем прямому указанию пользователя.
             const nameTxt = new PIXI.Text('', {
-                fontFamily:'AA Bebas Neue', fontSize:14, fill:'#8a7157',
-                wordWrap:true, wordWrapWidth: LBL_X - NAME_X - 8,
+                fontFamily:'AA Bebas Neue', fontSize:18, fill:'#8a7157',
+                wordWrap:true, wordWrapWidth: (LBL_X - NAME_X - 8) * 1.280,
             });
-            nameTxt.x = NAME_X; nameTxt.y = NAME_Y[r]; nameTxt.scale.set(NAME_SCALE);
+            nameTxt.x = NAME_X; nameTxt.y = NAME_Y[r];
             win.addChild(nameTxt);
 
             const dmgLbl = new PIXI.Text('Нанесенный урон:', {
-                fontFamily:'Southbank LT', fontSize:12, fill:'#8a7157',
+                fontFamily:'Southbank LT', fontSize:15, fill:'#8a7157',
             });
-            dmgLbl.x = LBL_X; dmgLbl.y = LBL_Y[r]; dmgLbl.scale.set(LBL_SCALE);
+            dmgLbl.x = LBL_X; dmgLbl.y = LBL_Y[r];
             win.addChild(dmgLbl);
 
             const dmgTxt = new PIXI.Text('× 0', {
-                fontFamily:'Southbank LT', fontSize:14, fill:'#8a7157',
+                fontFamily:'Southbank LT', fontSize:16, fill:'#8a7157',
             });
-            dmgTxt.x = VAL_X; dmgTxt.y = VAL_Y[r]; dmgTxt.scale.set(VAL_SCALE);
+            dmgTxt.x = VAL_X; dmgTxt.y = VAL_Y[r];
             win.addChild(dmgTxt);
 
             const rowObj = { avSpr, nameTxt, dmgTxt, id: null, nick: null };
@@ -410,6 +449,65 @@ export function attachBossesFight(proto){
         }
 
         // ── РЯД ОРУЖИЙ (нижний центр) ─────────────────────────────
+        // 08.10.2026 (по прямому указанию, новый файл + координаты): декоративная панель "слотов"
+        // под рядом кнопок оружия — добавлена ПОСЛЕ _spineBossMount(win) выше, значит в Z-порядке
+        // она (как и сами кнопки ниже) лежит ПОВЕРХ Spine-анимации, как и требовалось.
+        // Координаты уточнены тем же днём (второй снимок редактора позиций): x:369,y:610,
+        // scale:1.012 (натуральный размер файла 675×109 × 1.012 ≈ 683×109 — ровно то, что
+        // замерил редактор).
+        //
+        // 08.10.2026 (по прямому указанию — "в картинке визуально 8 ячеек, а оружий только 6,
+        // обрежь лишние ~90px"; уточнено тем же днём — "не 6, а 7 ячеек"): картинка нарисована
+        // на 8 слотов, видимых ячеек должно остаться 7 (1 лишняя обрезается). Сверка по X: панель
+        // x:369..369+683=1052, последняя кнопка (автомат) x:792 + ширина ≈792+84≈876 — запас
+        // ≈176px (≈2 ячейки) висит СПРАВА от последней кнопки; обрезается ровно 1 ячейка
+        // (оставляем небольшой запас/рамку после автомата, не ровно по его краю). Обрезаем через
+        // PIXI.Texture.frame (реальный crop пикселей, не squish-масштабирование — иначе оставшиеся
+        // ячейки визуально сплющились бы).
+        //
+        // 08.10.2026 (тем же днём, повторное уточнение — "ещё справа обрезал бы, типа пикселей 6"):
+        // после обрезки до 7/8 ячеек справа остаётся лишний тонкий край — срезаем ещё EXTRA_TRIM_PX
+        // нативных пикселей текстуры сверх 7/8-доли (масштаб 1.012 близок к 1:1, разницей между
+        // "нативный" и "экранный" пиксель на этой величине можно пренебречь).
+        //
+        // 09.10.2026 (по прямому указанию — "справа обрежь ещё пикселей 6, и сделай справа
+        // небольшой border-radius"): EXTRA_TRIM_PX увеличен на ещё 6px (было 8, стало 14) — тот
+        // же приём, что и раньше. Маска раньше была равномерным drawRoundedRect() — скругляла ВСЕ
+        // 4 угла одним радиусом 4px. Левый край текстуры — родной край исходного файла (не
+        // обрезался), скруглять его не просили; правый — искусственный обрез (crop), именно его
+        // просили заметно скруглить. Маска переписана на ручной путь (moveTo/lineTo/arcTo) —
+        // левые углы остаются прямыми, правые скруглены радиусом RIGHT_RADIUS.
+        const wpnSlotsBg = new PIXI.Sprite(PIXI.Texture.EMPTY);
+        wpnSlotsBg.x = 369; wpnSlotsBg.y = 610; wpnSlotsBg.scale.set(1.012);
+        win.addChild(wpnSlotsBg);
+        {
+            const TOTAL_CELLS = 8, VISIBLE_CELLS = 7, EXTRA_TRIM_PX = 14, RIGHT_RADIUS = 10;
+            const fullTex = PIXI.Texture.from(B + 'боевка слоты под оружие v2.png');
+            const _applyCrop = () => {
+                const bt = fullTex.baseTexture;
+                const cropW = Math.round(bt.width * VISIBLE_CELLS / TOTAL_CELLS) - EXTRA_TRIM_PX;
+                wpnSlotsBg.texture = new PIXI.Texture(bt, new PIXI.Rectangle(0, 0, cropW, bt.height));
+                const h = bt.height;
+                const slotsMask = new PIXI.Graphics();
+                slotsMask.beginFill(0xffffff);
+                slotsMask.moveTo(0, 0);
+                slotsMask.lineTo(cropW - RIGHT_RADIUS, 0);
+                slotsMask.arcTo(cropW, 0, cropW, RIGHT_RADIUS, RIGHT_RADIUS);
+                slotsMask.lineTo(cropW, h - RIGHT_RADIUS);
+                slotsMask.arcTo(cropW, h, cropW - RIGHT_RADIUS, h, RIGHT_RADIUS);
+                slotsMask.lineTo(0, h);
+                slotsMask.closePath();
+                slotsMask.endFill();
+                slotsMask.x = wpnSlotsBg.x;
+                slotsMask.y = wpnSlotsBg.y;
+                slotsMask.scale.copyFrom(wpnSlotsBg.scale);
+                win.addChild(slotsMask);
+                wpnSlotsBg.mask = slotsMask;
+            };
+            if(fullTex.baseTexture.valid) _applyCrop();
+            else fullTex.baseTexture.once('loaded', _applyCrop);
+        }
+
         const WPN_BTNS = [
             { file:'боевка кнопка нож.png',    id:0 },
             { file:'боевка кнопка цепь.png',   id:1 },
@@ -493,6 +591,15 @@ export function attachBossesFight(proto){
             5: {x:833, y:714}, // автомат
         };
 
+        // 08.10.2026 (по прямому указанию — "показывай количество оружия, которым игрок может
+        // атаковать, в зависимости от коэффициента"): сколько ударов ЕЩЁ доступно донатным
+        // оружием при ВЫБРАННОМ множителе — floor(qty / mult). Пример из указания: qty=100,
+        // mult=×1 (по умолчанию) → 100 ударов; тот же qty=100, mult=×2 → 50 ударов (патроны
+        // тратятся по mult штук за удар, см. _showWpnTip/computeModifiedDamage выше — тот же
+        // mult, что умножает урон за удар). Координаты — X те же, что у метки множителя, Y на
+        // 80px выше (измерено по мачете: 714-80=634, та же дельта для ствола/автомата).
+        this._bossFightAmmoCountLabels = [];
+
         for(let i = 0; i < WPN_BTNS.length; i++){
             const wid = WPN_BTNS[i].id;
 
@@ -514,8 +621,17 @@ export function attachBossesFight(proto){
                 win.addChild(multLbl);
                 this._bossFightMultLabels[i] = multLbl;
 
+                const ammoLbl = new PIXI.Text('0', {
+                    fontFamily:'Southbank LT', fontSize:14, fill:'#ffffff',
+                    dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
+                });
+                ammoLbl.anchor.set(0.5,1); ammoLbl.x = pos.x; ammoLbl.y = pos.y - 80;
+                win.addChild(ammoLbl);
+                this._bossFightAmmoCountLabels[i] = ammoLbl;
+
             } else {
                 this._bossFightMultLabels[i] = null;
+                this._bossFightAmmoCountLabels[i] = null;
             }
         }
 
@@ -590,10 +706,10 @@ export function attachBossesFight(proto){
         this._bossFightProgBar = progBar;
 
         const progTxt = new PIXI.Text('0/0', {
-            fontFamily:'Southbank LT', fontSize:16, fill:'#ffffff',
+            fontFamily:'Southbank LT', fontSize:19, fill:'#ffffff',
         });
         // 03.10.2026 (редактор позиций): добавлен scale 1.186.
-        progTxt.anchor.set(0.5, 0.5); progTxt.x = 1115; progTxt.y = 595; progTxt.scale.set(1.186);
+        progTxt.anchor.set(0.5, 0.5); progTxt.x = 1115; progTxt.y = 595;
         win.addChild(progTxt);
         this._bossFightProgTxt = progTxt;
 
@@ -612,11 +728,11 @@ export function attachBossesFight(proto){
         // 03.10.2026 (по прямому указанию — "кол-во новых очков и прокачанных опусти вниз на
         // 1px, сдвинь вправо на 1px, уменьши жирность"): fontWeight bold → normal.
         const ptsTxt = new PIXI.Text('—', {
-            fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',
+            fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',
         });
         ptsTxt.anchor.set(0.5, 0.5);
         // 04.10.2026 (редактор позиций — "кол-во прокачанных очков"): x:1080 y:639 scale:1.521.
-        ptsTxt.x = 1080; ptsTxt.y = 639; ptsTxt.scale.set(1.521);
+        ptsTxt.x = 1080; ptsTxt.y = 639;
         win.addChild(ptsTxt);
         this._bossFightPtsTxt = ptsTxt;
 
@@ -625,11 +741,11 @@ export function attachBossesFight(proto){
 
         // 03.10.2026 (см. коммент у ptsTxt выше — тот же батч правок): fontWeight bold → normal.
         const newTxt = new PIXI.Text('—', {
-            fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',
+            fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',
         });
         newTxt.anchor.set(0.5, 0.5);
         // 04.10.2026 (редактор позиций — "кол-во новых очков"): x:1220 y:639 scale:1.521.
-        newTxt.x = 1220; newTxt.y = 639; newTxt.scale.set(1.521);
+        newTxt.x = 1220; newTxt.y = 639;
         win.addChild(newTxt);
 
         this._bossFightNewTxt = newTxt;
@@ -800,11 +916,11 @@ export function attachBossesFight(proto){
             this._bossFightModeSprs.forEach((s, i)=>{ s.alpha = i === this._bossFightDiffIdx ? 1 : (i === 3 ? 0.6 : 0.45); });
 
         const BOSS_BGS = [
-            'боевка с боссом охотник.png',      // boss 0: оригинальный фон (Spine поверх статики)
-            'боевка с боссом счастливчик.png',
-            'боевка с боссом ястреб.png',       'боевка с боссом меченный.png',
-            'боевка с боссом крыс.png',         'боевка с боссом баркут.png',
-            'боевка с боссом борода.png',       'боевка с боссом жгут.png',
+            'боевка с боссом охотник v2.png',
+            'боевка с боссом счастливчик v2.png',
+            'боевка с боссом ястреб v2.png',    'боевка с боссом меченный v2.png',
+            'боевка с боссом крыс v2.png',      'боевка с боссом баркут v2.png',
+            'боевка с боссом борода v2.png',    'боевка с боссом жгут v2.png',
         ];
         if(this._bossFightBg)
             this._bossFightBg.texture = PIXI.Texture.from('./images/' + (BOSS_BGS[bossIdx] || BOSS_BGS[0]));
@@ -907,6 +1023,27 @@ export function attachBossesFight(proto){
         });
     };
 
+    // 09.10.2026 — см. комментарий у создания hpTooltip выше. Текущие cur/max считаются ЗАНОВО
+    // по тем же полям, что и _updateBossFightHpDisplay() (bosses.hpByDiff/BOSS_HP) — не кэш,
+    // поэтому тултип не может показать устаревшее число, даже если ХП изменилось, пока он уже
+    // был открыт (pointerover срабатывает заново при каждом новом наведении).
+    proto._showBossFightHpTooltip = function(){
+        if(!window.bosses || !this._bossFightHpTooltip) return;
+        const idx = this._bossFightBossIdx; const di = this._bossFightDiffIdx;
+        const cur = Math.max(0, Math.round(bosses.hpByDiff[di][idx]));
+        const max = Math.round(bosses.BOSS_HP[idx][di]);
+        const txt = this._bossFightHpTooltipTxt;
+        txt.text = cur.toLocaleString('ru') + ' / ' + max.toLocaleString('ru');
+        const padX = 12, padY = 8;
+        const bg = this._bossFightHpTooltipBg;
+        bg.clear();
+        bg.beginFill(0x111111, 0.92); bg.lineStyle(1, 0x5a4a2a);
+        bg.drawRoundedRect(-txt.width/2 - padX, -txt.height/2 - padY, txt.width + padX*2, txt.height + padY*2, 4);
+        bg.endFill();
+        this._bossFightHpTooltip.x = 136; this._bossFightHpTooltip.y = 110;
+        this._bossFightHpTooltip.visible = true;
+    };
+
     proto._updateBossFightHpDisplay = function(){
         if(!window.bosses) return;
         const idx = this._bossFightBossIdx; const di = this._bossFightDiffIdx;
@@ -940,13 +1077,23 @@ export function attachBossesFight(proto){
             spr.buttonMode  = true;
 
             const multLbl = this._bossFightMultLabels ? this._bossFightMultLabels[i] : null;
-            if(id >= 3){ // донатное оружие — показываем только множитель расхода
+            const ammoLbl = this._bossFightAmmoCountLabels ? this._bossFightAmmoCountLabels[i] : null;
+            if(id >= 3){ // донатное оружие — показываем множитель расхода и доступное число ударов
                 const mi    = (this._bossFightWpnMultIdx && this._bossFightWpnMultIdx[id]) || 0;
                 const mult  = MULT_OPTS[mi] || 1;
                 const mTxt  = mult >= 1000 ? '×1K' : '×' + mult;
                 if(multLbl){ multLbl.text = mTxt; multLbl.interactive = true; }
+
+                // 08.10.2026: доступные удары при текущем множителе = floor(патроны / mult) —
+                // mult патронов списывается за ОДИН удар (см. bosses.php.attack()/
+                // computeModifiedDamage выше — тот же mult определяет и урон, и расход).
+                if(ammoLbl){
+                    const qty = wp ? (parseInt(wp.qty) || 0) : 0;
+                    ammoLbl.text = String(Math.floor(qty / mult));
+                }
             } else { // бесплатное оружие — никаких меток
                 if(multLbl) multLbl.text = '';
+                if(ammoLbl) ammoLbl.text = '';
             }
         }
     };

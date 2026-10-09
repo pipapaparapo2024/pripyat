@@ -28,7 +28,10 @@ console.log('\nTest 1: preloader.js — старая FLA-заставка скр
 {
     const ctorIdx = preloaderSrc.indexOf('constructor(preloader_movie){');
     assert(ctorIdx !== -1, 'constructor найден');
-    const body = preloaderSrc.slice(ctorIdx, ctorIdx + 700);
+    // 08.10.2026: окно увеличено 700→900 — комментарий над этой строкой подрос на строку
+    // (уточнение про Spine-прелоадер вместо video, см. preloader-visual.js), сама проверяемая
+    // строка кода не изменилась.
+    const body = preloaderSrc.slice(ctorIdx, ctorIdx + 900);
     assert(/this\.preloader\.visible = false;/.test(body), 'this.preloader.visible=false сразу в конструкторе');
 }
 

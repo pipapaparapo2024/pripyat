@@ -48,7 +48,10 @@ console.log('\nTest 2: bosses_prefight.js — иконка босса (обща�
     // 26.09.2026: уточнено ещё раз редактором позиций (892,151→866,175), цвет также переведён
     // на #cbc9c9 (см. gambling-reward-highlight.test.js / отдельный тест на палитру экрана).
     assert(/xpTxt\.anchor\.set\(0\.5, 0\.5\); xpTxt\.x = 866; xpTxt\.y = 175;/.test(prefightSrc), 'HP-текст на новых координатах');
-    assert(/xpTxt\.scale\.set\(1\.240\);/.test(prefightSrc), 'HP-текст увеличен (scale 1.24)');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:22×scale(1.240) заменены на итоговый
+    // fontSize:27 без scale.
+    assert(/fontSize:27,/.test(prefightSrc) && !/xpTxt\.scale\.set\(/.test(prefightSrc),
+        'HP-текст увеличен напрямую (fontSize:27 = 22×1.24), без scale');
     assert(/napBtn\.x = 880; napBtn\.y = 663;/.test(prefightSrc), 'кнопка НАПАСТЬ на новых координатах');
 }
 

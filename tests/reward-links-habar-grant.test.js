@@ -35,17 +35,21 @@ const logsSrc   = fs.readFileSync(path.join(siteRoot, 'logs.php'), 'utf-8');
 
 console.log('\nTest 1: server/core/controllers/rewardlinks.php — kind:"habar" выдаёт habar_bought=containerId+1, "один хабар в одни руки"');
 {
-    const start = rewardlinksSrc.indexOf("} else if(\$kind === 'habar'){");
-    assert(start !== -1, 'ветка kind==="habar" найдена в claim()');
+    // 08.10.2026 (рефакторинг при фиксе бага "посылки оружия не используются"): разбор kind
+    // перенесён из инлайн-foreach в claim() в отдельный _applyRewardEntry() — ветки теперь
+    // самостоятельные if с ранним return (не continue внутри общего foreach), см.
+    // tests/rewardlinks-weapon-ammo-sync.test.js для тестов нового метода целиком.
+    const start = rewardlinksSrc.indexOf("if(\$kind === 'habar'){");
+    assert(start !== -1, 'ветка kind==="habar" найдена в _applyRewardEntry()');
     const body = rewardlinksSrc.slice(start, rewardlinksSrc.indexOf('\n            }', start));
 
     assert(/\$containerId = intval\(\$entry\['containerId'\] \?\? -1\);/.test(body), 'читает containerId из награды');
-    assert(/if\(\$containerId < 0 \|\| \$containerId > 3\) continue;/.test(body), 'валидирует диапазон 0-3 (4 тира хабара, как в habar_daily_config.json)');
-    assert(/if\(\$this->ops->i\(\$user, 'habar_bought'\) > 0\) continue;/.test(body),
-        '"один хабар в одни руки" — если у игрока УЖЕ есть хабар (куплен или получен раньше), строка молча пропускается, не перезаписывает');
+    assert(/if\(\$containerId < 0 \|\| \$containerId > 3\) return null;/.test(body), 'валидирует диапазон 0-3 (4 тира хабара, как в habar_daily_config.json)');
+    assert(/if\(\$this->ops->i\(\$user, 'habar_bought'\) > 0\) return null;/.test(body),
+        '"один хабар в одни руки" — если у игрока УЖЕ есть хабар (куплен или получен раньше), строка молча пропускается (return null — не попадает в summary), не перезаписывает');
     assert(/\$user\['habar_bought'\] = \$containerId \+ 1;/.test(body),
         'выдаёт ТО ЖЕ поле, что и покупка (habar.php.buy(): habar_bought = idx + 1) — единственный переключатель для collectDay()');
-    assert(/\$summary\[\] = \['kind' => 'habar', 'containerId' => \$containerId\];/.test(body), 'попадает в summary для клиентского попапа наград');
+    assert(/return \['kind' => 'habar', 'containerId' => \$containerId\];/.test(body), 'возвращает запись для summary (клиентский попап наград)');
 }
 
 console.log('\nTest 2: patch включает habar_bought — клиент узнаёт о выданном хабаре сразу, без перезахода');

@@ -13,9 +13,13 @@
  * _remove() независимо от готовности игры — на медленной сети реальная загрузка легко
  * превышает 30с, а короткий ролик успевал отыграть цикл несколько раз ("пара раз") до этого
  * момента, после чего таймер обрывал видео ДО готовности игры → чёрный экран посреди загрузки.
- * Теперь таймер только логирует диагностику, не убирает прелоадер — цикл 'ended' продолжает
- * крутить ролик, пока window._preloaderVideoReady() реально не выставит готовность (см. также
- * preloader-video-loops-until-game-ready.test.js).
+ * Теперь таймер только логирует диагностику, не убирает прелоадер.
+ *
+ * 08.10.2026 (по прямому указанию — "замени прелоадер на новый, не зацикливай старый"): видео
+ * (preloader.mp4) заменено на Spine-анимацию — цикл 'ended' заменён на Spine-событие 'complete',
+ * window._preloaderVideoReady() переименован в window._preloaderVisualReady(). Поведение
+ * (не убирать раньше реальной готовности игры, таймер только диагностирует) не изменилось, см.
+ * также preloader-video-loops-until-game-ready.test.js.
  *
  * Run: node tests/preloader-version-badge-hidden-and-no-failsafe-cutoff.test.js
  */
@@ -71,14 +75,17 @@ console.log('\nTest 4: preloader-visual.js — 30-секундный диагн�
     assert(/console\.warn/.test(body), 'таймер оставляет диагностику в консоли вместо принудительного скрытия');
 }
 
-console.log("\nTest 5: preloader-visual.js — цикл 'ended' по-прежнему сам решает, когда убирать прелоадер (только по _gameDone)");
+// 08.10.2026 (тем же днём, ВТОРОЙ Spine-экспорт — см. preloader-visual-remove-on-ready.test.js):
+// ожидание 'complete' (границы цикла) само оказалось багом ("анимация не закончится — прелоадер
+// держится бесконечно при любой заминке Spine-рантайма") — убрано, window._preloaderVisualReady()
+// теперь убирает прелоадер НАПРЯМУЮ, без ожидания границы цикла. window._onPreloaderHidden() (см.
+// Test 3 выше) от этого не зависит — вызывается из _remove() независимо от того, КТО её позвал.
+console.log("\nTest 5: preloader-visual.js — ожидание границы цикла (Spine 'complete') убрано, прелоадер убирается сразу по сигналу готовности");
 {
-    const m = preloaderSrc.match(/vid\.addEventListener\('ended', \(\) => \{([\s\S]*?)\n    \}\);/);
-    assert(!!m, "обработчик 'ended' найден");
-    const body = m ? m[1] : '';
-    assert(/if\(_gameDone\)\{/.test(body), 'проверяет реальную готовность игры на каждой границе цикла');
-    assert(/vid\.currentTime = 0;/.test(body) && /vid\.play\(\)\.catch/.test(body),
-        'если игра не готова — перематывает на начало и снова запускает ролик (бесконечный цикл)');
+    assert(!/complete: \(\) => \{/.test(preloaderSrc),
+        "обработчик 'complete' у state.addListener убран — реальное удаление больше не ждёт границы цикла");
+    assert(/window\._preloaderVisualReady = \(\) => \{ _remove\(\); \};/.test(preloaderSrc),
+        'window._preloaderVisualReady() вызывает _remove() сразу, без промежуточного _gameDone/ожидания цикла');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

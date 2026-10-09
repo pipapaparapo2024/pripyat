@@ -94,9 +94,14 @@ console.log('\nTest 6: energy_buy.js — покупка энергии и на V
     const handlerEnd = src.indexOf('});', handlerStart);
     const handlerBody = src.slice(handlerStart, handlerEnd);
     assert(!/bridge\.send\('VKWebAppShowOrderBox'/.test(handlerBody), 'прямой вызов VKWebAppShowOrderBox убран из самого обработчика клика (комментарий выше его не считает)');
-    assert(/if\(isOk\(\)\)\{/.test(src), 'плашка цены в ОКах рисуется только на площадке ОК (у VK — родная картинка с ценой)');
-    assert(/opt\.price_ok \+ ' ' \+ helper\.numberEnd\(opt\.price_ok, 'votes'\)/.test(src),
-        'плашка показывает именно price_ok, не votes (VK-поле) — снова нарисована, см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js');
+    // 09.10.2026 (стале-пин, не регрессия — см. tests/energy-buy-unified-cards-platform-price-
+    // text.test.js для полной истории): карточки энергии заменены на унифицированный art без
+    // цены вообще (для ЛЮБОЙ площадки, не только VK) — текст цены теперь рисуется безусловно,
+    // не только внутри if(isOk()){...}, платформа влияет лишь на то, ЧТО именно показывать
+    // (price_ok или votes).
+    assert(/const price = isOk\(\) \? opt\.price_ok : opt\.votes;/.test(src), 'цена вычисляется по площадке — ОК показывает price_ok, VK показывает votes (раньше VK брал цену из самой картинки)');
+    assert(/price \+ ' ' \+ helper\.numberEnd\(price, 'votes'\)/.test(src),
+        'текст цены строится из вычисленного price (платформо-зависимого), не захардкожен на opt.price_ok — см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js');
 }
 
 console.log('\nTest 7: modules/iap.js — ВОЗВРАЩЁН прямой FAPI.UI.showPayment() для ОК (05.10.2026, живой тест показал "item за null OK": VKWebAppShowOrderBox не передаёт цену, Launcher ОК не нашёл её в своём каталоге — у FAPI.UI.showPayment() цена явный параметр, каталог не нужен)');

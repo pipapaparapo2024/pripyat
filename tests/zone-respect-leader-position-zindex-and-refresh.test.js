@@ -34,7 +34,10 @@ assert(/amountTxt\.y = frameSpr\.y \+ RESPECT_AMOUNT_REL_Y;/.test(zoneSrc), 'Y �
 assert(/amountTxt\.rotation = RESPECT_AMOUNT_ROTATION_DEG \* Math\.PI \/ 180;/.test(zoneSrc), 'поворот применяется через новую константу');
 assert(/amountTxt\.x = frameSpr\.x \+ RESPECT_FRAME_W \/ 2 \+ 5;/.test(zoneSrc), 'X сдвинут на +5px вправо от центра — подтверждено пользователем');
 // 03.10.2026: масштаб уточнён редактором позиций повторно — 1.125 → 1.394.
-assert(/amountTxt\.scale\.set\(1\.394\);/.test(zoneSrc), 'scale уточнён редактором позиций (1.394)');
+// 08.10.2026 (фикс пикселизации текста): scale.set(1.394) убран, коэффициент свёрнут в
+// fontSize (16 → 22), см. тот же фикс в zone-cards-uniform-size-and-respect-caption-style.test.js.
+assert(/fontSize:22, fill:'#000000', fontWeight:'300',/.test(zoneSrc), 'fontSize=22 (было 16 × scale 1.394) — уточнён редактором позиций');
+assert(!/amountTxt\.scale\.set\(/.test(zoneSrc), 'amountTxt.scale.set() больше не вызывается');
 
 console.log('\nZ-индекс — фото и число теперь ВЫШЕ рамки (addChild в конец, не addChildAt перед рамкой)');
 assert(!/addChildAt\(photoSpr, frameIdx\)/.test(zoneSrc), 'photoSpr больше не вставляется ПЕРЕД рамкой');

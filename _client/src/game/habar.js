@@ -134,14 +134,13 @@ export default class Habar{
                 // x:971 y:506): было +40/+15, стало +26/+17.
                 const TIMER_OFFSET_X = 26, TIMER_OFFSET_Y = 17;
                 const timer = new PIXI.Text('', {
-                    fontFamily:'Southbank LT', fontSize:18, fill:'#f0e2c4',
+                    fontFamily:'Southbank LT', fontSize:23, fill:'#f0e2c4',
                     align:'center', fontWeight:'bold',
                     dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
                 });
                 timer.anchor.set(0.5, 0.5);
                 timer.x = BTN_X[i] + TIMER_OFFSET_X;
                 timer.y = BTN_Y[i] + TIMER_OFFSET_Y;
-                timer.scale.set(1.258);
                 timer.interactive = false;
                 timer.visible = false;
                 win.addChild(timer);
@@ -155,7 +154,7 @@ export default class Habar{
                 // 3) — offset уточнён до +62, даёт ровно 1047 для слота 3; Y уже совпадал (504),
                 // не менялся. Формула общая для всех 4 слотов, как и раньше.
                 const daysTxt = new PIXI.Text('', {
-                    fontFamily:'Southbank LT', fontSize:18, fill:'#f0e2c4',
+                    fontFamily:'Southbank LT', fontSize:23, fill:'#f0e2c4',
                     align:'center', fontWeight:'bold',
                     dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
                 });
@@ -164,7 +163,6 @@ export default class Habar{
                 daysTxt.anchor.set(0.5, 0.5);
                 daysTxt.x = timer.x + 86;
                 daysTxt.y = timer.y;
-                daysTxt.scale.set(1.253);
                 daysTxt.interactive = false;
                 daysTxt.visible = false;
                 win.addChild(daysTxt);

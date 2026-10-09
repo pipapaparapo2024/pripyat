@@ -35,14 +35,17 @@ const combatSrc = fs.readFileSync(
     path.join(__dirname, '..', '_client', 'src', 'game', 'bosses', 'bosses-combat.js'), 'utf-8'
 );
 
-// ── Test 1: шрифт "cur/next" внутри полоски увеличен на 3px (13 → 16) ────────
-console.log('\nTest 1: progTxt (число внутри оранжевой полоски) — fontSize 16 (было 13)');
+// ── Test 1: шрифт "cur/next" внутри полоски увеличен на 3px (13 → 16), затем ──
+// 08.10.2026 (фикс пикселизации текста): 16×scale(1.186) заменены на итоговый fontSize:19
+// без scale — та же видимая величина, что раньше давали 16+scale, но не размытая.
+console.log('\nTest 1: progTxt (число внутри оранжевой полоски) — fontSize 19 (16×1.186, без scale)');
 {
     const m = bossFightSrc.match(/const progTxt = new PIXI\.Text\('0\/0', \{([\s\S]*?)\}\);/);
     assert(!!m, 'progTxt найден');
     if (m) {
-        assert(/fontSize:16/.test(m[1]), 'fontSize увеличен до 16 (было 13, +3px)');
+        assert(/fontSize:19/.test(m[1]), 'fontSize увеличен до 19 (16×1.186), не через scale');
     }
+    assert(!/progTxt\.scale\.set\(/.test(bossFightSrc), 'scale.set() для progTxt больше не вызывается');
 }
 
 // ── Test 2: при заполненных 460 очках полоска показывает МАКС и полностью залита ──

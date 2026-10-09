@@ -173,8 +173,10 @@ console.log('\nTest 6: скиллы — полоска опыта обнуляе
 console.log('\nTest 7: боевой экран — координаты HP-текста и панели "РЕЙТИНГ УРОНА" по замеру редактором позиций');
 {
     // 03.10.2026 (редактор позиций): y 156→157, scale 1.314→1.710.
-    assert(/hpTxt\.anchor\.set\(0\.5, 0\.5\); hpTxt\.x = 136; hpTxt\.y = 157; hpTxt\.scale\.set\(1\.710\);/.test(fight),
-        'HP-текст боя с боссом получил scale 1.710 (позиция 136,157)');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:12×scale(1.710) заменены на итоговый
+    // fontSize:21 без scale.
+    assert(/hpTxt\.anchor\.set\(0\.5, 0\.5\); hpTxt\.x = 136; hpTxt\.y = 157;/.test(fight) && !/hpTxt\.scale\.set\(/.test(fight),
+        'HP-текст боя с боссом получил итоговый fontSize:21 (12×1.710), без scale (позиция 136,157)');
     // 26.09.2026: +1 к X/Y (уточнено редактором позиций повторно), avSpr — scale.set(0.542)
     // вместо фиксированного 42×42 (пропорции чужого VK-фото больше не искажаются).
     // 29.09.2026: ещё одно точечное уточнение редактором — x:37,y:541,scale:0.472 для строки 0
@@ -188,7 +190,14 @@ console.log('\nTest 7: боевой экран — координаты HP-те�
     // плюс масштаб имени/подписи/значения (NAME_SCALE/LBL_SCALE/VAL_SCALE).
     assert(/const LBL_X = 256, LBL_Y\s*= \[535, 597, 659\];/.test(fight), 'подпись "Нанесенный урон:": единый X=256, та же Y что и у имени (одна линия)');
     assert(/const VAL_X = 282, VAL_Y\s*= \[558, 618, 678\];/.test(fight), 'значение урона "× N": единый X=282, Y по строкам 558/618/678');
-    assert(/const NAME_SCALE = 1\.280, LBL_SCALE = 1\.210, VAL_SCALE = 1\.159;/.test(fight), 'масштабы имени/подписи/значения рейтинга урона');
+    // 08.10.2026 (фикс пикселизации текста): NAME_SCALE/LBL_SCALE/VAL_SCALE как scale.set()
+    // убраны — те же коэффициенты теперь свёрнуты прямо в fontSize каждого текста
+    // (14×1.280≈18, 12×1.210≈15, 14×1.159≈16).
+    assert(/fontFamily:'AA Bebas Neue', fontSize:18, fill:'#8a7157',/.test(fight), 'имя рейтинга — итоговый fontSize:18 (14×1.280)');
+    assert(/fontFamily:'Southbank LT', fontSize:15, fill:'#8a7157',/.test(fight), 'подпись "Нанесенный урон:" — итоговый fontSize:15 (12×1.210)');
+    assert(/fontFamily:'Southbank LT', fontSize:16, fill:'#8a7157',/.test(fight), 'значение урона — итоговый fontSize:16 (14×1.159)');
+    assert(!/const NAME_SCALE|\.scale\.set\(NAME_SCALE\)|\.scale\.set\(LBL_SCALE\)|\.scale\.set\(VAL_SCALE\)/.test(fight),
+        'константы *_SCALE как scale.set() объектов убраны (упоминание в поясняющем комментарии истории — не регрессия)');
     assert(!/const ROW0_OVERRIDE/.test(fight), 'особый случай для строки 0 (отдельная константа) полностью убран — единая формула для всех 3 строк');
 }
 

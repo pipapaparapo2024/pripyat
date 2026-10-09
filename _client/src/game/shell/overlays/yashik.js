@@ -82,13 +82,12 @@ export function attachYashik(proto){
 
 		// --- Количество патронов (левый блок, текст поверх панели в PNG) ---
 		const bulletCountTxt = new PIXI.Text('0', {
-			fontFamily: 'Southbank LT', fontSize: 58, fill: '#f3f0ee',
+			fontFamily: 'Southbank LT', fontSize: 48, fill: '#f3f0ee',
 			dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 2
 		});
 		bulletCountTxt.anchor.set(0.5, 0);
 		bulletCountTxt.x = 111;
 		bulletCountTxt.y = 150;
-		bulletCountTxt.scale.set(0.833);
 		win.addChild(bulletCountTxt);
 
 		// --- Кнопка ОБЫСКАТЬ ---
@@ -418,17 +417,15 @@ export function attachYashik(proto){
 		} else {
 			const uwyaTxt = new PIXI.Text(
 				'УВЫ БРАТ\nВ СЛЕДУЮЩИЙ РАЗ\nДЕРЖИ ОПЫТА :\n' + fmt(expGain),
-				{ fontFamily:'Southbank LT', fontSize:34, fill:0xffffff, align:'center', wordWrap:true, wordWrapWidth:240 }
+				{ fontFamily:'Southbank LT', fontSize:36, fill:0xffffff, align:'center', wordWrap:true, wordWrapWidth:253 }
 			);
 			uwyaTxt.anchor.set(0.5, 0.5);
 			uwyaTxt.x = 236; uwyaTxt.y = 351;
-			uwyaTxt.scale.set(1.056);
 			win.addChild(uwyaTxt);
 
-			const expLbl = new PIXI.Text('ОПЫТ', { fontFamily:'Southbank LT', fontSize:34, fill:0xffffff });
+			const expLbl = new PIXI.Text('ОПЫТ', { fontFamily:'Southbank LT', fontSize:42, fill:0xffffff });
 			expLbl.anchor.set(0.5, 0.5);
 			expLbl.x = 236; expLbl.y = 532;
-			expLbl.scale.set(1.240);
 			win.addChild(expLbl);
 		}
 

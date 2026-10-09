@@ -383,11 +383,10 @@ export function attachRyukzak(proto){
 		win.addChild(tushenkaIconSpr);
 
 		const tushenkaQtyTxt = new PIXI.Text('20', {
-			fontFamily: 'Southbank LT', fontSize: 24, fill: '#1a1a1a'
+			fontFamily: 'Southbank LT', fontSize: 32, fill: '#1a1a1a'
 		});
 		tushenkaQtyTxt.anchor.set(0.5, 0.5);
 		tushenkaQtyTxt.x = 810; tushenkaQtyTxt.y = 594;
-		tushenkaQtyTxt.scale.set(1.328);
 		tushenkaQtyTxt.rotation = 52 * Math.PI / 180;
 		win.addChild(tushenkaQtyTxt);
 

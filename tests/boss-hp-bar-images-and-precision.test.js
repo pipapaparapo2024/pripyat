@@ -108,6 +108,47 @@ console.log('\nTest 6: bosses.js._fmt() — точность до 1 знака �
     assert(fmt(30000000) !== fmt(29900000), 'до и после 100к урона строки РАЗНЫЕ (баг-репорт: раньше совпадали)');
 }
 
+console.log('\nTest 7 (09.10.2026, живой репорт — "друзья нанесли урон, а ХП в бою всё ещё 100к/100к"): тот же toFixed(1) теперь и для диапазона 1e4-1e6');
+{
+    const start = bossesSrc.indexOf('_fmt(n){');
+    const end   = bossesSrc.indexOf('\n    }', start);
+    const body  = bossesSrc.slice(start, end);
+    assert(/if\(n >= 1e4\)\s*return \(n\/1e3\)\.toFixed\(1\)\.replace\('\.0',''\)\+'к';/.test(body),
+        'ветка n>=1e4 использует toFixed(1) (было toFixed(0)) — та же формула, что уже исправила баг для n>=1e6');
+
+    function fmt(n) {
+        if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + 'кк';
+        if (n >= 1e4) return (n / 1e3).toFixed(1).replace('.0', '') + 'к';
+        return n.toLocaleString('ru');
+    }
+    // Ровно сценарий репорта: босс 100000 HP, друзья нанесли 60 урона.
+    assert(fmt(100000) === '100к', 'полное ХП (100000) форматируется как "100к" (круглое число, без .0)');
+    assert(fmt(99940) === '99.9к', 'после 60 урона (99940) форматируется как "99.9к" — урон теперь виден на индикаторе');
+    assert(fmt(100000) !== fmt(99940), 'до и после 60 урона строки РАЗНЫЕ (баг-репорт: раньше обе были "100к")');
+    // Круглые тысячи по-прежнему без ".0" (не "50.0к").
+    assert(fmt(50000) === '50к', 'круглое число (50000) по-прежнему без ".0" — "50к", не "50.0к"');
+}
+
+console.log('\nTest 8 (09.10.2026): тултип точного ХП при наведении на полоску ХП в бою');
+{
+    assert(/const hpTooltip = new PIXI\.Container\(\);/.test(fightSrc), 'тултип — отдельный Container (тот же паттерн, что keyTooltip в ryukzak.js)');
+    assert(/hpTooltip\.visible = false;/.test(fightSrc), 'изначально скрыт');
+    assert(/this\._bossFightHpTooltip = hpTooltip;/.test(fightSrc), 'ссылка сохранена на this для доступа из _showBossFightHpTooltip()');
+    assert(/hpBarBg\.interactive = true;/.test(fightSrc), 'интерактивность повешена на hpBarBg (фон "прогрессия"), не на hpBar — hpBar сжимается по % ХП и не покроет всю зону при низком ХП');
+    assert(/hpBarBg\.on\('pointerover', \(\) => this\._showBossFightHpTooltip\(\)\);/.test(fightSrc), 'pointerover открывает тултип');
+    assert(/hpBarBg\.on\('pointerout',\s*\(\) => \{ hpTooltip\.visible = false; \}\);/.test(fightSrc), 'pointerout скрывает тултип');
+
+    const start = fightSrc.indexOf('proto._showBossFightHpTooltip = function(){');
+    assert(start !== -1, '_showBossFightHpTooltip определена');
+    const end = fightSrc.indexOf('\n    };', start);
+    const body = fightSrc.slice(start, end);
+    assert(/const cur = Math\.max\(0, Math\.round\(bosses\.hpByDiff\[di\]\[idx\]\)\);/.test(body),
+        'cur считается ЗАНОВО из bosses.hpByDiff (не кэш) — тултип не покажет устаревшее число при повторном наведении');
+    assert(/const max = Math\.round\(bosses\.BOSS_HP\[idx\]\[di\]\);/.test(body), 'max считается из bosses.BOSS_HP (тот же источник, что и округлённый hpTxt)');
+    assert(/txt\.text = cur\.toLocaleString\('ru'\) \+ ' \/ ' \+ max\.toLocaleString\('ru'\);/.test(body),
+        'текст тултипа — ТОЧНЫЕ числа (toLocaleString, без "к"/"кк" сокращения) — в отличие от hpTxt выше');
+}
+
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

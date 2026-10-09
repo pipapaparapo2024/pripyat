@@ -30,7 +30,10 @@ console.log('\nTest 1: descTxt центрирован по горизонтал�
     const body  = src.slice(start, end);
     assert(/align:'center'/.test(body), "align:'center' — переносы строк внутри wordWrap тоже центрируются, не только блок целиком");
     assert(/descTxt\.anchor\.set\(0\.5, 0\);/.test(body), 'anchor(0.5,0) — центр по X, верх по Y (было anchor по умолчанию 0,0)');
-    assert(/descTxt\.scale\.set\(DESC_SCALE\);/.test(body), 'применён DESC_SCALE (0.965) — "уменьшил размер текста"');
+    // 08.10.2026 (фикс пикселизации текста): DESC_SCALE как scale.set() убран — тот же
+    // коэффициент 0.965 свёрнут в wordWrapWidth.
+    assert(/wordWrapWidth: \(CARD_W - 260\) \* 0\.965,/.test(body), 'коэффициент 0.965 ("уменьшил размер текста") сохранён в wordWrapWidth, не через scale');
+    assert(!/descTxt\.scale\.set\(/.test(body), 'scale.set() для descTxt больше не вызывается');
     assert(/descTxt\.x = DESC_CENTER_X; descTxt\.y = DESC_Y;/.test(body),
         'x = центр ПРОГРЕСС-БАРА (DESC_CENTER_X), не центр всей карточки (CARD_W/2) — по прямому указанию');
 }

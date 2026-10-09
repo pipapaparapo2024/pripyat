@@ -84,7 +84,10 @@ console.log('\nTest 4: подпись суммы уважения — без "+"
     assert(/fill:'#000000'/.test(body), 'цвет текста — чёрный (#000000)');
     assert(!/fill:'#ffdd44'/.test(body), 'старый золотой цвет не остался');
     // 03.10.2026: масштаб уточнён редактором позиций повторно — 1.125 → 1.394.
-    assert(/amountTxt\.scale\.set\(1\.394\);/.test(body), 'масштаб 1.394 — снят через редактор позиций');
+    // 08.10.2026 (фикс пикселизации текста): scale.set(1.394) убран, коэффициент свёрнут в
+    // fontSize (16 → 22).
+    assert(/fontSize:22, fill:'#000000', fontWeight:'300',/.test(body), 'fontSize=22 (было 16 × scale 1.394) — снят через редактор позиций');
+    assert(!/amountTxt\.scale\.set\(/.test(body), 'amountTxt.scale.set() больше не вызывается');
     // 02.10.2026: -3° — подтверждённый пользователем напрямую финальный угол (см. комментарий
     // у константы в zone_screen.js), не трогать без прямого указания.
     assert(/amountTxt\.rotation = RESPECT_AMOUNT_ROTATION_DEG \* Math\.PI \/ 180;/.test(body), 'поворот применяется через RESPECT_AMOUNT_ROTATION_DEG (сейчас -3°)');

@@ -185,12 +185,11 @@ export function attachBlackjack(proto){
 
         // Смены карт (справа от названия)
         const swapsTxt = new PIXI.Text('', {
-            fontFamily:'Southbank LT', fontSize:20, fill:'#ffffff',
+            fontFamily:'Southbank LT', fontSize:23, fill:'#ffffff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
         swapsTxt.anchor.set(0.5, 0.5);
         swapsTxt.x = 355; swapsTxt.y = 141;
-        swapsTxt.scale.set(1.141);
         win.addChild(swapsTxt);
         this._bjSwapsTxt = swapsTxt;
 

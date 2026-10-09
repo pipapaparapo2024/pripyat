@@ -30,13 +30,21 @@ console.log('\nПозиция таймера — уточнена редакто
 assert(/const TIMER_OFFSET_X = 26, TIMER_OFFSET_Y = 17;/.test(habarSrc), 'новое смещение +26/+17 от BTN_X[i]/BTN_Y[i] (даёт 971/506 для слота 3, было +40/+15)');
 assert(/timer\.x = BTN_X\[i\] \+ TIMER_OFFSET_X;/.test(habarSrc), 'X таймера использует новую константу смещения');
 assert(/timer\.y = BTN_Y\[i\] \+ TIMER_OFFSET_Y;/.test(habarSrc), 'Y таймера использует новую константу смещения');
-assert(/timer\.scale\.set\(1\.258\);/.test(habarSrc), 'таймер получил scale 1.258 (редактор позиций 03.10.2026)');
+// 08.10.2026 (фикс пикселизации текста): fontSize:18×scale(1.258) заменены на итоговый
+// fontSize:23 без scale.
+assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:23,/.test(habarSrc),
+    'таймер получил итоговый fontSize:23 (18×1.258), не через scale');
+assert(!/timer\.scale\.set\(/.test(habarSrc), 'scale.set() для timer больше не вызывается');
 
 console.log('\nСчётчик "N/30" — новый текст, правее таймера, тот же Y, та же видимость');
 assert(/this\._habarDaysLabels = \[\];/.test(habarSrc), 'массив меток дней инициализирован рядом с массивом таймеров');
 assert(/daysTxt\.x = timer\.x \+ 86;/.test(habarSrc), 'X = таймер + 86px (уточнено редактором позиций 03.10.2026, было +62)');
 assert(/daysTxt\.y = timer\.y;/.test(habarSrc), 'Y — тот же, что у таймера');
-assert(/daysTxt\.scale\.set\(1\.253\);/.test(habarSrc), 'счётчик дней получил scale 1.253 (редактор позиций 03.10.2026)');
+// 08.10.2026 (фикс пикселизации текста): fontSize:18×scale(1.253) заменены на итоговый
+// fontSize:23 без scale.
+assert(/const daysTxt = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:23,/.test(habarSrc),
+    'счётчик дней получил итоговый fontSize:23 (18×1.253), не через scale');
+assert(!/daysTxt\.scale\.set\(/.test(habarSrc), 'scale.set() для daysTxt больше не вызывается');
 assert(/daysTxt\.visible = !canCollect;/.test(habarSrc), 'видимость синхронна с таймером (появляется/исчезает вместе)');
 assert(/daysTxt\.text = Math\.min\(collected, 30\) \+ '\/30';/.test(habarSrc), 'текст — N/30, где N = habar_days_collected (капнуто на 30)');
 

@@ -131,6 +131,23 @@ console.log('\nTest 9: bank.js/energy_buy.js — покупки на ОК сно
         'карточка энергии передаёт label в startPurchase()');
 }
 
+console.log('\nTest 10 (09.10.2026, отказ модерации ОК п.5 — "платежи не работают"): $_POST[\'platform\']=\'ok\' форсируется ДО new Registry, иначе Registry молча берёт БД VK');
+{
+    const src = read('server/ok_pay_callback.php');
+    // Registry::__construct() (server/core/models/registry.php) выбирает БД ИСКЛЮЧИТЕЛЬНО по
+    // $_POST['platform'] — а этот файл обслуживает голый GET-запрос от серверов ОК (см. докблок
+    // файла), $_POST здесь физически всегда пуст. Без форсированной подстановки Registry всегда
+    // брала бы дефолтную 'stalker' (прод VK) — платёж реального ОК-игрока (чей прогресс лежит в
+    // 'stalker_ok') искал бы его по чужому id в чужой базе, не находил и отвечал ОК ошибкой,
+    // хотя деньги уже списаны.
+    const platformIdx = src.indexOf("$_POST['platform'] = 'ok';");
+    const registryIdx = src.indexOf('$registry = new Registry;');
+    assertRegex(platformIdx !== -1, "$_POST['platform'] = 'ok'; присутствует в файле");
+    assertRegex(registryIdx !== -1, '$registry = new Registry; присутствует в файле');
+    assertRegex(platformIdx !== -1 && registryIdx !== -1 && platformIdx < registryIdx,
+        "$_POST['platform'] форсируется ДО создания Registry — иначе конструктор уже прочитал бы пустое значение");
+}
+
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed${phpBin ? ' (включая реальное исполнение PHP ' + phpBin + ')' : ''}`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

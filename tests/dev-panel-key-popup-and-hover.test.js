@@ -17,7 +17,9 @@ assert(!/attachDevPanelCasinoForce/.test(iface), 'casino-force extension is not 
 assert(/keyIcon\.x = 662; keyIcon\.y = 350;/.test(popup), 'key icon position is x=662, y=350');
 assert(/const KEY_ICON_SCALE = 0\.184;/.test(popup), 'key icon scale is 0.184');
 assert(/buyLabelTxt\.x = 559; buyLabelTxt\.y = 415;/.test(popup), '"Купить за" position is x=559, y=415');
-assert(/buyLabelTxt\.scale\.set\(0\.908\)/.test(popup), '"Купить за" scale is 0.908');
+// 08.10.2026 (text pixelation fix): fontSize:20×scale(0.908) replaced with final fontSize:18, no scale.
+assert(/fontSize: 18,/.test(popup), '"Купить за" fontSize is 18 (20×0.908), not via scale');
+assert(!/buyLabelTxt\.scale\.set\(/.test(popup), '"Купить за" no longer uses scale.set');
 assert(/buyBtn\.on\('pointerover', \(\) => \{ _sa\(buyBtn, 0\.85\); _ss\(buyBtn, 1\.08\); \}\)/.test(popup), 'buy button uses smooth hover scaling');
 assert(/exitBtn\.on\('pointerover', \(\) => \{ _sa\(exitBtn, 0\.75\); _ss\(exitBtn, 1\.08\); \}\)/.test(popup), 'close button uses smooth hover scaling');
 assert(/emitter\.on = function\(event, listener, \.\.\.args\)/.test(uiKit) && /window\._ss\(target, x\)/.test(uiKit), 'legacy hover scale setters are globally animated through _ss');

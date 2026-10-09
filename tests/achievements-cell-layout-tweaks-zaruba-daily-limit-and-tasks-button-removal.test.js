@@ -51,11 +51,14 @@ console.log('\nTest 2: svod-achievements.js — название сдвинут�
 
 console.log('\nTest 3: svod-achievements.js — описание уменьшено и центрируется относительно прогресс-бара, не карточки');
 {
-    assert(/const DESC_SCALE = 0\.965;/.test(achSrc), 'DESC_SCALE = 0.965 (уменьшение размера текста)');
+    // 08.10.2026 (фикс пикселизации текста, по прямому указанию дизайнера): DESC_SCALE как
+    // scale.set() объекта убран — тот же коэффициент 0.965 теперь сворачивается прямо в
+    // wordWrapWidth descTxt (fontSize не менялся, т.к. 13×0.965≈13 — разница незаметна).
     assert(/const DESC_Y          = 29;/.test(achSrc), 'DESC_Y = 29 (было 26)');
     assert(/const DESC_CENTER_X = PROGRESS_BAR_X \+ PROGRESS_BAR_W \/ 2;/.test(achSrc),
         'DESC_CENTER_X вычислен от PROGRESS_BAR_X/W — центр прогресс-бара, а не CARD_W/2');
-    assert(/descTxt\.scale\.set\(DESC_SCALE\);/.test(achSrc), 'scale применяется к самому объекту descTxt');
+    assert(/wordWrapWidth: \(CARD_W - 260\) \* 0\.965,/.test(achSrc), 'итоговая ширина переноса descTxt сохраняет тот же коэффициент 0.965, что раньше был в scale');
+    assert(!/descTxt\.scale\.set\(/.test(achSrc), 'scale.set() на descTxt больше не вызывается — текст не растягивается после рендера');
     assert(/descTxt\.x = DESC_CENTER_X; descTxt\.y = DESC_Y;/.test(achSrc), 'descTxt позиционируется через DESC_CENTER_X/DESC_Y');
     assert(!/descTxt\.x = CARD_W \/ 2;/.test(achSrc), 'старое центрирование по CARD_W/2 (вся карточка) убрано');
 }

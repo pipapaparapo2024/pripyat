@@ -77,7 +77,16 @@ window.bridge = vkBridge;
 // умолчанию для всех игроков. Дополнительный барьер (на случай если этот флаг всё же
 // обойдут) — сервер (users.php.save()) теперь сам отклоняет неправдоподобные значения
 // основных валют/прогресса, даже если GIVE_MILLION() успеет отработать на клиенте.
-window.debug_mode = false;
+// 08.10.2026 (по прямому указанию — диагностика "бесконечная загрузка на тесте, прелоадер
+// крутится вечно"): раньше флаг был жёстко false — после 26.09.2026 все console.log/warn/error
+// по правилу №8 (ниже) заглушаются ВСЕГДА, то есть даже на тестовом домене диагностировать
+// зависание загрузки по консоли игрока было физически невозможно (видна только версия и
+// браузерные предупреждения, ни одного своего лога). Тестовый домен (test-pripyat-game.ru) —
+// отдельная БД (stalker_test), реальных игроков там нет, включение GIVE_MILLION()/RUN_TESTS()
+// (см. setupDebugTools() ниже) там безопасно. На проде (pripyat-game.ru) hostname не совпадает —
+// флаг остаётся false, поведение для реальных игроков не меняется, хотя файл после супер
+// деплоя побайтово идентичен на обоих доменах (см. AGENTS.md).
+window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');
 
 // 26.09.2026 (по прямому указанию, перед модерацией VK) — весь console.log/warn/error/info
 // по всему проекту (Правило №8 CLAUDE.md, сотни вызовов во всех модулях) заглушается для
@@ -141,7 +150,19 @@ window.vk_params = userDataVk;
 window.VK_token = vk_params['access_token'];
 window.VK_version = '5.132';
 
-window.my_server = 'https://pripyat-game.ru/server';
+// 08.10.2026 (найдено по прямому репорту — "игра снова не загружается", консоль показала
+// "Access to XMLHttpRequest at 'https://pripyat-game.ru/server/json/links.json' from origin
+// 'https://test-pripyat-game.ru' has been blocked by CORS policy"): my_server был ЖЁСТКО
+// захардкожен на прод независимо от того, с какого домена реально загружена страница — клиент,
+// открытый с test-pripyat-game.ru, всё равно слал ВСЕ запросы (TS.php/helper.getJSON) на
+// pripyat-game.ru. Раз у прод-сервера нет Access-Control-Allow-Origin для чужого домена,
+// браузер блокировал КАЖДЫЙ такой запрос — игра бесконечно "грузилась", ни разу не дойдя даже
+// до security.getToken. Тот же hostname-паттерн, что уже используется для window.debug_mode
+// (см. ниже в этом файле) — self-gating, один и тот же файл одинаково работает на обоих
+// доменах после супер деплоя, ничего руками не переключать.
+window.my_server = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru')
+    ? 'https://test-pripyat-game.ru/server'
+    : 'https://pripyat-game.ru/server';
 
 window.bridge = bridge;
 window.Timers = Timers;
@@ -181,10 +202,10 @@ document.body.style.overflow = 'hidden';
 // отдельно (добавлено логирование ниже по всей цепочке, см. dvor-roulette-screen.js/shmot.js).
 document.body.appendChild(canv);
 
-// Визуал загрузочного экрана — видео (preloader.mp4), играется один раз; если ролик кончится
-// раньше игры — показывается компас загрузки до реальной готовности (см. preloader-visual.js).
-// Вся логика вынесена в отдельный модуль (см. коммент там) — самодостаточный кусок, не часть
-// игровой модели window.*, не место ему разрастаться прямо в точке входа.
+// Визуал загрузочного экрана — Spine-анимация (08.10.2026, заменила видео preloader.mp4, см.
+// docblock в preloader-visual.js), крутится в цикле до реальной готовности игры. Вся логика
+// вынесена в отдельный модуль — самодостаточный кусок, не часть игровой модели window.*, не
+// место ему разрастаться прямо в точке входа.
 startPreloaderVisual();
 
 // Регистрируем window.endLoadGame и window.loadGame

@@ -724,6 +724,39 @@
                 // где whitelist теперь молча отбрасывает max_energy — старое накопленное значение
                 // (бонусы шмота/скиллов/банды до сброса) оставалось висеть нетронутым навсегда.
                 'max_energy'             => '50',
+                // 08.10.2026 (баг найден по прямому репорту — "сбросил аккаунт, а после
+                // перезагрузки страницы ресурсы снова старые"): тот же класс, что max_energy
+                // чуть выше — 'coins'/'stew'/'cigarettes' убраны из client-writable $allowed в
+                // save() ещё 29.09.2026 (см. коммент там), 'zone'/'base_buildings'/'base_stats'/
+                // 'gang_id'/'zone_collect_0..4' убраны 04.10.2026 тем же аудитом, а
+                // 'stew_spent'/'coins_spent'/'votes_spent'/'roulette_spichki'/'poker_spichki'/
+                // 'roulette_winner'/'keyring_owner' — ещё раньше, каждое отдельным анти-чит
+                // фиксом. _resetAccount() (dev_panel.js) всё это время продолжал слать их через
+                // обычный users.save() — whitelist молча отбрасывал ключи, значение в БД не
+                // менялось. Клиент выглядел сброшенным мгновенно (window.udata заменён локально,
+                // без перезагрузки страницы — по решению 16.09.2026), поэтому расхождение
+                // проявлялось только на СЛЕДУЮЩЕЙ реальной перезагрузке вкладки, когда сервер
+                // отдавал настоящие (старые) значения из БД. Те же дефолты, что в
+                // _defaultResetUdata() ниже / dev_panel.js._resetAccount().
+                'coins'                  => '10',
+                'stew'                   => '0',
+                'cigarettes'             => '1000',
+                'zone'                   => '{}',
+                'base_buildings'         => '',
+                'base_stats'             => '',
+                'gang_id'                => '0',
+                'zone_collect_0'         => '0',
+                'zone_collect_1'         => '0',
+                'zone_collect_2'         => '0',
+                'zone_collect_3'         => '0',
+                'zone_collect_4'         => '0',
+                'stew_spent'             => '0',
+                'coins_spent'            => '0',
+                'votes_spent'            => '0',
+                'roulette_spichki'       => '0',
+                'poker_spichki'          => '0',
+                'roulette_winner'        => '{}',
+                'keyring_owner'          => '0',
             ];
             $result = $this->registry['udb']->saveData($this->registry['utb'], $update);
             if(isset($result['error']) && $result['error']){

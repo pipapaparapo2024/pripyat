@@ -32,7 +32,9 @@ assert(/ADD COLUMN `friends_scope_granted` TINYINT\(1\) NOT NULL DEFAULT 0/.test
 assert(/hasFriendsScopeGrantedLocal/.test(gate) && /_persistFriendsScopeGranted\(\)/.test(preloader), 'старое локальное согласие переносится в БД без нового запроса VK');
 
 console.log('\n3) Имена в рейтингах белые');
-assert(/fontFamily:'Southbank LT', fontSize:13, fill:'#ffffff'/.test(leaderboard), 'имена игроков во всех вкладках рейтинга рендерятся белым');
+// 08.10.2026 (фикс пикселизации текста): fontSize:13×scale(0.954) заменены на итоговый
+// fontSize:12 без scale (13×0.954≈12 — практически та же видимая величина).
+assert(/fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff'/.test(leaderboard), 'имена игроков во всех вкладках рейтинга рендерятся белым, fontSize:12 (13×0.954)');
 
 console.log(`\n${'─'.repeat(50)}`);
 if(failed){ console.error(`❌ ${failed} failed, ${passed} passed`); process.exit(1); }

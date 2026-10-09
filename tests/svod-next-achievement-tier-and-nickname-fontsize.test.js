@@ -78,7 +78,9 @@ console.log('\nTest 3: ники игроков в Сводке уменьшен�
     const s = leaderSrc.indexOf('const nameTxt = new PIXI.Text(');
     const e = leaderSrc.indexOf('});', s);
     const body = leaderSrc.slice(s, e);
-    assert(/fontSize:13,\s*fill:'#ffffff'/.test(body), "nameTxt fontSize:13 (было 15)");
+    // 08.10.2026 (фикс пикселизации текста): поверх правки 25.09 (15→13) позже добавился
+    // scale.set(0.954), который потом убрали, свернув коэффициент прямо в fontSize — 13×0.954≈12.
+    assert(/fontSize:12,\s*fill:'#ffffff'/.test(body), "nameTxt fontSize:12 (15 → 13 → 12, 08.10.2026 scale свёрнут в fontSize)");
 }
 
 console.log(`\n${'─'.repeat(50)}`);

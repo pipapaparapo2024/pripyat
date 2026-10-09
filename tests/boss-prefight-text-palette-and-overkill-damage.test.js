@@ -39,10 +39,13 @@ console.log('\nTest 1: bosses_prefight.js — HP-текст и тултип ик
         'заголовок карточки-тултипа шмотки остался #ac3b26 (не тронут палитрой #cbc9c9)');
 }
 
-console.log('\nTest 2: bosses_prefight.js — новая позиция HP-текста (x:866,y:175, scale не менялся)');
+console.log('\nTest 2: bosses_prefight.js — новая позиция HP-текста (x:866,y:175)');
 {
     assert(/xpTxt\.anchor\.set\(0\.5, 0\.5\); xpTxt\.x = 866; xpTxt\.y = 175;/.test(prefightSrc), 'x:866,y:175');
-    assert(/xpTxt\.scale\.set\(1\.240\);/.test(prefightSrc), 'scale 1.240 не менялся');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:22×scale(1.240) заменены на итоговый
+    // fontSize:27 без scale.
+    assert(/fontSize:27,/.test(prefightSrc), 'fontSize увеличен напрямую до 27 (= 22×1.240), не через scale');
+    assert(!/xpTxt\.scale\.set\(/.test(prefightSrc), 'scale.set() для xpTxt больше не вызывается');
 }
 
 console.log('\nTest 3: bosses.php.attack() — патроны списываются полным mult, без экономии на добивающем ударе');

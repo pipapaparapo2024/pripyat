@@ -33,7 +33,12 @@ assert(/String\(udata\['friends_scope_granted'\][\s\S]{0,500}window\._friendsSco
 // клик по вкладке «Друзья» через _showFriendsScopePrompt()) тихо зовут _requestFriendsScope() —
 // VK отдаёт токен для уже разрешённого scope БЕЗ системного диалога, поэтому это не нарушает
 // правило 2.6.3, но даёт рабочий VK_token на сессию.
-assert(/friends_scope_granted'\] \|\| '0'\) === '1'\)\{[\s\S]{0,1700}this\._requestFriendsScope\(\(\) => \{\}\);[\s\S]{0,20}return;/.test(preloader), 'фоновая проверка после загрузки тихо обновляет VK_token сессии, не только доверяет кэшу БД');
+// 09.10.2026 (отказ модерации ОК, п.1 — "предложение в фоне на каждой сессии", правило 2.6.3):
+// этот тихий авто-вызов теперь ограничен isVk() — предположение "VK резолвит без диалога"
+// верно ТОЛЬКО для настоящего VK, у ОК-Launcher нет гарантии той же памяти о гранте (см.
+// tests/ok-moderation-background-friends-scope-gate.test.js для полного разбора). Окно
+// увеличено (1700→7500) — докблок про isVk()-гейт заметно удлинил расстояние до вызова.
+assert(/friends_scope_granted'\] \|\| '0'\) === '1'\)\{[\s\S]{0,7500}if\(isVk\(\)\) this\._requestFriendsScope\(\(\) => \{\}\);[\s\S]{0,20}return;/.test(preloader), 'фоновая проверка после загрузки тихо обновляет VK_token сессии на VK (теперь за isVk()-гейтом, не безусловно)');
 assert(/if\(hasSavedConsent\)\{[\s\S]{0,400}this\._requestFriendsScope\(\(\) => \{\}\);[\s\S]{0,20}return;/.test(preloader), 'повторный вызов при сохранённом согласии тоже тихо обновляет VK_token (а не просто врёт "готово")');
 assert(!/if\(hasSavedConsent\)\{\s*window\._friendsScopeReady = true;\s*window\.dispatchEvent\(new Event\('pripyat:friends-connected'\)\);\s*return;/.test(preloader), 'старый баговый шорткат (готово без реального запроса токена) удалён');
 

@@ -58,18 +58,21 @@ console.log('\nTest 4: оба текста (ОЧКИ / НОВЫЕ) центри�
     // 04.10.2026 (редактор позиций, повторная правка): центрирование относительно подложки
     // заменено на явные абсолютные координаты + scale — PTS_BG/NEW_BG остаются только размером
     // самих подложек (не участвуют в позиционировании текста).
+    // 08.10.2026 (фикс пикселизации текста, по прямому указанию дизайнера): fontSize:18×
+    // scale(1.521) заменены на итоговый fontSize:27 без scale — та же видимая величина,
+    // текст больше не размыт. Позиция x/y не менялась.
     assert(/ptsTxt\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'ptsTxt имеет anchor(0.5,0.5)');
-    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639; ptsTxt\.scale\.set\(1\.521\);/.test(body),
-        'ptsTxt позиционируется по явным координатам редактора позиций (x:1080 y:639 scale:1.521)');
+    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639;/.test(body) && !/ptsTxt\.scale\.set\(/.test(body),
+        'ptsTxt позиционируется по явным координатам редактора позиций (x:1080 y:639), без scale');
 
     assert(/newTxt\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'newTxt имеет anchor(0.5,0.5)');
-    assert(/newTxt\.x = 1220; newTxt\.y = 639; newTxt\.scale\.set\(1\.521\);/.test(body),
-        'newTxt позиционируется по явным координатам редактора позиций (x:1220 y:639 scale:1.521)');
+    assert(/newTxt\.x = 1220; newTxt\.y = 639;/.test(body) && !/newTxt\.scale\.set\(/.test(body),
+        'newTxt позиционируется по явным координатам редактора позиций (x:1220 y:639), без scale');
 
-    assert(/fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*ptsTxt\.anchor/.test(fightSrc),
-        'ptsTxt fontWeight normal (было bold)');
-    assert(/fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*newTxt\.anchor/.test(fightSrc),
-        'newTxt fontWeight normal (было bold)');
+    assert(/fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*ptsTxt\.anchor/.test(fightSrc),
+        'ptsTxt fontWeight normal (было bold), fontSize:27 (18×1.521)');
+    assert(/fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*newTxt\.anchor/.test(fightSrc),
+        'newTxt fontWeight normal (было bold), fontSize:27 (18×1.521)');
 }
 
 console.log('\nTest 5: старый костыль ручного сдвига X по числу цифр (NEW_PTS_X_BY_DIGITS) убран — центрирование через anchor делает его лишним');

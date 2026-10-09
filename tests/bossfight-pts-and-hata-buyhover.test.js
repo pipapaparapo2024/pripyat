@@ -36,10 +36,12 @@ console.log('\nTest 1: позиции ptsTxt (ОЧКИ) и newTxt (НОВЫЕ) �
 {
     // 04.10.2026: центрирование относительно подложки заменено явными координатами редактора
     // позиций — см. boss-fight-points-badges-centered-text.test.js для полной проверки.
-    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639; ptsTxt\.scale\.set\(1\.521\);/.test(bossFightSrc),
-        'ptsTxt позиционируется по явным координатам (см. boss-fight-points-badges-centered-text.test.js)');
-    assert(/newTxt\.x = 1220; newTxt\.y = 639; newTxt\.scale\.set\(1\.521\);/.test(bossFightSrc),
-        'newTxt позиционируется по явным координатам (см. boss-fight-points-badges-centered-text.test.js)');
+    // 08.10.2026 (фикс пикселизации текста): scale:1.521 заменён на итоговый fontSize:27 без
+    // scale у обоих — позиция x/y не менялась.
+    assert(/ptsTxt\.x = 1080; ptsTxt\.y = 639;/.test(bossFightSrc) && !/ptsTxt\.scale\.set\(/.test(bossFightSrc),
+        'ptsTxt позиционируется по явным координатам, без scale (см. boss-fight-points-badges-centered-text.test.js)');
+    assert(/newTxt\.x = 1220; newTxt\.y = 639;/.test(bossFightSrc) && !/newTxt\.scale\.set\(/.test(bossFightSrc),
+        'newTxt позиционируется по явным координатам, без scale (см. boss-fight-points-badges-centered-text.test.js)');
 }
 
 // ── Test 2: buyHover в hata.js — УСТАРЕЛО (25.09.2026) ────────────────────────

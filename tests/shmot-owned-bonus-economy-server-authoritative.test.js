@@ -89,8 +89,10 @@ console.log('\nTest 3: остальные 6 прямых мест выдачи �
     assert(/if\(\$bossShmotItemId !== null\)\{\s*\n\s*\$shmotAmount\+\+;\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$bossShmotItemId\);/.test(bossesPhp),
         'bosses.php: персональный пул босса (оба ветвления fragment/direct) — applyShmotOwnBonus по единой точке $bossShmotItemId');
 
-    // rewardlinks.php
-    assert(/\$shmotState\[\$itemId\]\['owned'\] = true;\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$itemId\);/.test(rewardlinksPhp),
+    // rewardlinks.php — 08.10.2026 (рефакторинг при фиксе бага "посылки оружия не
+    // используются"): состояние переехало в $state['shmot'] (параметр _applyRewardEntry()), не
+    // отдельная переменная $shmotState — см. tests/rewardlinks-weapon-ammo-sync.test.js.
+    assert(/\$state\['shmot'\]\[\$itemId\]\['owned'\] = true;\s*\n\s*\$this->ops->applyShmotOwnBonus\(\$user, \$itemId\);/.test(rewardlinksPhp),
         'rewardlinks.php: applyShmotOwnBonus($user, $itemId) сразу после owned=true');
 
     // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026: yashik.php/

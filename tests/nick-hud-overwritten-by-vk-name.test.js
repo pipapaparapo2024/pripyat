@@ -92,8 +92,11 @@ console.log('\nTest 4: bosses_fight.js — ник в рейтинге урона
 
     assert(!!body && start !== -1, 'создание nameTxt найдено');
     assert(/wordWrap:true/.test(body), 'wordWrap включён');
-    assert(/wordWrapWidth: LBL_X - NAME_X - 8/.test(body),
-        'ширина переноса вычислена от реального зазора до "Нанесенный урон:" (LBL_X - NAME_X), не магическое число');
+    // 08.10.2026 (фикс пикселизации текста): fontSize вынесен в итоговый размер (14×1.280≈18),
+    // scale.set() убран — чтобы перенос строк не стал УЖЕ прежнего визуального, wordWrapWidth
+    // домножен на тот же бывший коэффициент scale (×1.280).
+    assert(/wordWrapWidth: \(LBL_X - NAME_X - 8\) \* 1\.280/.test(body),
+        'ширина переноса вычислена от реального зазора до "Нанесенный урон:" (LBL_X - NAME_X), домножена на бывший scale 1.280');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

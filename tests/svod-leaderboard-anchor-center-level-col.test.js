@@ -85,11 +85,17 @@ console.log('\nTest 4: координаты текста строки — точ
     const body  = lbSrc.slice(start, end);
     // 19.09.2026: система суб-блоков ячейки (CELL_BLOCKS) — место/ник/значение больше не сидят
     // на абсолютных x, а центрируются (anchor.x=0.5) относительно СВОЕГО блока, см.
-    // svod-cell-blocks-and-text-centering.test.js. Y/scale не менялись.
-    assert(/placeTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*placeTxt\.x = centerX\(CELL_BLOCKS\.place\); placeTxt\.y = 6; placeTxt\.scale\.set\(1\.200\);/.test(body),
-        'placeTxt: центрирован в блоке «место», y=6, scale=1.2');
-    assert(/nameTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*nameTxt\.x = centerX\(CELL_BLOCKS\.name\); nameTxt\.y = 10; nameTxt\.scale\.set\(0\.954\);/.test(body),
-        'nameTxt: центрирован в блоке «никнейм», y=10, scale=0.954');
+    // svod-cell-blocks-and-text-centering.test.js. Y не менялись.
+    // 08.10.2026 (фикс пикселизации текста): scale.set(1.200)/scale.set(0.954) убраны — те же
+    // коэффициенты свёрнуты прямо в fontSize (16→19, 13→12), см. docblock в svod-leaderboard.js.
+    assert(/placeTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*placeTxt\.x = centerX\(CELL_BLOCKS\.place\); placeTxt\.y = 6;/.test(body),
+        'placeTxt: центрирован в блоке «место», y=6 (scale свёрнут в fontSize:19)');
+    assert(!/placeTxt\.scale\.set\(/.test(body), 'placeTxt.scale.set() больше не вызывается');
+    assert(/fontSize:19,\s*fill:'#e8d9b8'/.test(lbSrc), 'placeTxt fontSize=19 (было 16 × scale 1.2)');
+    assert(/nameTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*nameTxt\.x = centerX\(CELL_BLOCKS\.name\); nameTxt\.y = 10;/.test(body),
+        'nameTxt: центрирован в блоке «никнейм», y=10 (scale свёрнут в fontSize:12)');
+    assert(!/nameTxt\.scale\.set\(/.test(body), 'nameTxt.scale.set() больше не вызывается');
+    assert(/fontSize:12, fill:'#ffffff'/.test(lbSrc), 'nameTxt fontSize=12 (было 13 × scale 0.954)');
     assert(/valTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*valTxt\.x = centerX\(CELL_BLOCKS\.value\); valTxt\.y = 9; valTxt\.scale\.set\(1\.000\);/.test(body),
         'valTxt: центрирован в блоке «урон авторитет» (было anchor 1,0 у правого края), y=9, scale=1.0');
 }

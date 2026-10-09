@@ -66,10 +66,10 @@ export function attachSvodLeaderboard(proto){
         // Координаты заданы пользователем для блока на вкладке «Топ по урону».
         if(tabCfg.cat === 0){
             const resetTxt = new PIXI.Text('', {
-                fontFamily:'Southbank LT', fontSize:14, fill:'#e8d9b8', fontWeight:'bold', align:'center',
+                fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', fontWeight:'bold', align:'center',
             });
             resetTxt.anchor.set(0.5, 0);
-            resetTxt.x = 462; resetTxt.y = 496; resetTxt.scale.set(1.3);
+            resetTxt.x = 462; resetTxt.y = 496;
             resetTxt.style.fill = '#000000';
             const refreshReset = () => {
                 const now = new Date();
@@ -147,9 +147,9 @@ export function attachSvodLeaderboard(proto){
             // Координаты ниже — точный снимок пользователя через редактор позиций (17.09.2026),
             // применены одинаково к каждой строке пула. X теперь = центр блока «место»
             // (см. CELL_BLOCKS выше) — anchor.x=0.5 центрирует число по горизонтали внутри блока.
-            const placeTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:16, fill:'#e8d9b8', fontWeight:'bold' });
+            const placeTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:19, fill:'#e8d9b8', fontWeight:'bold' });
             placeTxt.anchor.set(0.5, 0);
-            placeTxt.x = centerX(CELL_BLOCKS.place); placeTxt.y = 6; placeTxt.scale.set(1.200);
+            placeTxt.x = centerX(CELL_BLOCKS.place); placeTxt.y = 6;
             row.addChild(placeTxt);
 
             // 22.09.2026 (баг найден по живому репорту — "иконки игроков вообще не выводятся,
@@ -187,11 +187,11 @@ export function attachSvodLeaderboard(proto){
             // пикселя"): 15 → 13, общая строка-пул для всех вкладок Сводки (Общий топ/Друзья/
             // Топ по урону/Топ по авторитету/Топ по достижениям — одна и та же функция).
             const nameTxt = new PIXI.Text('', {
-                fontFamily:'Southbank LT', fontSize:13, fill:'#ffffff',
+                fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff',
                 align:'center',
             });
             nameTxt.anchor.set(0.5, 0);
-            nameTxt.x = centerX(CELL_BLOCKS.name); nameTxt.y = 10; nameTxt.scale.set(0.954);
+            nameTxt.x = centerX(CELL_BLOCKS.name); nameTxt.y = 10;
             row.addChild(nameTxt);
 
             // «Уровень» — центр блока «уровень» (см. CELL_BLOCKS). Цвет/шрифт — редактор позиций

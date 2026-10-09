@@ -287,13 +287,12 @@ export function attachZoneScreen(proto){
 
 		// Таймер до сбора
 		const timerLbl = new PIXI.Text('', {
-			fontFamily: 'Southbank LT', fontSize: 18, fill: '#ffffff',
+			fontFamily: 'Southbank LT', fontSize: 22, fill: '#ffffff',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
 		timerLbl.anchor.set(0.5, 0.5);
 		// 04.10.2026 (по прямому указанию, редактор позиций — x:665 y:692 scale:1.209 w:258 h:24).
 		timerLbl.x = 665; timerLbl.y = 692;
-		timerLbl.scale.set(1.209);
 		timerLbl.visible = false;
 		win.addChild(timerLbl);
 		this._zoneTimerLbl = timerLbl;
@@ -436,7 +435,7 @@ export function attachZoneScreen(proto){
 						// (снижали 03.10.2026) — пробуем числовой вес '300' (легче normal/400),
 						// если у шрифта нет такой градации, canvas тихо откатится на обычный.
 						const amountTxt = new PIXI.Text(String(l.amount), {
-							fontFamily:'Southbank LT', fontSize:16, fill:'#000000', fontWeight:'300',
+							fontFamily:'Southbank LT', fontSize:22, fill:'#000000', fontWeight:'300',
 							dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1,
 						});
 						amountTxt.anchor.set(0.5, 0);
@@ -444,7 +443,6 @@ export function attachZoneScreen(proto){
 						amountTxt.y = frameSpr.y + RESPECT_AMOUNT_REL_Y;
 						// 03.10.2026 (по прямому указанию): новый размер 1.394 (было 1.125);
 						// fontWeight уже 'normal' выше — уменьшать жирность дальше не требуется.
-						amountTxt.scale.set(1.394);
 						amountTxt.rotation = RESPECT_AMOUNT_ROTATION_DEG * Math.PI / 180;
 						amountTxt._uDraggable = true;
 						g.group.addChild(amountTxt);

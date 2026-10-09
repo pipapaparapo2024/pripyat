@@ -1814,6 +1814,29 @@
             $devForceDrops = !empty($user['dev_force_drops']);
             $shmotAmount = 0;
 
+            // 09.10.2026 (аудит гонок состояний по всему проекту, по прямому запросу "посмотри,
+            // есть ли ещё такие же места"): персональный дроп шмотки босса ниже пишет
+            // shmot/shmot_fragments/max_energy (последнее — через applyShmotOwnBonus(), если у
+            // выпавшей вещи есть бонус max_e) ОБЫЧНЫМ loadUser()/saveUser(), без лока — хотя те
+            // же shmot/max_energy уже защищены в shmot.php.buy()/yashik.php через
+            // SELECT...FOR UPDATE. Конкурентная покупка шмотки/открытие ящика в момент убийства
+            // босса могли затереть персональный дроп устаревшим снимком (тот же класс гонки,
+            // что уже чинили в rewardlinks.php/poker.php — см. комментарий там же). ryukzak_points
+            // чуть выше уже защищён этим приёмом — здесь тот же приём для shmot-блока.
+            $shmotLockFields = ['shmot', 'shmot_fragments', 'max_energy'];
+            $shmotLockLink = $this->_rawLink();
+            if($shmotLockLink){
+                $shmotLockLink->begin_transaction();
+                $shmotColList = implode(',', array_map(function($col){ return "`$col`"; }, $shmotLockFields));
+                $shmotLockRes = $shmotLockLink->query("SELECT $shmotColList FROM `{$this->registry['utb']}` WHERE `id`=" . $uid . " FOR UPDATE");
+                $shmotLockRow = ($shmotLockRes && $shmotLockRes->num_rows > 0) ? $shmotLockRes->fetch_assoc() : null;
+                if($shmotLockRow !== null){
+                    foreach($shmotLockFields as $f) if($shmotLockRow[$f] !== null) $user[$f] = $shmotLockRow[$f];
+                }
+            }
+            $shmotLockBefore = [];
+            foreach($shmotLockFields as $f) $shmotLockBefore[$f] = $user[$f] ?? null;
+
             // 22.09.2026 (по прямому указанию, финальная сверка полного присланного списка
             // сетов — "почти все шмотки достаются с боссов") — второй, НЕЗАВИСИМЫЙ от блока
             // выше дроп вещи из ПЕРСОНАЛЬНОГО пула ЭТОГО босса+режима (boss_shmot_drop_pool в
@@ -1931,7 +1954,28 @@
             $skillsResult = $this->_finalizeSkillSession($user);
             if(!$skillsResult['locked']) $user['skills_levels'] = $skillsResult['json'];
 
+            // Залоченные shmot/shmot_fragments/max_energy пишем ОТДЕЛЬНЫМ UPDATE под тем же
+            // локом (см. комментарий у $shmotLockLink выше) и исключаем их из $user ДО общего
+            // saveUser() — иначе он затёр бы их устаревшим снимком из loadUser() в начале
+            // функции (тот же принцип, что у ryukzak_points чуть выше и во всех остальных
+            // контроллерах с этим паттерном).
+            $shmotLockedUpdates = [];
+            foreach($shmotLockFields as $f){
+                if(isset($user[$f]) && $user[$f] !== $shmotLockBefore[$f]) $shmotLockedUpdates[$f] = strval($user[$f]);
+            }
+            if($shmotLockLink){
+                if(!empty($shmotLockedUpdates)){
+                    $shmotSetParts = [];
+                    foreach($shmotLockedUpdates as $col => $val) $shmotSetParts[] = "`$col`='" . $shmotLockLink->real_escape_string($val) . "'";
+                    $shmotLockLink->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $shmotSetParts) . " WHERE `id`=" . $uid);
+                }
+                $shmotLockLink->commit();
+                $shmotLockLink->close();
+                foreach(array_keys($shmotLockedUpdates) as $col) unset($user[$col]);
+            }
+
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            foreach($shmotLockedUpdates as $col => $val) $user[$col] = $val;
 
             $user['skills_levels'] = $skillsResult['json'];
             $user['ryukzak_points'] = $freshRyukzakPts;

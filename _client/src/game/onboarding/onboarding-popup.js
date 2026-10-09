@@ -15,14 +15,18 @@ const MERGE_X = 391, MERGE_Y = 506;
 // 30.09.2026, по прямому указанию (живой тест) — снято "📋 СУПЕР КОПИРОВАТЬ" прямо с текста
 // попапа. X и scale общие для всех трёх состояний (замерены одинаковыми в обоих снятиях).
 // Y и wordWrapWidth — РАЗНЫЕ по состояниям: тексты разной длины (интро короткий, про валюту —
-// в разы длиннее и должен начинаться выше, чтобы поместиться до кнопок). wordWrapWidth —
-// ЛОКАЛЬНАЯ (до scale) ширина обёртки, а w из редактора уже С УЧЁТОМ scale (s.width геттер
-// PIXI) — делим обратно.
-//   intro:    x:625, y:312, scale:0.907, w:340 → wordWrapWidth = 340/0.907 ≈ 375
-//   currency: x:625, y:232, scale:0.907, w:337 → wordWrapWidth = 337/0.907 ≈ 372
-const TEXT_X = 625, TEXT_SCALE = 0.907;
+// в разы длиннее и должен начинаться выше, чтобы поместиться до кнопок).
+// 08.10.2026 (фикс пикселизации текста, по прямому указанию дизайнера — PIXI.Text,
+// отрисованный под маленький fontSize и растянутый scale'ом, размывается): fontSize/
+// lineHeight/wordWrapWidth ниже переведены на прямой конечный размер (той же формулой,
+// что редактор позиций уже использовал для вычисления итоговой ширины w — см. историю:
+// w = wordWrapWidth × scale, здесь теперь wordWrapWidth СРАЗУ равен прежнему w). scale
+// больше не применяется вообще.
+//   intro:    x:625, y:312, w:340 (было wordWrapWidth:375 × scale:0.907)
+//   currency: x:625, y:232, w:337 (было wordWrapWidth:372 × scale:0.907)
+const TEXT_X = 625;
 const TEXT_Y_BY_STATE = { intro: 312, currency: 232, final: 312, permission: 255 };
-const TEXT_W_BY_STATE  = { intro: 375, currency: 372, final: 375, permission: 372 };
+const TEXT_W_BY_STATE  = { intro: 340, currency: 337, final: 340, permission: 337 };
 
 // 30.09.2026 (по прямому указанию — "подсветка для ресурсов на моменте про ресурсы"; ПЕРЕСМОТРЕНО
 // тем же днём — "не нужна жёлтая овальная обводка, сделай чтобы элемент фона ресурса просто
@@ -56,12 +60,11 @@ export function attachOnboardingPopup(Onboarding){
         win.addChild(bg);
 
         const text = new PIXI.Text('', {
-            fontFamily: 'Southbank LT', fontSize: 20, fill: '#ffffff',
+            fontFamily: 'Southbank LT', fontSize: 18, fill: '#ffffff',
             dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
-            wordWrap: true, wordWrapWidth: TEXT_W_BY_STATE.intro, lineHeight: 26,
+            wordWrap: true, wordWrapWidth: TEXT_W_BY_STATE.intro, lineHeight: 24,
         });
         text.x = TEXT_X; text.y = TEXT_Y_BY_STATE.intro;
-        text.scale.set(TEXT_SCALE);
         win.addChild(text);
         this._onboardingText = text;
 

@@ -3,6 +3,32 @@ import energyPacks from '../../../data/energy_packs.json';
 import { isOk } from '../../../modules/platform.js';
 import { startPurchase } from '../../../modules/iap.js';
 
+// 09.10.2026 (по прямому указанию — "теперь тебе сверху в окошке придётся самому вписывать
+// ценники"): новые унифицированные карточки энергии (присланы отдельно, заменяют старые) больше
+// НЕ содержат цену, нарисованную художником — старые ассеты рисовались ТОЛЬКО под VK ("N голосов"
+// было частью картинки), что и так уже было найдено модерацией ОК как нарушение ("цена не в
+// валюте площадки", см. комментарий в genSlots() bank.js). Новые карточки вместо этого содержат
+// пустую табличку-рамку сверху (под "+N энергии" снизу) — именно под неё и кладётся текст цены,
+// теперь для ОБЕИХ площадок (раньше текстом рисовалась цена ТОЛЬКО для ОК поверх VK-картинки,
+// см. историю ниже). Координата подобрана по реальным пикселям присланных файлов (185×~195,
+// табличка — верхние ~y:3-37, центр ~y:20) — ЕСЛИ карточка визуально не совпадёт с art, сверить
+// через редактор позиций и поправить ENERGY_PRICE_OFFSET_Y/ENERGY_PRICE_OFFSET_X.
+// 09.10.2026 (правка тем же днём, по прямому указанию редактора позиций — "шрифт на подписи
+// опусти вниз на 2px и вправо на 3px"): offset Y сдвинут с -78 на -76 (+2 вниз), добавлен
+// offset X (+3 вправо) — для ОБЕИХ площадок одинаково (один и тот же PIXI.Text).
+const ENERGY_PRICE_OFFSET_Y = -76;
+const ENERGY_PRICE_OFFSET_X = 3;
+
+// 09.10.2026 (точечная подстройка тем же днём, по прямому указанию — "для 60 голосов подними
+// вверх на 2px, для 85 — на 1px, для 120 — на 1px и вправо на 4px"): индексы совпадают с
+// позицией пакета в energyPacks.json/cards — 5=votes:60(1300 энергии), 6=votes:85(2000),
+// 7=votes:120(3500). Остальные 5 карточек используют только общий offset выше, без правок.
+const ENERGY_PRICE_FINE_TUNE = {
+	5: { dx: 0, dy: -2 },
+	6: { dx: 0, dy: -1 },
+	7: { dx: 4, dy: -1 },
+};
+
 export function attachEnergyBuy(proto){
 	proto._initEnergyBuyBtn = function(){
 		const btn = new PIXI.Sprite(PIXI.Texture.from('./images/hud/butt_energy_buy.png'));
@@ -79,27 +105,27 @@ export function attachEnergyBuy(proto){
 			});
 			win.addChild(slot);
 
-			// 05.10.2026 (модерация ОК, п.4 — "цена не в валюте площадки"): цена "N голосов"
-			// нарисована ПРЯМО НА картинке карточки (художник рисовал под VK) — для ОК
-			// художественного ассета нет, поэтому накладываем текстовую плашку с ценой в ОКах
-			// поверх нижней части карточки. ⚠️ Координата offsetY подобрана приблизительно
-			// (карточка ~170px высотой, цена обычно внизу) — ТРЕБУЕТ сверки со скриншотом
-			// реальной карточки и правки через редактор позиций, если не совпадёт.
-			if(isOk()){
-				const priceBg = new PIXI.Graphics();
-				priceBg.beginFill(0x1a1410, 0.85);
-				priceBg.drawRoundedRect(-60, 58, 120, 30, 6);
-				priceBg.endFill();
-				priceBg.x = card.x; priceBg.y = card.y;
-				win.addChild(priceBg);
-				const priceTxt = new PIXI.Text(opt.price_ok + ' ' + helper.numberEnd(opt.price_ok, 'votes'), {
-					fontFamily:'Southbank LT', fontSize:20, fill:'#ffdd44',
-					dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
-				});
-				priceTxt.anchor.set(0.5, 0.5);
-				priceTxt.x = card.x; priceTxt.y = card.y + 73;
-				win.addChild(priceTxt);
-			}
+			// 09.10.2026 (см. комментарий у ENERGY_PRICE_OFFSET_Y выше — новые унифицированные
+			// карточки без цены на art): цена показывается ТЕПЕРЬ для ЛЮБОЙ площадки (раньше —
+			// только для ОК, поверх VK-картинки с уже нарисованной ценой голосов; новая картинка
+			// одна на все площадки и вообще не содержит цены). Платформо-зависимое число и
+			// склонение — тот же приём, что bank.js._displayPrice()/genSlots(): ОК показывает
+			// price_ok напрямую, VK — votes (helper.numberEnd само возьмёт нужные склонения
+			// "голос/голоса/голосов" или "ОК/ОКа/ОКов" через modules/platform.js.currencyNames()).
+			// Фона под текст НЕ рисуем — на новой картинке уже есть готовая табличка-рамка,
+			// второй тёмный прямоугольник поверх нее смотрелся бы задвоенно.
+			const price = isOk() ? opt.price_ok : opt.votes;
+			// 09.10.2026 (правка тем же днём): fontSize 18→16 (-2px), цвет #ffdd44 (золотой) →
+			// #ffffff (белый) — по прямому указанию, для ОБЕИХ площадок одинаково.
+			const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), {
+				fontFamily:'Southbank LT', fontSize:16, fill:'#ffffff',
+				dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
+			});
+			priceTxt.anchor.set(0.5, 0.5);
+			const fine = ENERGY_PRICE_FINE_TUNE[i] || { dx: 0, dy: 0 };
+			priceTxt.x = card.x + ENERGY_PRICE_OFFSET_X + fine.dx;
+			priceTxt.y = card.y + ENERGY_PRICE_OFFSET_Y + fine.dy;
+			win.addChild(priceTxt);
 		});
 
 		const closeHit = new PIXI.Graphics();

@@ -106,12 +106,11 @@ export function attachPokerScreen(proto){
         this._pokerExpBarFill = barFill;
 
         const expLbl = new PIXI.Text('0/1', {
-            fontFamily:'Southbank LT', fontSize:13, fill:'#ffffff',
+            fontFamily:'Southbank LT', fontSize:16, fill:'#ffffff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
         expLbl.anchor.set(0.5, 0.5);
         expLbl.x = 595; expLbl.y = 105;
-        expLbl.scale.set(1.2);
         win.addChild(expLbl);
         this._pokerExpLabelTxt = expLbl;
 

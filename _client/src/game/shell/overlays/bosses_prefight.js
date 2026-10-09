@@ -43,11 +43,10 @@ export function attachBossPreFight(proto){
         // повторяющий магазин шмоток), переведён с белого/золотого на #cbc9c9.
         const xpTxt = new PIXI.Text(
             _getHpTxt(0),
-            { fontFamily:'Southbank LT', fontSize:22, fill:'#cbc9c9',
+            { fontFamily:'Southbank LT', fontSize:27, fill:'#cbc9c9',
               fontWeight:'bold', dropShadow:true, dropShadowColor:'#000', dropShadowDistance:2 }
         );
         xpTxt.anchor.set(0.5, 0.5); xpTxt.x = 866; xpTxt.y = 175;
-        xpTxt.scale.set(1.240);
         win.addChild(xpTxt);
 
         // Кнопка выход

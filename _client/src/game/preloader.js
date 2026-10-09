@@ -1,5 +1,6 @@
 import { shouldAskFriendsScopeAsync, markFriendsScopeAsked, markFriendsScopeGranted, hasFriendsScopeGrantedLocal } from '../modules/friends-scope-gate.js';
 import { applyPatch } from '../modules/patch.js';
+import { isVk } from '../modules/platform.js';
 
 export default class Preloader{
 	constructor(preloader_movie){
@@ -10,8 +11,9 @@ export default class Preloader{
 
 		// Старая FLA-заставка (зомби появляется/пропадает в цикле) — по прямому указанию
 		// больше не должна показываться вообще. Основная работающая анимация загрузки —
-		// video-прелоадер (./preloader.mp4, монтируется в index.js) поверх компаса (_clo,
-		// index.html) — её не трогаем. Сам preloader_mc не удаляем (нужен error_mc в
+		// Spine-прелоадер (08.10.2026: ./spine/preloader.json, монтируется в index.js через
+		// modules/preloader-visual.js — до этого был video ./preloader.mp4) поверх компаса
+		// (_clo, index.html) — её не трогаем. Сам preloader_mc не удаляем (нужен error_mc в
 		// onError() ниже для показа ошибки загрузки), просто прячем в норме.
 		this.preloader.visible = false;
 		// Финальное окно обучения уже объясняет, зачем игре нужны друзья. Поэтому его кнопка
@@ -259,7 +261,18 @@ export default class Preloader{
 				// согласившегося игрока VKWebAppGetAuthToken резолвится МГНОВЕННО и БЕЗ
 				// системного диалога (VK помнит grant) — поэтому можно звать его тихо, без
 				// предупреждения, именно это и восстанавливает рабочий VK_token на сессию.
-				this._requestFriendsScope(() => {});
+				//
+				// 09.10.2026 (отказ модерации ОК, п.1 — "предложение в фоне на каждой сессии"):
+				// ограничено isVk() — предположение "резолвится мгновенно без диалога" верно
+				// ТОЛЬКО для настоящего VK (у него есть память о гранте). ОК рендерит это
+				// Mini App через СВОЙ Launcher, перехватывающий ВСЕ Bridge-вызовы (см. docblock
+				// modules/iap.js — "Launcher v.0.1.136... перехватывает ВСЕ VK Bridge-вызовы") —
+				// нет гарантии, что его реализация GetAuthToken помнит прежний grant так же, как
+				// настоящий VK; тихий автозапрос БЕЗ клика игрока на КАЖДОЙ сессии — именно то,
+				// что запрещает правило 2.6.3. На ОК список друзей просто останется недоступен
+				// до явного клика игрока (кнопка «Друзья»/вкладка свода уже зовут
+				// _showFriendsScopePrompt({force:true}) — тот путь не затронут).
+				if(isVk()) this._requestFriendsScope(() => {});
 				return;
 			}
 			// У игроков, давших согласие до добавления поля в БД, переносим прежнюю

@@ -42,7 +42,11 @@ console.log('\nTest 2: notifications.js — новые координаты по
 {
     assert(/bg\.y = -20;/.test(notifySrc), 'фон попапа (bg) сдвинут на y=-20');
     assert(/bodyTxt\.x = 357; bodyTxt\.y = 335;/.test(notifySrc), 'текст сообщения: x=357 y=335');
-    assert(/bodyTxt\.scale\.set\(1\.084\);/.test(notifySrc), 'текст сообщения увеличен scale=1.084');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:22×scale(1.084) заменены на итоговый
+    // fontSize:24 без scale, wordWrapWidth пропорционально увеличен 500→542.
+    assert(/fontSize: 24, fill: '#e8c088',/.test(notifySrc), 'текст сообщения увеличен до fontSize:24 (22×1.084), не через scale');
+    assert(/wordWrapWidth: 542,/.test(notifySrc), 'wordWrapWidth пропорционально увеличен (500×1.084≈542) — перенос строк не стал уже');
+    assert(!/bodyTxt\.scale\.set\(/.test(notifySrc), 'scale.set() для bodyTxt больше не вызывается');
     assert(/okBtn\.x = 357; okBtn\.y = 442;/.test(notifySrc), 'кнопка "понятно": x=357 y=442');
 }
 

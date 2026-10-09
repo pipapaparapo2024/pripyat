@@ -125,31 +125,31 @@ export function attachBossesSkills(proto){
         // ── ДОСТУПНО ОЧКОВ ────────────────────────────────────────
         // 03.10.2026 (редактор позиций, по прямому указанию): было y:139, без scale.
         const avlLbl = new PIXI.Text('ДОСТУПНО', {
-            fontFamily:'Southbank LT', fontSize:16, fill:'#aaaaaa',
+            fontFamily:'Southbank LT', fontSize:19, fill:'#aaaaaa',
         });
-        avlLbl.x = 240; avlLbl.y = 135; avlLbl.scale.set(1.183); win.addChild(avlLbl);
+        avlLbl.x = 240; avlLbl.y = 135; win.addChild(avlLbl);
 
         // 03.10.2026 (редактор позиций): было x:264,y:156, без scale.
         const avlTxt = new PIXI.Text('0', {
-            fontFamily:'Southbank LT', fontSize:36, fill:'#ff9400',
+            fontFamily:'Southbank LT', fontSize:62, fill:'#ff9400',
             fontWeight:'bold', dropShadow:true, dropShadowColor:'#000', dropShadowDistance:2,
         });
-        avlTxt.x = 254; avlTxt.y = 158; avlTxt.scale.set(1.733); win.addChild(avlTxt);
+        avlTxt.x = 254; avlTxt.y = 158; win.addChild(avlTxt);
         this._skillsAvlTxt = avlTxt;
 
         // 03.10.2026 (редактор позиций): было y:196, без scale.
         const hintTxt1 = new PIXI.Text('для закрытия всех навыков: ~20кк урона', {
-            fontFamily:'Southbank LT', fontSize:11, fill:'#888888',
-            wordWrap:true, wordWrapWidth:130,
+            fontFamily:'Southbank LT', fontSize:13, fill:'#888888',
+            wordWrap:true, wordWrapWidth:153,
         });
-        hintTxt1.x = 221; hintTxt1.y = 221; hintTxt1.scale.set(1.180); win.addChild(hintTxt1);
+        hintTxt1.x = 221; hintTxt1.y = 221; win.addChild(hintTxt1);
 
         // 03.10.2026 (редактор позиций): было y:230, без scale.
         const hintTxt2 = new PIXI.Text('До след. очка: ...', {
-            fontFamily:'Southbank LT', fontSize:11, fill:'#888888',
+            fontFamily:'Southbank LT', fontSize:13, fill:'#888888',
             wordWrap:true, wordWrapWidth:130,
         });
-        hintTxt2.x = 221; hintTxt2.y = 259; hintTxt2.scale.set(1.183); win.addChild(hintTxt2);
+        hintTxt2.x = 221; hintTxt2.y = 259; win.addChild(hintTxt2);
         this._skillsHintTxt2 = hintTxt2;
 
         // ── ИКОНКИ СКИЛЛОВ (20 штук) ──────────────────────────────

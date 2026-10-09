@@ -46,13 +46,12 @@ export default class Notifications{
 		popup.addChild(bg);
 
 		const bodyTxt = new PIXI.Text(text, {
-			fontFamily: 'Southbank LT', fontSize: 22, fill: '#e8c088',
-			align: 'center', wordWrap: true, wordWrapWidth: 500,
+			fontFamily: 'Southbank LT', fontSize: 24, fill: '#e8c088',
+			align: 'center', wordWrap: true, wordWrapWidth: 542,
 			dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
 		});
 		bodyTxt.anchor.set(0.5, 0.5);
 		bodyTxt.x = 357; bodyTxt.y = 335;
-		bodyTxt.scale.set(1.084);
 		popup.addChild(bodyTxt);
 
 		const okBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'попап ошибка кнопка понятно.png'));

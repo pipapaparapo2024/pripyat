@@ -91,7 +91,11 @@ console.log('\n2) bosses.php.claimKill(): sedoyDamage считается ТОЛ�
     // самых больших функций контроллера (>22000 симв.), а оба искомых вхождения 'sedoyDamage'
     // лежат ближе к концу функции — старое окно 6000 симв. обрезало их обоих раньше, чем
     // regex успевал дойти. Расширено с запасом.
-    const claimBody = bossesPhpSrc.slice(claimIdx, claimIdx + 25000);
+    // 09.10.2026 (стале-пин, не регрессия — claimKill() выросла после фикса гонки состояний
+    // shmot/shmot_fragments/max_energy, см. rewardlinks.php-класс бага): 25000 символов больше не
+    // покрывали весь текст функции, второе вхождение 'sedoyDamage' => $sedoyDamage (в ok()-ответе)
+    // оказалось ЗА пределами окна. Увеличено с запасом.
+    const claimBody = bossesPhpSrc.slice(claimIdx, claimIdx + 35000);
 
     assert(/\$sedoyDamage\s*=\s*\$this->_sedoyDamageMineSince\(\$hpLink,\s*\$uid,\s*\$bossId,\s*\$fightStart\);/.test(claimBody),
         'claimKill() вычисляет $sedoyDamage ЦЕЛИКОМ из _sedoyDamageMineSince() — оператор `;` сразу после вызова, никакого "+ friends" слагаемого');

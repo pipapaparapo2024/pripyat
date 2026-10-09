@@ -78,12 +78,11 @@ export function attachBuyKeyPopup(proto){
         // Подпись «Купить за» + цена — те же координаты/стиль, что "Ускорить за"/"20" в попапе
         // перезарядки бесплатного оружия (по прямому указанию — переиспользовать один в один).
         const buyLabelTxt = new PIXI.Text('Купить за', {
-            fontFamily: 'Southbank LT', fontSize: 20, fontWeight: 'normal', fill: '#ffee88',
+            fontFamily: 'Southbank LT', fontSize: 18, fontWeight: 'normal', fill: '#ffee88',
             dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
         });
         buyLabelTxt.anchor.set(0, 0.5);
         buyLabelTxt.x = 559; buyLabelTxt.y = 415;
-        buyLabelTxt.scale.set(0.908);
         win.addChild(buyLabelTxt);
 
         const costTxt = new PIXI.Text('', {

@@ -266,13 +266,17 @@ test('Счётчик ключей центрируется для 1–3 цифр
     assert(bossesSelectSrc.includes('const KEY_TEXT_X_BY_DIGITS = { 1: 296, 2: 293, 3: 286 }'), 'нет координат для 1/2/3 цифр');
     assert(bossesSelectSrc.includes("keysTxt.x = KEY_TEXT_X_BY_DIGITS[String(shownKeys).length] || 286"), 'X не выбирается по числу цифр');
     assert(bossesSelectSrc.includes('keysTxt.y = cardY + 20'), 'координата Y не привязана одинаково к каждой карточке');
-    assert(bossesSelectSrc.includes('keysTxt.scale.set(1.333)'), 'масштаб счётчика не применён ко всем карточкам');
+    // 08.10.2026 (фикс пикселизации текста): fontSize:18×scale(1.333) заменены на fontSize:24
+    // без scale — тот же итоговый размер, но текст рендерится сразу чётким, не растянутым.
+    assert(bossesSelectSrc.includes("fontSize: 24, fill: '#e8e0d0',"), 'итоговый размер счётчика ключей не применён ко всем карточкам (fontSize 18×1.333≈24)');
     assert(bossesSelectSrc.includes('kcSpr.alpha = 0.7'), 'связка ключей не имеет прозрачность 70%');
 });
 
 test('Убито, лимит и таймер имеют одинаковые координаты относительно каждой карточки', () => {
     // 25.09.2026: KILLED_DY 128→124 (сдвиг на 4px вверх, по прямому указанию пользователя).
-    assert(bossesSelectSrc.includes('const KILLED_X = 310, KILLED_DY = 124, KILLED_SCALE = 1.083'), 'позиция числа УБИТО не совпадает с Баркутом');
+    // 08.10.2026 (фикс пикселизации текста): KILLED_SCALE=1.083 убран, fontSize killedTxt
+    // вынесен сразу в итоговый размер (20×1.083≈22) — позиция (KILLED_X/KILLED_DY) не менялась.
+    assert(bossesSelectSrc.includes('const KILLED_X = 310, KILLED_DY = 124;'), 'позиция числа УБИТО не совпадает с Баркутом');
     assert(bossesSelectSrc.includes('const DAILY_X = 380, DAILY_DY = 126'), 'ЛИМИТ не привязан к общей позиции');
     assert(bossesSelectSrc.includes('const TIMER_X = 380, TIMER_DY = 148'), 'таймер не привязан к общей позиции');
     assert(!bossesSelectSrc.includes('(i === 0 ? -8 : 0)'), 'у Охотника остался отдельный сдвиг подписей');

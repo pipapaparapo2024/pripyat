@@ -42,12 +42,12 @@ export function attachPokerBag(proto){
         // экране покера и что реально списывает сервер, см. poker.php.openBag()).
         const spichkiCount = parseInt(udata['poker_spichki']||0);
         const spTxt = new PIXI.Text(String(spichkiCount), {
-            fontFamily:'Southbank LT', fontSize:28, fill:'#88ccff',
+            fontFamily:'Southbank LT', fontSize:35, fill:'#88ccff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
         // 03.10.2026 (редактор позиций): было x:240,y:288, без scale.
         spTxt.anchor.set(0.5, 0);
-        spTxt.x = 241; spTxt.y = 283; spTxt.scale.set(1.265);
+        spTxt.x = 241; spTxt.y = 283;
         win.addChild(spTxt);
 
         const _spichkiNow = parseInt(udata['poker_spichki']||0);

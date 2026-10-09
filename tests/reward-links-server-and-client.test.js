@@ -61,9 +61,16 @@ console.log('\n1) server/core/controllers/rewardlinks.php — контролле
 
     assert(/if\(\$kind === 'currency'\)/.test(src) && /in_array\(\$field, self::CURRENCY_FIELDS, true\)/.test(src),
         'валюта — только по вайтлисту полей (нельзя записать произвольное поле БД через reward)');
-    assert(/if\(\$kind === 'shmot'\)/.test(src) && /\$shmotState\[\$itemId\]\['owned'\] = true;/.test(src),
+    // 08.10.2026 (рефакторинг при фиксе бага "посылки оружия не используются" — см.
+    // tests/rewardlinks-weapon-ammo-sync.test.js): разбор ОДНОЙ строки награды вынесен из
+    // claim() в отдельный приватный _applyRewardEntry() (ради тестируемости через Reflection
+    // без мока $link) — state теперь хранится в массиве $state['shmot']/['bosses_data'], не в
+    // отдельных переменных $shmotState/$bossesData.
+    assert(/function _applyRewardEntry\(&\$user, \$entry, &\$state\)\{/.test(src),
+        'разбор строки награды вынесен в отдельный чистый метод (без $link) — тестируем через Reflection');
+    assert(/if\(\$kind === 'shmot'\)/.test(src) && /\$state\['shmot'\]\[\$itemId\]\['owned'\] = true;/.test(src),
         'шмотка — выдаётся владение конкретным id из каталога');
-    assert(/if\(\$kind === 'key'\)/.test(src) && /\$bossesData\['keys'\]\[\$bossId\] = intval\(\$bossesData\['keys'\]\[\$bossId\]\) \+ \$amount;/.test(src),
+    assert(/if\(\$kind === 'key'\)/.test(src) && /\$state\['bosses_data'\]\['keys'\]\[\$bossId\] = intval\(\$state\['bosses_data'\]\['keys'\]\[\$bossId\]\) \+ \$amount;/.test(src),
         'ключ босса — инкремент bosses_data.keys[bossId] (то же поле, что тратит bosses.php.startFight())');
 
     // Резервация проверена выше (Test 1) — здесь дополнительно проверяем откат резервации,

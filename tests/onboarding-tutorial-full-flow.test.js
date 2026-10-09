@@ -225,15 +225,22 @@ console.log('\n11) Старт отложен до реального скрыт�
 
 console.log('\n12) Попап обучения — координаты текста (по состояниям) + затемнение экрана (живой тест 30.09.2026)');
 {
-    assert(/const TEXT_X = 625, TEXT_SCALE = 0\.907;/.test(popupSrc), 'x и scale общие для всех состояний');
+    // 08.10.2026 (фикс пикселизации текста, по прямому указанию дизайнера): TEXT_SCALE как
+    // scale.set() убран — fontSize/lineHeight/wordWrapWidth переведены на прямой итоговый
+    // размер (та же формула, что уже применял редактор позиций для w = wordWrapWidth×scale —
+    // теперь wordWrapWidth СРАЗУ равен прежнему w, scale не применяется вообще).
+    assert(/const TEXT_X = 625;/.test(popupSrc) && !/TEXT_SCALE/.test(popupSrc.slice(0, popupSrc.indexOf('const TEXT_Y_BY_STATE'))),
+        'x общий для всех состояний, TEXT_SCALE убран');
     // 02.10.2026: добавлено 4-е состояние 'permission' (новый попап после final — запрос
     // доступа к друзьям, см. STEP_SEQUENCE в п.1 и _onContinue в п.7) — дописано в обе карты,
     // не заменяет прежние 3 состояния.
     assert(/const TEXT_Y_BY_STATE = \{ intro: 312, currency: 232, final: 312, permission: 255 \};/.test(popupSrc),
         'Y текста разный по состояниям: интро/финал 312, про валюту 232 (текст длиннее, начинается выше), permission 255');
-    assert(/const TEXT_W_BY_STATE\s*= \{ intro: 375, currency: 372, final: 375, permission: 372 \};/.test(popupSrc),
-        'wordWrapWidth разный по состояниям: интро/финал 375 (340/0.907), про валюту 372 (337/0.907), permission 372');
-    assert(/text\.scale\.set\(TEXT_SCALE\);/.test(popupSrc), 'scale реально применяется к тексту');
+    assert(/const TEXT_W_BY_STATE\s*= \{ intro: 340, currency: 337, final: 340, permission: 337 \};/.test(popupSrc),
+        'wordWrapWidth теперь СРАЗУ итоговая ширина (340/337, было 375/372 ×0.907 через scale)');
+    assert(/fontSize: 18,/.test(popupSrc.slice(popupSrc.indexOf('const text = new PIXI.Text'), popupSrc.indexOf('const text = new PIXI.Text') + 300)),
+        'fontSize текста — итоговый 18 (20×0.907), не через scale');
+    assert(!/text\.scale\.set\(/.test(popupSrc), 'scale.set() для текста больше не вызывается');
     assert(/blocker\.beginFill\(0x000000, 0\.6\);/.test(popupSrc.slice(popupSrc.indexOf('_buildPopup'), popupSrc.indexOf('_showPopup'))),
         'blocker попапа теперь затемняет экран (было 0.001 — только перехват кликов, экран оставался прозрачным)');
 

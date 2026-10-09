@@ -4,14 +4,14 @@
  * сделать загрузку не последовательной, а параллельной?" (по прямому указанию — да, сделано).
  *
  * Причина исходного бага: window.endLoadGame() (game-boot.js) прятал компас (#_clo) и вызывал
- * window._preloaderVideoReady() сразу после готовности ТОЛЬКО FLA interface/home + текстур
+ * window._preloaderVisualReady() сразу после готовности ТОЛЬКО FLA interface/home + текстур
  * _allGamePngs — это происходит очень быстро (текстуры прогреваются заранее early-preload'ом).
  * Реальные игровые модули (_bgModules — 16 шт.: notify/bosses/zone/vassilich/weapons/shmot/
  * gangs/dvor/base/habar/top/svod/zadaniya/battlepass/hapuga/bot) в этот момент ЕЩЁ ДАЖЕ НЕ
  * НАЧИНАЛИ грузиться (стартуют только через 4с). Видео доигрывало ролик, показывало компас как
  * fallback — и тут же гасилось этим преждевременным сигналом "готово".
  *
- * Фикс (первый батч): скрытие компаса/прогресс-бара и вызов window._preloaderVideoReady()
+ * Фикс (первый батч): скрытие компаса/прогресс-бара и вызов window._preloaderVisualReady()
  * вынесены в отдельную _finishLoading(), которая срабатывает только когда ОБА флага истинны —
  * _gameShown (лёгкая часть) И _bgAllLoaded (весь _bgModules реально догружен).
  *
@@ -49,7 +49,7 @@ console.log('\nTest 1: _showGame() больше НЕ прячет компас/�
     assert(!/_clo\.style\.display = 'none';/.test(body), 'внутри _showGame() больше нет прямого "_clo.style.display = \'none\'"');
 }
 
-console.log('\nTest 2: _finishLoading() гейтится ОБОИМИ флагами — _gameShown И _bgAllLoaded — и только тогда реально прячет компас/прогресс-бар и зовёт _preloaderVideoReady()');
+console.log('\nTest 2: _finishLoading() гейтится ОБОИМИ флагами — _gameShown И _bgAllLoaded — и только тогда реально прячет компас/прогресс-бар и зовёт _preloaderVisualReady()');
 {
     const start = bootSrc.indexOf('const _finishLoading = () => {');
     const end   = bootSrc.indexOf('\n        };', start);
@@ -59,7 +59,7 @@ console.log('\nTest 2: _finishLoading() гейтится ОБОИМИ флага
         '_finishLoading() выходит, если хотя бы одно условие (готовность/фоновые модули/уже выполнено) не выполнено');
     assert(/_clo\.style\.display = 'none';/.test(body), 'после прохождения гейта прячет компас');
     assert(/_ui\.style\.display = 'none';/.test(body), 'после прохождения гейта прячет прогресс-бар (#_loader_ui)');
-    assert(/window\._preloaderVideoReady\(\);/.test(body), 'после прохождения гейта вызывает window._preloaderVideoReady()');
+    assert(/window\._preloaderVisualReady\(\);/.test(body), 'после прохождения гейта вызывает window._preloaderVisualReady()');
 }
 
 console.log('\nTest 3: _bgModules грузятся ПАРАЛЛЕЛЬНО (forEach, все 16 стартуют разом), не последовательно');

@@ -116,15 +116,21 @@ console.log('\nTest 3: users.save() отклоняет неправдоподо�
     assert(/continue;/.test(body), 'отклонённое поле пропускается (не валит весь запрос, остальные поля сохраняются)');
 }
 
-console.log('\nTest 4: window.debug_mode по умолчанию false в продакшн-сборке');
+console.log('\nTest 4: window.debug_mode по умолчанию false для реальных игроков (прод), не захардкожено true');
 {
     const src = readSrc('_client/src/index.js');
-    assert(/window\.debug_mode = false;/.test(src),
-        'debug_mode = false по умолчанию — GIVE_MILLION()/RUN_TESTS() не включаются для обычных игроков');
+    // 08.10.2026: debug_mode больше не константа false — self-gating по hostname (true только на
+    // test-pripyat-game.ru, для диагностики "бесконечная загрузка" через [game-boot...] логи,
+    // правило №8). Ключевое свойство для безопасности прода не изменилось — на любом hostname,
+    // кроме тестового (в т.ч. pripyat-game.ru), выражение false, GIVE_MILLION() не включается.
+    assert(/window\.debug_mode = \(typeof location !== 'undefined' && location\.hostname === 'test-pripyat-game\.ru'\);/.test(src),
+        'debug_mode — выражение от hostname, не захардкожен true; на проде (другой hostname) вычисляется в false');
     assert(!/window\.debug_mode = true;\s*\n\s*window\.session_hash/.test(src),
-        'старое безусловное true перед session_hash убрано');
+        'старое безусловное true перед session_hash не вернулось');
+    assert(!/window\.debug_mode = true;/.test(src),
+        'debug_mode нигде не захардкожен безусловным true — GIVE_MILLION()/RUN_TESTS() не включаются для обычных игроков на проде');
     assert(/if\(window\.debug_mode\) setupDebugTools\(\);/.test(src),
-        'сами dev-инструменты не удалены из сборки — включаются только явным флагом (для разработчика)');
+        'сами dev-инструменты не удалены из сборки — включаются только явным флагом (для разработчика/теста)');
 }
 
 console.log('\nTest 5: zone.recordRespect() ограничивает amount сверху');
