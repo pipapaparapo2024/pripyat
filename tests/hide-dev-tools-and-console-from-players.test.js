@@ -94,7 +94,7 @@ console.log('\nTest 4: сам код dev_panel.js/universal_pos_editor.js/shmot_
     assert(/proto\._openDevPanel = function/.test(devPanelJs), '_openDevPanel всё ещё определён (код рабочий, просто не вызывается из HUD)');
 }
 
-console.log('\nTest 5: index.js — console.* глушится для игрока, если window.debug_mode !== true, без удаления существующих console.log по коду');
+console.log('\nTest 5: index.js — console.* глушится для игрока; ОК-диагностика сохранена, но выключена переключателем');
 {
     // 08.10.2026 (диагностика "бесконечная загрузка на тесте"): window.debug_mode больше не
     // жёсткая константа false — на test-pripyat-game.ru включается автоматически по hostname,
@@ -104,11 +104,17 @@ console.log('\nTest 5: index.js — console.* глушится для игрок
     const start = indexJs.indexOf("window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');");
     assert(start !== -1, 'window.debug_mode остаётся единой точкой включения отладки, теперь self-gating по hostname теста (не жёсткая false)');
     assert(!/window\.debug_mode = true;/.test(indexJs), 'debug_mode НЕ включён безусловно (это дало бы GIVE_MILLION/RUN_TESTS всем игрокам на проде)');
-    const body = indexJs.slice(start, start + 1500);
+    // В блок добавлена отключённая ОК-диагностика с белым списком, поэтому до самой
+    // подмены console.* теперь больше комментариев и кода, чем прежние 1500 символов.
+    const body = indexJs.slice(start, start + 5000);
     assert(/if\(!window\.debug_mode\)\{/.test(body), 'глушение обёрнуто в проверку debug_mode — легко включить обратно локально');
-    assert(/console\.log = _noop;/.test(body), 'console.log глушится');
-    assert(/console\.warn = _noop;/.test(body), 'console.warn глушится');
-    assert(/console\.error = _noop;/.test(body), 'console.error глушится');
+    // 09.10.2026: прямой _noop заменён на белый список будущей ОК-диагностики. Пока
+    // переключатель false, обёртка столь же молча отбрасывает любой console.log/warn/error.
+    assert(/window\.ok_payment_diagnostics_enabled = false;/.test(indexJs), 'ОК-диагностика сохранена в коде, но выключена в production');
+    assert(/const _okDiagnosticLog = \(kind\) => \(\.\.\.args\) =>/.test(body), 'обёртка лога проверяет белый список, а не открывает всю консоль');
+    assert(/console\.log = _okDiagnosticLog\('log'\);/.test(body), 'console.log глушится при выключенной диагностике');
+    assert(/console\.warn = _okDiagnosticLog\('warn'\);/.test(body), 'console.warn глушится при выключенной диагностике');
+    assert(/console\.error = _okDiagnosticLog\('error'\);/.test(body), 'console.error глушится при выключенной диагностике');
     assert(/console\.info = _noop;/.test(body), 'console.info глушится');
 }
 

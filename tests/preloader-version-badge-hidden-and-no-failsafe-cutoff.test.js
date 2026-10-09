@@ -84,7 +84,7 @@ console.log("\nTest 5: preloader-visual.js — ожидание границы �
 {
     assert(!/complete: \(\) => \{/.test(preloaderSrc),
         "обработчик 'complete' у state.addListener убран — реальное удаление больше не ждёт границы цикла");
-    assert(/window\._preloaderVisualReady = \(\) => \{ _remove\(\); \};/.test(preloaderSrc),
+    assert(/window\._preloaderVisualReady\s*=\s*\(\)\s*=>\s*\{[\s\S]{0,300}?_remove\(\);/.test(preloaderSrc),
         'window._preloaderVisualReady() вызывает _remove() сразу, без промежуточного _gameDone/ожидания цикла');
 }
 

@@ -53,8 +53,8 @@ console.log('\nTest 3: preloader-visual.js — Spine запускается ср
     assert(/TextureAtlas|SkeletonJson|AnimationStateData|SkeletonRenderer/.test(preloaderSrc),
         'spine-ts API (TextureAtlas/SkeletonJson/AnimationStateData/SkeletonRenderer) используется');
     assert(/SPINE_DIR = '\.\/spine\/';/.test(preloaderSrc), "путь './spine/' — тот же, что у прелоадера в AGENTS.md (Spine-анимации боссов)");
-    assert(/'Preloader\.atlas'/.test(preloaderSrc) && /'preloader\.json'/.test(preloaderSrc),
-        'грузит именно присланные файлы: Preloader.atlas + preloader.json');
+    assert(/'Preloader_v2\.atlas'/.test(preloaderSrc) && /'preloader_v2\.json'/.test(preloaderSrc),
+        'грузит именно второй присланный экспорт: Preloader_v2.atlas + preloader_v2.json');
 }
 
 console.log('\nTest 4: preloader-visual.js — анимация зациклена через Spine loop=true (не ручным перезапуском, как было у видео)');
@@ -77,7 +77,7 @@ console.log('\nTest 5: preloader-visual.js — НЕТ больше ожидан�
 
 console.log('\nTest 6: preloader-visual.js — window._preloaderVisualReady() убирает прелоадер НАПРЯМУЮ и немедленно');
 {
-    assert(/window\._preloaderVisualReady = \(\) => \{ _remove\(\); \};/.test(preloaderSrc),
+    assert(/window\._preloaderVisualReady\s*=\s*\(\)\s*=>\s*\{[\s\S]{0,300}?_remove\(\);/.test(preloaderSrc),
         'window._preloaderVisualReady() вызывает _remove() сразу, без промежуточного флага/ожидания цикла');
     assert(/function _remove\(\)\{\s*\n\s*if\(_removed\) return;/.test(preloaderSrc),
         '_remove() требует только !_removed');

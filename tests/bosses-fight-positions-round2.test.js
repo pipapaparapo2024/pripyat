@@ -22,15 +22,16 @@ const yashikSrc = fs.readFileSync(
     path.join(__dirname, '..', '_client', 'src', 'game', 'shell', 'overlays', 'yashik.js'), 'utf-8'
 );
 
-console.log('\nTest 1: имя босса и таймер боя — координаты/масштаб (супersedeн 25.09.2026)');
+console.log('\nTest 1: имя босса и таймер боя — координаты/масштаб (заменено новой центровкой)');
 {
     // 25.09.2026 (регресс найден повторным прогоном тестов): новые координаты по редактору
     // позиций + цвет #F0F0F0 + шрифт чуть тоньше (bold→normal), см.
     // boss-name-timer-reposition-color.test.js для полной проверки.
     // 08.10.2026 (фикс пикселизации текста): scale:1.404 заменён на fontSize:34 (без scale),
-    // позиция x:92 y:92 не менялась — см. boss-name-timer-reposition-color.test.js.
-    assert(/bossNameTxt\.x = 92; bossNameTxt\.y = 92;/.test(fightSrc) && !/bossNameTxt\.scale\.set\(/.test(fightSrc),
-        'имя босса x:92 y:92, без scale (fontSize:34 = 24×1.404)');
+    // текст центрируется anchor=0.5 в фактической точке x:137.5,y:95 — см.
+    // boss-name-timer-reposition-color.test.js.
+    assert(/bossNameTxt\.anchor\.set\(0\.5, 0\);/.test(fightSrc) && /bossNameTxt\.x = 137\.5; bossNameTxt\.y = 95;/.test(fightSrc) && !/bossNameTxt\.scale\.set\(/.test(fightSrc),
+        'имя босса центрируется в x:137.5 y:95, без scale (fontSize:34)');
     // 08.10.2026 (по прямому указанию дизайнера — фикс пикселизации): scale:1.624 заменён на
     // fontSize:39 (без scale), позиция x:80 y:203 не менялась — см.
     // tests/boss-name-timer-reposition-color.test.js для полной проверки этого фикса.

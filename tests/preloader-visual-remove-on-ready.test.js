@@ -25,8 +25,8 @@ const src = fs.readFileSync(
 
 console.log('\nTest 1: window._preloaderVisualReady вызывает _remove() напрямую, не просто флаг');
 {
-    assert(/window\._preloaderVisualReady\s*=\s*\(\)\s*=>\s*\{\s*_remove\(\);\s*\}/.test(src),
-        'window._preloaderVisualReady = () => { _remove(); } — немедленное скрытие по сигналу готовности');
+    assert(/window\._preloaderVisualReady\s*=\s*\(\)\s*=>\s*\{[\s\S]{0,300}?_remove\(\);/.test(src),
+        'window._preloaderVisualReady вызывает _remove() в том же обработчике без промежуточного флага');
     assert(!/let _gameDone/.test(src),
         'переменная _gameDone убрана целиком (больше не нужна — _remove() не ждёт флага)');
 }

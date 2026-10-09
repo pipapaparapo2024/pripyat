@@ -21,7 +21,7 @@ const fightSrc = fs.readFileSync(
     path.join(__dirname, '..', '_client', 'src', 'game', 'shell', 'overlays', 'bosses_fight.js'), 'utf-8'
 );
 
-console.log('\nTest 1: имя босса (bossNameTxt) — координаты x:92,y:92, цвет #f0f0f0, шрифт normal');
+console.log('\nTest 1: имя босса (bossNameTxt) — центр x:137.5,y:95, цвет #f0f0f0, шрифт normal');
 {
     const start = fightSrc.indexOf("const bossNameTxt = new PIXI.Text('', {");
     assert(start !== -1, 'bossNameTxt найден');
@@ -29,10 +29,10 @@ console.log('\nTest 1: имя босса (bossNameTxt) — координаты 
     assert(/fill:'#f0f0f0'/.test(chunk), "цвет #f0f0f0 (было #ffffff)");
     assert(/fontWeight:'normal'/.test(chunk), "шрифт normal (было bold — 'чуть тоньше')");
     // 08.10.2026 (фикс пикселизации текста): fontSize:24×scale(1.404) заменены на итоговый
-    // fontSize:34 без scale. Позиция x/y не менялась.
+    // fontSize:34 без scale. Текст центрируется anchor=0.5 в фактической точке 137.5,95.
     assert(/fontSize:34,/.test(chunk), 'fontSize увеличен напрямую до 34 (= 24×1.404), не через scale');
-    assert(/bossNameTxt\.x = 92; bossNameTxt\.y = 92;/.test(chunk) && !/bossNameTxt\.scale\.set\(/.test(chunk),
-        'позиция x:92 y:92 (было x:92 y:95), без scale');
+    assert(/bossNameTxt\.anchor\.set\(0\.5, 0\);/.test(chunk) && /bossNameTxt\.x = 137\.5; bossNameTxt\.y = 95;/.test(chunk) && !/bossNameTxt\.scale\.set\(/.test(chunk),
+        'центр x:137.5 y:95 через anchor 0.5, без scale');
 }
 
 console.log('\nTest 2: таймер боя (timerTxt) — координаты x:80,y:203, цвет #f0f0f0, шрифт normal');
@@ -57,7 +57,7 @@ console.log('\nTest 2: таймер боя (timerTxt) — координаты x
 console.log('\nTest 3: старые координаты/цвет/толщина шрифта нигде не остались (регресс-гвард)');
 {
     assert(!/bossNameTxt\.x = 92; bossNameTxt\.y = 95; bossNameTxt\.scale\.set\(1\.250\);/.test(fightSrc),
-        'старая позиция имени босса (92,95,1.250) не осталась');
+        'старая масштабируемая позиция имени босса (92,95,1.250) не осталась');
     assert(!/timerTxt\.x = 94; timerTxt\.y = 204;/.test(fightSrc),
         'старая позиция таймера (94,204) не осталась');
 }

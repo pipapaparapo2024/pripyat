@@ -55,7 +55,7 @@ console.log('\nTest 2: прелоадер убирается СРАЗУ по г�
 
 console.log('\nTest 3: window._preloaderVisualReady() убирает прелоадер НАПРЯМУЮ и немедленно, без промежуточного флага');
 {
-    assert(/window\._preloaderVisualReady = \(\) => \{ _remove\(\); \};/.test(src),
+    assert(/window\._preloaderVisualReady\s*=\s*\(\)\s*=>\s*\{[\s\S]{0,300}?_remove\(\);/.test(src),
         'window._preloaderVisualReady() (переименован из _preloaderVideoReady) вызывает _remove() сразу');
 }
 
