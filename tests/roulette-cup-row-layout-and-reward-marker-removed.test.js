@@ -36,7 +36,9 @@ console.log('\n1) dvor-roulette-screen.js — rewardMarker (красная то�
 console.log('\n2) dvor-roulette-minigame.js — стаканчики в ОДИН ряд, координаты 216/431, шаг 93');
 {
     const src = read('_client/src/game/dvor/dvor-roulette-minigame.js');
-    assert(/const START_X = 216, CUP_Y = 431, STEP_X = 93;/.test(src), 'константы раскладки — x=216 первый, y=431 для всех, шаг 93');
+    // 10.10.2026 (по прямому указанию — "все эти файлы стаканчиков опусти вниз на 50 пикселей"):
+    // CUP_Y 431→481.
+    assert(/const START_X = 216, CUP_Y = 481, STEP_X = 93;/.test(src), 'константы раскладки — x=216 первый, y=481 для всех (опущено на 50px 10.10.2026), шаг 93');
     assert(/const x = START_X \+ i \* STEP_X;/.test(src), 'X растёт равномерно с шагом STEP_X для всех 9 индексов');
     assert(/const y = CUP_Y;/.test(src), 'Y одинаковый для всех стаканчиков (не зависит от индекса)');
     assert(!/const col = i % COLS, row = Math\.floor\(i \/ COLS\);/.test(src), 'старая сетка 3×3 (col/row по модулю) удалена');

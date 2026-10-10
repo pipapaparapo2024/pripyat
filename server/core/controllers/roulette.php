@@ -359,7 +359,11 @@ Class Roulette {
                 'rawLinkFailed' => true, 'slotTrace' => $slotTrace, 'slotResult' => $slotResult];
             error_log('[roulette.spin] ' . json_encode($debug) . ' !!! _rawLink() НЕ ПОДКЛЮЧИЛСЯ — крутили без джекпота/связки !!!');
             $patch = $this->ops->patchCurrencies($user, ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games']);
-            return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0, 'debug' => $debug] + $slotResult);
+            // 10.10.2026 (по прямому указанию — ТЗ "Игроки не должны видеть... под каким
+            // стаканчиком он находится" + репорт "debug сливается в консоль браузера"): $debug
+            // (slotTrace/slotResult — честность розыгрыша) больше НЕ уходит в ответ клиенту,
+            // остаётся ТОЛЬКО в error_log() строкой выше (серверная диагностика, игроку не видна).
+            return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0] + $slotResult);
         }
 
         $link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = `jackpot_pool` + 10 WHERE `id`=1");
@@ -430,9 +434,13 @@ Class Roulette {
         $spinCounterOut   = $realJackpot ? 0 : $counter;
         $spinThresholdOut = $realJackpot ? $jackpotResetInfo['newThreshold'] : $threshold;
 
+        // 10.10.2026 (по прямому указанию — ТЗ "Игроки не должны видеть... под каким
+        // стаканчиком он находится" + репорт "debug сливается в консоль браузера"): $debug
+        // (globalCounterAfterIncrement/globalThreshold/slotTrace — честность розыгрыша) больше
+        // НЕ уходит в ответ клиенту, остаётся ТОЛЬКО в error_log() выше (серверная диагностика).
         $this->registry['tools']->output(['patch' => $patch, 'jackpot' => $jackpot,
             'keyring_available' => $keyringAvailable, 'jackpot_pool' => $jackpotPool,
-            'spin_counter' => $spinCounterOut, 'spin_threshold' => $spinThresholdOut, 'debug' => $debug] + $slotResult);
+            'spin_counter' => $spinCounterOut, 'spin_threshold' => $spinThresholdOut] + $slotResult);
     }
 
     // Выбирает slotIdx (та же логика, что раньше была в dvor-roulette.js._spinRoulette()) и,
@@ -603,7 +611,12 @@ Class Roulette {
         ];
         error_log('[roulette.openMinigame] ' . json_encode($debug));
 
-        $this->registry['tools']->output(['ok' => true, 'debug' => $debug]);
+        // 10.10.2026 (по прямому указанию — ТЗ "Игроки не должны видеть... под каким
+        // стаканчиком [куш/связка] находится" + репорт "debug сливается в консоль браузера"):
+        // $debug содержит ПОЛНЫЙ массив 'cups' (что лежит под КАЖДЫМ из 9 стаканчиков, включая
+        // позицию куша/связки) — это и есть прямая утечка честности раздачи, если бы ушло в
+        // ответ. Больше НЕ уходит клиенту, остаётся ТОЛЬКО в error_log() выше.
+        $this->registry['tools']->output(['ok' => true]);
     }
 
     // Игрок выбрал стаканчик idx (0-8) — сервер смотрит, что сам же туда положил
@@ -639,8 +652,12 @@ Class Roulette {
                 $link->close();
             }
             error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'kush']));
+            // 10.10.2026 (по прямому указанию — ТЗ "не должны видеть под каким стаканчиком" +
+            // репорт "debug сливается в консоль"): $debugBase содержит 'allCups' — ПОЛНУЮ
+            // раскладку всех 9 стаканчиков. Больше НЕ уходит клиенту (все 4 исхода pickCup()
+            // ниже), остаётся ТОЛЬКО в error_log() строкой выше.
             $this->ops->ok(['type' => 'coins', 'amt' => $this->KUSH_AMOUNT, 'kush' => true,
-                'patch' => $this->ops->patchCurrencies($user, ['coins','coins_earned']), 'debug' => $debugBase]);
+                'patch' => $this->ops->patchCurrencies($user, ['coins','coins_earned'])]);
             return;
         }
         if($reward === 'keyring'){
@@ -663,7 +680,7 @@ Class Roulette {
             error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'keyring', 'gotKeyring' => $got]));
             if($got){
                 $this->ops->ok(['type' => 'keyring', 'amt' => 1,
-                    'patch' => $this->ops->patchCurrencies($user, ['keyring_owner']), 'debug' => $debugBase]);
+                    'patch' => $this->ops->patchCurrencies($user, ['keyring_owner'])]);
             } else {
             // Сохранение не удалось — не оставляем игрока совсем без награды.
                 $user['keyring_owner'] = null; // не даём частично записанному значению уйти в следующий saveUser()
@@ -671,7 +688,7 @@ Class Roulette {
                 if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
                 $this->ops->ok(['type' => 'exp', 'amt' => 1000, 'missed_keyring' => true,
                     'patch' => $this->ops->patchCurrencies($user, ['exp']),
-                    'clientRewards' => [['type'=>'battlepass_xp','amt'=>10]], 'debug' => $debugBase]);
+                    'clientRewards' => [['type'=>'battlepass_xp','amt'=>10]]]);
             }
             return;
         }
@@ -697,7 +714,7 @@ Class Roulette {
         error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'consolation', 'type' => $type, 'amt' => $amt]));
         $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true,
             'patch' => $this->ops->patchCurrencies($user, $patchKeys),
-            'clientRewards' => $clientRewards, 'debug' => $debugBase]);
+            'clientRewards' => $clientRewards]);
     }
 }
 ?>

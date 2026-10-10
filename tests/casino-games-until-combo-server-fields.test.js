@@ -100,16 +100,22 @@ console.log('\nTest 5: roulette.php.status() — spin_counter/spin_threshold и�
 
 console.log('\nTest 6: roulette.php.spin() — spin_counter/spin_threshold в обоих путях (успех/fallback), актуальные значения при реальном джекпоте');
 {
-    assert(/'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0, 'debug' => \$debug/.test(rouletteSrc),
+    // 10.10.2026 (по прямому указанию, ТЗ "игроки не должны видеть..." + подтверждённая утечка
+    // debug в консоль браузера): 'debug' => $debug убран из ответа клиенту (остался только в
+    // error_log) — spin_counter/spin_threshold сами по себе не трогались, регекс просто больше
+    // не ищет хвост ", 'debug' => $debug" после них.
+    assert(/'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0\] \+ \$slotResult\)/.test(rouletteSrc),
         'fallback-ветка (нет _rawLink()) тоже отдаёт spin_counter/spin_threshold');
 
     const outIdx = rouletteSrc.indexOf('$spinCounterOut   = $realJackpot ? 0 : $counter;');
     assert(outIdx !== -1, 'основной путь считает spinCounterOut/spinThresholdOut с учётом realJackpot');
-    const body = rouletteSrc.slice(outIdx, outIdx + 600);
+    // 10.10.2026: окно расширено 600→900 — новый explain-комментарий перед output() (про
+    // удаление debug из ответа клиенту) отодвинул искомую строку дальше outIdx.
+    const body = rouletteSrc.slice(outIdx, outIdx + 900);
     assert(/\$spinThresholdOut = \$realJackpot \? \$jackpotResetInfo\['newThreshold'\] : \$threshold;/.test(body),
         'при реальном джекпоте отдаётся НОВЫЙ порог (после сброса), не старый');
-    assert(/'spin_counter' => \$spinCounterOut, 'spin_threshold' => \$spinThresholdOut, 'debug' => \$debug/.test(body),
-        'финальный output() использует именно spinCounterOut/spinThresholdOut, не сырые $counter/$threshold');
+    assert(/'spin_counter' => \$spinCounterOut, 'spin_threshold' => \$spinThresholdOut\] \+ \$slotResult\)/.test(body),
+        'финальный output() использует именно spinCounterOut/spinThresholdOut, не сырые $counter/$threshold (10.10.2026: debug убран из ответа клиенту)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

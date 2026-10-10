@@ -69,7 +69,9 @@ console.log('\nTest 3: Рулетка — панель "До джекпота" �
     assert(/if\(!this\._roulPityTxt \|\| !res\) return;/.test(roulSrc), 'guard на отсутствие this._roulPityTxt на месте — вызовы ниже безопасны');
 
     const spinStart = roulSrc.indexOf("TS.php('roulette.spin'");
-    const spinBody = roulSrc.slice(spinStart, spinStart + 1100);
+    // 10.10.2026: окно расширено 1100→1400 — новый explain-комментарий про удаление debug
+    // (убран console.log(res.debug), см. roulette.php) отодвинул искомый вызов дальше spinStart.
+    const spinBody = roulSrc.slice(spinStart, spinStart + 1400);
     assert(/this\._updateRoulettePityTxt\(res\);/.test(spinBody), 'после spin() вызов остался (безвредно, панели нет)');
 }
 

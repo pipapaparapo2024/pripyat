@@ -81,10 +81,11 @@ export function attachRouletteMinigame(proto){
 
     proto._openRouletteMinigame = function(){
         if(!window.TS) return;
-        // 23.09.2026 (по прямому указанию, превентивно): debug из ответа сервера печатаем
-        // отдельно, раскрытым объектом.
+        // 10.10.2026 (по прямому указанию — ТЗ "игроки не должны видеть под каким стаканчиком
+        // куш/связка" + репорт "debug сливается в консоль браузера"): roulette.openMinigame()
+        // больше не отдаёт поле debug (оно содержало ПОЛНУЮ раскладку 9 стаканчиков — см.
+        // roulette.php) — console.log убран вместе с ним.
         TS.php('roulette.openMinigame', {}, (res)=>{
-            if(res && res.debug) console.log('[dvor-roulette-minigame._openRouletteMinigame] ПОЛНАЯ ТРАССИРОВКА СЕРВЕРА (debug):', res.debug);
             this._buildRouletteMinigameWin();
         }, ()=>{
             if(this._roulResultTxt) this._roulResultTxt.text = 'Ошибка связи с сервером';
@@ -126,9 +127,18 @@ export function attachRouletteMinigame(proto){
         // X растёт с фиксированным шагом. 1-й стаканчик: x=216 y=431. 2-й: x=309 (шаг 93px —
         // это ширина стаканчика впритык, отсюда и CW=93 ниже). Координаты — ЦЕНТР спрайта
         // (стаканчик — Sprite с anchor 0.5,0.5), не левый верхний угол контейнера.
+        // 10.10.2026 (по прямому указанию, редактор позиций — "все эти файлы стаканчиков опусти
+        // вниз на 50 пикселей"): CUP_Y 431→481 — сдвигает вниз весь стаканчик разом (хитбокс,
+        // спрайт, шарик), не только текстуру в отрыве от зоны клика.
         const cups = [];
         const CW = 93, CH = 140;
-        const START_X = 216, CUP_Y = 431, STEP_X = 93;
+        const START_X = 216, CUP_Y = 481, STEP_X = 93;
+        // 10.10.2026 (по прямому указанию — "если шарика нет (не-Куш исход), шарик выкатывается
+        // в левую сторону"; координаты даны пользователем повторно после потери контекста сессии):
+        // ФИКСИРОВАННАЯ точка экрана, в которую укатывается шарик при любом не-Куш исходе — одна
+        // и та же для всех 9 стаканчиков, не зависит от того, какой именно открыли. 'win' (куда
+        // добавлен cup) сам не смещён (x=y=0), поэтому это абсолютные координаты канваса 1280×720.
+        const BALL_ROLL_TARGET = { x: 130, y: 540 };
 
         let resolved = false;
         for(let i = 0; i < 9; i++){
@@ -145,6 +155,25 @@ export function attachRouletteMinigame(proto){
             hit.endFill();
             cup.addChild(hit);
 
+            // 10.10.2026 (по прямому указанию — "шарик должен находиться за стаканчиком"):
+            // ballSpr добавлен в cup ДО closedSpr — PIXI addChild-порядок = z-порядок, значит
+            // шарик рисуется ПОД стаканчиком (а не поверх, как было раньше). Показывается только
+            // при res.kush в обработчике клика ниже — никакой новой игровой логики, награда за
+            // Куш уже полностью реализована в roulette.php. Позиция — приблизительная, поправить
+            // точно через редактор позиций, если ляжет не туда.
+            const ballSpr = new PIXI.Sprite(PIXI.Texture.from('./images/шарик суперигра.png'));
+            ballSpr.anchor.set(0.5, 0.5);
+            ballSpr.x = 30; ballSpr.y = 12;
+            ballSpr.visible = false;
+            cup.addChild(ballSpr);
+
+            // 10.10.2026 (по прямому указанию — "когда стаканчик открывается, не заменяй его на
+            // другой файл, просто подними вверх и поверни на 90° по часовой"): раньше при раскрытии
+            // closedSpr прятался и подменялся отдельным спрайтом "стаканчик открытый суперигра.png"
+            // (openSpr) — это сбрасывало визуальный эффект gsap-анимации поворота/подъёма ниже,
+            // т.к. новый спрайт появлялся мгновенно и без поворота. openSpr убран целиком —
+            // closedSpr остаётся единственным файлом и на "открытом" состоянии (просто в своём
+            // повёрнутом/поднятом виде после gsap.to()).
             const closedSpr = new PIXI.Sprite(PIXI.Texture.from('./images/стаканчик суперигра.png'));
             closedSpr.anchor.set(0.5, 0.5);
             const _fitClosed = () => {
@@ -156,30 +185,6 @@ export function attachRouletteMinigame(proto){
             else closedSpr.texture.baseTexture.once('loaded', _fitClosed);
             cup.addChild(closedSpr);
 
-            const openSpr = new PIXI.Sprite(PIXI.Texture.from('./images/стаканчик открытый суперигра.png'));
-            openSpr.anchor.set(0.5, 0.5);
-            openSpr.visible = false;
-            const _fitOpen = () => {
-                const tex = openSpr.texture;
-                if(tex.width <= 1) return;
-                openSpr.scale.set(Math.min(CW / tex.width, CH / tex.height));
-            };
-            if(openSpr.texture.baseTexture.valid) _fitOpen();
-            else openSpr.texture.baseTexture.once('loaded', _fitOpen);
-            cup.addChild(openSpr);
-
-            // 25.09.2026 (по прямому указанию — "шарик появляется под стаканчиком ТОЛЬКО когда
-            // там Куш"): чисто визуальный маркер, поверх открытого (лежащего на боку)
-            // стаканчика, показывается только при res.kush в обработчике клика ниже — никакой
-            // новой игровой логики, награда за Куш уже полностью реализована в roulette.php.
-            // Позиция — приблизительная (рядом с "горлышком" лежащего стаканчика), поправить
-            // точно через редактор позиций, если ляжет не туда.
-            const ballSpr = new PIXI.Sprite(PIXI.Texture.from('./images/шарик суперигра.png'));
-            ballSpr.anchor.set(0.5, 0.5);
-            ballSpr.x = 30; ballSpr.y = 12;
-            ballSpr.visible = false;
-            cup.addChild(ballSpr);
-
             cup.on('pointerover', ()=>{ if(!resolved) closedSpr.alpha = 0.8; });
             cup.on('pointerout',  ()=>{ closedSpr.alpha = 1; });
             cup.on('pointerdown', ()=>{
@@ -189,7 +194,10 @@ export function attachRouletteMinigame(proto){
 
                 console.log('[dvor-roulette-minigame] КЛИК стаканчик idx=' + i + ' | performance.now()=' + performance.now().toFixed(1) + 'ms Date.now()=' + Date.now());
                 TS.php('roulette.pickCup', {idx:i}, (res)=>{
-                    if(res && res.debug) console.log('[dvor-roulette-minigame.pickCup] ПОЛНАЯ ТРАССИРОВКА СЕРВЕРА (debug):', res.debug);
+                    // 10.10.2026 (по прямому указанию — ТЗ "игроки не должны видеть под каким
+                    // стаканчиком куш/связка" + репорт "debug сливается в консоль браузера"):
+                    // roulette.pickCup() больше не отдаёт поле debug (оно содержало 'allCups' —
+                    // полную раскладку всех 9 стаканчиков, см. roulette.php) — console.log убран.
 
                     // 25.09.2026 (по прямому указанию — "переворот стаканчика: поворот по часовой
                     // на 90° + подъём на 40px"): раньше раскрытие было мгновенной сменой картинки.
@@ -199,12 +207,34 @@ export function attachRouletteMinigame(proto){
                     // срабатывало мгновенно и попап немедленно перекрывал бы саму анимацию.
                     const CUP_FLIP_DURATION = 0.35;
                     const _finishReveal = () => {
-                        closedSpr.visible = false;
-                        openSpr.visible = true;
+                        // 10.10.2026: файл больше НЕ подменяется (openSpr убран) — closedSpr уже
+                        // в повёрнутом/поднятом состоянии после gsap.to() ниже, просто оставляем
+                        // его видимым как есть.
                         // 25.09.2026 (по прямому указанию — "шарик появляется под стаканчиком
                         // ТОЛЬКО когда там Куш"): чисто визуальный маркер, награда за Куш не
                         // меняется (уже начисляется ниже через applyPatch/_openJackpotPrize).
-                        if(res.kush) ballSpr.visible = true;
+                        //
+                        // 10.10.2026 (по прямому указанию — "если человек поднимает, и там нет
+                        // шарика, шарик выкатывается в левую сторону; любой не-Куш исход, фикс.
+                        // расстояние [в точку (130,540)]"): при Куше шарик просто показывается на
+                        // месте (ЗА стаканчиком, см. z-порядок выше); при ЛЮБОМ другом исходе —
+                        // появляется из-под стаканчика и укатывается (translate+spin) в ту же
+                        // фиксированную точку экрана BALL_ROLL_TARGET, независимо от того, какой
+                        // из 9 стаканчиков открыли (цель переведена в локальные координаты cup).
+                        if(res.kush){
+                            ballSpr.visible = true;
+                        } else {
+                            ballSpr.visible = true;
+                            const rollX = BALL_ROLL_TARGET.x - x, rollY = BALL_ROLL_TARGET.y - y;
+                            if(window.gsap){
+                                gsap.to(ballSpr, {
+                                    x: rollX, y: rollY, rotation: ballSpr.rotation + Math.PI * 4,
+                                    duration: 0.5, ease: 'power1.out',
+                                });
+                            } else {
+                                ballSpr.x = rollX; ballSpr.y = rollY;
+                            }
+                        }
 
                         if(res.patch) applyPatch(res.patch);
                         (res.clientRewards || []).forEach(cr => {
@@ -243,7 +273,7 @@ export function attachRouletteMinigame(proto){
                             fontFamily:'Southbank LT', fontSize:13, fill:'#ffffff', align:'center', fontWeight:'bold',
                             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1,
                         });
-                        rTxt.anchor.set(0.5, 0); rTxt.x = 0; rTxt.y = openSpr.height/2 + 4;
+                        rTxt.anchor.set(0.5, 0); rTxt.x = 0; rTxt.y = closedSpr.height/2 + 4;
                         cup.addChild(rTxt);
 
                         resultTxt.text = res.type === 'keyring' ? '🗝 СВЯЗКА КЛЮЧЕЙ! Ты теперь владелец!'

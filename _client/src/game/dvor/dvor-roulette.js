@@ -186,7 +186,9 @@ export function attachRoulette(proto){
         flushPlayerSave('roulette_spin_flush_prev_exp', () => {
         if(window.suspendPlayerSave) suspendPlayerSave('roulette_spin');
         TS.php('roulette.spin', {}, (res) => {
-            if(res && res.debug) console.log('[dvor-roulette._spinRoulette] ПОЛНАЯ ТРАССИРОВКА СЕРВЕРА (debug):', res.debug);
+            // 10.10.2026 (по прямому указанию — ТЗ "игроки не должны видеть счётчик/момент
+            // джекпота" + репорт "debug сливается в консоль браузера"): roulette.spin() больше
+            // не отдаёт поле debug (убрано на сервере, см. roulette.php) — console.log тоже убран.
             if(!res || !res.patch){
                 this._roulSpinning = false;
                 if(window.resumePlayerSave) resumePlayerSave('roulette_spin');
