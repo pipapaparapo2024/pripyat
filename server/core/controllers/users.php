@@ -128,7 +128,8 @@
             $row = $this->registry['udb']->getData(
                 $this->registry['utb'],
                 ['id', 'nick', 'exp', 'respect', 'shmot', 'bosses_killed', 'total_damage',
-                 'gang_id', 'str_xp_total', 'achievement_stars', 'skills_levels', 'habar_bought', 'create_time'],
+                 'gang_id', 'str_xp_total', 'achievement_stars', 'skills_levels', 'habar_bought', 'create_time',
+                 'base_bg_active'],
                 'id=' . $id
             );
             if(isset($row['error']) && $row['error']) return $this->registry['tools']->error(51);
@@ -194,6 +195,10 @@
                 'rating_place'      => $ratingPlace,
                 'habar_bought'      => intval($row['habar_bought'] ?? 0),
                 'create_time'       => intval($row['create_time'] ?? 0),
+                // 10.10.2026 (по прямому указанию — "показывает всех в дефолт базах, должно
+                // отображаться в какой он сидит"): чисто косметическое поле (индекс фона базы),
+                // не экономика/секрет — безопасно отдавать в публичном срезе профиля.
+                'base_bg_active'    => intval($row['base_bg_active'] ?? 0),
             ]);
         }
 

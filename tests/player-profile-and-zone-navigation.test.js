@@ -52,9 +52,10 @@ console.log('\nTest 1: сервер — users.getProfile зарегистрир�
     assert(/if\(\$id <= 0\) return \$this->registry\['tools'\]->error\(54\);/.test(body), 'валидирует id (не 0/отрицательный)');
     // 19.09.2026: список расширен полями визитки игрока (gang_id/str_xp_total/achievement_stars/
     // skills_levels/habar_bought/create_time) — по-прежнему явный список, не array('*').
+    // 10.10.2026: добавлено base_bg_active (фон базы в чужом профиле, был всегда дефолтным).
     assert(/\['id', 'nick', 'exp', 'respect', 'shmot', 'bosses_killed', 'total_damage',/.test(body) &&
-        /'gang_id', 'str_xp_total', 'achievement_stars', 'skills_levels', 'habar_bought', 'create_time'\]/.test(body),
-        'запрашивает у БД явный безопасный список полей (включая поля визитки) — не array(\'*\')');
+        /'gang_id', 'str_xp_total', 'achievement_stars', 'skills_levels', 'habar_bought', 'create_time',\s*\n\s*'base_bg_active'\]/.test(body),
+        'запрашивает у БД явный безопасный список полей (включая поля визитки + base_bg_active) — не array(\'*\')');
     ['coins', 'stew', 'cigarettes', 'inventory', 'weapons', 'ammo_'].forEach(dangerous => {
         assert(!body.includes("'" + dangerous), 'НЕ включает опасное/личное поле "' + dangerous + '" в выборку/ответ');
     });

@@ -69,10 +69,26 @@ export function attachPlayerProfile(proto){
         blocker.interactive = true;
         win.addChild(blocker);
 
-        // Тот же фон-«кубрик», что у себя дома по умолчанию (Home._bgFiles[0]) — чужой
-        // выбор фона (base_bg_active) не тянем, это не относится к экипировке персонажа.
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/кубрик.png'));
-        bg.width = 1280; bg.height = 604;
+        // 10.10.2026 (по прямому указанию — "показывает всех в дефолт базах, должно
+        // отображаться в какой он сидит"): раньше тут всегда был дефолтный "кубрик.png",
+        // чужой выбор фона игнорировался. Теперь читаем profile.base_bg_active (сервер отдаёт
+        // его в users.getProfile, см. users.php) — тот же каталог файлов/подгонки, что
+        // Home._bgFiles/_bgAdjust (home.js), продублирован здесь намеренно (разные классы).
+        const PROFILE_BG_FILES = ['кубрик.png','шлюз.png','канализация.png','двор_фон.png','мастерская.png','железка.png','станция.png','заправка.png'];
+        const PROFILE_BG_ADJUST = {
+            'шлюз.png':        { y: 32, scale: 1.000 },
+            'канализация.png': { y: 35, scale: 1.000 },
+            'двор_фон.png':    { y: 54, scale: 1.000 },
+            'мастерская.png':  { y: 74, scale: 1.000 },
+            'железка.png':     { y: 56, scale: 1.002 },
+            'заправка.png':    { y: 63, scale: 1.004 },
+            'станция.png':     { y: 73, scale: 1.000 },
+        };
+        const bgIdx = Math.max(0, Math.min(PROFILE_BG_FILES.length - 1, parseInt(profile.base_bg_active || 0) || 0));
+        const bgFile = PROFILE_BG_FILES[bgIdx];
+        const bgAdj = PROFILE_BG_ADJUST[bgFile] || { y: 0, scale: 1 };
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/' + bgFile));
+        bg.width = 1280 * bgAdj.scale; bg.height = 604 * bgAdj.scale; bg.y = bgAdj.y;
         win.addChild(bg);
 
         // Персонаж — те же координаты, что Home.init() (506,204).

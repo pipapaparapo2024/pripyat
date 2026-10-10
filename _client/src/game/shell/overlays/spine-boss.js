@@ -71,7 +71,7 @@ const BOSS_SPINE = [
     { atlas: 'lucky.atlas',      json: 'lucky.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
       explosion: { atlas: 'lucky_explosion.atlas', json: 'lucky_explosion.json', anim: 'animation',
-                   x: 680, y: 673, scale: 0.25 } },
+                   x: 680, y: 673, scale: 1.0 } },
     { atlas: 'yastreb.atlas',    json: 'yastreb.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
     { atlas: 'mechennii.atlas',  json: 'mechennii.json',
