@@ -88,6 +88,33 @@ window.bridge = vkBridge;
 // деплоя побайтово идентичен на обоих доменах (см. AGENTS.md).
 window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');
 
+// 09.10.2026: live-логи ОК подтверждали v585, но в них не было ни bank, ни iap. Причина
+// оказалась не в обработчиках: production ниже намеренно заглушает ВСЕ console.*. Оставляем
+// обычную защиту от внутренних логов для игроков, но на ОК пропускаем строго белый список
+// префиксов диагностики пути «тач → Pixi → FAPI». Иначе нельзя отличить непопадание в кнопку
+// от отказа платёжного SDK. Origin Launcher'а может быть st.okcdn.ru, не только ok.ru.
+const _nativeConsole = {
+    log: console.log.bind(console), warn: console.warn.bind(console), error: console.error.bind(console),
+    info: console.info.bind(console), debug: console.debug.bind(console)
+};
+const _okDiagnosticOrigins = (() => {
+    try {
+        const ancestors = window.location.ancestorOrigins ? Array.from(window.location.ancestorOrigins) : [];
+        return (document.referrer + ' ' + ancestors.join(' ')).toLowerCase();
+    } catch(e){ return ''; }
+})();
+// Переключатель сохранён специально: диагностика не удаляется, но по прямому указанию
+// 09.10.2026 выключена везде. При следующем согласованном расследовании достаточно сменить
+// false на true и пересобрать, не восстанавливая сотни console-вызовов из истории.
+window.ok_payment_diagnostics_enabled = false;
+window.ok_payment_diagnostics = window.ok_payment_diagnostics_enabled && (_okDiagnosticOrigins.includes('ok.ru')
+    || _okDiagnosticOrigins.includes('odnoklassniki.ru') || _okDiagnosticOrigins.includes('st.okcdn.ru'));
+// Не пропускаем весь [bank]: bank.constructor намеренно пишет launch-параметры для локальной
+// отладки. В production ОК допустимы только безопасные логи координат/слотов/FAPI, без токенов,
+// sign, vk_user_id и полного vk_params.
+const _isPaymentDiagnostic = (args) => typeof args[0] === 'string'
+    && /^\[(?:bank\.(?:input|genSlots)|iap(?:\.|\])|platform\.detectPlatform|energy_buy\.initButtons|mobile-viewport|index\.js\.resize)/.test(args[0]);
+
 // 26.09.2026 (по прямому указанию, перед модерацией VK) — весь console.log/warn/error/info
 // по всему проекту (Правило №8 CLAUDE.md, сотни вызовов во всех модулях) заглушается для
 // игроков ЗДЕСЬ, глобальной подменой самих console.* методов, а не построчным удалением каждого
@@ -100,11 +127,17 @@ window.debug_mode = (typeof location !== 'undefined' && location.hostname === 't
 // в углу экрана видна игроку как и раньше.
 if(!window.debug_mode){
 	const _noop = () => {};
-	console.log = _noop;
-	console.warn = _noop;
-	console.error = _noop;
+	const _okDiagnosticLog = (kind) => (...args) => {
+		if(window.ok_payment_diagnostics && _isPaymentDiagnostic(args)) _nativeConsole[kind](...args);
+	};
+	console.log = _okDiagnosticLog('log');
+	console.warn = _okDiagnosticLog('warn');
+	console.error = _okDiagnosticLog('error');
 	console.info = _noop;
 	console.debug = _noop;
+	if(window.ok_payment_diagnostics){
+		_nativeConsole.log('[iap.diagnostics] ОК-режим: включены только логи bank/iap/platform/energy_buy/mobile-viewport для разбора оплаты и нажатий');
+	}
 }
 
 window.session_hash = md5(Math.random().toString());

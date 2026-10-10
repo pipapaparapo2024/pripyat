@@ -919,8 +919,8 @@ export function attachBossesFight(proto){
             'боевка с боссом охотник v2.png',
             'боевка с боссом счастливчик v2.png',
             'боевка с боссом ястреб v2.png',    'боевка с боссом меченный v2.png',
-            'боевка с боссом крыс v2.png',      'боевка с боссом баркут v2.png',
-            'боевка с боссом борода v2.png',    'боевка с боссом жгут v2.png',
+            'боевка с боссом крыс.png',      'боевка с боссом баркут.png',
+            'боевка с боссом борода.png',    'боевка с боссом жгут.png',
         ];
         if(this._bossFightBg)
             this._bossFightBg.texture = PIXI.Texture.from('./images/' + (BOSS_BGS[bossIdx] || BOSS_BGS[0]));

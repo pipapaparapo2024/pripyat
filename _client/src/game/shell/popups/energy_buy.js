@@ -88,6 +88,11 @@ export function attachEnergyBuy(proto){
 			const slot = new PIXI.Sprite(PIXI.Texture.from('./images/layers/popups/Энергия/' + card.file));
 			slot.anchor.set(0.5, 0.5); slot.x = card.x; slot.y = card.y;
 			slot.interactive = true; slot.buttonMode = true;
+			if(window.isMobile) helper.touchPad(slot, 128);
+			console.log('[energy_buy.initButtons] карточка покупки готова | item:', 100 + i,
+				'| interactive:', slot.interactive, '| x,y:', slot.x, slot.y,
+				'| width,height:', Math.round(slot.width), Math.round(slot.height),
+				'| hitArea:', slot.hitArea ? JSON.stringify(slot.hitArea) : 'обычный bounds');
 			slot.on('pointerover', ()=>{ _sa(slot, 0.9); slot.scale.set(1.03); });
 			slot.on('pointerout',  ()=>{ _sa(slot, 1); slot.scale.set(1); });
 			// Выдачу энергии (item100-107) уже обрабатывает ЕДИНЫЙ глобальный
@@ -100,7 +105,9 @@ export function attachEnergyBuy(proto){
 			// несуществующего _unsub() бросал исключение прямо внутри диспетчера
 			// VK Bridge, из-за чего VK показывал свой собственный попап
 			// "Произошла ошибка" поверх уже корректно выданной энергии.
-			slot.on('pointerdown', ()=>{
+			slot.on('pointerdown', (e)=>{
+				console.log('[energy_buy.initButtons] PIXI pointerdown по карточке энергии | item:', 100 + i,
+					'| priceOk:', opt.price_ok, '| PIXI global:', e && e.data ? Math.round(e.data.global.x) + ',' + Math.round(e.data.global.y) : 'нет');
 				startPurchase('item' + (100 + i), opt.price_ok, opt.energy + ' энергии');
 			});
 			win.addChild(slot);

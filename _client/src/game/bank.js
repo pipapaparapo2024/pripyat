@@ -117,6 +117,21 @@ export default class Bank{
 
 		root.layer2_mc.addChild(this.atm);
 		if(!this._bankMoved){ this._bankMoved=true; this.atm.y-=20; }
+
+		// 09.10.2026: в живом ОК-логе есть загрузка FAPI, но нет НИ ОДНОЙ строки
+		// bank/iap после тапа. Значит надо отличить «DOM-тач не дошёл до canvas» от
+		// «PIXI не выбрал слот» и от «слот выбрался, но упала оплата».
+		const canvas = document.querySelector('canvas');
+		if(canvas && !this._bankDomPointerDebug){
+			this._bankDomPointerDebug = (event) => {
+				const rect = canvas.getBoundingClientRect();
+				console.log('[bank.input] DOM pointerdown при открытом банке | client:', event.clientX, event.clientY,
+					'| canvas rect:', Math.round(rect.left), Math.round(rect.top), Math.round(rect.width), Math.round(rect.height),
+					'| pixi mouseXY:', window.mouseXY ? Math.round(mouseXY.x) + ',' + Math.round(mouseXY.y) : 'нет',
+					'| isMobile:', window.isMobile, '| platform:', isOk() ? 'ok' : 'vk');
+			};
+			canvas.addEventListener('pointerdown', this._bankDomPointerDebug, true);
+		}
 	}
 
 	// 05.10.2026 (модерация ОК, п.4 отказа — "цена не в валюте площадки"): цена в "голосах"
@@ -138,21 +153,29 @@ export default class Bank{
 		let coins_len = name == 'stew' || name == 'coins' ? 0 : donuts_info['coins']['price'].length;
 
 		for(let i = 0; i < 8; i++){
-			this.atm.win['slot'+i].icon.gotoAndStop(name);
-			this.atm.win['slot'+i].img.gotoAndStop(name+i);
+			const slot = this.atm.win['slot'+i];
+			slot.icon.gotoAndStop(name);
+			slot.img.gotoAndStop(name+i);
 
 			const count = donuts_info[name]['default'][i];
-			this.atm.win['slot'+i].count_txt.text = count + ' ' + helper.numberEnd(count, name);
+			slot.count_txt.text = count + ' ' + helper.numberEnd(count, name);
 			const price = this._displayPrice(name, i);
-			this.atm.win['slot'+i].price_txt.text = price + ' ' + helper.numberEnd(price, 'votes');
+			slot.price_txt.text = price + ' ' + helper.numberEnd(price, 'votes');
 
-			helper.clearButton(this.atm.win['slot'+i], true);
+			helper.clearButton(slot, true);
+			// Карточки были размечены под мышь. На телефоне добавляем прозрачный запас до
+			// 128 логических px, не меняя их рисунок и координаты.
+			if(window.isMobile) helper.touchPad(slot, 128);
+			console.log('[bank.genSlots] слот готов к покупке | вкладка:', name, '| slot:', i,
+				'| interactive:', slot.interactive, '| x,y:', slot.x, slot.y,
+				'| width,height:', Math.round(slot.width), Math.round(slot.height),
+				'| hitArea:', slot.hitArea ? JSON.stringify(slot.hitArea) : 'обычный bounds');
 
-			this.atm.win['slot'+i].on('pointerdown', (e) => {
+			slot.on('pointerdown', (e) => {
 				this.set_donut = stew_len + coins_len + i;
-				console.log('[bank.genSlots] клик по слоту покупки | вкладка:', name, '| индекс в вкладке:', i,
+				console.log('[bank.genSlots] PIXI pointerdown по слоту покупки | вкладка:', name, '| индекс в вкладке:', i,
 					'| итоговый item:', 'item' + this.set_donut, '| цена отображения:', price, '| платформа:', isOk() ? 'ok' : 'vk',
-					'| количество товара:', count);
+					'| количество товара:', count, '| PIXI global:', e && e.data ? Math.round(e.data.global.x) + ',' + Math.round(e.data.global.y) : 'нет');
 
 				startPurchase('item' + this.set_donut.toString(), price, count + ' ' + helper.numberEnd(count, name));
 			});
@@ -365,6 +388,11 @@ export default class Bank{
 	}
 
 	hideBank(){
+		const canvas = document.querySelector('canvas');
+		if(canvas && this._bankDomPointerDebug){
+			canvas.removeEventListener('pointerdown', this._bankDomPointerDebug, true);
+			this._bankDomPointerDebug = null;
+		}
 		if(this.atm.parent) this.atm.parent.removeChild(this.atm);
 	}
 

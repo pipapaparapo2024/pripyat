@@ -284,7 +284,27 @@
                 'zone_fights_0','zone_fights_1','zone_fights_2','zone_fights_3','zone_fights_4',
                 'natisk_event_id','natisk_free_attempts','natisk_paid_attempts','natisk_kills',
                 'natisk_seen_event_id',
-                'skills_data','skill_points',
+                // 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"):
+                // 'skills_data' УБРАНО отсюда. Реальная прокачка переехала в server-only
+                // skills_levels ещё 18.09.2026 (levels) и 22.09.2026 (dmgSpent) — с тех пор
+                // 'skills_data' держали в whitelist ТОЛЬКО ради одноразовой миграции СУЩЕСТВУЮЩИХ
+                // игроков: skills.php._loadState()/bosses.php._loadSkillsState() при ПЕРВОМ же
+                // обращении (пока skills_levels ещё пуст) подхватывают levels/skillsDmgSpent из
+                // этого поля как стартовое значение. Но это ровно та же дыра, что и у bosses_data
+                // (см. _sanitizeBossesData() ниже) — ЛЮБОЙ аккаунт, у которого skills_levels ещё
+                // не инициализирован (гарантированно верно для КАЖДОГО нового игрока), был уязвим:
+                // читер мог ОДНИМ users.save({skills_data: JSON.stringify({levels:
+                // Array(20).fill(20), skillsDmgSpent: 999999999})}) ДО первого же клика по
+                // скиллам подложить поддельное стартовое состояние — первый же upgrade()/attack()
+                // "усыновил" бы его в skills_levels НАВСЕГДА (все 20 скиллов на максимуме
+                // бесплатно). Убирая поле из whitelist, НЕ ломаем миграцию для старых аккаунтов,
+                // у которых skills_data уже легитимно накоплен В БД ДО этой правки (читается
+                // как и раньше, просто больше не ПЕРЕЗАПИСЫВАЕТСЯ клиентом) — закрываем только
+                // возможность НОВОЙ подделки. users.get()/patch не меняются, whitelist влияет
+                // только на save(). 'skill_points' оставлено — не читается НИ ОДНИМ контроллером
+                // как вход для решения (grep подтвердил, только дев-инструменты пишут его для
+                // отображения), настоящий баланс очков живёт в skills_levels.points.
+                'skill_points',
                 // 26.09.2026 (перенос сбора сигарет во дворе на сервер, см. dvor.php.collectCig()
                 // и tests/dead-code-audit-dvor-fla-roulette-removed-cig-cloud-risk.test.js
                 // «Находка 1»): 'dvor_daily_sigs' УБРАНО из этого списка — читер мог обнулить
@@ -520,16 +540,34 @@
             // предметы с любым effect и тут же "использовать" их тем же UI, полностью в обход
             // цен и лут-таблиц Василича. См. _sanitizeInventory() ниже — разрешает только сужение
             // уже сохранённого набора (ровно то, что делает единственная легитимная операция).
-            $jsonBlobGuards  = ['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory'];
+            // 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"):
+            // bosses_data — тот самый JSON-блоб, про который предупреждал комментарий 17.09.2026
+            // выше ("требует отдельной, более глубокой валидации схемы") — валидация так и не
+            // была написана, bosses-combat.js сам прямо признаёт это в своём комментарии
+            // ("bosses_data — client-writable поле (users.php $allowed, без валидации"). Реальный
+            // вектор: keys[] — валюта похода на босса (начисляется ИСКЛЮЧИТЕЛЬНО bosses.php/
+            // rewardlinks.php через Gameops::saveUser(), В ОБХОД этого whitelist) — читер мог
+            // одним users.save({bosses_data: JSON.stringify({keys:[999,...]})}) выставить себе
+            // любое число ключей без единой реальной победы/покупки. dailyKills/killsTotal/
+            // medalKills — те же счётчики лимита попыток/статистики, которые bosses.php.
+            // startFight() читает НАПРЯМУЮ из этого же поля — тем же приёмом читер мог обнулить
+            // dailyKills и обойти дневной лимит атак. Честный клиент НИКОГДА не придумывает для
+            // этих 4 полей значение сам — bosses-combat.js._saveToUdata() всегда берёт их из
+            // in-memory кэша, который синхронизируется ИСКЛЮЧИТЕЛЬНО из серверных patch-ответов
+            // (см. ._onDefeat() — "Синхронизируем... с тем, что сервер только что сохранил") —
+            // поэтому для честного клиента incoming всегда совпадает с уже сохранённым в БД,
+            // строгое сравнение ничего легитимного не ломает. См. _sanitizeBossesData() ниже.
+            $jsonBlobGuards  = ['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'];
 
-            // Текущие значения оружия/патронов/инвентаря нужны ТОЛЬКО если клиент вообще
-            // пытается их записать в этом запросе — не гонять лишний SELECT на каждый обычный autosave.
+            // Текущие значения оружия/патронов/инвентаря/данных боссов нужны ТОЛЬКО если клиент
+            // вообще пытается их записать в этом запросе — не гонять лишний SELECT на каждый
+            // обычный autosave.
             $current = null;
-            if(isset($incoming['weapons']) || isset($incoming['inventory'])
+            if(isset($incoming['weapons']) || isset($incoming['inventory']) || isset($incoming['bosses_data'])
                 || isset($incoming['ammo_auto']) || isset($incoming['ammo_gun']) || isset($incoming['ammo_machete'])){
                 $current = $this->registry['udb']->getData(
                     $this->registry['utb'],
-                    ['weapons', 'inventory', 'ammo_auto', 'ammo_gun', 'ammo_machete'],
+                    ['weapons', 'inventory', 'bosses_data', 'ammo_auto', 'ammo_gun', 'ammo_machete'],
                     'id=' . $this->registry['uid']
                 );
                 if(isset($current['error']) && $current['error']) $current = [];
@@ -1051,6 +1089,34 @@
                 $key = array_search(json_encode($item), $pool, true);
                 if($key === false) return null; // предмет, которого не было в сохранённом наборе — отклоняем весь блоб
                 unset($pool[$key]);
+            }
+            return $incoming;
+        }
+
+        // 09.10.2026 (аудит по прямому указанию — см. большой комментарий у $jsonBlobGuards
+        // выше). Разрешаем бить ВЕСЬ остальной bosses_data (freeWpnCdMs/curCycleDmg/
+        // friendDmgApplied/hpByDiff/bossStartMs/bossDamage/personalDamageTotal/dailyDate/
+        // diffIdx/fightTimeBonusMs и т.п. — ни один из них не является ни валютой, ни лимитом
+        // попыток напрямую проверяемым startFight()/claimKill() как условие выдачи награды),
+        // но ЗАМОРАЖИВАЕМ 4 конкретных под-массива построчно против уже сохранённого в БД —
+        // любое расхождение по ЛЮБОМУ индексу отклоняет ВЕСЬ блоб целиком (тот же приём, что
+        // _sanitizeInventory() выше, не точечная правка одного элемента).
+        function _sanitizeBossesData($currentRaw, $incomingRaw){
+            $current = is_array($currentRaw) ? $currentRaw : (is_string($currentRaw) && $currentRaw !== '' ? json_decode($currentRaw, true) : []);
+            if(!is_array($current)) $current = [];
+            $incoming = is_array($incomingRaw) ? $incomingRaw : json_decode($incomingRaw, true);
+            if(!is_array($incoming)) return null;
+
+            $lockedFields = ['keys', 'dailyKills', 'killsTotal', 'medalKills'];
+            foreach($lockedFields as $f){
+                if(!isset($incoming[$f])) continue; // поле не прислано — нечего сверять, не трогаем
+                if(!is_array($incoming[$f])) return null;
+                $curArr = isset($current[$f]) && is_array($current[$f]) ? $current[$f] : [];
+                $newArr = $incoming[$f];
+                $maxLen = max(count($curArr), count($newArr));
+                for($i = 0; $i < $maxLen; $i++){
+                    if(intval($newArr[$i] ?? 0) !== intval($curArr[$i] ?? 0)) return null;
+                }
             }
             return $incoming;
         }

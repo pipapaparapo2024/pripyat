@@ -68,7 +68,9 @@ console.log('\nTest 1: weapons остаётся в whitelist с content-вали
     // отсутствии 'weapons' (оно всё ещё здесь, просто без 'gang_id' перед собой).
     assert(/'gang_data','weapons','inventory',/.test(usersPhp), 'weapons всё ещё в $allowed (нужен для легитимного расхода патронов)');
     assert(!/'weapons','shmot'/.test(usersPhp.replace(/\s+/g,'')), "'shmot' больше НЕ рядом с weapons в whitelist — убран целиком");
-    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory'\];/.test(usersPhp),
+    // 09.10.2026: третья запись ('bosses_data' => '_sanitizeBossesData') добавлена позже тем же
+    // приёмом — см. tests/users-php-real-exec-sanitize-bosses-data-currency-guard.test.js.
+    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'\];/.test(usersPhp),
         'jsonBlobGuards содержит weapons и inventory — запись для shmot убрана вместе с самим полем');
     assert(/function _sanitizeWeapons\(\$currentRaw, \$incomingRaw\)\{/.test(usersPhp), '_sanitizeWeapons() определён (weapons остаётся client-writable)');
     assert(!/function _sanitizeShmot/.test(usersPhp), '_sanitizeShmot() удалена — shmot больше не проходит через users.save вообще, guard не нужен');

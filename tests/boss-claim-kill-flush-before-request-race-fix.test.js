@@ -35,13 +35,20 @@ const root = path.join(__dirname, '..');
 const combatSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'bosses', 'bosses-combat.js'), 'utf-8');
 const usersPhp  = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
 
-console.log('\nTest 1: регресс-гвард — bosses_data подтверждённо client-writable без anti-rollback защиты (документирует ПОЧЕМУ фикс вообще нужен)');
+console.log('\nTest 1: регресс-гвард — bosses_data по-прежнему client-writable (документирует ПОЧЕМУ фикс нужен был изначально)');
 {
     const m = usersPhp.match(/\$allowed = \[([\s\S]*?)\];/);
     assert(!!m, '$allowed массив найден');
-    assert(m && /'bosses_data'/.test(m[1]), "'bosses_data' в whitelist (client-writable) — подтверждает риск гонки");
-    assert(!/\$jsonBlobGuards\s*=\s*\[[^\]]*'bosses_data'/.test(usersPhp),
-        'bosses_data НЕ имеет anti-rollback guard (в отличие от weapons/shmot) — гонка реальна, не гипотетична');
+    assert(m && /'bosses_data'/.test(m[1]), "'bosses_data' в whitelist (client-writable) — исходная причина риска гонки по-прежнему актуальна для НЕ-защищённых полей (freeWpnCdMs/hpByDiff/bossStartMs и т.п.)");
+    // 09.10.2026 (отдельный аудит — "переживаю что игроки могут читерить", НЕ связан с этим
+    // race-фиксом напрямую): bosses_data ТЕПЕРЬ имеет guard (_sanitizeBossesData), но защищает
+    // только keys/dailyKills/killsTotal/medalKills от ПОДДЕЛКИ произвольным значением — остальные
+    // поля (freeWpnCdMs/hpByDiff/bossStartMs/curCycleDmg и т.п.) по-прежнему проходят свободно,
+    // и именно для НИХ flushPlayerSave()/suspendPlayerSave() ниже остаётся нужным — guard решает
+    // другую задачу (анти-чит), а не гонку между честным устаревшим автосейвом и свежей победой.
+    // См. tests/users-php-real-exec-sanitize-bosses-data-currency-guard.test.js для guard'а.
+    assert(/\$jsonBlobGuards\s*=\s*\[[^\]]*'bosses_data' => '_sanitizeBossesData'/.test(usersPhp),
+        'bosses_data теперь имеет guard (_sanitizeBossesData) — но он про анти-чит keys/счётчиков, не про гонку с этим race-фиксом');
 }
 
 console.log('\nTest 2: _onDefeat() — claimKill() теперь оборачивается в flushPlayerSave (тот же паттерн, что старт/форфейт/таймаут)');

@@ -9,6 +9,19 @@
  * skills_levels (НЕ в whitelist, как dice_session/yashik_session/roulette_cups) — клиент
  * физически не может подделать его через users.save.
  *
+ * 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"): 22.09.2026
+ * skillsDmgSpent ТОЖЕ переехал в skills_levels (см. skills.js — "ЕДИНСТВЕННОЕ место, откуда
+ * клиент узнаёт свой реальный прогресс"), но 'skills_data' оставалось в whitelist "по
+ * инерции" — justification строкой 4 выше устарел с той же даты. Реальный остаточный риск:
+ * skills.php._loadState()/bosses.php._loadSkillsState() при ПЕРВОМ обращении (пока
+ * skills_levels ещё пуст — гарантированно верно для КАЖДОГО нового аккаунта) мигрируют levels/
+ * dmgSpent ИЗ skills_data как стартовое значение — читер мог подложить поддельный skills_data
+ * ДО первого же клика по скиллам, и первый upgrade()/attack() "усыновил" бы подделку в
+ * skills_levels навсегда. 'skills_data' убрано из whitelist — миграция для СТАРЫХ аккаунтов
+ * (которые легитимно накопили skills_data до этой правки) по-прежнему читает уже сохранённое в
+ * БД (whitelist влияет только на запись, не на чтение), просто новых подделок больше не
+ * принимает. См. Test 2 ниже.
+ *
  * Run: node tests/skills-server-authoritative.test.js
  */
 
@@ -47,8 +60,14 @@ console.log('\nTest 2: skills_levels НЕ в client-writable whitelist (ключ
     assert(!!allowedMatch, '$allowed массив найден в users.php');
     assert(!/'skills_levels'/.test(allowedMatch ? allowedMatch[1] : ''),
         "'skills_levels' сознательно НЕ добавлен в \$allowed users.php — клиент не может подделать через users.save");
-    assert(/'skills_data'/.test(usersPhp),
-        "'skills_data' остаётся в whitelist (skillsDmgSpent там же, тот же уровень доверия, что урон по боссам)");
+    // 09.10.2026: 'skills_data' убрано из $allowed (см. докблок выше) — поле ВСЁ ЕЩЁ
+    // существует в коде/БД (читается как миграционный фолбэк в skills.php/bosses.php), но
+    // больше не client-writable. Сверяем ТОЛЬКО реальные ключи массива (комментарии вырезаны
+    // ПЕРЕД проверкой — сам объясняющий комментарий у этой правки неизбежно упоминает
+    // 'skills_data' текстом несколько раз, наивный поиск по всей строке дал бы ложный провал).
+    const allowedNoComments = (allowedMatch ? allowedMatch[1] : '').replace(/\/\/[^\n]*/g, '');
+    assert(!/'skills_data'/.test(allowedNoComments),
+        "'skills_data' убрано из \$allowed — миграционный сид для skills_levels больше нельзя подделать через users.save");
 }
 
 console.log('\nTest 3: миграция 19 создаёт служебное поле skills_levels');

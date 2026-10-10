@@ -35,8 +35,10 @@ const usersPhp = read('server/core/controllers/users.php');
 
 console.log('\nTest 1: jsonBlobGuards содержит sanitizer для inventory (не только weapons)');
 {
-    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory'\];/.test(usersPhp),
-        "jsonBlobGuards включает и 'weapons', и 'inventory'");
+    // 09.10.2026: третья запись ('bosses_data' => '_sanitizeBossesData') добавлена позже тем же
+    // приёмом — см. tests/users-php-real-exec-sanitize-bosses-data-currency-guard.test.js.
+    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'\];/.test(usersPhp),
+        "jsonBlobGuards включает 'weapons', 'inventory' и 'bosses_data'");
     assert(/function _sanitizeInventory\(\$currentRaw, \$incomingRaw\)\{/.test(usersPhp), '_sanitizeInventory() определена');
 }
 

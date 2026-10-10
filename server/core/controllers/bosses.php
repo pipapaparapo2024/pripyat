@@ -1814,6 +1814,18 @@
             $devForceDrops = !empty($user['dev_force_drops']);
             $shmotAmount = 0;
 
+            // Финализацию скиллов выполняем ДО захвата shmot-lock ниже. Оба механизма блокируют
+            // ОДНУ строку users, но _finalizeSkillSession() открывает отдельное mysqli-соединение.
+            // Если сначала удерживать shmotLockLink (SELECT ... FOR UPDATE), а затем из второго
+            // соединения вызвать _finalizeSkillSession(), MySQL ждёт блокировку, которую держит
+            // ЭТОТ ЖЕ запрос, и через innodb_lock_wait_timeout аварийно обрывает claimKill().
+            // Именно так 09.10.2026 зависла победа Алексея Катаева: HP уже был 0, но награда и
+            // сброс bossStartMs не сохранялись. Здесь нет зависимости от шмоток, поэтому
+            // безопасный порядок — сначала закрыть отдельную skills-транзакцию, затем брать lock
+            // для shmot/shmot_fragments/max_energy.
+            $skillsResult = $this->_finalizeSkillSession($user);
+            if(!$skillsResult['locked']) $user['skills_levels'] = $skillsResult['json'];
+
             // 09.10.2026 (аудит гонок состояний по всему проекту, по прямому запросу "посмотри,
             // есть ли ещё такие же места"): персональный дроп шмотки босса ниже пишет
             // shmot/shmot_fragments/max_energy (последнее — через applyShmotOwnBonus(), если у
@@ -1944,15 +1956,6 @@
             $user['boss_fight_session'] = json_encode([]);
 
             $user['bosses_data'] = json_encode($data);
-
-            // 22.09.2026: победа завершает попытку — та же финализация сессии скиллов (откат
-            // прогресса до пола уровня, если левелапа не было ЗА ЭТУ попытку), что
-            // endFightSession() делает для таймаута/форфейта/крестика (см. _finalizeSkillSession()).
-            // 04.10.2026: функция теперь сама лочит строку и пишет skills_levels отдельным
-            // UPDATE (не мутирует $user) — присваиваем результат в $user ДО saveUser() ТОЛЬКО
-            // если лока не было (иначе результат потеряется), см. комментарий в самой функции.
-            $skillsResult = $this->_finalizeSkillSession($user);
-            if(!$skillsResult['locked']) $user['skills_levels'] = $skillsResult['json'];
 
             // Залоченные shmot/shmot_fragments/max_energy пишем ОТДЕЛЬНЫМ UPDATE под тем же
             // локом (см. комментарий у $shmotLockLink выше) и исключаем их из $user ДО общего
