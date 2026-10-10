@@ -130,15 +130,21 @@ export function attachRouletteMinigame(proto){
         // 10.10.2026 (по прямому указанию, редактор позиций — "все эти файлы стаканчиков опусти
         // вниз на 50 пикселей"): CUP_Y 431→481 — сдвигает вниз весь стаканчик разом (хитбокс,
         // спрайт, шарик), не только текстуру в отрыве от зоны клика.
+        // 10.10.2026 (по прямому указанию — "все стаканчики сдвинь вправо на 30 пикселей"):
+        // START_X 216→246 — сдвигает вправо весь ряд разом (хитбокс/спрайт/шарик каждого
+        // стаканчика, те же соображения, что и у сдвига вниз выше).
         const cups = [];
         const CW = 93, CH = 140;
-        const START_X = 216, CUP_Y = 481, STEP_X = 93;
+        const START_X = 246, CUP_Y = 481, STEP_X = 93;
         // 10.10.2026 (по прямому указанию — "если шарика нет (не-Куш исход), шарик выкатывается
         // в левую сторону"; координаты даны пользователем повторно после потери контекста сессии):
         // ФИКСИРОВАННАЯ точка экрана, в которую укатывается шарик при любом не-Куш исходе — одна
         // и та же для всех 9 стаканчиков, не зависит от того, какой именно открыли. 'win' (куда
         // добавлен cup) сам не смещён (x=y=0), поэтому это абсолютные координаты канваса 1280×720.
-        const BALL_ROLL_TARGET = { x: 130, y: 540 };
+        // 10.10.2026 (по прямому указанию — "шарик тоже сдвинь, по такому же принципу" вслед за
+        // сдвигом стаканчиков вправо на 30px): x 130→160 — та же точка смещена на ту же величину,
+        // чтобы точка укатывания осталась в прежнем визуальном соотношении с рядом стаканчиков.
+        const BALL_ROLL_TARGET = { x: 160, y: 540 };
 
         let resolved = false;
         for(let i = 0; i < 9; i++){
@@ -376,6 +382,13 @@ export function attachRouletteMinigame(proto){
     // В отличие от "Утешительного приза" — фон здесь НЕ гаснет (не запрошено), кнопка ЗАБРАТЬ
     // переиспользует уже существующий файл "стаканчики кнопка забрать.png" (новый файл под эту
     // кнопку не присылали, только новые координаты).
+    //
+    // 10.10.2026 (по прямому указанию — "не пиши +50 000 на попапе, при нажатии ЗАБРАТЬ должен
+    // открываться стандартный попап награды (рубли) с суммой; кнопку ЗАБРАТЬ сдвинь вправо на
+    // 40px и вниз на 16px"): инлайн-текст суммы (amtTxt) убран целиком — сумма теперь показана
+    // ТОЛЬКО через стандартный iface._showRewardPopup (тот же паттерн, что уже у claimPrize()/
+    // _openConsolationPrize() — см. выше в этом файле), открывается СРАЗУ после закрытия обоих
+    // попапов мини-игры, повторного запроса к серверу не делает (награда уже начислена выше).
     proto._openJackpotPrize = function(cupsWin, amount){
         const win = new PIXI.Container();
         win.interactive = true;
@@ -388,25 +401,16 @@ export function attachRouletteMinigame(proto){
         panel.x = 96; panel.y = 31;
         win.addChild(panel);
 
-        // Сумма — оценочная позиция над монетами на попапе (не снята редактором позиций
-        // отдельно от самого файла-попапа), если ляжет не туда — поправить одним числом.
-        const amtTxt = new PIXI.Text('+' + Number(amount).toLocaleString('ru'), {
-            fontFamily:'Southbank LT', fontSize:28, fill:'#ffee88', fontWeight:'bold',
-            dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
-        });
-        amtTxt.anchor.set(0.5, 0.5);
-        amtTxt.x = 96 + 570; amtTxt.y = 31 + 330;
-        win.addChild(amtTxt);
-
         const takeBtn = new PIXI.Sprite(PIXI.Texture.from('./images/стаканчики кнопка забрать.png'));
-        takeBtn.x = 540; takeBtn.y = 464;
+        takeBtn.x = 540 + 40; takeBtn.y = 464 + 16;
         takeBtn.interactive = true; takeBtn.buttonMode = true;
         takeBtn.on('pointerover', ()=>{ _sa(takeBtn, 0.85); takeBtn.scale.set(1.08); });
         takeBtn.on('pointerout',  ()=>{ _sa(takeBtn, 1); takeBtn.scale.set(1); });
         takeBtn.on('pointerdown', ()=>{
-            console.log('[dvor-roulette-minigame._openJackpotPrize] ЗАБРАТЬ — закрываю попап и мини-игру');
+            console.log('[dvor-roulette-minigame._openJackpotPrize] ЗАБРАТЬ — закрываю попап и мини-игру, показываю попап награды');
             if(win.parent) win.parent.removeChild(win);
             if(cupsWin && cupsWin.parent) cupsWin.parent.removeChild(cupsWin);
+            if(window.iface) iface._showRewardPopup([{type:'coins', amount}]);
         });
         win.addChild(takeBtn);
 

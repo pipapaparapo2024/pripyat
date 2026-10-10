@@ -77,6 +77,7 @@ const SPINE_DIR = './images/spine/';
 //
 // 10.10.2026 (по прямому указанию, со скриншотом — "дым поднимается выше взрыва, сделай
 // 0.32"): 0.25 → 0.32, позиция/логика не менялись, чисто визуальная подстройка размера.
+// 10.10.2026 (по прямому указанию — "скейл с 0.32 до 0.44"): 0.32 → 0.44, та же логика.
 // 10.10.2026 (по прямому указанию — "анимация немного не та, возможно из-за кэша по имени
 // файла"): JSON Охотника грузится обычным fetch() без cache-busting query-параметра (см.
 // _loadSpineSkeleton() ниже) — предыдущие два обновления этого файла (08.10 и 10.10) заливались
@@ -91,7 +92,7 @@ const BOSS_SPINE = [
     { atlas: 'lucky.atlas',      json: 'lucky.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
       explosion: { atlas: 'lucky_explosion.atlas', json: 'lucky_explosion.json', anim: 'animation',
-                   x: 680, y: 673, scale: 0.32 } },
+                   x: 680, y: 673, scale: 0.44 } },
     { atlas: 'yastreb.atlas',    json: 'yastreb.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
     { atlas: 'mechennii.atlas',  json: 'mechennii.json',

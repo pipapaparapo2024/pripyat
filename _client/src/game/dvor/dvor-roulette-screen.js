@@ -137,9 +137,11 @@ export function attachRouletteScreen(proto){
         // 23.09.2026 как placeholder "чтобы видно было окно/размер"). Теперь до резолва
         // настоящего фото победителя по VK id спрайт пустой и невидимый — ничего не
         // показывается, фото появляется, только когда реально резолвится (см. dvor-roulette.js).
+        // 10.10.2026 (по прямому указанию, редактор позиций — новое расположение иконки
+        // победителя джекпота): было x:739,y:279,47×42 → стало x:741,y:265,44×44 (квадрат).
         const winnerPhotoSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);
-        winnerPhotoSpr.width = 47; winnerPhotoSpr.height = 42;
-        winnerPhotoSpr.x = 739; winnerPhotoSpr.y = 279;
+        winnerPhotoSpr.width = 44; winnerPhotoSpr.height = 44;
+        winnerPhotoSpr.x = 741; winnerPhotoSpr.y = 265;
         winnerPhotoSpr.visible = false;
         // 22.09.2026 (по прямому указанию): помечен _uDraggable — универсальный редактор позиций
         // по умолчанию хит-тестит только интерактивные объекты, без флага плейсхолдер не найти.

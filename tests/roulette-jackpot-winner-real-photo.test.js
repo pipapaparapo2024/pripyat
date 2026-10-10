@@ -26,12 +26,14 @@ const root = path.join(__dirname, '..');
 const screenSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'dvor-roulette-screen.js'), 'utf-8');
 const orchSrc   = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'dvor-roulette.js'), 'utf-8');
 
-console.log('\nTest 1: winnerPhotoSpr — 03.10.2026: заглушка-иконка убрана, стартует пустым/невидимым, позиция и размер 47×42 не менялись');
+console.log('\nTest 1: winnerPhotoSpr — 03.10.2026: заглушка-иконка убрана, стартует пустым/невидимым; 10.10.2026: новые позиция/размер с редактора позиций');
 {
     assert(/const winnerPhotoSpr = new PIXI\.Sprite\(PIXI\.Texture\.EMPTY\);/.test(screenSrc),
         'winnerPhotoSpr по умолчанию — Texture.EMPTY (иконка сталкера больше не используется)');
-    assert(/winnerPhotoSpr\.width = 47; winnerPhotoSpr\.height = 42;/.test(screenSrc), 'размер 47×42 не менялся');
-    assert(/winnerPhotoSpr\.x = 739; winnerPhotoSpr\.y = 279;/.test(screenSrc), 'позиция x:739 y:279 не менялась');
+    // 10.10.2026 (по прямому указанию, редактор позиций — новое расположение иконки победителя):
+    // было 47×42 @ (739,279) → стало 44×44 (квадрат) @ (741,265).
+    assert(/winnerPhotoSpr\.width = 44; winnerPhotoSpr\.height = 44;/.test(screenSrc), 'размер обновлён на 44×44 (10.10.2026)');
+    assert(/winnerPhotoSpr\.x = 741; winnerPhotoSpr\.y = 265;/.test(screenSrc), 'позиция обновлена на x:741 y:265 (10.10.2026)');
     assert(/winnerPhotoSpr\.visible = false;/.test(screenSrc), 'по умолчанию невидим');
     assert(!/winnerPhotoSpr instanceof PIXI\.Graphics/.test(screenSrc), 'старая ветка PIXI.Graphics-заглушки убрана целиком');
 }
