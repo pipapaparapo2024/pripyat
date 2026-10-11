@@ -212,46 +212,35 @@ export function attachRouletteMinigame(proto){
 
                     // 25.09.2026 (по прямому указанию — "переворот стаканчика: поворот по часовой
                     // на 90° + подъём на 40px"): раньше раскрытие было мгновенной сменой картинки.
-                    // Теперь ЗАКРЫТЫЙ спрайт анимированно "опрокидывается" (поворот+подъём), и
-                    // только по завершении анимации происходит фактическое раскрытие (смена
-                    // картинки, шарик при Куше, применение патча, попапы) — раньше это всё
-                    // срабатывало мгновенно и попап немедленно перекрывал бы саму анимацию.
+                    // Теперь ЗАКРЫТЫЙ спрайт анимированно "опрокидывается" (поворот+подъём).
                     const CUP_FLIP_DURATION = 0.35;
-                    const _finishReveal = () => {
-                        // 10.10.2026: файл больше НЕ подменяется (openSpr убран) — closedSpr уже
-                        // в повёрнутом/поднятом состоянии после gsap.to() ниже, просто оставляем
-                        // его видимым как есть.
-                        // 25.09.2026 (по прямому указанию — "шарик появляется под стаканчиком
-                        // ТОЛЬКО когда там Куш"): чисто визуальный маркер, награда за Куш не
-                        // меняется (уже начисляется ниже через applyPatch/_openJackpotPrize).
-                        //
-                        // 11.10.2026 (по прямому указанию — "выезжает/выкатывается влево, такого
-                        // быть не должно; если куш не выбил — открывается ДРУГОЙ стаканчик, в
-                        // котором был шарик, и шарик показывается в нём"): при Куше — шарик просто
-                        // проявляется на месте (ЗА стаканчиком, см. z-порядок выше). При любом
-                        // ДРУГОМ исходе — если сервер сообщил res.otherKushIdx (куш реально лежал
-                        // под одним из ОСТАЛЬНЫХ 8 стаканчиков в этой раскладке — так бывает не
-                        // каждую игру, см. roulette.php.pickCup()), тот стаканчик тоже "опрокиды-
-                        // вается" ТОЙ ЖЕ анимацией (поворот+подъём), открывая шарик под собой —
-                        // никакого перемещения шарика за пределы своего стаканчика больше нет.
-                        if(res.kush){
-                            ballSpr.visible = true;
-                        } else if(res.otherKushIdx !== null && res.otherKushIdx !== undefined && cups[res.otherKushIdx]){
-                            const otherCup = cups[res.otherKushIdx];
-                            const oClosed = otherCup._closedSpr, oBall = otherCup._ballSpr;
-                            if(oBall) oBall.visible = true;
-                            if(oClosed){
-                                if(window.gsap){
-                                    gsap.to(oClosed, {
-                                        rotation: Math.PI / 2, y: oClosed.y - 40,
-                                        duration: CUP_FLIP_DURATION, ease: 'power2.out',
-                                    });
-                                } else {
-                                    oClosed.rotation = Math.PI / 2; oClosed.y -= 40;
-                                }
-                            }
-                        }
+                    // 11.10.2026 (по прямому указанию, уточнение тайминга реveal'а — "хотя бы
+                    // полсекунды, чтобы игрок понял что произошло" перед попапом, И перед тем,
+                    // как откроется стаканчик с шариком при промахе): пауза ПОСЛЕ каждого
+                    // подъёма стаканчика, прежде чем сделать следующий шаг (поднять второй
+                    // стаканчик, либо показать попап).
+                    const REVEAL_PAUSE_MS = 500;
 
+                    const _flipCup = (spr, onDone) => {
+                        if(window.gsap){
+                            gsap.to(spr, {
+                                rotation: Math.PI / 2, y: spr.y - 40,
+                                duration: CUP_FLIP_DURATION, ease: 'power2.out',
+                                onComplete: onDone,
+                            });
+                        } else {
+                            spr.rotation = Math.PI / 2; spr.y -= 40;
+                            onDone();
+                        }
+                    };
+
+                    // 11.10.2026 (по прямому указанию, после репорта "попап перекрывает открытие
+                    // второго стаканчика, игрок не успевает его увидеть"): реveal разделён на
+                    // шаги — применение награды/попап теперь отдельная функция, вызывается ТОЛЬКО
+                    // после того, как все открытия стаканчиков реально доиграли с паузами (было:
+                    // мгновенно, прямо внутри onComplete первого стаканчика, второй стаканчик
+                    // физически не успевал прорисоваться на экране до попапа).
+                    const _finishReveal = () => {
                         if(res.patch) applyPatch(res.patch);
                         // 11.10.2026 (по прямому репорту — "выбил автомат/пистолет в мини-игре,
                         // а по факту не начислило"): auto/gun/machete раньше шли как clientReward
@@ -306,15 +295,33 @@ export function attachRouletteMinigame(proto){
                         setTimeout(()=>{ if(win.parent) win.parent.removeChild(win); }, 2200);
                     };
 
-                    if(window.gsap){
-                        gsap.to(closedSpr, {
-                            rotation: Math.PI / 2, y: closedSpr.y - 40,
-                            duration: CUP_FLIP_DURATION, ease: 'power2.out',
-                            onComplete: _finishReveal,
-                        });
-                    } else {
-                        _finishReveal();
-                    }
+                    // 11.10.2026 (по прямому указанию — "шарик должен отрисовываться в момент,
+                    // когда нажатие на стаканчик произошло", т.е. в момент начала подъёма, а не
+                    // после его завершения — иначе игрок доли секунды видит уже поднятый
+                    // стаканчик БЕЗ шарика перед тем, как тот появится): ballSpr.visible
+                    // переключается ПРЯМО ПЕРЕД стартом gsap.to(), не в onComplete.
+                    if(res.kush) ballSpr.visible = true;
+                    _flipCup(closedSpr, () => {
+                        if(res.otherKushIdx !== null && res.otherKushIdx !== undefined && cups[res.otherKushIdx]){
+                            // Промах, но куш реально лежал под ДРУГИМ стаканчиком этой раскладки
+                            // (не каждая игра, см. roulette.php.openMinigame()) — полсекунды,
+                            // чтобы игрок осознал "тут пусто", и только потом поднимаем тот,
+                            // другой, стаканчик (той же анимацией, шарик — тем же приёмом, в
+                            // момент начала его подъёма).
+                            setTimeout(() => {
+                                const otherCup = cups[res.otherKushIdx];
+                                const oClosed = otherCup._closedSpr, oBall = otherCup._ballSpr;
+                                if(oBall) oBall.visible = true;
+                                if(oClosed) _flipCup(oClosed, () => setTimeout(_finishReveal, REVEAL_PAUSE_MS));
+                                else setTimeout(_finishReveal, REVEAL_PAUSE_MS);
+                            }, REVEAL_PAUSE_MS);
+                        } else {
+                            // Куш выбит сразу, либо куша в этой раскладке не было вовсе —
+                            // та же пауза перед попапом, чтобы не перекрывать саму анимацию
+                            // подъёма первого стаканчика.
+                            setTimeout(_finishReveal, REVEAL_PAUSE_MS);
+                        }
+                    });
                 }, ()=>{
                     resultTxt.text = 'Ошибка связи с сервером';
                 });

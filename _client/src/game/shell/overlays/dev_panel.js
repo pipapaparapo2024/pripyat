@@ -488,6 +488,19 @@ export function attachDevPanel(proto){
         _row('Стаканчики — где шарик', [
             {label:'ПОКАЗАТЬ', color:T, action:()=>this._peekRouletteCups()},
         ]);
+        // 11.10.2026 (по прямому репорту — "кнопка не работает"): НЕ notify.showResult — его
+        // попап живёт в том же root.layer2_mc, что и сама дев-панель, а _devWinTickerFn (см.
+        // _openDevPanel выше) КАЖДЫЙ кадр принудительно поднимает devWin обратно на самый верх
+        // слоя — любой toast, добавленный, пока панель открыта, визуально погребён под почти
+        // непрозрачным фоном панели (panel.beginFill(0x12121e, 0.97)) уже на следующем кадре.
+        // Результат выводится текстом ПРЯМО В ПАНЕЛИ (внутри content, переживает её собственный
+        // z-order) — тот же паттерн, что решил бы проблему для любой другой dev-кнопки с
+        // мгновенной обратной связью, если она понадобится впредь.
+        const cupsPeekTxt = new PIXI.Text('', {fontFamily:'Southbank LT', fontSize:12, fill:'#ffdd44', wordWrap:true, wordWrapWidth: PW - 28});
+        cupsPeekTxt.x = LBL_X; cupsPeekTxt.y = curY + 2;
+        content.addChild(cupsPeekTxt);
+        this._cupsPeekTxt = cupsPeekTxt;
+        curY += 20;
         // 25.09.2026 (по прямому указанию — "кнопка открывает бой с любым боссом (Охотник) и
         // показывает эффект критического урона, чтобы двигать его в редакторе"): обычный вход
         // в бой (та же цепочка проверок, что и у игрока — Охотнику ключи не нужны), эффект
@@ -1136,7 +1149,7 @@ export function attachDevPanel(proto){
         TS.php('users.devPeekRouletteCups', {}, (res) => {
             console.log('[devPanel._peekRouletteCups] раскладка:', JSON.stringify(res));
             if(!res || !res.open){
-                if(window.notify) notify.showResult({text: 'Мини-игра сейчас не открыта'}, 0);
+                if(this._cupsPeekTxt) this._cupsPeekTxt.text = 'Мини-игра сейчас не открыта';
                 return;
             }
             const parts = [];
@@ -1146,10 +1159,10 @@ export function attachDevPanel(proto){
             if(res.keyringIdx !== null && res.keyringIdx !== undefined){
                 parts.push('Связка — стаканчик №' + (res.keyringIdx + 1));
             }
-            if(window.notify) notify.showResult({text: parts.join(' | ')}, 1);
+            if(this._cupsPeekTxt) this._cupsPeekTxt.text = parts.join(' | ');
         }, (err) => {
             console.error('[devPanel._peekRouletteCups] ошибка:', JSON.stringify(err));
-            if(window.notify) notify.showResult({text: 'Ошибка — см. консоль'}, 0);
+            if(this._cupsPeekTxt) this._cupsPeekTxt.text = 'Ошибка — см. консоль';
         });
     };
 

@@ -38,6 +38,27 @@
  * у своего собственного) и показывает под ним шарик. Чисто визуальная подсказка — экономику
  * (kush_counter/kush_threshold, саму награду) не трогает.
  *
+ * 11.10.2026, тем же днём — ВТОРОЕ уточнение (по живому репорту "попап перекрывает открытие
+ * второго стаканчика, игрок не успевает его увидеть" + детальное ТЗ по таймингу):
+ *  - Попап награды/приза БОЛЬШЕ НЕ показывается мгновенно в момент onComplete первого стаканчика
+ *    (раньше второй стаканчик даже не успевал физически прорисоваться на экране — попап
+ *    перекрывал его в тот же тик). Теперь между каждым шагом (подъём своего стаканчика → пауза →
+ *    [подъём чужого стаканчика с шариком → пауза] → попап) стоит REVEAL_PAUSE_MS=500мс, чтобы
+ *    игрок успел увидеть результат каждого шага.
+ *  - Переворот стаканчика вынесен в общий хелпер `_flipCup(spr, onDone)` — используется и для
+ *    своего стаканчика, и для чужого (раньше анимация чужого стаканчика была отдельным
+ *    копипастом inline-кода внутри _finishReveal).
+ *  - `ballSpr.visible = true` для СВОЕГО стаканчика переключается ПЕРЕД стартом `_flipCup()`
+ *    (в момент начала подъёма), а не в onComplete (после завершения) — "шарик должен
+ *    отрисовываться в момент, когда нажатие на стаканчик произошло"; то же самое для ЧУЖОГО
+ *    стаканчика — его ballSpr.visible тоже переключается перед стартом ЕГО _flipCup(), а не
+ *    одновременно с запуском анимации (раньше оба — oBall.visible и gsap.to — стояли рядом,
+ *    структурно эквивалентно, но теперь это явно оформлено как общее правило через хелпер).
+ *  - `_finishReveal` больше НЕ содержит никакой ball-reveal логики (ни res.kush, ни
+ *    res.otherKushIdx) — она теперь только применяет патч/clientRewards и показывает
+ *    попап/инлайн-текст. Вся ball-reveal логика (обе ветки) живёт СНАРУЖИ, между запуском
+ *    собственного `_flipCup()` и финальным `setTimeout(_finishReveal, REVEAL_PAUSE_MS)`.
+ *
  * Run: node tests/roulette-minigame-cup-flip-and-ball.test.js
  */
 
@@ -84,36 +105,38 @@ console.log('\nTest 2: шарик — файл скопирован, спрай�
     assert(/ballSpr\.visible = false;/.test(declChunk), 'шарик скрыт по умолчанию (виден только при Куше)');
 }
 
-console.log('\nTest 3: анимация переворота — поворот 90° по часовой (Math.PI/2) + подъём на 40px');
+console.log('\nTest 3: общий хелпер _flipCup — поворот 90° по часовой (Math.PI/2) + подъём на 40px, используется и для своего, и для чужого стаканчика');
 {
-    // 10.10.2026: anchor сменён с indexOf('if(window.gsap){') на indexOf('gsap.to(closedSpr'),
-    // т.к. теперь ЭТО уже не первое вхождение 'if(window.gsap){' в файле — новая ветка укатывания
-    // шарика (см. Test 6) тоже начинается с 'if(window.gsap){', но определена РАНЬШЕ по тексту
-    // (внутри _finishReveal, который вызывается через onComplete этой самой анимации).
-    const closedAnimIdx = src.indexOf('gsap.to(closedSpr, {');
-    assert(closedAnimIdx !== -1, 'анимация переворота закрытого стаканчика найдена');
-    const start = src.lastIndexOf('if(window.gsap){', closedAnimIdx);
-    assert(start !== -1, 'ветка запуска анимации через gsap найдена');
-    const end = src.indexOf('} else {', start);
+    const start = src.indexOf('const _flipCup = (spr, onDone) => {');
+    assert(start !== -1, '_flipCup определён как общий хелпер (не inline-копипаста для каждого стаканчика)');
+    const end = src.indexOf('\n                    };', start);
     const body = src.slice(start, end);
-    assert(/gsap\.to\(closedSpr, \{/.test(body), 'анимируется ИМЕННО закрытый спрайт (визуально "опрокидывается")');
+    assert(/gsap\.to\(spr, \{/.test(body), 'анимируется параметр spr (общий для своего/чужого стаканчика), не захардкоженный closedSpr');
     assert(/rotation: Math\.PI \/ 2,/.test(body), 'поворот на 90° по часовой стрелке (Math.PI/2 — положительное значение = по часовой в PIXI)');
-    assert(/y: closedSpr\.y - 40,/.test(body), 'подъём на 40px (y уменьшается — "вверх" в экранных координатах)');
-    assert(/onComplete: _finishReveal,/.test(body), 'фактическое раскрытие происходит ПОСЛЕ завершения анимации, не раньше');
-    // Фолбэк без gsap — на случай если библиотека почему-то не загрузилась, раскрытие всё равно происходит.
-    const fallbackIdx = src.indexOf('} else {\n                        _finishReveal();');
-    assert(fallbackIdx !== -1, 'без gsap раскрытие происходит немедленно (фолбэк, не зависает)');
+    assert(/y: spr\.y - 40,/.test(body), 'подъём на 40px (y уменьшается — "вверх" в экранных координатах)');
+    assert(/onComplete: onDone,/.test(body), 'колбэк вызывается ПОСЛЕ завершения анимации, не раньше');
+    assert(/\} else \{\s*\n\s*spr\.rotation = Math\.PI \/ 2; spr\.y -= 40;\s*\n\s*onDone\(\);\s*\n\s*\}/.test(body),
+        'фолбэк без gsap — мгновенный поворот/подъём + немедленный вызов onDone(), не зависает');
+
+    // Оба вызова (свой стаканчик и чужой) используют именно этот хелпер, а не раздельные
+    // gsap.to(...)-копипасты, как было до 11.10.2026.
+    assert(/_flipCup\(closedSpr, \(\) => \{/.test(src), 'свой стаканчик поднимается через _flipCup(closedSpr, ...)');
+    assert(/if\(oClosed\) _flipCup\(oClosed, \(\) => setTimeout\(_finishReveal, REVEAL_PAUSE_MS\)\);/.test(src),
+        'чужой стаканчик поднимается через ТОТ ЖЕ _flipCup(oClosed, ...) — не отдельный inline gsap.to');
 }
 
-console.log('\nTest 4: _finishReveal — 10.10.2026: больше НЕ подменяет файл, шарик по-прежнему показывается ТОЛЬКО при res.kush, остальная логика (патч/попапы) не изменилась по сути');
+console.log('\nTest 4: _finishReveal — 11.10.2026: больше НЕ содержит ball-reveal логику (вынесена наружу, см. Test 6), только патч/clientRewards/попап');
 {
     const start = src.indexOf('const _finishReveal = () => {');
     const end   = src.indexOf('\n                    };', start);
     const body  = src.slice(start, end);
     assert(!/closedSpr\.visible = false;/.test(body), '10.10.2026 (по прямому указанию "не заменяй файл") — закрытый спрайт больше НЕ скрывается при раскрытии');
     assert(!/openSpr\.visible = true;/.test(body), 'открытый спрайт больше не показывается (его и не существует как переменной)');
-    assert(/if\(res\.kush\)\{\s*\n\s*ballSpr\.visible = true;\s*\n\s*\} else if\(res\.otherKushIdx !== null && res\.otherKushIdx !== undefined && cups\[res\.otherKushIdx\]\)\{/.test(body),
-        '11.10.2026: при Куше шарик показывается на месте, иначе (else if) — открывается чужой стаканчик по otherKushIdx, если сервер его прислал (см. Test 6)');
+    // 11.10.2026 (по прямому репорту "попап перекрывает открытие второго стаканчика"): ball-reveal
+    // (и res.kush, и res.otherKushIdx) переехал СНАРУЖИ _finishReveal — сама функция теперь
+    // вызывается ТОЛЬКО когда все открытия стаканчиков (с паузами) уже реально доиграли.
+    assert(!/ballSpr\.visible/.test(body), '_finishReveal больше не трогает ballSpr.visible своего стаканчика — это сделано заранее, перед стартом анимации');
+    assert(!/otherKushIdx/.test(body), '_finishReveal больше не содержит otherKushIdx-ветку — чужой стаканчик уже открыт к моменту её вызова');
     assert(/if\(res\.patch\) applyPatch\(res\.patch\);/.test(body), 'патч сервера по-прежнему применяется (логика награды не тронута)');
     // 27.09.2026 (устаревший тест, найдено плановой чисткой): 26.09.2026 (по прямому указанию —
     // "откат правки 25.09.2026, утешительный приз выглядит иначе") сервер перестал выдавать
@@ -140,26 +163,55 @@ console.log('\nTest 5: серверная логика Куша/Связки/у�
     assert(/list\(\$type, \$amt\) = explode\(':', \$reward\);/.test(body), 'обычный исход берёт реальную награду из CUP_POOL, а не фиксированные 50 рублей');
 }
 
-console.log('\nTest 6: 11.10.2026 — не-Куш исход БОЛЬШЕ НЕ укатывает шарик за пределы стаканчика, вместо этого открывает ДРУГОЙ стаканчик (res.otherKushIdx), в котором куш реально лежал');
+console.log('\nTest 6: 11.10.2026 — таймированная последовательность реveal\'а: шарик появляется В МОМЕНТ старта подъёма (не после), пауза REVEAL_PAUSE_MS между каждым шагом, попап — только в самом конце');
 {
-    assert(!/const BALL_ROLL_TARGET/.test(src), 'укатывание в фиксированную точку экрана убрано целиком (отменено тем же днём, что и введено)');
+    assert(!/const BALL_ROLL_TARGET/.test(src), 'укатывание в фиксированную точку экрана убрано целиком (отменено ещё 10.10.2026)');
     assert(!/ballSpr\.rotation \+ Math\.PI \* 4/.test(src), 'анимация "качения" шарика убрана вместе с укатыванием');
 
     assert(/cup\._closedSpr = closedSpr;/.test(src) && /cup\._ballSpr = ballSpr;/.test(src),
         'closedSpr/ballSpr каждого стаканчика сохранены НА cup — нужны снаружи замыкания, чтобы открыть ЧУЖОЙ стаканчик по индексу');
 
-    const start = src.indexOf('} else if(res.otherKushIdx !== null');
-    assert(start !== -1, 'ветка "иначе, если сервер прислал otherKushIdx" найдена');
-    const end = src.indexOf('\n                        }', start);
+    assert(/const REVEAL_PAUSE_MS = 500;/.test(src),
+        'пауза между шагами реveal\'а — 500мс ("хотя бы полсекунды, чтобы игрок понял что произошло")');
+
+    const start = src.indexOf('if(res.kush) ballSpr.visible = true;');
+    assert(start !== -1, 'ballSpr.visible своего стаканчика переключается ОТДЕЛЬНОЙ строкой перед стартом анимации');
+    const end = src.indexOf('\n                }, ()=>{', start);
     const body = src.slice(start, end);
 
-    assert(/const otherCup = cups\[res\.otherKushIdx\];/.test(body), 'берётся именно ТОТ стаканчик, индекс которого прислал сервер (не текущий i, не угадывается на клиенте)');
-    assert(/const oClosed = otherCup\._closedSpr, oBall = otherCup\._ballSpr;/.test(body), 'читаются спрайты чужого стаканчика через сохранённые на cup ссылки');
-    assert(/if\(oBall\) oBall\.visible = true;/.test(body), 'шарик чужого стаканчика становится видимым');
-    assert(/rotation: Math\.PI \/ 2, y: oClosed\.y - 40,/.test(body) && /duration: CUP_FLIP_DURATION, ease: 'power2\.out',/.test(body),
-        'чужой стаканчик "опрокидывается" ТОЙ ЖЕ анимацией (поворот+подъём, та же длительность), что и свой собственный при раскрытии');
-    assert(/\} else \{\s*\n\s*oClosed\.rotation = Math\.PI \/ 2; oClosed\.y -= 40;\s*\n\s*\}/.test(body),
-        'фолбэк без gsap — мгновенный поворот/подъём чужого стаканчика, не зависает без анимации');
+    // "Шарик должен отрисовываться в момент, когда нажатие на стаканчик произошло" — т.е. ballSpr
+    // своего стаканчика переключается ДО вызова _flipCup(), а не в его onDone-колбэке.
+    const ballToggleIdx = body.indexOf('if(res.kush) ballSpr.visible = true;');
+    const flipCallIdx   = body.indexOf('_flipCup(closedSpr, () => {');
+    assert(ballToggleIdx !== -1 && flipCallIdx !== -1 && ballToggleIdx < flipCallIdx,
+        'ballSpr.visible своего стаканчика переключается ДО старта _flipCup(), не после его завершения');
+
+    assert(/if\(res\.otherKushIdx !== null && res\.otherKushIdx !== undefined && cups\[res\.otherKushIdx\]\)\{/.test(body),
+        'внутри onDone первого стаканчика — ветвление по тому же res.otherKushIdx, что и раньше');
+
+    const otherBranchStart = body.indexOf('setTimeout(() => {\n                                const otherCup');
+    assert(otherBranchStart !== -1, 'открытие чужого стаканчика обёрнуто в setTimeout (пауза ПЕРЕД его подъёмом — "тут пусто", дать игроку осознать)');
+    const otherBranchEnd = body.indexOf('}, REVEAL_PAUSE_MS);', otherBranchStart) + '}, REVEAL_PAUSE_MS);'.length;
+    const otherBranch = body.slice(otherBranchStart, otherBranchEnd);
+    assert(/}, REVEAL_PAUSE_MS\);$/.test(otherBranch), 'setTimeout чужого стаканчика использует именно REVEAL_PAUSE_MS, не магическое число');
+
+    assert(/const otherCup = cups\[res\.otherKushIdx\];/.test(otherBranch), 'берётся именно ТОТ стаканчик, индекс которого прислал сервер (не текущий i, не угадывается на клиенте)');
+    assert(/const oClosed = otherCup\._closedSpr, oBall = otherCup\._ballSpr;/.test(otherBranch), 'читаются спрайты чужого стаканчика через сохранённые на cup ссылки');
+    // Та же логика тайминга, что и для своего стаканчика: шарик чужого стаканчика переключается
+    // ДО старта его _flipCup(), не после.
+    const oBallToggleIdx = otherBranch.indexOf('if(oBall) oBall.visible = true;');
+    const oFlipCallIdx   = otherBranch.indexOf('if(oClosed) _flipCup(oClosed,');
+    assert(oBallToggleIdx !== -1 && oFlipCallIdx !== -1 && oBallToggleIdx < oFlipCallIdx,
+        'ballSpr.visible чужого стаканчика тоже переключается ДО старта его собственного _flipCup()');
+    assert(/if\(oClosed\) _flipCup\(oClosed, \(\) => setTimeout\(_finishReveal, REVEAL_PAUSE_MS\)\);/.test(otherBranch),
+        'после подъёма чужого стаканчика — снова пауза REVEAL_PAUSE_MS, и только потом _finishReveal (попап)');
+    assert(/else setTimeout\(_finishReveal, REVEAL_PAUSE_MS\);/.test(otherBranch),
+        'если по какой-то причине у чужого стаканчика нет closedSpr — fallback всё равно не зависает без попапа');
+
+    // Путь "куш выбит сразу, либо куша в раскладке вообще не было" — тоже пауза перед попапом,
+    // не мгновенный показ сразу после подъёма своего стаканчика.
+    assert(/\} else \{\s*\n\s*\/\/ Куш выбит сразу, либо куша в этой раскладке не было вовсе[\s\S]*?setTimeout\(_finishReveal, REVEAL_PAUSE_MS\);\s*\n\s*\}/.test(body),
+        'если otherKushIdx нет (куш у себя или в раскладке его не было) — всё равно REVEAL_PAUSE_MS перед попапом, не мгновенно');
 }
 
 console.log('\nTest 7: roulette.php.pickCup() — otherKushIdx вычисляется сервером (не клиентом) и уходит во ВСЕ не-Куш ветки ответа, экономику не трогает');
