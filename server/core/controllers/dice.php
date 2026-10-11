@@ -14,9 +14,12 @@
     // остаётся client-writable — ниже риска, чем сам RNG/выплата (даёт лишний шанс перебросить
     // кость, не создаёт валюту напрямую), не в фокусе этого шага.
     //
-    // Награды типа shmot/auto/gun/machete возвращаются клиенту как clientRewards — эти
-    // подсистемы (гардероб/оружие) ещё не перенесены на сервер, применяются как раньше через
-    // shmot.giveRandom()/weapons.grantAmmo() на клиенте.
+    // 11.10.2026 (по прямому репорту — "выбил оружие в зариках, а по факту не начислило"):
+    // auto/gun/machete больше НЕ clientRewards — users.save() целенаправленно отклоняет РОСТ
+    // ammo_*/weapons (анти-чит), clientReward+weapons.grantAmmo() молча терял награду на
+    // следующем автосейве (тот же класс бага, что уже чинили в poker.php/roulette.php — см.
+    // _grantWeaponReward() ниже). shmot по-прежнему выдаётся сразу через
+    // Gameops::grantShmotFromSource() (отдельная подсистема, своей проблемы не имела).
     //
     // 23.09.2026 (по прямому указанию, после находки похожего репорта в блэкджеке — "выпала AA
     // хотя pity ещё далеко", там пока не найдена — на всякий случай тот же класс максимального
@@ -146,6 +149,30 @@
 
         private function _catalog(){
             return $this->ops->catalog('dice_config');
+        }
+
+        // 11.10.2026 — 1-в-1 порт poker.php._grantWeaponReward() (тот же класс бага уже был
+        // закрыт там раньше, см. комментарий у poker.php.resolve() — "users.save запрещает
+        // клиенту увеличивать запас патронов, поэтому clientReward здесь недостаточен"). Пишет
+        // прямо в $user, уходит тем же Gameops::saveUser(), в обход whitelist/гвардов users.save().
+        private function _grantWeaponReward(&$user, $type, $amount){
+            $wid = ['machete' => 3, 'gun' => 4, 'auto' => 5][$type] ?? null;
+            $amount = max(0, intval($amount));
+            if($wid === null || $amount === 0) return;
+            $data = $this->ops->j($user, 'weapons', []);
+            if(!is_array($data)) $data = [];
+            for($i = 0; $i < 6; $i++){
+                $data[$i] = array_merge(
+                    ['owned' => $i < 3, 'equipped' => false, 'upg' => 0, 'qty' => 0],
+                    isset($data[$i]) && is_array($data[$i]) ? $data[$i] : []
+                );
+            }
+            $ammoKey = 'ammo_' . $type;
+            $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
+            $data[$wid]['owned'] = true;
+            ksort($data);
+            $user['weapons'] = json_encode(array_values($data));
+            $user[$ammoKey] = strval($data[$wid]['qty']);
         }
 
         private function _loadSession($user){
@@ -443,8 +470,8 @@
             $session['active'] = null;
             $user['dice_session'] = json_encode($session);
 
-            $clientRewards = []; $shmotGranted = [];
-            $applyCurrency = function($type, $amt) use (&$user, &$clientRewards, &$shmotGranted){
+            $clientRewards = []; $shmotGranted = []; $weaponTypesGranted = [];
+            $applyCurrency = function($type, $amt) use (&$user, &$clientRewards, &$shmotGranted, &$weaponTypesGranted){
                 $amt = intval($amt);
                 switch($type){
                     case 'cig': $this->ops->add($user, 'cigarettes', $amt); break;
@@ -465,8 +492,18 @@
                             if($id !== null) $shmotGranted[] = $id;
                         }
                         break;
+                    case 'auto': case 'gun': case 'machete':
+                        // 11.10.2026 (по прямому репорту — тот же баг, уже закрытый в
+                        // roulette.php/poker.php: "выбил оружие, а по факту не начислило"):
+                        // раньше это падало в default-ветку ниже и уходило как clientReward,
+                        // применяемый клиентом через weapons.grantAmmo() — но users.save()
+                        // целенаправленно отклоняет РОСТ ammo_*/weapons ($monotonicFields/
+                        // $jsonBlobGuards в users.php, анти-чит), награда молча терялась на
+                        // следующем автосейве. 1-в-1 порт poker.php._grantWeaponReward().
+                        $this->_grantWeaponReward($user, $type, $amt);
+                        $weaponTypesGranted[$type] = true; // несколько пар за бросок — максимум 2 разных типа
+                        break;
                     default:
-                        // Оружейные награды пока не имеют серверного инвентаря.
                         $clientRewards[] = ['type' => $type, 'amt' => $amt];
                 }
             };
@@ -525,7 +562,15 @@
             error_log('[dice.resolve] ' . json_encode($debug)
                 . ($verify['mismatch'] ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
 
-            $patch = $this->ops->patchCurrencies($user, ['cigarettes', 'coins', 'coins_earned', 'exp', 'dice_points', 'dvor_games', 'shmot', 'max_energy']);
+            $patchKeysResolve = ['cigarettes', 'coins', 'coins_earned', 'exp', 'dice_points', 'dvor_games', 'shmot', 'max_energy'];
+            // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
+            // в $user, нужно включить их в patch, иначе клиент узнает о них только при
+            // следующей полной перезагрузке udata.
+            if(!empty($weaponTypesGranted)){
+                $patchKeysResolve[] = 'weapons';
+                foreach(array_keys($weaponTypesGranted) as $wType) $patchKeysResolve[] = 'ammo_' . $wType;
+            }
+            $patch = $this->ops->patchCurrencies($user, $patchKeysResolve);
             $this->ops->ok([
                 'patch' => $patch, 'rolls' => $rolls, 'forced' => $forced,
                 'rewards' => $rewards, 'clientRewards' => $clientRewards,

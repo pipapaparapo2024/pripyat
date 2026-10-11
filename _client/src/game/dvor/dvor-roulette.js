@@ -201,6 +201,11 @@ export function attachRoulette(proto){
                 // Приз уже подтверждён сервером, но интерфейс получает его только в момент,
                 // когда колесо физически остановилось на выигрышной ячейке.
                 applyPatch(res.patch);
+                // 11.10.2026 (см. roulette.php._grantWeaponReward()): auto/gun теперь приходят
+                // прямо в patch.weapons/patch.ammo_X (не clientRewards) — applyPatch() выше уже
+                // обновил udata, но in-memory weapons.data (боевка/слоты оружия) синхронизируется
+                // только явным перечитыванием, тот же приём, что уже есть у dvor-poker-game.js.
+                if(res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
                 if(window.resumePlayerSave) resumePlayerSave('roulette_spin');
                 this._updateRoulettePityTxt(res);
                 this._resolveRouletteNewScreen(idx, !!res.jackpot, res.reward, res.clientRewards || []);

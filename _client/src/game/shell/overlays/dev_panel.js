@@ -278,9 +278,13 @@ export function attachDevPanel(proto){
         win.addChild(million.g);
 
         // ── Хелперы действий ────────────────────────────────────────
+        // 11.10.2026 (см. коммент у $allowed/devGrantCurrency в users.php — dice_points/
+        // blue_points/poker_chips тоже убраны из client-writable whitelist, тот же класс бага,
+        // что уже чинили для coins/stew/cigarettes): добавлены в этот же серверный путь.
+        const _SERVER_ONLY_CURRENCIES = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips'];
         const _addU = (key, amt) => {
             if(!window.udata) return;
-            if(key === 'coins' || key === 'stew' || key === 'cigarettes'){
+            if(_SERVER_ONLY_CURRENCIES.includes(key)){
                 _grantCurrencyServer({[key]: amt}, () => {
                     console.log('[devPanel] +'+amt+' к '+key+' (сервер) итого='+udata[key]);
                 });
@@ -475,6 +479,14 @@ export function attachDevPanel(proto){
         _section('МИНИ-ИГРЫ / БОЙ (ТЕСТ)');
         _row('Джекпот рулетки', [
             {label:'100% НА СЛЕД. СПИН', color:T, action:()=>this._forceNextJackpot()},
+        ]);
+        // 11.10.2026 (по прямому указанию — репорт "если не угадал, стаканчик с шариком не
+        // появляется"): roulette.php намеренно не отдаёт раскладку клиенту (ТЗ "не должны
+        // видеть под каким стаканчиком куш/связка" + debug-leak фикс 10.10.2026) — без этой
+        // кнопки нельзя было отличить "куша не было в ЭТОЙ раскладке" (не каждая игра, см.
+        // kush_counter/kush_threshold) от реального бага показа. Диагностика, награду не трогает.
+        _row('Стаканчики — где шарик', [
+            {label:'ПОКАЗАТЬ', color:T, action:()=>this._peekRouletteCups()},
         ]);
         // 25.09.2026 (по прямому указанию — "кнопка открывает бой с любым боссом (Охотник) и
         // показывает эффект критического урона, чтобы двигать его в редакторе"): обычный вход
@@ -940,16 +952,17 @@ export function attachDevPanel(proto){
         // сейчас в udata (актуально сразу после users.get()/patch — для дев-инструмента этого
         // достаточно), и шлём эти три поля ОДНИМ запросом (см. коммент у devGrantCurrency() в
         // users.php — параллельные отдельные запросы на одну и ту же строку затирали бы друг друга).
+        // 11.10.2026: dice_points/blue_points/poker_chips тоже убраны из whitelist (тот же класс
+        // бага, что уже чинили для coins/stew/cigarettes) — переведены на тот же дельта-путь,
+        // прямое присвоение udata[key]=M для них ниже убрано (users.save() его теперь просто
+        // молча проигнорирует, как и для coins/stew/cigarettes).
         const currencyDeltas = {};
-        ['coins','stew','cigarettes'].forEach(key => {
+        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips'].forEach(key => {
             const delta = 1000000 - parseInt(udata[key]||0);
             if(delta !== 0) currencyDeltas[key] = delta;
         });
         udata['exp']               = M;
         udata['respect']           = M;
-        udata['dice_points']       = M;
-        udata['blue_points']       = M;
-        udata['poker_chips']       = M;
         udata['poker_spichki']     = M;
         udata['roulette_spichki']  = M;
         udata['stash_count']       = M; // habar_counts НЕ трогаем — это JSON-массив Хабара, не счётчик заначек
@@ -1109,6 +1122,33 @@ export function attachDevPanel(proto){
             if(window.notify) notify.showResult({text: 'Следующий спин рулетки — джекпот'}, 1);
         }, (err) => {
             console.error('[devPanel._forceNextJackpot] ошибка:', err);
+            if(window.notify) notify.showResult({text: 'Ошибка — см. консоль'}, 0);
+        });
+    };
+
+    // 11.10.2026 (по прямому указанию — см. комментарий у кнопки «Стаканчики — где шарик»
+    // выше): читает ТЕКУЩУЮ открытую раскладку мини-игры "9 стаканчиков" через дев-only
+    // users.devPeekRouletteCups() — работает только пока мини-игра реально открыта на экране
+    // (между roulette.openMinigame() и roulette.pickCup(), см. roulette.php) — после выбора
+    // стаканчика raскладка сбрасывается в null и повторный вызов честно скажет "не открыта".
+    proto._peekRouletteCups = function(){
+        if(!window.TS) return;
+        TS.php('users.devPeekRouletteCups', {}, (res) => {
+            console.log('[devPanel._peekRouletteCups] раскладка:', JSON.stringify(res));
+            if(!res || !res.open){
+                if(window.notify) notify.showResult({text: 'Мини-игра сейчас не открыта'}, 0);
+                return;
+            }
+            const parts = [];
+            parts.push((res.kushIdx !== null && res.kushIdx !== undefined)
+                ? ('Куш — стаканчик №' + (res.kushIdx + 1))
+                : 'Куша в этой раскладке нет');
+            if(res.keyringIdx !== null && res.keyringIdx !== undefined){
+                parts.push('Связка — стаканчик №' + (res.keyringIdx + 1));
+            }
+            if(window.notify) notify.showResult({text: parts.join(' | ')}, 1);
+        }, (err) => {
+            console.error('[devPanel._peekRouletteCups] ошибка:', JSON.stringify(err));
             if(window.notify) notify.showResult({text: 'Ошибка — см. консоль'}, 0);
         });
     };

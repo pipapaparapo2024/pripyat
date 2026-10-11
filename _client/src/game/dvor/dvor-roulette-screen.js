@@ -397,11 +397,12 @@ export function attachRouletteScreen(proto){
             if(this._roulResultTxt) this._roulResultTxt.text = '🗝 СВЯЗКА КЛЮЧЕЙ! Ты теперь владелец!';
         } else {
             // Валюта уже начислена сервером (roulette.spin → applyPatch в dvor-roulette.js) —
-            // здесь только применяем ПОДСКАЗКИ для ещё не мигрировавших подсистем (оружие/
-            // боевой пропуск), тем же приёмом, что и у зариков/покера (см. dvor-dice-game.js).
+            // здесь только применяем ПОДСКАЗКИ для ещё не мигрировавших подсистем (боевой
+            // пропуск). 11.10.2026: auto/gun больше НЕ приходят сюда как clientReward (см.
+            // roulette.php._grantWeaponReward() — ушли прямо в patch.weapons/ammo_X, applyPatch
+            // + weapons._loadFromUdata() уже отработали в dvor-roulette.js ДО вызова этой функции).
             (clientRewards || []).forEach(cr => {
                 if(cr.type === 'battlepass_xp'){ if(window.battlepass) battlepass.addXp(cr.amt); }
-                else if(window.weapons && (cr.type === 'auto' || cr.type === 'gun')){ weapons.grantAmmo(cr.type, cr.amt); }
             });
             iface.updateUp();
             if(this._roulResultTxt) this._roulResultTxt.text = '';

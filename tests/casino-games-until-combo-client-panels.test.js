@@ -71,7 +71,10 @@ console.log('\nTest 3: Рулетка — панель "До джекпота" �
     const spinStart = roulSrc.indexOf("TS.php('roulette.spin'");
     // 10.10.2026: окно расширено 1100→1400 — новый explain-комментарий про удаление debug
     // (убран console.log(res.debug), см. roulette.php) отодвинул искомый вызов дальше spinStart.
-    const spinBody = roulSrc.slice(spinStart, spinStart + 1400);
+    // 11.10.2026: окно расширено 1400→1800 — новый блок weapons._loadFromUdata() (см.
+    // roulette.php._grantWeaponReward()/dvor-roulette.js, фикс "выбил оружие — не начислило")
+    // отодвинул искомый вызов ещё дальше.
+    const spinBody = roulSrc.slice(spinStart, spinStart + 1800);
     assert(/this\._updateRoulettePityTxt\(res\);/.test(spinBody), 'после spin() вызов остался (безвредно, панели нет)');
 }
 

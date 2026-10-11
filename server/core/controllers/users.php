@@ -25,7 +25,7 @@
             // Gameops-контроллерах (см. CLAUDE.md, правило №9).
             $this->ops = new Gameops($registry);
 
-            $this->permits = ['get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'resetAllPlayers'];
+            $this->permits = ['get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers'];
         }
 
         function get(){
@@ -320,7 +320,24 @@
                 // (SELECT '*') — клиент видит, какие облачка уже собраны сегодня, просто больше
                 // не может это подделать через users.save.
                 'dvor_games_data',
-                'dice_points','blue_points','poker_chips',
+                // 11.10.2026 (по прямому репорту — "выиграл 10 синих поинтов, в рулетке
+                // показало 0, потом выбил ещё раз — показало 9"): 'dice_points'/'blue_points'/
+                // 'poker_chips' УБРАНЫ отсюда — тот же класс бага, что уже чинили для coins/
+                // stew/cigarettes/roulette_spichki 29.09.2026/28.09.2026 (см. комментарии выше),
+                // просто пропущенный в той чистке. Все три полностью server-authoritative —
+                // начисляются ИСКЛЮЧИТЕЛЬНО через Gameops::add()+saveUser() в roulette.php
+                // (spin()/pickCup()), dice.php (start()/resolve()), poker.php (buyChips()? —
+                // нет, poker_chips начисляет только habar.php/покупка), habar.php.collectDay() —
+                // везде в обход этого whitelist. Пока поля оставались здесь client-writable,
+                // ЛЮБОЙ обычный дебаунс-автосейв (queuePlayerSave, триггерится любой мутацией
+                // udata — achievements._checkAll() и т.п.) мог долететь до users.save() СО
+                // СТАРЫМ локальным снимком (снятым ДО applyPatch() от одного из перечисленных
+                // эндпоинтов) и затереть свежее серверное начисление обратно — снаружи выглядело
+                // как "выиграл в мини-игре, а баланс не вырос или даже обнулился". users.get()/
+                // patch по-прежнему отдают клиенту актуальное значение на чтение — whitelist
+                // влияет только на save(). Дев-кнопки (+50/+100/+500, МИЛЛИОН ВСЕГО) переведены
+                // на devGrantCurrency() (см. там же) — тот же приём, что уже применён к coins/
+                // stew/cigarettes.
                 // poker_spichki is awarded only by poker.resolve(). Achievement
                 // thresholds consume it, so users.save must not accept it.
                 // 28.09.2026 (репорт "спички рулетки выдаются вдвойне"): 'roulette_spichki'
@@ -515,7 +532,10 @@
                 // $allowed выше — раз поля больше не client-writable, числовой потолок для них
                 // здесь не нужен (тот же паттерн, что 'roulette_spichki'/'max_energy' выше).
                 'exp', 'respect', 'health',
-                'skill_points', 'dice_points', 'blue_points', 'poker_chips',
+                'skill_points',
+                // 11.10.2026: 'dice_points'/'blue_points'/'poker_chips' убраны отсюда вместе с
+                // удалением из $allowed выше (см. коммент там) — раз поля больше не
+                // client-writable, числовой потолок для них здесь не нужен.
                 // 28.09.2026: 'roulette_spichki' тоже убрано отсюда вместе с удалением из
                 // $allowed выше (см. коммент там) — раз поле больше не client-writable,
                 // числовой потолок для него здесь не нужен.
@@ -900,7 +920,11 @@
         // setDevFlag (дев-панель скрыта от игроков на уровне интерфейса, не сервера).
         function devGrantCurrency(){
             if(!$this->_requireDevUser()) return;
-            $allowedTypes = ['coins', 'stew', 'cigarettes'];
+            // 11.10.2026: dice_points/blue_points/poker_chips добавлены сюда же — убраны из
+            // client-writable whitelist $allowed выше (тот же класс бага, что уже чинили для
+            // coins/stew/cigarettes 29.09.2026), дев-кнопкам (+50/+100/+500, МИЛЛИОН ВСЕГО)
+            // нужен тот же обходной путь.
+            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips'];
             $deltas = [];
             foreach($allowedTypes as $type){
                 if(!isset($this->registry['user_params'][$type])) continue;
@@ -1188,6 +1212,33 @@
             if(!$this->ops->saveUser($user)) return $this->registry['tools']->error(99);
             $this->registry['tools']->output(['ok'=>1, 'enabled'=>$enabled ? 1 : 0,
                 'patch'=>$this->ops->patchCurrencies($user, ['keyring_owner'])]);
+        }
+
+        // 11.10.2026 (по прямому указанию — "добавь в дев панель кнопку, при нажатии на
+        // которую покажет где шарик лежит", после репорта "если игрок не угадал, стаканчик с
+        // шариком не появляется"): roulette.php намеренно НЕ отдаёт полную раскладку мини-игры
+        // клиенту (10.10.2026, ТЗ "игроки не должны видеть под каким стаканчиком куш/связка" +
+        // тот самый debug-leak фикс) — значит у разработчика тоже нет штатного способа
+        // проверить вживую, реально ли куш отсутствовал в конкретной раскладке (ожидаемо не
+        // каждую игру, see roulette.php.openMinigame() kush_counter/kush_threshold) или
+        // стаканчик с шариком не открывается из-за бага. Чисто диагностический permit — читает
+        // ТЕКУЩУЮ открытую раскладку (user['roulette_cups'], server-only поле) того же
+        // аккаунта, ничего не меняет и не начисляет. Как и остальные dev-permits этого файла —
+        // в users.php (не roulette.php), т.к. только здесь есть общий _requireDevUser() (тот
+        // же приём, что уже применён для toggleDevKeyring() выше — тоже про roulette-домен).
+        function devPeekRouletteCups(){
+            if(!$this->_requireDevUser()) return;
+            $user = $this->ops->loadUser();
+            if(!$user) return $this->registry['tools']->error(99);
+            $cups = $this->ops->j($user, 'roulette_cups', null);
+            if(!is_array($cups) || in_array('__prize_choice__', $cups, true)){
+                return $this->registry['tools']->output(['ok' => 1, 'open' => false]);
+            }
+            $kushIdx = array_search('kush', $cups, true);
+            $keyringIdx = array_search('keyring', $cups, true);
+            $this->registry['tools']->output(['ok' => 1, 'open' => true, 'cups' => $cups,
+                'kushIdx' => $kushIdx !== false ? intval($kushIdx) : null,
+                'keyringIdx' => $keyringIdx !== false ? intval($keyringIdx) : null]);
         }
 
         // 23.09.2026 (по прямому указанию — сначала одноразовый server/reset_all_players_23092026.php

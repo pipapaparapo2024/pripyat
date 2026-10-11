@@ -328,14 +328,16 @@ export function attachDiceGame(proto){
             if(res.patch && res.patch.shmot !== undefined && window.shmot && typeof shmot._loadFromUdata === 'function'){
                 shmot._loadFromUdata();
             }
+            // 11.10.2026 (по прямому репорту — "выбил оружие, а по факту не начислило"):
+            // auto/gun/machete больше НЕ clientReward (см. dice.php._grantWeaponReward()) —
+            // ушли прямо в patch.weapons/patch.ammo_X, applyPatch() выше уже обновил udata,
+            // здесь только перечитываем in-memory weapons.data (тот же приём, что у shmot выше).
+            if(res.patch && res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
 
-            // Подсистемы, которые сервер ещё не переносит (гардероб/оружие/боевой пропуск) —
+            // Боевой пропуск — единственная подсистема, которую сервер ещё не переносит,
             // применяем на клиенте по подсказке сервера (см. dice.php: clientRewards).
             (res.clientRewards || []).forEach(cr => {
                 if(cr.type === 'battlepass_xp'){ if(window.battlepass) battlepass.addXp(cr.amt); }
-                else if(window.weapons && (cr.type === 'auto' || cr.type === 'gun' || cr.type === 'machete')){
-                    weapons.grantAmmo(cr.type, cr.amt);
-                }
             });
             iface.updateUp();
 

@@ -61,7 +61,10 @@ console.log('\nTest 1: клиент — ОДНА переменная idx кор
     // 02.10.2026: окно раздвинуто с 250 до 600 символов — между вызовом _animRouletteWheel и
     // _resolveRouletteNewScreen добавлен поясняющий комментарий (почему patch применяется именно
     // в onComplete), сама структура кода (одна и та же idx, без пересчёта) не изменилась.
-    const chunk = roulJs.slice(start, start + 600);
+    // 11.10.2026: окно раздвинуто 600→1100 — новый блок weapons._loadFromUdata() (см.
+    // roulette.php._grantWeaponReward()/dvor-roulette.js, фикс "выбил оружие — не начислило")
+    // отодвинул _resolveRouletteNewScreen ещё дальше, сама структура (одна idx) не изменилась.
+    const chunk = roulJs.slice(start, start + 1100);
     assert(/this\._animRouletteWheel\(idx, \(\) => \{/.test(chunk), '_animRouletteWheel вызывается с этой же idx');
     assert(/this\._resolveRouletteNewScreen\(idx, !!res\.jackpot, res\.reward, res\.clientRewards \|\| \[\]\);/.test(chunk),
         '_resolveRouletteNewScreen вызывается с ТОЙ ЖЕ idx (внутри замыкания onComplete) — не с отдельно пересчитанным значением');

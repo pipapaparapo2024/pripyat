@@ -253,11 +253,19 @@ export function attachRouletteMinigame(proto){
                         }
 
                         if(res.patch) applyPatch(res.patch);
+                        // 11.10.2026 (по прямому репорту — "выбил автомат/пистолет в мини-игре,
+                        // а по факту не начислило"): auto/gun/machete раньше шли как clientReward
+                        // + weapons.grantAmmo() (локальная мутация, ждущая следующего автосейва),
+                        // но users.save() целенаправленно отклоняет РОСТ ammo_*/weapons
+                        // ($monotonicFields/$jsonBlobGuards в users.php, анти-чит) — награда
+                        // молча терялась на следующем же автосейве. Теперь сервер пишет её сам
+                        // (roulette.php._grantWeaponReward()) и присылает прямо в
+                        // patch.weapons/patch.ammo_X — applyPatch() выше уже обновил udata,
+                        // здесь только перечитываем in-memory weapons.data (тот же приём, что у
+                        // dvor-poker-game.js).
+                        if(res.patch && res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
                         (res.clientRewards || []).forEach(cr => {
                             if(cr.type === 'battlepass_xp'){ if(window.battlepass) battlepass.addXp(cr.amt); }
-                            else if(window.weapons && (cr.type === 'auto' || cr.type === 'gun' || cr.type === 'machete')){
-                                weapons.grantAmmo(cr.type, cr.amt);
-                            }
                         });
 
                         // 25.09.2026 (по прямому указанию — "если не угадал, выскакивает

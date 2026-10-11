@@ -7,16 +7,15 @@ export function setupDebugTools(){
         // 29.09.2026: coins/stew/cigarettes больше не client-writable (см. коммент у $allowed
         // в users.php) — АБСОЛЮТНОЕ значение здесь нужно выставить дельтой через
         // users.devGrantCurrency(), обычный users.save() ниже эти три поля больше не примет.
+        // 11.10.2026: dice_points/blue_points/poker_chips тоже убраны из whitelist (тот же
+        // класс бага) — переведены на тот же дельта-путь, прямое присвоение ниже убрано.
         const currencyDeltas = {};
-        ['coins','stew','cigarettes'].forEach(key => {
+        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips'].forEach(key => {
             const delta = 1000000 - parseInt(udata[key]||0);
             if(delta !== 0) currencyDeltas[key] = delta;
         });
         udata['exp']               = M;
         udata['respect']           = M;
-        udata['dice_points']       = M;
-        udata['blue_points']       = M;
-        udata['poker_chips']       = M;
         udata['poker_spichki']     = M;
         udata['roulette_spichki']  = M;
         udata['stash_count']       = M; // habar_counts НЕ трогаем здесь — это JSON-массив Хабара, не счётчик заначек

@@ -251,6 +251,37 @@ Class Roulette {
         $this->ops->ok(['patch' => $patch, 'pts' => $pts, 'price' => $price, 'debug' => $debug]);
     }
 
+    // 11.10.2026 (по прямому репорту — "мини-игра выбила автомат/пистолет, а по факту не
+    // начислило"): auto/gun/machete раньше возвращались клиенту как clientReward и применялись
+    // через weapons.grantAmmo() (локальная мутация udata['weapons']/'ammo_X' + ожидание
+    // следующего автосейва) — но users.save() ЦЕЛЕНАПРАВЛЕННО отклоняет РОСТ этих полей
+    // ($monotonicFields/$jsonBlobGuards в users.php, анти-чит защита от самостоятельной
+    // накрутки патронов) — награда визуально мелькала (попап "+1 автомат"), но ни разу не
+    // долетала до БД, следующий же автосейв тихо откатывал её обратно. 1-в-1 порт
+    // poker.php._grantWeaponReward() (там этот же класс бага уже был закрыт раньше, см.
+    // комментарий у poker.php.resolve() — "users.save запрещает клиенту увеличивать запас
+    // патронов, поэтому clientReward здесь недостаточен") — пишет прямо в $user, уходит тем же
+    // Gameops::saveUser(), в обход whitelist/гвардов users.save() целиком.
+    private function _grantWeaponReward(&$user, $type, $amount){
+        $wid = ['machete' => 3, 'gun' => 4, 'auto' => 5][$type] ?? null;
+        $amount = max(0, intval($amount));
+        if($wid === null || $amount === 0) return;
+        $data = $this->ops->j($user, 'weapons', []);
+        if(!is_array($data)) $data = [];
+        for($i = 0; $i < 6; $i++){
+            $data[$i] = array_merge(
+                ['owned' => $i < 3, 'equipped' => false, 'upg' => 0, 'qty' => 0],
+                isset($data[$i]) && is_array($data[$i]) ? $data[$i] : []
+            );
+        }
+        $ammoKey = 'ammo_' . $type;
+        $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
+        $data[$wid]['owned'] = true;
+        ksort($data);
+        $user['weapons'] = json_encode(array_values($data));
+        $user[$ammoKey] = strval($data[$wid]['qty']);
+    }
+
     // Отдельное прямое подключение к БД — по тому же паттерну, что bosses.php (_rawLink):
     // roulette_state — ГЛОБАЛЬНАЯ таблица (одна строка id=1, общая на всех игроков),
     // обычный getData/saveData (всегда per-user через utb) для неё не подходит.
@@ -358,7 +389,13 @@ Class Roulette {
                 'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
                 'rawLinkFailed' => true, 'slotTrace' => $slotTrace, 'slotResult' => $slotResult];
             error_log('[roulette.spin] ' . json_encode($debug) . ' !!! _rawLink() НЕ ПОДКЛЮЧИЛСЯ — крутили без джекпота/связки !!!');
-            $patch = $this->ops->patchCurrencies($user, ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games']);
+            $patchKeysFallback = ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games'];
+            // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
+            // в $user, нужно включить их в patch, иначе клиент узнает о них только при
+            // следующей полной перезагрузке udata.
+            $slotType = $slotResult['reward']['type'] ?? null;
+            if(in_array($slotType, ['auto','gun','machete'], true)){ $patchKeysFallback[] = 'weapons'; $patchKeysFallback[] = 'ammo_' . $slotType; }
+            $patch = $this->ops->patchCurrencies($user, $patchKeysFallback);
             // 10.10.2026 (по прямому указанию — ТЗ "Игроки не должны видеть... под каким
             // стаканчиком он находится" + репорт "debug сливается в консоль браузера"): $debug
             // (slotTrace/slotResult — честность розыгрыша) больше НЕ уходит в ответ клиенту,
@@ -414,7 +451,13 @@ Class Roulette {
         $link->close();
 
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-        $patch = $this->ops->patchCurrencies($user, ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games', 'keyring_owner']);
+        $patchKeysSpin = ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games', 'keyring_owner'];
+        // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
+        // в $user, нужно включить их в patch, иначе клиент узнает о них только при следующей
+        // полной перезагрузке udata.
+        $slotType = $slotResult['reward']['type'] ?? null;
+        if(in_array($slotType, ['auto','gun','machete'], true)){ $patchKeysSpin[] = 'weapons'; $patchKeysSpin[] = 'ammo_' . $slotType; }
+        $patch = $this->ops->patchCurrencies($user, $patchKeysSpin);
 
         $debug = [
             'fn' => 'spin', 'uid' => abs(intval($this->registry['uid'])),
@@ -491,7 +534,13 @@ Class Roulette {
             case 'blue_points':
                 $this->ops->add($user, 'blue_points', $slot['amt']);
                 break;
-            default: // auto/gun — гардероб/оружие ещё не перенесены на сервер, клиент применяет сам.
+            case 'auto': case 'gun': case 'machete':
+                // 11.10.2026: больше НЕ clientReward (см. большой коммент у _grantWeaponReward()
+                // выше) — пишется прямо в $user, уходит тем же saveUser(), что и остальные поля
+                // этого спина.
+                $this->_grantWeaponReward($user, $slot['type'], $slot['amt']);
+                break;
+            default:
                 $clientRewards[] = $slot;
         }
         $user['dvor_games'] = $this->ops->i($user, 'dvor_games') + 1;
@@ -722,7 +771,15 @@ Class Roulette {
             $clientRewards[] = ['type'=>'battlepass_xp', 'amt'=>max(1, intval(floor($amt / 100)))];
         }
         else if($type === 'blue_points'){ $this->ops->add($user, 'blue_points', $amt); $patchKeys[] = 'blue_points'; }
-        else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; } // auto/gun/machete — клиент выдаёт сам (weapons.grantAmmo)
+        else if($type === 'auto' || $type === 'gun' || $type === 'machete'){
+            // 11.10.2026: больше НЕ clientReward (см. большой коммент у _grantWeaponReward()
+            // выше) — та же причина, по которой это уже закрыто у poker.php.resolve():
+            // users.save() отклоняет РОСТ ammo_*/weapons, clientReward+weapons.grantAmmo()
+            // молча терял награду при следующем автосейве.
+            $this->_grantWeaponReward($user, $type, $amt);
+            $patchKeys[] = 'weapons'; $patchKeys[] = 'ammo_' . $type;
+        }
+        else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; }
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'consolation', 'type' => $type, 'amt' => $amt]));
         $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true, 'otherKushIdx' => $otherKushIdx,

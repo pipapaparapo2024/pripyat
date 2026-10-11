@@ -35,11 +35,12 @@ export function attachDice(proto){
                 // clientRewards, так что эта ветка была мёртвым кодом, реализующим тот же
                 // небезопасный паттерн (клиент сам решает и сам пишет владение шмоткой через
                 // users.save, которое users.php._sanitizeShmot() молча отклоняет).
+                // 11.10.2026: та же логика для auto/gun/machete — dice.php._grantWeaponReward()
+                // теперь начисляет их САМ и присылает в patch.weapons/patch.ammo_X, ветка
+                // clientReward для этих типов больше никогда не приходит.
+                if(res2.patch && res2.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
                 (res2.clientRewards || []).forEach(cr => {
                     if(cr.type === 'battlepass_xp'){ if(window.battlepass) battlepass.addXp(cr.amt); }
-                    else if(window.weapons && (cr.type === 'auto' || cr.type === 'gun' || cr.type === 'machete')){
-                        weapons.grantAmmo(cr.type, cr.amt);
-                    }
                 });
                 iface.updateUp();
                 this._finishDice();
