@@ -86,8 +86,20 @@ const SPINE_DIR = './images/spine/';
 // обновление (кость 'hand2' IK — доп. keyframe в начале трека, плавный разгон mix) залито под
 // НОВЫМ именем 'okhotnik_v2.json' — старый 'okhotnik.json' оставлен на диске неиспользуемым
 // (на случай отката), атлас/текстура не менялись (побайтово те же), поэтому не переименованы.
+//
+// 11.10.2026 (по прямому указанию, новые экспорты обоих боссов присланы разом — "переименуй,
+// боюсь что кэш застрял в имени"): та же причина/фикс, что и у okhotnik_v2.json выше —
+//  - Охотник: четвёртое обновление (та же модель/риг — 40 костей, 26 слотов, длительность
+//    18.9667с, не изменились) — json залит под СЛЕДУЮЩИМ именем 'okhotnik_v3.json' (v2 уже
+//    занято предыдущим обновлением). В присланном архиве текстура/атлас тоже были переименованы
+//    (okhotnik2.webp/okhotnik2.atlas.txt), но побайтово идентичны уже используемым
+//    okhotnik.webp/okhotnik.atlas — оставлены старые имена, переименовывать нечего.
+//  - Меченный: первое переименование для этого босса (до сих пор заливался под тем же именем
+//    mechennii.json, как и окотник до 10.10.2026) — тот же риг (61 кость, 31 слот, 17.2667с),
+//    json залит под 'mechennii_v2.json'. Атлас/текстура не менялись (побайтово те же) — не
+//    переименованы.
 const BOSS_SPINE = [
-    { atlas: 'okhotnik.atlas',   json: 'okhotnik_v2.json',
+    { atlas: 'okhotnik.atlas',   json: 'okhotnik_v3.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 0 — Охотник
     { atlas: 'lucky.atlas',      json: 'lucky.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
@@ -95,7 +107,7 @@ const BOSS_SPINE = [
                    x: 680, y: 673, scale: 0.44 } },
     { atlas: 'yastreb.atlas',    json: 'yastreb.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
-    { atlas: 'mechennii.atlas',  json: 'mechennii.json',
+    { atlas: 'mechennii.atlas',  json: 'mechennii_v2.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 3 — Меченный
     null, null, null, null                               // 4-7 — пока без Spine (файлов нет)
 ];

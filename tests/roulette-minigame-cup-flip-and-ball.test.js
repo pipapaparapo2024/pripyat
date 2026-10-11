@@ -29,6 +29,15 @@
  *  - ballSpr теперь добавляется В CUP ДО closedSpr (не после openSpr) — рисуется ЗА стаканчиком,
  *    а не поверх.
  *
+ * 11.10.2026 (по прямому указанию — "выкатывается влево, такого быть не должно; если куш не
+ * выбил — открывается ДРУГОЙ стаканчик, в котором был шарик, и шарик показывается в нём"):
+ * укатывание шарика в фиксированную точку (введено и уже отменено 10.10.2026, см. историю выше)
+ * убрано целиком. Вместо него — roulette.php.pickCup() ищет 'kush' в оставшихся 8 стаканчиках
+ * раскладки (array_search) и, если он там реально есть, отдаёт его индекс как res.otherKushIdx;
+ * клиент при его наличии открывает именно ТОТ стаканчик (та же анимация поворота/подъёма, что и
+ * у своего собственного) и показывает под ним шарик. Чисто визуальная подсказка — экономику
+ * (kush_counter/kush_threshold, саму награду) не трогает.
+ *
  * Run: node tests/roulette-minigame-cup-flip-and-ball.test.js
  */
 
@@ -103,8 +112,8 @@ console.log('\nTest 4: _finishReveal — 10.10.2026: больше НЕ подм�
     const body  = src.slice(start, end);
     assert(!/closedSpr\.visible = false;/.test(body), '10.10.2026 (по прямому указанию "не заменяй файл") — закрытый спрайт больше НЕ скрывается при раскрытии');
     assert(!/openSpr\.visible = true;/.test(body), 'открытый спрайт больше не показывается (его и не существует как переменной)');
-    assert(/if\(res\.kush\)\{\s*\n\s*ballSpr\.visible = true;\s*\n\s*\} else \{/.test(body),
-        '10.10.2026: шарик теперь виден при ЛЮБОМ исходе — при Куше просто показывается, иначе (else) укатывается (см. Test 6)');
+    assert(/if\(res\.kush\)\{\s*\n\s*ballSpr\.visible = true;\s*\n\s*\} else if\(res\.otherKushIdx !== null && res\.otherKushIdx !== undefined && cups\[res\.otherKushIdx\]\)\{/.test(body),
+        '11.10.2026: при Куше шарик показывается на месте, иначе (else if) — открывается чужой стаканчик по otherKushIdx, если сервер его прислал (см. Test 6)');
     assert(/if\(res\.patch\) applyPatch\(res\.patch\);/.test(body), 'патч сервера по-прежнему применяется (логика награды не тронута)');
     // 27.09.2026 (устаревший тест, найдено плановой чисткой): 26.09.2026 (по прямому указанию —
     // "откат правки 25.09.2026, утешительный приз выглядит иначе") сервер перестал выдавать
@@ -131,25 +140,61 @@ console.log('\nTest 5: серверная логика Куша/Связки/у�
     assert(/list\(\$type, \$amt\) = explode\(':', \$reward\);/.test(body), 'обычный исход берёт реальную награду из CUP_POOL, а не фиксированные 50 рублей');
 }
 
-console.log('\nTest 6: 10.10.2026 — не-Куш исход укатывает шарик в фиксированную точку экрана (130,540), одну и ту же для всех 9 стаканчиков');
+console.log('\nTest 6: 11.10.2026 — не-Куш исход БОЛЬШЕ НЕ укатывает шарик за пределы стаканчика, вместо этого открывает ДРУГОЙ стаканчик (res.otherKushIdx), в котором куш реально лежал');
 {
-    // 10.10.2026 (по прямому указанию — "шарик тоже сдвинь по такому же принципу" вслед за
-    // сдвигом стаканчиков вправо на 30px): x 130→160.
-    assert(/const BALL_ROLL_TARGET = \{ x: 160, y: 540 \};/.test(src),
-        'фиксированная цель укатывания задана один раз, не per-стаканчик (координаты даны пользователем 10.10.2026)');
+    assert(!/const BALL_ROLL_TARGET/.test(src), 'укатывание в фиксированную точку экрана убрано целиком (отменено тем же днём, что и введено)');
+    assert(!/ballSpr\.rotation \+ Math\.PI \* 4/.test(src), 'анимация "качения" шарика убрана вместе с укатыванием');
 
-    const start = src.indexOf('} else {\n                            ballSpr.visible = true;');
-    assert(start !== -1, 'ветка "иначе" (не-Куш) с показом+укатыванием шарика найдена');
+    assert(/cup\._closedSpr = closedSpr;/.test(src) && /cup\._ballSpr = ballSpr;/.test(src),
+        'closedSpr/ballSpr каждого стаканчика сохранены НА cup — нужны снаружи замыкания, чтобы открыть ЧУЖОЙ стаканчик по индексу');
+
+    const start = src.indexOf('} else if(res.otherKushIdx !== null');
+    assert(start !== -1, 'ветка "иначе, если сервер прислал otherKushIdx" найдена');
     const end = src.indexOf('\n                        }', start);
     const body = src.slice(start, end);
 
-    assert(/const rollX = BALL_ROLL_TARGET\.x - x, rollY = BALL_ROLL_TARGET\.y - y;/.test(body),
-        'цель переведена из абсолютных координат канваса в локальные координаты cup (вычитание текущих x,y стаканчика) — одна и та же абсолютная точка для ЛЮБОГО из 9 стаканчиков');
-    assert(/gsap\.to\(ballSpr, \{/.test(body), 'укатывание анимируется через gsap (не мгновенный телепорт), как и переворот стаканчика выше');
-    assert(/x: rollX, y: rollY, rotation: ballSpr\.rotation \+ Math\.PI \* 4,/.test(body),
-        'анимация — перемещение в целевую точку + вращение (имитация качения, "шарик ВЫКАТЫВАЕТСЯ")');
-    assert(/\} else \{\s*\n\s*ballSpr\.x = rollX; ballSpr\.y = rollY;\s*\n\s*\}/.test(body),
-        'фолбэк без gsap — мгновенная телепортация в ту же точку, не зависает без анимации');
+    assert(/const otherCup = cups\[res\.otherKushIdx\];/.test(body), 'берётся именно ТОТ стаканчик, индекс которого прислал сервер (не текущий i, не угадывается на клиенте)');
+    assert(/const oClosed = otherCup\._closedSpr, oBall = otherCup\._ballSpr;/.test(body), 'читаются спрайты чужого стаканчика через сохранённые на cup ссылки');
+    assert(/if\(oBall\) oBall\.visible = true;/.test(body), 'шарик чужого стаканчика становится видимым');
+    assert(/rotation: Math\.PI \/ 2, y: oClosed\.y - 40,/.test(body) && /duration: CUP_FLIP_DURATION, ease: 'power2\.out',/.test(body),
+        'чужой стаканчик "опрокидывается" ТОЙ ЖЕ анимацией (поворот+подъём, та же длительность), что и свой собственный при раскрытии');
+    assert(/\} else \{\s*\n\s*oClosed\.rotation = Math\.PI \/ 2; oClosed\.y -= 40;\s*\n\s*\}/.test(body),
+        'фолбэк без gsap — мгновенный поворот/подъём чужого стаканчика, не зависает без анимации');
+}
+
+console.log('\nTest 7: roulette.php.pickCup() — otherKushIdx вычисляется сервером (не клиентом) и уходит во ВСЕ не-Куш ветки ответа, экономику не трогает');
+{
+    const phpSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
+    const start = phpSrc.indexOf('function pickCup(){');
+    const end   = phpSrc.indexOf('\n    }\n}', start);
+    const body  = phpSrc.slice(start, end);
+
+    assert(/if\(\$reward !== 'kush'\)\{\s*\n\s*\$foundIdx = array_search\('kush', \$cups, true\);/.test(body),
+        'otherKushIdx ищется ТОЛЬКО когда сам игрок куш НЕ выбил (иначе он и так виден на месте)');
+    assert(/if\(\$foundIdx !== false\) \$otherKushIdx = intval\(\$foundIdx\);/.test(body),
+        'array_search честно может вернуть false (куша в этой раскладке вообще не было) — тогда otherKushIdx остаётся null, клиент ничего лишнего не откроет');
+
+    // otherKushIdx должен попасть во ВСЕ 3 не-Куш ветки ответа (keyring-успех, keyring-провал/
+    // missed_keyring, обычное утешение) — ветка самого Куша его не содержит (там кладётся ДО неё,
+    // но используется только когда reward !== 'kush', так что в kush-ответе явно не фигурирует).
+    // Считаем буквальные вхождения "'otherKushIdx' => $otherKushIdx" (не через [^\]]*, который
+    // обрывается на первой же вложенной "]" внутри clientRewards-массивов) — должно быть 4:
+    // 1 в $debugBase (для error_log) + 3 в самих ok()-ответах (keyring-успех/missed_keyring/
+    // утешение).
+    const occurrences = (body.match(/'otherKushIdx' => \$otherKushIdx/g) || []).length;
+    assert(occurrences === 4, `otherKushIdx передан клиенту во ВСЕХ 3 не-Куш ветках ответа + попадает в $debugBase (найдено вхождений: ${occurrences}, ожидалось 4)`);
+
+    const kushOkIdx = body.indexOf("'type' => 'coins', 'amt' => \$this->KUSH_AMOUNT, 'kush' => true,");
+    assert(kushOkIdx !== -1 && !/otherKushIdx/.test(body.slice(kushOkIdx, kushOkIdx + 150)),
+        'Куш-ответ НЕ содержит otherKushIdx (бессмысленно — игрок уже видит шарик на месте)');
+
+    // Экономика не трогается: единственное место, где kush_counter/kush_threshold сбрасываются —
+    // ветка реального выигрыша (if($reward === 'kush')); вычисление $otherKushIdx стоит строго ДО
+    // неё и ничего там не меняет.
+    const kushCounterResetIdx = body.indexOf('`kush_counter`=0, `kush_threshold`=');
+    const otherKushCalcIdx    = body.indexOf('$otherKushIdx = null;');
+    assert(kushCounterResetIdx !== -1 && otherKushCalcIdx !== -1 && otherKushCalcIdx < kushCounterResetIdx,
+        '$otherKushIdx вычисляется ДО ветки сброса kush_counter/kush_threshold — чисто визуальная подсказка, не новый способ выиграть/сбросить куш');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

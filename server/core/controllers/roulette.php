@@ -635,9 +635,22 @@ Class Roulette {
         $reward = $cups[$idx];
         $user['roulette_cups'] = null; // одноразово — повторно pickCup ничего не даст
 
+        // 11.10.2026 (по прямому указанию — "если куш не выбил, тогда открывается ДРУГОЙ
+        // стаканчик, в котором был шарик, и шарик показывается в том стаканчике"): раньше при
+        // промахе шарик укатывался в фиксированную точку экрана (10.10.2026, уже отменено этим же
+        // днём) — теперь вместо укатывания клиенту нужно знать, под КАКИМ именно стаканчиком
+        // реально лежал куш в этой раскладке (если он вообще был в ней — hasKush не гарантирует,
+        // что он есть КАЖДУЮ игру, см. openMinigame()), чтобы визуально открыть и его тоже. Не
+        // влияет на экономику — награда по-прежнему только у $idx, kush_counter не трогается.
+        $otherKushIdx = null;
+        if($reward !== 'kush'){
+            $foundIdx = array_search('kush', $cups, true);
+            if($foundIdx !== false) $otherKushIdx = intval($foundIdx);
+        }
+
         $debugBase = ['fn' => 'pickCup', 'uid' => abs(intval($this->registry['uid'])),
             'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
-            'idx' => $idx, 'allCups' => $cups, 'reward' => $reward];
+            'idx' => $idx, 'allCups' => $cups, 'reward' => $reward, 'otherKushIdx' => $otherKushIdx];
 
         if($reward === 'kush'){
             $this->ops->add($user, 'coins', $this->KUSH_AMOUNT);
@@ -679,14 +692,14 @@ Class Roulette {
             }
             error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'keyring', 'gotKeyring' => $got]));
             if($got){
-                $this->ops->ok(['type' => 'keyring', 'amt' => 1,
+                $this->ops->ok(['type' => 'keyring', 'amt' => 1, 'otherKushIdx' => $otherKushIdx,
                     'patch' => $this->ops->patchCurrencies($user, ['keyring_owner'])]);
             } else {
             // Сохранение не удалось — не оставляем игрока совсем без награды.
                 $user['keyring_owner'] = null; // не даём частично записанному значению уйти в следующий saveUser()
                 $this->ops->add($user, 'exp', 1000);
                 if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-                $this->ops->ok(['type' => 'exp', 'amt' => 1000, 'missed_keyring' => true,
+                $this->ops->ok(['type' => 'exp', 'amt' => 1000, 'missed_keyring' => true, 'otherKushIdx' => $otherKushIdx,
                     'patch' => $this->ops->patchCurrencies($user, ['exp']),
                     'clientRewards' => [['type'=>'battlepass_xp','amt'=>10]]]);
             }
@@ -712,7 +725,7 @@ Class Roulette {
         else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; } // auto/gun/machete — клиент выдаёт сам (weapons.grantAmmo)
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'consolation', 'type' => $type, 'amt' => $amt]));
-        $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true,
+        $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true, 'otherKushIdx' => $otherKushIdx,
             'patch' => $this->ops->patchCurrencies($user, $patchKeys),
             'clientRewards' => $clientRewards]);
     }
