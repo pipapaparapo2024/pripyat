@@ -99,7 +99,14 @@ const SPINE_DIR = './images/spine/';
 //    json залит под 'mechennii_v2.json'. Атлас/текстура не менялись (побайтово те же) — не
 //    переименованы.
 const BOSS_SPINE = [
-    { atlas: 'okhotnik.atlas',   json: 'okhotnik_v3.json',
+    // 12.10.2026 (по прямому указанию, новый экспорт "okhotnik2.zip"): на этот раз ОБНОВИЛСЯ
+    // не только json, но и сам atlas (единственная реальная правка внутри — первая строка
+    // 'okhotnik.webp' → 'okhotnik2.webp', см. diff) — впервые с добавления Охотника. Текстура
+    // (.webp) при этом байт-в-байт совпадает с уже лежащим okhotnik1.webp, но атлас ссылается
+    // именно на имя 'okhotnik2.webp' (tex читается из atlas.pages[0].name, см. правило в
+    // AGENTS.md) — скопирован отдельным файлом под этим именем, а не переиспользован
+    // okhotnik1.webp, чтобы не редактировать присланный атлас руками.
+    { atlas: 'okhotnik2.atlas',  json: 'okhotnik_v4.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 0 — Охотник
     { atlas: 'lucky.atlas',      json: 'lucky.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
@@ -107,7 +114,9 @@ const BOSS_SPINE = [
                    x: 680, y: 673, scale: 0.44 } },
     { atlas: 'yastreb.atlas',    json: 'yastreb.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
-    { atlas: 'mechennii.atlas',  json: 'mechennii_v2.json',
+    // 12.10.2026 (новый экспорт "Mechennii2.zip"): только json изменился (atlas/webp —
+    // байт-в-байт совпадают с уже лежащими, переименование не требуется).
+    { atlas: 'mechennii.atlas',  json: 'mechennii_v3.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 3 — Меченный
     null, null, null, null                               // 4-7 — пока без Spine (файлов нет)
 ];
