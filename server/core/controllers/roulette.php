@@ -282,6 +282,27 @@ Class Roulette {
         $user[$ammoKey] = strval($data[$wid]['qty']);
     }
 
+    // 12.10.2026 (по прямому указанию, репорт — "если не выбил куш, второй стаканчик с шариком
+    // не открывается"; гипотеза пользователя подтверждена чтением openMinigame(): $hasKush =
+    // $kushCounter >= $kushThreshold — до 6-8 игр куша в раскладке нет НИ ОДНОГО экземпляра, то
+    // есть "стаканчик с шариком" не поднимался не из-за бага анимации, а потому что поднимать
+    // было физически нечего). Игрок не должен уметь отличить "куша не было вовсе" от "куш был,
+    // но в другом стаканчике" — вне зависимости от того, лежал ли в cups настоящий 'kush',
+    // клиент всегда получает otherKushIdx и всегда видит один и тот же reveal другого
+    // стаканчика. Чистая функция (без $user/$link) — вынесена отдельно, чтобы тестироваться
+    // ReflectionMethod без БД, по тому же паттерну, что _grantWeaponReward() выше.
+    private function _pickOtherKushIdx($cups, $idx){
+        $foundIdx = array_search('kush', $cups, true);
+        if($foundIdx !== false) return intval($foundIdx);
+        // Фейковый reveal: случайный чужой индекс (не $idx — иначе собственный стаканчик
+        // игрока "содержал бы куш", которого там нет). Нигде ниже не читается как источник
+        // награды — реальная выдача уже зафиксирована как $reward = $cups[$idx] до вызова этого
+        // метода, это чисто визуальный индекс для клиента.
+        $others = array_values(array_diff(range(0, 8), [$idx]));
+        if(!$others) return null;
+        return intval($others[array_rand($others)]);
+    }
+
     // Отдельное прямое подключение к БД — по тому же паттерну, что bosses.php (_rawLink):
     // roulette_state — ГЛОБАЛЬНАЯ таблица (одна строка id=1, общая на всех игроков),
     // обычный getData/saveData (всегда per-user через utb) для неё не подходит.
@@ -691,11 +712,10 @@ Class Roulette {
         // реально лежал куш в этой раскладке (если он вообще был в ней — hasKush не гарантирует,
         // что он есть КАЖДУЮ игру, см. openMinigame()), чтобы визуально открыть и его тоже. Не
         // влияет на экономику — награда по-прежнему только у $idx, kush_counter не трогается.
-        $otherKushIdx = null;
-        if($reward !== 'kush'){
-            $foundIdx = array_search('kush', $cups, true);
-            if($foundIdx !== false) $otherKushIdx = intval($foundIdx);
-        }
+        // 11.10.2026 → 12.10.2026 (см. _pickOtherKushIdx() выше): реальный kush в cups ИЛИ,
+        // если его в этой раскладке физически не было (до 6-8 игр), фейковый индекс для того же
+        // визуального reveal'а — игрок не должен различать эти два случая.
+        $otherKushIdx = $reward !== 'kush' ? $this->_pickOtherKushIdx($cups, $idx) : null;
 
         $debugBase = ['fn' => 'pickCup', 'uid' => abs(intval($this->registry['uid'])),
             'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),

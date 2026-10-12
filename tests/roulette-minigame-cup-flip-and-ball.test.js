@@ -103,6 +103,10 @@ console.log('\nTest 2: шарик — файл скопирован, спрай�
         '10.10.2026 (по прямому указанию "шарик должен находиться за стаканчиком") — ballSpr добавлен в cup РАНЬШЕ closedSpr, значит рисуется ЗА ним (PIXI addChild-порядок = z-порядок)');
     const declChunk = src.slice(ballDeclIdx, ballAddIdx + 30);
     assert(/ballSpr\.visible = false;/.test(declChunk), 'шарик скрыт по умолчанию (виден только при Куше)');
+    // 12.10.2026 (по прямому указанию — "для всех стаканчиков шарик сдвинуть влево на 30px и
+    // вниз на 24px"): было x=30,y=12 → x=0,y=36. Один const — применяется разом ко всем 9
+    // стаканчикам (цикл for i<9 строит их по одному шаблону).
+    assert(/ballSpr\.x = 0; ballSpr\.y = 36;/.test(declChunk), 'шарик сдвинут: x=30→0 (влево на 30px), y=12→36 (вниз на 24px), для всех 9 стаканчиков разом');
 }
 
 console.log('\nTest 3: общий хелпер _flipCup — поворот 90° по часовой (Math.PI/2) + подъём на 40px, используется и для своего, и для чужого стаканчика');
@@ -221,10 +225,13 @@ console.log('\nTest 7: roulette.php.pickCup() — otherKushIdx вычисляе�
     const end   = phpSrc.indexOf('\n    }\n}', start);
     const body  = phpSrc.slice(start, end);
 
-    assert(/if\(\$reward !== 'kush'\)\{\s*\n\s*\$foundIdx = array_search\('kush', \$cups, true\);/.test(body),
-        'otherKushIdx ищется ТОЛЬКО когда сам игрок куш НЕ выбил (иначе он и так виден на месте)');
-    assert(/if\(\$foundIdx !== false\) \$otherKushIdx = intval\(\$foundIdx\);/.test(body),
-        'array_search честно может вернуть false (куша в этой раскладке вообще не было) — тогда otherKushIdx остаётся null, клиент ничего лишнего не откроет');
+    // 12.10.2026 (по прямому указанию, репорт "если не угадал куш, второй стаканчик не
+    // открывается" — гипотеза подтверждена: hasKush=false до 6-8 игр, значит 'kush' в cups
+    // физически нет вообще): вычисление вынесено в приватный метод _pickOtherKushIdx() (тестируется
+    // отдельно реальным PHP-исполнением, см. Test 8 / roulette-pick-other-kush-idx-core.php) —
+    // здесь только проверяем, что pickCup() реально его вызывает, когда сам игрок куш не выбил.
+    assert(/\$otherKushIdx = \$reward !== 'kush' \? \$this->_pickOtherKushIdx\(\$cups, \$idx\) : null;/.test(body),
+        'otherKushIdx вызывает _pickOtherKushIdx($cups, $idx) ТОЛЬКО когда сам игрок куш НЕ выбил (иначе он и так виден на месте), иначе null');
 
     // otherKushIdx должен попасть во ВСЕ 3 не-Куш ветки ответа (keyring-успех, keyring-провал/
     // missed_keyring, обычное утешение) — ветка самого Куша его не содержит (там кладётся ДО неё,
@@ -244,9 +251,39 @@ console.log('\nTest 7: roulette.php.pickCup() — otherKushIdx вычисляе�
     // ветка реального выигрыша (if($reward === 'kush')); вычисление $otherKushIdx стоит строго ДО
     // неё и ничего там не меняет.
     const kushCounterResetIdx = body.indexOf('`kush_counter`=0, `kush_threshold`=');
-    const otherKushCalcIdx    = body.indexOf('$otherKushIdx = null;');
+    const otherKushCalcIdx    = body.indexOf('$otherKushIdx = $reward !==');
     assert(kushCounterResetIdx !== -1 && otherKushCalcIdx !== -1 && otherKushCalcIdx < kushCounterResetIdx,
         '$otherKushIdx вычисляется ДО ветки сброса kush_counter/kush_threshold — чисто визуальная подсказка, не новый способ выиграть/сбросить куш');
+}
+
+console.log('\nTest 8: 12.10.2026 — Roulette::_pickOtherKushIdx() реальным PHP-исполнением: настоящий куш vs фейковый reveal, когда куша в раскладке физически нет');
+{
+    const { execFileSync } = require('child_process');
+    const { findPhpBin } = require('./_php_bin.js');
+    const phpBin = findPhpBin();
+    if(!phpBin){
+        console.log('  ⚠️  PHP не найден локально — блок реального исполнения пропущен (см. tests/_php_bin.js).');
+    } else {
+        const fixture = path.join(root, 'tests', '_php_fixtures', 'roulette-pick-other-kush-idx-core.php');
+        let stdout;
+        try {
+            stdout = execFileSync(phpBin, ['-d', 'display_errors=stderr', fixture], { encoding: 'utf-8', timeout: 15000 });
+        } catch(e){
+            console.error('  ❌ PHP-фикстура упала (фатальная ошибка):', e.stderr || e.message);
+            failed++;
+            stdout = '';
+        }
+        stdout.trim().split('\n').forEach(line => {
+            if(line.startsWith('PASS:')){ console.log('  ✅', line.slice(6)); passed++; }
+            else if(line.startsWith('FAIL:')){ console.error('  ❌ FAIL:', line.slice(6)); failed++; }
+            else if(line.trim()) console.log('  ', line);
+        });
+    }
+
+    // Метод объявлен как private — doc-подтверждение, что он реально существует в этом виде
+    // (сама корректность поведения — выше, через реальное исполнение).
+    const phpSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
+    assert(/private function _pickOtherKushIdx\(\$cups, \$idx\)\{/.test(phpSrc), '_pickOtherKushIdx($cups, $idx) определён как приватный метод класса Roulette');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

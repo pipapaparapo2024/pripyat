@@ -92,6 +92,38 @@ export function attachRouletteMinigame(proto){
         });
     };
 
+    // 12.10.2026 (по прямому указанию, репорт — "выбил джекпот, не успел открыть стаканчик,
+    // перезагрузил страницу — игра пропала"): roulette_cups УЖЕ сервер-авторитетное поле,
+    // которое честно переживает reload (пишется через Gameops::saveUser(), приходит клиенту
+    // сырым значением в users.get → SELECT *, см. users.php::get()) — на сервере состояние
+    // никуда не девалось. Реальная причина пропажи — клиент НИКОГДА не проверял это поле при
+    // повторном входе в экран рулетки, поэтому игрок просто не видел пути назад к уже
+    // разложенным стаканчикам/выбору "забрать или рискнуть". Вызывается из
+    // dvor-roulette.js._openRouletteScreen() при каждом открытии экрана.
+    //
+    // Два возможных "зависших" состояния:
+    //  - roulette_cups === ['__prize_choice__'] — игрок выиграл джек-пот на колесе, но ещё не
+    //    выбрал "забрать 500р" / "рискнуть" (см. spin()/claimPrize() в roulette.php) — заново
+    //    открываем тот же попап выбора.
+    //  - roulette_cups — настоящий массив из 9 строк (разложено openMinigame()) — игрок уже
+    //    рискнул, но не успел кликнуть ни один стаканчик — заново строим экран мини-игры.
+    // НЕ дёргает roulette.openMinigame() повторно — это сгенерировало бы НОВую раскладку поверх
+    // уже существующей (и зря инкрементировало бы общий kush_counter) — только перечитывает уже
+    // сохранённое состояние и перестраивает тот же UI.
+    proto._resumeRouletteMinigameIfPending = function(){
+        if(!window.udata) return;
+        let cups = udata['roulette_cups'];
+        if(typeof cups === 'string'){
+            try { cups = JSON.parse(cups); } catch(e) { cups = null; }
+        }
+        if(!Array.isArray(cups) || !cups.length) return;
+        if(cups.length === 1 && cups[0] === '__prize_choice__'){
+            this._openJackpotChoice();
+        } else if(cups.length === 9){
+            this._buildRouletteMinigameWin();
+        }
+    };
+
     proto._buildRouletteMinigameWin = function(){
         const win = new PIXI.Container();
         win.interactive = true;
@@ -167,7 +199,9 @@ export function attachRouletteMinigame(proto){
             // точно через редактор позиций, если ляжет не туда.
             const ballSpr = new PIXI.Sprite(PIXI.Texture.from('./images/шарик суперигра.png'));
             ballSpr.anchor.set(0.5, 0.5);
-            ballSpr.x = 30; ballSpr.y = 12;
+            // 12.10.2026 (по прямому указанию — "шарик сдвинуть влево на 30px и вниз на 24px"
+            // для ВСЕХ стаканчиков): было x=30,y=12 → x=0,y=36.
+            ballSpr.x = 0; ballSpr.y = 36;
             ballSpr.visible = false;
             cup.addChild(ballSpr);
 
