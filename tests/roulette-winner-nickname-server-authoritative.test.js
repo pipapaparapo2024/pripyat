@@ -24,6 +24,16 @@
  *     может подделать его через users.save).
  *  4) dvor-roulette-screen.js — клиентская запись убрана целиком.
  *
+ * 12.10.2026 (РЕВЕРТ пункта 2 по прямому указанию, живой репорт — "забрал гарантированные 500р,
+ * а отобразило, что сорвал джекпот на 500р"): логическая ошибка пережила сам фикс кодировки —
+ * claimPrize() ЭТО ВЕТКА ГАРАНТИРОВАННЫХ 500р (игрок сознательно отказался рисковать, Куш не
+ * выбивал), но именно она писала публичного "победителя джекпота", который видят ВСЕ игроки на
+ * экране рулетки. Реальный выигрыш Куша (pickCup(), ветка $reward==='kush') при этом вообще не
+ * трогал roulette_winner — доска объявляла джекпот тем, кто его не выигрывал, и молчала про
+ * настоящих победителей. Запись перенесена из claimPrize() В pickCup() (ветка kush), сумма —
+ * $this->KUSH_AMOUNT (реальный размер Куша), а не захардкоженные 500. claimPrize() больше НЕ
+ * трогает roulette_winner вовсе — см. Test 2 (переписан) и Test 5 (новый).
+ *
  * Run: node tests/roulette-winner-nickname-server-authoritative.test.js
  */
 
@@ -52,23 +62,54 @@ console.log('\nTest 1: database.php — roulette_winner исключён из JS
     assert(/\$keys\[\$i\] === 'roulette_winner'/.test(line), "'roulette_winner' добавлен в исключение");
 }
 
-console.log('\nTest 2: roulette.php.claimPrize() — пишет roulette_winner на сервере, с реальным ником и JSON_UNESCAPED_UNICODE');
+console.log('\nTest 2: 12.10.2026 (РЕВЕРТ) — roulette.php.claimPrize() (гарантированные 500р) БОЛЬШЕ НЕ пишет roulette_winner — игрок тут не выиграл джекпот');
 {
     const start = rouletteSrc.indexOf('function claimPrize(){');
     const end   = rouletteSrc.indexOf('\n    }', rouletteSrc.indexOf("\$this->ops->ok(['patch'=>\$patch, 'amount'=>500", start));
     const body  = rouletteSrc.slice(start, end);
+    // Исключаем строки-комментарии (объясняющие ИСТОРИЮ переноса и законно упоминающие имя
+    // поля) перед проверкой — иначе regex ложно падает на пояснительном тексте, а не на коде.
+    const codeOnly = body.split('\n').filter(line => !/^\s*\/\//.test(line)).join('\n');
+    assert(!/roulette_winner/.test(codeOnly), 'claimPrize() НИГДЕ в коде не упоминает roulette_winner (ни записи, ни в patch; упоминания в explanatory-комментариях не в счёт) — гарантированное утешение не объявляется публично как выигрыш джекпота');
+    assert(/patchCurrencies\(\$user, \['coins', 'coins_earned'\]\)/.test(body), "patch сузился до coins/coins_earned (roulette_winner убран)");
+    assert(/\$this->ops->add\(\$user, 'coins', 500\);/.test(body), 'сами 500р по-прежнему начисляются (экономика этой ветки не тронута)');
+}
+
+console.log('\nTest 5: 12.10.2026 (ВТОРАЯ правка, живой репорт — "выбил куш, дали 50 тысяч, а должны дать джекпот") — pickCup(), ветка реального Куша читает ЖИВОЙ jackpot_pool, платит ИМ (не $this->KUSH_AMOUNT), и ТОЛЬКО тут сбрасывает пул на 3000');
+{
+    const kushStart = rouletteSrc.indexOf("if(\$reward === 'kush'){");
+    assert(kushStart !== -1, 'ветка $reward===\'kush\' найдена в pickCup()');
+    const kushEnd = rouletteSrc.indexOf('\n        }', rouletteSrc.indexOf("'kush' => true,", kushStart));
+    const body = rouletteSrc.slice(kushStart, kushEnd);
+
+    // Живое чтение пула — не захардкоженная сумма и не параметр, пришедший из более ранней части
+    // функции (там он мог устареть на несколько спинов других игроков).
+    assert(/\$jackpotPool = \$this->KUSH_AMOUNT;/.test(body), '$this->KUSH_AMOUNT используется ТОЛЬКО как фолбэк по умолчанию (на случай недоступности БД)');
+    assert(/SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1/.test(body), 'читает АКТУАЛЬНОЕ значение пула прямо в момент выигрыша');
+    assert(/if\(\$row\) \$jackpotPool = intval\(\$row\['jackpot_pool'\]\);/.test(body), 'перезаписывает фолбэк реальным значением, если чтение удалось');
+
+    assert(/\$this->ops->add\(\$user, 'coins', \$jackpotPool\);/.test(body), 'начисляет игроку именно $jackpotPool (живой пул), не фиксированную сумму');
+    assert(/\$user\['coins_earned'\] = \$this->ops->i\(\$user, 'coins_earned'\) \+ \$jackpotPool;/.test(body), 'coins_earned тоже растёт на реальный $jackpotPool');
+
     assert(/\$nick = trim\(strval\(\$user\['nick'\] \?\? ''\)\);/.test(body), 'читает РЕАЛЬНЫЙ сохранённый ник из серверной строки игрока ($user[\'nick\'])');
-    assert(/'name' => \(\$nick !== '' \? \$nick : 'Сталкер'\), 'amount' => 500, 'id' => abs\(intval\(\$this->registry\['uid'\]\)\)/.test(body),
-        'формирует winner-объект с name/amount/id (фолбэк "Сталкер" — только для реально пустого ника)');
+    assert(/'name' => \(\$nick !== '' \? \$nick : 'Сталкер'\), 'amount' => \$jackpotPool, 'id' => abs\(intval\(\$this->registry\['uid'\]\)\)/.test(body),
+        'winner-объект объявляет РЕАЛЬНУЮ выплаченную сумму ($jackpotPool), не захардкоженные 500 (ошибка claimPrize()) и не плейсхолдер 50000');
     assert(/\$user\['roulette_winner'\] = json_encode\(\$winner, JSON_UNESCAPED_UNICODE\);/.test(body),
-        'кодирует ЯВНО с JSON_UNESCAPED_UNICODE (та же защита, что poker.php/blackjack.php)');
-    assert(/patchCurrencies\(\$user, \['coins', 'coins_earned', 'roulette_winner'\]\)/.test(body),
-        "'roulette_winner' добавлен в patch — клиент узнаёт обновлённое значение через applyPatch()");
-    // Запись победителя должна произойти ДО saveUser() (в одной транзакции с начислением 500р),
-    // не отдельным запросом.
+        'кодирует ЯВНО с JSON_UNESCAPED_UNICODE (та же защита, что была у claimPrize())');
+    assert(/patchCurrencies\(\$user, \['coins','coins_earned','roulette_winner'\]\)/.test(body),
+        "'roulette_winner' добавлен в patch kush-ответа — клиент узнаёт обновлённое значение через applyPatch()");
+    assert(/'amt' => \$jackpotPool, 'kush' => true,/.test(body), "ответ клиенту ('amt') — тоже живой $jackpotPool, не захардкоженная сумма");
+
+    // Сброс пула на 3000 — в ТОЙ ЖЕ UPDATE-операции, что и kush_counter/kush_threshold, и ТОЛЬКО
+    // здесь (не в spin(), см. roulette-real-jackpot-pool.test.js Test 1).
+    assert(/UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=\$newT, `jackpot_pool`=3000 WHERE `id`=1/.test(body),
+        'сброс kush_counter/kush_threshold/jackpot_pool — одной атомарной операцией');
+
+    // Запись победителя должна произойти ДО saveUser() этой ветки (одна атомарная запись вместе
+    // с начислением Куша), не отдельным запросом.
     const winnerIdx = body.indexOf("\$user['roulette_winner']");
     const saveIdx   = body.indexOf('saveUser($user)');
-    assert(winnerIdx !== -1 && saveIdx !== -1 && winnerIdx < saveIdx, 'roulette_winner выставляется ДО saveUser() — одна атомарная запись');
+    assert(winnerIdx !== -1 && saveIdx !== -1 && winnerIdx < saveIdx, 'roulette_winner выставляется ДО saveUser() — одна атомарная запись вместе с начислением Куша');
 }
 
 console.log('\nTest 3: users.php — roulette_winner убран из client-writable whitelist');

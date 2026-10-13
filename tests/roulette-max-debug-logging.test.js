@@ -76,7 +76,10 @@ console.log('\nTest 3: openMinigame()/pickCup() — раскладка стак�
         'openMinigame(): куш-счётчик/порог/результат по-прежнему попадает в $debug (для error_log)');
     assert(/'cups' => \$cups,/.test(roulPhp), 'openMinigame(): полная раскладка 9 стаканчиков по-прежнему логируется (сервер знает, что реально положил)');
     assert(/\$debugBase = \['fn' => 'pickCup'/.test(roulPhp), 'pickCup(): debugBase по-прежнему собран с полным состоянием (включая allCups)');
-    assert(/error_log\('\[roulette\.pickCup\] ' \. json_encode\(\$debugBase \+ \['result' => 'kush'\]\)\);/.test(roulPhp), 'pickCup(): ветка kush по-прежнему логируется');
+    // 12.10.2026: строка расширена полем 'jackpotPoolPaid' (реальная выплаченная сумма Куша,
+    // см. roulette-winner-nickname-server-authoritative.test.js Test 5) — сам факт логирования
+    // ветки kush не изменился, проверяем расширенную строку.
+    assert(/error_log\('\[roulette\.pickCup\] ' \. json_encode\(\$debugBase \+ \['result' => 'kush', 'jackpotPoolPaid' => \$jackpotPool\]\)\);/.test(roulPhp), 'pickCup(): ветка kush по-прежнему логируется (с суммой выплаты)');
     assert(/error_log\('\[roulette\.pickCup\] ' \. json_encode\(\$debugBase \+ \['result' => 'keyring', 'gotKeyring' => \$got\]\)\);/.test(roulPhp), 'pickCup(): ветка keyring по-прежнему логируется (включая исход гонки)');
 
     // 10.10.2026: ни одна из веток ответа клиенту (openMinigame() output() + все 4 исхода

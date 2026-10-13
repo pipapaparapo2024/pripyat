@@ -243,7 +243,9 @@ console.log('\nTest 7: roulette.php.pickCup() — otherKushIdx вычисляе�
     const occurrences = (body.match(/'otherKushIdx' => \$otherKushIdx/g) || []).length;
     assert(occurrences === 4, `otherKushIdx передан клиенту во ВСЕХ 3 не-Куш ветках ответа + попадает в $debugBase (найдено вхождений: ${occurrences}, ожидалось 4)`);
 
-    const kushOkIdx = body.indexOf("'type' => 'coins', 'amt' => \$this->KUSH_AMOUNT, 'kush' => true,");
+    // 12.10.2026: выплата Куша переведена на живой $jackpotPool (не $this->KUSH_AMOUNT) — см.
+    // roulette-winner-nickname-server-authoritative.test.js Test 5 для полной проверки.
+    const kushOkIdx = body.indexOf("'type' => 'coins', 'amt' => \$jackpotPool, 'kush' => true,");
     assert(kushOkIdx !== -1 && !/otherKushIdx/.test(body.slice(kushOkIdx, kushOkIdx + 150)),
         'Куш-ответ НЕ содержит otherKushIdx (бессмысленно — игрок уже видит шарик на месте)');
 

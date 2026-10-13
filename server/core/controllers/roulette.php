@@ -14,7 +14,16 @@ Class Roulette {
         ['type'=>'exp',     'amt'=>100000],
         ['type'=>'blue_points', 'amt'=>10],
     ];
-    private $KUSH_AMOUNT = 50000; // плейсхолдер — сумма Куша не указана в ТЗ
+    // 12.10.2026 (РЕВЕРТ смысла поля по прямому указанию, живой репорт — "выбил настоящий куш,
+    // дали фиксированные 50 тысяч, а должны были дать джекпот"): раньше это была ФИКСИРОВАННАЯ
+    // сумма реального выигрыша Куша — плейсхолдер, введённый ДО того, как в игре вообще появился
+    // растущий jackpot_pool (копится +10₽ за каждый спин, см. spin()/status()). По ТЗ
+    // ("в рулетке копится джекпот из трат на поинты, который можно выиграть в «супер-приз»")
+    // реальная выплата ДОЛЖНА быть суммой из jackpot_pool на момент выигрыша — теперь так и есть
+    // (см. pickCup(), ветка $reward==='kush'). Эта константа осталась ТОЛЬКО как аварийный
+    // фолбэк — если общая таблица roulette_state на момент выигрыша недоступна (_rawLink()
+    // вернул null), платим хотя бы эту сумму, а не 0.
+    private $KUSH_AMOUNT = 50000;
 
     // 29.09.2026 (СРОЧНО, по прямому указанию — репорт "игрок выбил связку ключей, такого не
     // может быть" + полное ТЗ на механику "Куш/Связка ключей", прислано целиком тем же днём):
@@ -443,8 +452,17 @@ Class Roulette {
         $jackpotResetInfo = null;
         if($realJackpot){
             $newThreshold = rand(3000, 3500);
-            // Выплаченный пул сбрасывается на стартовую сумму (3000₽), из которой копится заново.
-            $link->query("UPDATE `roulette_state` SET `spin_counter`=0, `spin_threshold`=$newThreshold, `jackpot_pool`=3000 WHERE `id`=1");
+            // 12.10.2026 (РЕВЕРТ по прямому указанию, живой репорт — "выбил настоящий куш, а
+            // дали фиксированные 50 тысяч вместо суммы джекпота; картинка показывала не ту
+            // сумму, что должна была накопиться"): jackpot_pool БОЛЬШЕ НЕ сбрасывается здесь.
+            // Этот момент — всего лишь попадание НА КОЛЕСЕ на сектор джекпота: игрок ещё даже
+            // не выбрал забрать гарантированные 500р или рискнуть, а если рискнёт — реальный
+            // Куш в суперигре может и не достаться (отдельная, более редкая гонка —
+            // kush_counter/kush_threshold, см. openMinigame()). Обнулять уже накопленный пул
+            // ПРОСТО от факта попадания на сектор — значит убивать саму идею растущего
+            // джекпота из ТЗ ни разу никому его не выплатив. Сброс пула ТЕПЕРЬ — ТОЛЬКО в
+            // pickCup(), в момент РЕАЛЬНОГО выигрыша Куша (см. там же).
+            $link->query("UPDATE `roulette_state` SET `spin_counter`=0, `spin_threshold`=$newThreshold WHERE `id`=1");
             $jackpotResetInfo = ['oldThreshold' => $threshold, 'newThreshold' => $newThreshold];
         }
         // dev-форс НЕ трогает общий счётчик/порог/пул выше — это тестовый исход для одного
@@ -597,20 +615,17 @@ Class Roulette {
         $this->ops->add($user, 'coins', 500);
         $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + 500;
 
-        // 25.09.2026 (по прямому указанию — "ник победителя показывается повреждённым/
-        // СТАЛКЕР"): запись победителя перенесена сюда с клиента (была client-writable
-        // JSON.stringify() в dvor-roulette-screen.js, срабатывала ещё ДО выбора забрать/
-        // рискнуть — "победитель" фиксировался, даже если игрок в итоге ничего не забрал).
-        // Теперь пишет сам сервер, только в момент реального ЗАБРАТЬ 500р, читая настоящий
-        // сохранённый ник игрока (не сиюминутный udata['nickname'] клиента), с явным
-        // JSON_UNESCAPED_UNICODE (см. тот же класс фикса кириллицы в poker.php/blackjack.php,
-        // а также исключение 'roulette_winner' из JSON-автопарсинга в database.php).
-        $nick = trim(strval($user['nick'] ?? ''));
-        $winner = ['name' => ($nick !== '' ? $nick : 'Сталкер'), 'amount' => 500, 'id' => abs(intval($this->registry['uid']))];
-        $user['roulette_winner'] = json_encode($winner, JSON_UNESCAPED_UNICODE);
-
+        // 25.09.2026 → 12.10.2026 (РЕВЕРТ по прямому указанию — живой репорт "забрал
+        // гарантированные 500р, а отобразило, что сорвал джекпот"): запись публичного
+        // победителя (udata['roulette_winner'], показывается ВСЕМ игрокам на экране рулетки
+        // как "ник победителя"/"сумма победителя") раньше ошибочно писалась ИМЕННО здесь —
+        // в ветке ГАРАНТИРОВАННЫХ 500р, где игрок СОЗНАТЕЛЬНО отказался рисковать и Куш
+        // физически не выбивал. При этом реальный выигрыш Куша (pickCup(), ветка
+        // $reward==='kush' ниже) до этой правки roulette_winner вообще не трогал — публичная
+        // доска объявляла "джекпот" тем, кто его не выигрывал, и молчала про настоящих
+        // победителей. Перенесено в pickCup() — пишется ТОЛЬКО при реальном выигрыше Куша.
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-        $patch = $this->ops->patchCurrencies($user, ['coins', 'coins_earned', 'roulette_winner']);
+        $patch = $this->ops->patchCurrencies($user, ['coins', 'coins_earned']);
         $debug = ['fn'=>'claimPrize', 'uid'=>abs(intval($this->registry['uid'])), 'amount'=>500,
             'time'=>date('Y-m-d H:i:s'), 'microtime'=>microtime(true)];
         error_log('[roulette.claimPrize] ' . json_encode($debug));
@@ -722,24 +737,47 @@ Class Roulette {
             'idx' => $idx, 'allCups' => $cups, 'reward' => $reward, 'otherKushIdx' => $otherKushIdx];
 
         if($reward === 'kush'){
-            $this->ops->add($user, 'coins', $this->KUSH_AMOUNT);
-            $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $this->KUSH_AMOUNT;
-            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-            // Реальный выигрыш Куша — вот теперь счётчик/порог сбрасываются (см. комментарий в
-            // openMinigame()), новый случайный порог 6-8 для следующего цикла.
+            // 12.10.2026 (по прямому указанию, живой репорт — "выбил настоящий куш, дали
+            // фиксированные 50 тысяч, а должны были дать джекпот"): по ТЗ ("в рулетке копится
+            // джекпот из трат на поинты, который можно выиграть в «супер-приз»") реальный
+            // выигрыш Куша обязан платить ИМЕННО накопленный jackpot_pool на этот момент, а не
+            // старый плейсхолдер $this->KUSH_AMOUNT (введён ДО того, как jackpot_pool вообще
+            // появился в игре, см. комментарий у объявления поля). Читаем пул ПРЯМО ЗДЕСЬ (не
+            // из устаревшего параметра/кэша) и сбрасываем его на стартовую сумму (3000₽) В ТОЙ
+            // ЖЕ операции, что и kush_counter/kush_threshold — единственное место во всём
+            // контроллере, где пул реально обнуляется, т.к. деньги реально выданы игроку (см.
+            // также spin() выше — там пул больше НЕ трогается).
+            $jackpotPool = $this->KUSH_AMOUNT; // фолбэк, если общая таблица вдруг недоступна
             $link = $this->_rawLink();
             if($link){
+                $res = $link->query("SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
+                $row = $res ? $res->fetch_assoc() : null;
+                if($row) $jackpotPool = intval($row['jackpot_pool']);
                 $newT = rand(6, 8);
-                $link->query("UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=$newT WHERE `id`=1");
+                $link->query("UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=$newT, `jackpot_pool`=3000 WHERE `id`=1");
                 $link->close();
             }
-            error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'kush']));
+
+            $this->ops->add($user, 'coins', $jackpotPool);
+            $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $jackpotPool;
+            // 12.10.2026 (по прямому указанию, репорт — "забрал гарантированные 500р, а
+            // показало, что сорвал джекпот"): запись публичного победителя перенесена СЮДА из
+            // claimPrize() (см. большой коммент там) — это и есть единственное место реального
+            // выигрыша Куша, именно его стоит объявлять всем игрокам, а не гарантированное
+            // утешение. Тот же приём, что раньше был в claimPrize() — нормализованный ник,
+            // JSON_UNESCAPED_UNICODE (кириллица), 'roulette_winner' исключён из автопарсинга
+            // JSON в database.php.
+            $nick = trim(strval($user['nick'] ?? ''));
+            $winner = ['name' => ($nick !== '' ? $nick : 'Сталкер'), 'amount' => $jackpotPool, 'id' => abs(intval($this->registry['uid']))];
+            $user['roulette_winner'] = json_encode($winner, JSON_UNESCAPED_UNICODE);
+            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'kush', 'jackpotPoolPaid' => $jackpotPool]));
             // 10.10.2026 (по прямому указанию — ТЗ "не должны видеть под каким стаканчиком" +
             // репорт "debug сливается в консоль"): $debugBase содержит 'allCups' — ПОЛНУЮ
             // раскладку всех 9 стаканчиков. Больше НЕ уходит клиенту (все 4 исхода pickCup()
             // ниже), остаётся ТОЛЬКО в error_log() строкой выше.
-            $this->ops->ok(['type' => 'coins', 'amt' => $this->KUSH_AMOUNT, 'kush' => true,
-                'patch' => $this->ops->patchCurrencies($user, ['coins','coins_earned'])]);
+            $this->ops->ok(['type' => 'coins', 'amt' => $jackpotPool, 'kush' => true,
+                'patch' => $this->ops->patchCurrencies($user, ['coins','coins_earned','roulette_winner'])]);
             return;
         }
         if($reward === 'keyring'){

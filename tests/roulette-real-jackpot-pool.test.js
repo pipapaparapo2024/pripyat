@@ -2,6 +2,14 @@
  * Test: рулетка — джек-пот теперь реально растёт на 10р за каждый спин (цена поинта),
  * Гарантированная награда — 500 рублей; накопленный пул разыгрывается в суперигре.
  *
+ * 12.10.2026 (по прямому указанию, живой репорт — "выбил настоящий куш, дали фиксированные
+ * 50 тысяч вместо суммы джекпота"): Test 1 обновлён — сброс jackpot_pool на 3000 переехал ИЗ
+ * spin() (попадание на сектор джекпота колеса — ещё не выигрыш, см. roulette.php) В pickCup()
+ * (ветка $reward==='kush' — РЕАЛЬНЫЙ выигрыш Куша, единственный момент, когда деньги реально
+ * выданы игроку). См. roulette-winner-nickname-server-authoritative.test.js Test 5 — там же
+ * проверяется, что ВЫПЛАТА использует именно это живое значение пула, а не старый плейсхолдер
+ * $this->KUSH_AMOUNT.
+ *
  * Run: node tests/roulette-real-jackpot-pool.test.js
  */
 
@@ -19,13 +27,23 @@ const rouletteSrc       = fs.readFileSync(path.join(__dirname, '..', '_client', 
 const rouletteScreenSrc = fs.readFileSync(path.join(__dirname, '..', '_client', 'src', 'game', 'dvor', 'dvor-roulette-screen.js'), 'utf-8');
 const minigameSrc       = fs.readFileSync(path.join(__dirname, '..', '_client', 'src', 'game', 'dvor', 'dvor-roulette-minigame.js'), 'utf-8');
 
-console.log('\nTest 1: server roulette.php — spin() растит и возвращает jackpot_pool');
+console.log('\nTest 1: server roulette.php — spin() растит и возвращает jackpot_pool, НЕ сбрасывает его при попадании на сектор');
 {
     assert(/UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID\(`spin_counter` \+ 1\), `jackpot_pool` = `jackpot_pool` \+ 10 WHERE `id`=1/.test(phpSrc),
         'spin_counter и jackpot_pool (+10) инкрементируются одним запросом');
-    assert(/jackpot_pool.*=.*3000.*WHERE `id`=1/.test(phpSrc) || /jackpot_pool`=3000 WHERE `id`=1/.test(phpSrc),
-        'при срабатывании джек-пота jackpot_pool сбрасывается на 3000');
     assert(/'jackpot_pool' => \$jackpotPool/.test(phpSrc), 'spin() отдаёт jackpot_pool клиенту в ответе');
+
+    // 12.10.2026 (РЕВЕРТ): попадание на сектор джекпота колеса ($realJackpot) — это ещё НЕ
+    // выигрыш (игрок может забрать гарантированные 500р или рискнуть и не найти шарик в
+    // суперигре), поэтому spin() больше НЕ трогает jackpot_pool — только spin_counter/
+    // spin_threshold (каданс "как часто сектор вообще может выпасть").
+    const realJackpotStart = phpSrc.indexOf('if($realJackpot){');
+    const realJackpotEnd   = phpSrc.indexOf('\n        }', realJackpotStart);
+    const realJackpotBody  = phpSrc.slice(realJackpotStart, realJackpotEnd);
+    assert(/UPDATE `roulette_state` SET `spin_counter`=0, `spin_threshold`=\$newThreshold WHERE `id`=1/.test(realJackpotBody),
+        'при попадании на сектор джекпота сбрасываются ТОЛЬКО spin_counter/spin_threshold');
+    assert(!/jackpot_pool`=3000/.test(realJackpotBody),
+        'jackpot_pool БОЛЬШЕ НЕ сбрасывается здесь (12.10.2026 — сброс переехал в pickCup(), см. Test 5 в roulette-winner-nickname-server-authoritative.test.js)');
 }
 
 console.log('\nTest 2: server roulette.php — status() тоже отдаёт jackpot_pool (для показа при открытии экрана)');
