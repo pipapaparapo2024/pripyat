@@ -99,14 +99,14 @@ const SPINE_DIR = './images/spine/';
 //    json залит под 'mechennii_v2.json'. Атлас/текстура не менялись (побайтово те же) — не
 //    переименованы.
 const BOSS_SPINE = [
-    // 12.10.2026 (по прямому указанию, новый экспорт "okhotnik2.zip"): на этот раз ОБНОВИЛСЯ
-    // не только json, но и сам atlas (единственная реальная правка внутри — первая строка
-    // 'okhotnik.webp' → 'okhotnik2.webp', см. diff) — впервые с добавления Охотника. Текстура
-    // (.webp) при этом байт-в-байт совпадает с уже лежащим okhotnik1.webp, но атлас ссылается
-    // именно на имя 'okhotnik2.webp' (tex читается из atlas.pages[0].name, см. правило в
-    // AGENTS.md) — скопирован отдельным файлом под этим именем, а не переиспользован
-    // okhotnik1.webp, чтобы не редактировать присланный атлас руками.
-    { atlas: 'okhotnik2.atlas',  json: 'okhotnik_v4.json',
+    // 15.10.2026 (по прямому указанию, новый экспорт "okhotnik.zip"): шестое обновление —
+    // только json изменился (39 костей/26 слотов — было 40/26, риг чуть упрощён, но слоты те же,
+    // atlas/webp не в счёт). atlas/webp побайтово совпадают с уже используемыми okhotnik2.atlas/
+    // okhotnik2.webp (diff/md5 подтверждены) — не переименованы, переименовывать нечего. json
+    // залит под СЛЕДУЮЩИМ именем 'okhotnik_v5.json' (v4 уже занято предыдущим обновлением) —
+    // та же причина cache-bust, что и у всех предыдущих переименований (_loadSpineSkeleton()
+    // грузит fetch() БЕЗ cache-busting query-параметра, см. комментарий там же).
+    { atlas: 'okhotnik2.atlas',  json: 'okhotnik_v5.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 0 — Охотник
     { atlas: 'lucky.atlas',      json: 'lucky.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
@@ -114,9 +114,10 @@ const BOSS_SPINE = [
                    x: 680, y: 673, scale: 0.44 } },
     { atlas: 'yastreb.atlas',    json: 'yastreb.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
-    // 12.10.2026 (новый экспорт "Mechennii2.zip"): только json изменился (atlas/webp —
-    // байт-в-байт совпадают с уже лежащими, переименование не требуется).
-    { atlas: 'mechennii.atlas',  json: 'mechennii_v3.json',
+    // 15.10.2026 (новый экспорт "Mechennii (2).zip"): третье обновление — только json изменился
+    // (55 костей/31 слот — было 60/31, тот же паттерн упрощения рига, что и у Охотника выше;
+    // atlas/webp побайтово совпадают с mechennii.atlas/mechennii.webp, не переименованы).
+    { atlas: 'mechennii.atlas',  json: 'mechennii_v4.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 3 — Меченный
     null, null, null, null                               // 4-7 — пока без Spine (файлов нет)
 ];
