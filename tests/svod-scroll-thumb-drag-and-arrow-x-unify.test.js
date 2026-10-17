@@ -77,8 +77,10 @@ console.log('\nTest 5: svod-achievements.js — arrowX унифицирован 
     const start = achSrc.indexOf('this._buildSvodScroll({');
     const end   = achSrc.indexOf('});', start);
     const body  = achSrc.slice(start, end);
-    assert(/trackX: 1035, arrowX: 1034, arrowDownY: 480,/.test(body),
-        'КРИТИЧНО: arrowX:1034 (было 1033) — стрелки вверх/вниз теперь на той же X, что и в Общем топе');
+    // 17.10.2026: trackY:236, arrowUpY:204 добавлены между arrowX и arrowDownY — унификация
+    // пошла дальше (теперь и трек/стрелка вверх совпадают с Общим топом, не только X).
+    assert(/trackX: 1035, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,/.test(body),
+        'КРИТИЧНО: arrowX:1034 (было 1033) — стрелки вверх/вниз теперь на той же X, что и в Общем топе; trackY/arrowUpY тоже унифицированы');
 }
 
 console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на arrowX:1034 (эталон, не менялся этим батчем)');

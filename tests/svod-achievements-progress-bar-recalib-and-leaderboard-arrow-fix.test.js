@@ -44,10 +44,12 @@ console.log('\nTest 2: svod-achievements.js — DESC_CENTER_X по-прежне�
 
 console.log('\nTest 3: svod-scroll.js — arrowUpY/arrowDownY из cfg реально читаются и применяются (раньше были в JSDoc, но не в destructuring)');
 {
-    assert(/const \{ parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY \} = cfg;/.test(scrollSrc),
-        'arrowUpY/arrowDownY добавлены в деструктуризацию cfg');
-    assert(/arrowUp\.y = \(arrowUpY !== undefined\) \? arrowUpY : viewY - 32;/.test(scrollSrc),
-        'arrowUp.y использует override, если передан, иначе прежняя формула (viewY-32)');
+    // 17.10.2026: добавлен trackY (см. docблок там же) — та же схема override, что у
+    // arrowUpY/arrowDownY, позиция в деструктуризации — в конце.
+    assert(/const \{ parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY \} = cfg;/.test(scrollSrc),
+        'arrowUpY/arrowDownY/trackY добавлены в деструктуризацию cfg');
+    assert(/arrowUp\.y = \(arrowUpY !== undefined\) \? arrowUpY : effectiveTrackY - 32;/.test(scrollSrc),
+        'arrowUp.y использует override, если передан, иначе формула от effectiveTrackY (было viewY, теперь декоративная Y трека, не контента)');
     assert(/arrowDown\.y = \(arrowDownY !== undefined\) \? arrowDownY : viewY \+ viewH \+ 2;/.test(scrollSrc),
         'arrowDown.y использует override, если передан, иначе прежняя формула (viewY+viewH+2)');
 }

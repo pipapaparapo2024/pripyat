@@ -216,14 +216,17 @@ export function attachBossResultPopup(proto){
         win.addChild(nameTxt);
 
         if(!isWin){
+            // 17.10.2026 (по прямому указанию — убрать текст с остатком HP вообще, не нужен):
+            // раньше тут писался остаток (текущий / максимум). Убрано целиком. Вместо него —
+            // только общий (максимальный) HP босса, на новых координатах с редактора позиций
+            // (та же величина, что показывает hpBarTxt на экране победы).
             const hpTxt = new PIXI.Text(
-                'Осталось HP: ' + (window.bosses ? bosses._fmt(opts.hpLeft || 0) : (opts.hpLeft || 0))
-                + ' / ' + (window.bosses ? bosses._fmt(opts.maxHp || 0) : (opts.maxHp || 0)),
+                window.bosses ? bosses._fmt(opts.maxHp || 0) : String(opts.maxHp || 0),
                 { fontFamily: 'Southbank LT', fontSize: 14, fill: '#1a1208' }
             );
             hpTxt.anchor.set(0.5, 0.5);
-            hpTxt.x = PORTRAIT_POS.x + NAME_OFFSET.x;
-            hpTxt.y = PORTRAIT_POS.y + NAME_OFFSET.y + 18;
+            hpTxt.x = 492; hpTxt.y = 415;
+            hpTxt.scale.set(1.000);
             win.addChild(hpTxt);
         } else {
             // 22.09.2026: "количество хп, которое было у босса" — на победном экране это его

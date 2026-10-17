@@ -53,7 +53,10 @@ console.log('\nTest 2: маска + locWrap — окно показа вмеща
     assert(/locWrap\.mask = maskGfx;/.test(src), 'маска применена к locWrap');
     assert(/group\.y = i \* SLOT_H;/.test(src), 'каждая группа локации сдвинута на i*SLOT_H — стек локаций друг под другом');
     assert(/const PER_LOC_STEP = 237;/.test(src), 'шаг между соседними локациями — 237 (разница центров старых top/bottom слотов)');
-    assert(/const VIEW_BOTTOM_PADDING = 26;[\s\S]*?const VIEW_Y = 120, VIEW_H = PER_LOC_STEP \* 2 \+ VIEW_BOTTOM_PADDING;/.test(src), 'маска имеет 26px запас под вторую карточку и не обрезает её низ');
+    // 17.10.2026 (по прямому указанию — "карусель вылезает за обе границы"): верх маски
+    // опущен на 12px, низ поднят на 12px (VIEW_TOP_TRIM/VIEW_BOTTOM_TRIM) — пиннуем новую
+    // формулу, 26px-запас под вторую карточку (VIEW_BOTTOM_PADDING) сам не менялся.
+    assert(/const VIEW_BOTTOM_PADDING = 26;[\s\S]*?const VIEW_TOP_TRIM = 12, VIEW_BOTTOM_TRIM = 12;[\s\S]*?const VIEW_Y = 120 \+ VIEW_TOP_TRIM;[\s\S]*?const VIEW_H = PER_LOC_STEP \* 2 \+ VIEW_BOTTOM_PADDING - VIEW_TOP_TRIM - VIEW_BOTTOM_TRIM;/.test(src), 'маска имеет 26px запас под вторую карточку, верх/низ подрезаны на 12px каждый по новому репорту');
     assert(/const SLOT_H = PER_LOC_STEP;/.test(src), 'шаг сдвига карусели = шагу между локациями (не высоте всего окна, как в первой версии)');
 }
 

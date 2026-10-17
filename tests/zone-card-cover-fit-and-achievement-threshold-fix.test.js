@@ -67,8 +67,8 @@ console.log('\nTest 1: карточки локаций — нативный ра
     assert(!/spr\.mask/.test(body), 'у спрайта карточки больше нет .mask');
     assert(/spr\.x = SLOT_CX \+ CARD_OFFSET_X;/.test(body),
         'позиция — центр единственного слота + снятый через редактор оффсет (не привязана к размеру конкретного файла)');
-    assert(/spr\.y = SLOT_CY \+ CARD_OFFSET_Y;/.test(body),
-        'позиция Y — та же логика (общий оффсет от центра слота)');
+    assert(/spr\.y = SLOT_CY \+ CARD_OFFSET_Y(?: \+ CARD_Y_NUDGE)?;/.test(body),
+        'позиция Y — та же логика (общий оффсет от центра слота, 17.10.2026 + CARD_Y_NUDGE на 4px)');
     // 22.09.2026: единый CARD_SCALE обрезал Агропром.png (native выше остальных 4) маской
     // карусели — заменено на per-текстурную нормализацию к CARD_TARGET_H. По-прежнему НЕ
     // per-location override-таблица (xOverride/yOverride/scaleOverride) — одна формула для всех.

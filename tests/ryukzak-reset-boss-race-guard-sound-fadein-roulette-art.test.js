@@ -46,21 +46,22 @@ console.log('\n1а) ryukzak.php.open() — очки обнуляются сра�
     assert(/patchCurrencies\(\$user, \[[\s\S]*?'ryukzak_points',/.test(body), "'ryukzak_points' входит в список ключей patchCurrencies — клиент увидит 0 сразу");
 }
 
-console.log('\n1б) ryukzak.js — клиент пересчитывает превью уровня и поднимает окно после закрытия попапа награды');
+console.log('\n1б) ryukzak.js — клиент пересчитывает превью уровня и поднимает окно поверх ХУДа после начисления награды');
 {
     const src = read('_client/src/game/shell/overlays/ryukzak.js');
-    assert(/this\._showRewardPopup\(rewards, \(\) => \{/.test(src), '_showRewardPopup вызывается с onClose-колбэком (раньше — без него)');
-    const cbIdx = src.indexOf('this._showRewardPopup(rewards, () => {');
-    // 04.10.2026: было фиксированное окно в 2600 символов — хрупко (сломалось от правки бага
-    // "следующая награда визуально не меняется", добавившей ~700 символов кода+коммента внутрь
-    // этого же колбэка). До конца callback'а ближайший устойчивый якорь — следующий addChild HUD.
+    // 17.10.2026 (по прямому указанию — "поп-ап награды в сумке/рюкзаке не нужен"): попап с
+    // onClose-колбэком убран, та же логика (сброс уровня, z-order) теперь выполняется сразу,
+    // синхронно, через именованную функцию _afterRewardClaimed() — якорь теста обновлён вместе
+    // с кодом (см. reward-popup-suppressed-yashik-ryukzak.test.js, Test 4 — то же поведение).
+    assert(/const _afterRewardClaimed = \(\) => \{/.test(src), 'onClose-логика вынесена в именованную функцию _afterRewardClaimed (раньше — инлайн-колбэк попапа)');
+    const cbIdx = src.indexOf('const _afterRewardClaimed = () => {');
     const cbEndIdx = src.indexOf('if(window.iface){ iface.updateUp(); iface.updateNick(); }', cbIdx);
     const cbChunk = src.slice(cbIdx, cbEndIdx !== -1 ? cbEndIdx : cbIdx + 4000);
     assert(/_ryukzakLevelFromPoints\(pointsAfter\)/.test(cbChunk), 'превью уровня пересчитывается по свежим очкам (0 после сброса)');
     assert(/lvlTxt\.text = 'УРОВЕНЬ РЮКЗАКА : ' \+ resetLevel;/.test(cbChunk), 'текст уровня обновляется на пересчитанный');
     assert(/_renderProgress\(resetLevel\)/.test(cbChunk), 'прогресс-бар тоже пересчитывается');
     assert(/if\(win\.parent\) root\.layer2_mc\.addChild\(win\);/.test(cbChunk),
-        'окно рюкзака поднимается обратно поверх ХУДа (restoreHud() внутри _showRewardPopup кладёт ХУД выше)');
+        'окно рюкзака поднимается обратно поверх ХУДа (restoreHud() всё ещё кладёт ХУД выше, попап тут больше ни при чём)');
 }
 
 console.log('\n2) bosses-combat.js — guard от повторного claimKill() при гонке _attack()/_syncFriendsDamage()');

@@ -40,7 +40,7 @@ const zoneScreenSrc = readSrc('_client/src/game/shell/overlays/zone_screen.js');
 // УР.10» — устаревший HUD без updateUp()) закрыт на новом, общем для обеих кнопок пути.
 console.log('\nTest 1: ящик (общий collectReward — крестик и ЗАБРАТЬ) — applyPatch + iface.updateUp() после начисления');
 {
-    const start = yashikSrc.indexOf('const collectReward = () => {');
+    const start = yashikSrc.indexOf('const collectReward = (suppressPopup) => {');
     const end   = yashikSrc.indexOf('\t\t};', start);
     const body  = yashikSrc.slice(start, end);
     assert(/TS\.php\('yashik\.collect', \{\}/.test(body), 'найден блок начисления награды (общий для крестика и ЗАБРАТЬ)');
@@ -57,7 +57,7 @@ console.log('\nTest 2: ящик — и крестик, и ЗАБРАТЬ исп�
 
     const zStart = yashikSrc.indexOf("zabratBtn.on('pointerdown'");
     const zEnd   = yashikSrc.indexOf('win.addChild(zabratBtn);');
-    assert(/collectReward\(\);/.test(yashikSrc.slice(zStart, zEnd)), 'ЗАБРАТЬ вызывает collectReward()');
+    assert(/collectReward\(true\);/.test(yashikSrc.slice(zStart, zEnd)), 'ЗАБРАТЬ вызывает collectReward() (17.10.2026: с true — попап подавлен, см. reward-popup-suppressed-yashik-ryukzak.test.js)');
 }
 
 // 17.09.2026 (позже этого батча, отдельное прямое указание): Math.min (contain) заменён на

@@ -49,8 +49,8 @@ console.log('\nTest 2: число очков внутри звезды (starPtsT
 
 console.log('\nTest 3: регресс-гвард — звезда всё ещё позиционируется/масштабируется как раньше (не задета правкой сверх задуманного)');
 {
-    assert(/star\.x = CARD_W - 60; star\.y = ICON_CENTER_Y;/.test(achSrc), 'позиция звезды (CARD_W-60, ICON_CENTER_Y) не изменилась');
-    assert(/star\.scale\.set\(0\.75\);/.test(achSrc), 'масштаб звезды (0.75) не изменился');
+    assert(/star\.x = CARD_W - 60; star\.y = ICON_CENTER_Y \+ 2;/.test(achSrc), 'позиция звезды (CARD_W-60, ICON_CENTER_Y+2 — 17.10.2026 сдвинута на 2px вниз)');
+    assert(/star\.scale\.set\(0\.932\);/.test(achSrc), 'масштаб звезды (0.932 — 17.10.2026, было 0.75)');
     assert(/starFill\.x = star\.x; starFill\.y = star\.y;/.test(achSrc), 'заливка по-прежнему совмещена с основанием звезды (не сдвинута вместе с текстом)');
 }
 

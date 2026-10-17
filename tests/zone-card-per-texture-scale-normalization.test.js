@@ -43,8 +43,8 @@ function pngSize(filePath){
 
 console.log('\nTest 1: CARD_TARGET_H — единая целевая высота, снятая с самого короткого исходника (311px)');
 {
-    assert(/const CARD_TARGET_H = Math\.round\(311 \* CARD_SCALE\);/.test(src),
-        'CARD_TARGET_H вычисляется от 311 (самый короткий из 5 исходников) и CARD_SCALE');
+    assert(/const CARD_TARGET_H = Math\.round\(311 \* CARD_SCALE \* CARD_SCALE_NUDGE\);/.test(src),
+        'CARD_TARGET_H вычисляется от 311 (самый короткий из 5 исходников), CARD_SCALE и CARD_SCALE_NUDGE (17.10.2026, −2%)');
 }
 
 console.log('\nTest 2: масштаб карточки — фиксированные width И height (CARD_TARGET_W/H), не единый пропорциональный scale');

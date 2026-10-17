@@ -292,10 +292,14 @@ export function attachSvodAchievements(proto){
             // (alpha по умолчанию 1), звезда с числом суммарных очков достижения/темы (если
             // пройти полностью) должна визуально чуть "уходить на второй план" рядом с галочкой/
             // прогресс-баром, а не перетягивать внимание наравне с ними.
+            // 17.10.2026 (по прямому указанию, редактор позиций — "scale:0.932, опусти на 2px
+            // вниз, для каждого достижения"): было scale 0.75. Применяется автоматически ко
+            // ВСЕМ CARD_POOL карточкам — звезда строится внутри этого цикла, не отдельно на
+            // карточку.
             const star = new PIXI.Sprite(PIXI.Texture.from(IMG + 'звездочка пустая.png'));
             star.anchor.set(0.5, 0.5);
-            star.x = CARD_W - 60; star.y = ICON_CENTER_Y;
-            star.scale.set(0.75); // на 70px видимой полосы полноразмерная звезда (для 149px карточки) не помещалась
+            star.x = CARD_W - 60; star.y = ICON_CENTER_Y + 2;
+            star.scale.set(0.932);
             star.alpha = 0.85;
             card.addChild(star);
 
@@ -304,7 +308,7 @@ export function attachSvodAchievements(proto){
             const starFill = new PIXI.Sprite(PIXI.Texture.from(IMG + 'звездочка фулл.png'));
             starFill.anchor.set(0.5, 0.5);
             starFill.x = star.x; starFill.y = star.y;
-            starFill.scale.set(0.75);
+            starFill.scale.set(0.932);
             starFill.alpha = 0.85;
             card.addChild(starFill);
             const starFillMask = new PIXI.Graphics();
@@ -360,11 +364,19 @@ export function attachSvodAchievements(proto){
         // стрелок вверх/вниз, сделай как в общем топе"): arrowX всё ещё был 1033 здесь против
         // 1034 в svod-leaderboard.js — только Y унифицировали вчера, X остался рассинхронизирован
         // на 1px, из-за чего разница осталась видна. Теперь оба экрана используют arrowX:1034.
+        // 17.10.2026 (по прямому указанию — "скролл в 'Мои достижения' не совпадает со
+        // 'Общий топ': расположение стрелки вверх, скрол.png и шкала скрола.png разные"):
+        // корень — LIST_TOP здесь 242, а в svod-leaderboard.js 236 (разная позиция СПИСКА,
+        // это намеренно, не трогаем), но раньше позиция ТРЕКА/СТРЕЛКИ ВВЕРХ была жёстко равна
+        // viewY (=LIST_TOP) — то есть decorative-элементы скролла неизбежно съезжали вместе со
+        // списком. trackY/arrowUpY — новые overrides (см. svod-scroll.js) — задают декоративную
+        // позицию трека/стрелки ОТДЕЛЬНО от позиции контента, здесь явно выставлены на те же
+        // 236/204, что получаются у svod-leaderboard.js (LIST_TOP=236, дефолт arrowUp=236-32).
         const scroll = this._buildSvodScroll({
             parent: win,
             contentContainer: cardsContainer,
             viewX: CARD_X, viewY: LIST_TOP, viewW: CARD_W, viewH: LIST_H,
-            trackX: 1035, arrowX: 1034, arrowDownY: 480,
+            trackX: 1035, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,
             stepPx: CARD_STEP,
             getTotalH: () => totalContentH,
         });
@@ -415,7 +427,9 @@ export function attachSvodAchievements(proto){
                     c._iconSpr.x = ICON_X; c._iconSpr.y = ICON_CENTER_Y;
                     // 21.09.2026: было 64×64 под полноразмерную 149px карточку — на 70px видимой
                     // полосы не помещалось (вылезало в прозрачные поля соседних карточек).
-                    c._iconSpr.width = 56; c._iconSpr.height = 56;
+                    // 17.10.2026 (по прямому указанию — "размеры иконок достижений сделай не
+                    // 56×56, а 42×42"): было 56×56.
+                    c._iconSpr.width = 42; c._iconSpr.height = 42;
                     c.card.addChildAt(c._iconSpr, 1);
                 }
                 c._iconSpr.texture = PIXI.Texture.from(iface._achievementIconFor(a));

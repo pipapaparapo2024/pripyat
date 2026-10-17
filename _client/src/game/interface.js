@@ -77,9 +77,11 @@ export default class Interface{
 			if(idx !== -1){ bitmaps50['id'].splice(idx, 1); bitmaps50['bm'].splice(idx, 1); }
 			helper.loadPhoto50(vk_params['vk_user_id'], (bm)=>{
 				if(this.up && this.up.ava && this.up.ava.icon_mc){
-					const S = 69;
+					// 17.10.2026 (по прямому указанию, редактор позиций — "иконка игрока в верхнем
+					// попапе" x:4,y:2,scale:0.509,w:55,h:55): было S=69,x=-4,y=-5.
+					const S = 55;
 					bm.width = S; bm.height = S;
-					bm.x = -4; bm.y = -5;
+					bm.x = 4; bm.y = 2;
 					this.up.ava.icon_mc.addChild(bm);
 				}
 			}, url || null);

@@ -102,6 +102,13 @@ export function attachZoneScreen(proto){
 		const SLOT_CX = 659, SLOT_CY = 267, SLOT_CARD_W = 902, SLOT_CARD_H = 196;
 		const CAP_BTN_X = 347, CAP_BTN_Y = 329;
 		const CARD_OFFSET_X = 14, CARD_OFFSET_Y = -7, CARD_SCALE = 0.706;
+		// 17.10.2026 (по прямому указанию — "уменьши все файлы карточек локаций на 2%, опусти
+		// вниз на 4px"): применяются поверх уже откалиброванных CARD_TARGET_W/H ниже — не трогаем
+		// сам 936×220 эталон (снят с картинки пользователя 22.09.2026), просто домножаем/сдвигаем
+		// перед использованием. Объявлены здесь (а не ниже, рядом с CARD_TARGET_W) — нужны обеим
+		// константам CARD_TARGET_W И CARD_TARGET_H, а вторая объявлена раньше по файлу.
+		const CARD_SCALE_NUDGE = 0.98;
+		const CARD_Y_NUDGE = 4;
 		// 22.09.2026 (баг найден по живому репорту — "карточка локации снизу обрезается
 		// невидимым блоком", воспроизводилось на Агропроме): CARD_SCALE=0.706 был подобран под
 		// исходники кордон/свалка/долина/янтарь (native height 311-317px), но у Агропром.png
@@ -112,7 +119,7 @@ export function attachZoneScreen(proto){
 		// высоты каждой текстуры к единой целевой видимой высоте (CARD_TARGET_H, снята с самой
 		// короткой из исходников — 311px при CARD_SCALE — она заведомо помещается), а не
 		// применяется как один и тот же множитель ко всем текстурам подряд.
-		const CARD_TARGET_H = Math.round(311 * CARD_SCALE);
+		const CARD_TARGET_H = Math.round(311 * CARD_SCALE * CARD_SCALE_NUDGE);
 		// 22.09.2026 (баг найден по прямому указанию, скриншот редактора позиций — "сделай все
 		// карточки локаций одним размером как на 1 картинке"): _applyCardScale ниже раньше
 		// нормализовала ТОЛЬКО высоту (scale = CARD_TARGET_H / texture.height) — у всех 5
@@ -122,7 +129,7 @@ export function attachZoneScreen(proto){
 		// была ровно 220. CARD_TARGET_W снят через редактор позиций именно с карточки "кордон"
 		// (эталон с картинки пользователя: w=936,h=220,scale=0.696) — теперь ширина ТОЖЕ
 		// фиксирована на это значение для всех карточек, а не только высота.
-		const CARD_TARGET_W = 936;
+		const CARD_TARGET_W = 936 * CARD_SCALE_NUDGE;
 
 		// 21.09.2026: Агропром раньше показывался в НИЖНЕМ слоте страницы и получил
 		// индивидуальный xOverride/yOverride/scaleOverride, снятые через редактор именно под
@@ -146,7 +153,13 @@ export function attachZoneScreen(proto){
 		// Запас в 26px заканчивается до стрелок и показывает карточку целиком.
 		const PER_LOC_STEP = 237;
 		const VIEW_BOTTOM_PADDING = 26;
-		const VIEW_Y = 120, VIEW_H = PER_LOC_STEP * 2 + VIEW_BOTTOM_PADDING;
+		// 17.10.2026 (по прямому указанию — "карусель выходит за обе границы: сверху залезает
+		// под кнопки вкладок ('зона актив.png'/'скоро зона.png'), снизу стрелки оказываются
+		// поверх списка"): верхняя граница маски опущена вниз на 12px, нижняя — поднята вверх
+		// на 12px (итоговое окно показа сузилось на 24px суммарно, не просто сдвинулось).
+		const VIEW_TOP_TRIM = 12, VIEW_BOTTOM_TRIM = 12;
+		const VIEW_Y = 120 + VIEW_TOP_TRIM;
+		const VIEW_H = PER_LOC_STEP * 2 + VIEW_BOTTOM_PADDING - VIEW_TOP_TRIM - VIEW_BOTTOM_TRIM;
 		const SLOT_H = PER_LOC_STEP;
 		// Последний индекс, до которого можно докрутить карусель — TOTAL_LOCS-2, чтобы
 		// последняя видимая пара ВСЕГДА была полной (напр. Агропром+Янтарь), а не одинокой
@@ -177,12 +190,16 @@ export function attachZoneScreen(proto){
 			const spr = new PIXI.Sprite(tex);
 			spr.anchor.set(0.5, 0.5);
 			spr.x = SLOT_CX + CARD_OFFSET_X;
-			spr.y = SLOT_CY + CARD_OFFSET_Y;
+			// 17.10.2026 (по прямому указанию — "уменьши все файлы на 2%, опусти на 4px"):
+			// +CARD_Y_NUDGE ниже сдвигает картинку вниз, сам размер (CARD_TARGET_W/H) уменьшен
+			// у константы — anchor спрайта 0.5/0.5, поэтому уменьшение идёт от центра карточки,
+			// не от угла (не тянет её в сторону).
+			spr.y = SLOT_CY + CARD_OFFSET_Y + CARD_Y_NUDGE;
 			// Масштаб — фиксированные ширина И высота (CARD_TARGET_W/H, см. коммент выше), не
 			// пропорциональный scale от одной лишь высоты: у исходников разное соотношение
 			// сторон, из-за чего при единственном общем множителе ширина карточек плавала
 			// (кордон/свалка/долина/янтарь ~4.25-4.35, Агропром 4.0). width/height растягивают
-			// НЕЗАВИСИМО — все карточки теперь строго 936×220, как показал пользователь.
+			// НЕЗАВИСИМО — все карточки теперь строго 936×220 × 0.98, как показал пользователь.
 			const _applyCardScale = () => { spr.width = CARD_TARGET_W; spr.height = CARD_TARGET_H; };
 			if(tex.baseTexture.valid) _applyCardScale();
 			else tex.baseTexture.once('loaded', _applyCardScale);
@@ -236,15 +253,19 @@ export function attachZoneScreen(proto){
 		this._refreshZoneRespectLeaders();
 
 		// Стрелки навигации (вертикальные) — теперь листают по ОДНОЙ локации за клик.
+		// 17.10.2026 (по прямому указанию — "стрелки вверх/вниз опустить на 2 пикселя"):
+		// касается обеих текстур каждой кнопки (активная/пассивная меняются только текстурой,
+		// см. _updateZoneArrows ниже — x/y выставляются один раз здесь и не трогаются при смене
+		// активная.png ⇄ пассивная.png).
 		const arrowUp = new PIXI.Sprite(PIXI.Texture.from(Z + 'Стрелка вверх.png'));
 		arrowUp.anchor.set(0.5, 0.5);
-		arrowUp.x = 635; arrowUp.y = 629;
+		arrowUp.x = 635; arrowUp.y = 631;
 		arrowUp.interactive = false;
 		win.addChild(arrowUp);
 
 		const arrowDown = new PIXI.Sprite(PIXI.Texture.from(Z + 'активная стрелка вниз.png'));
 		arrowDown.anchor.set(0.5, 0.5);
-		arrowDown.x = 706; arrowDown.y = 628;
+		arrowDown.x = 706; arrowDown.y = 630;
 		arrowDown.interactive = true; arrowDown.buttonMode = true;
 		win.addChild(arrowDown);
 

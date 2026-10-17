@@ -32,7 +32,9 @@ const src = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', '
 
 console.log('\nTest 1: CARD_TARGET_W добавлена (936, снята с эталонной карточки "кордон" на скриншоте пользователя)');
 {
-    assert(/const CARD_TARGET_W = 936;/.test(src), 'CARD_TARGET_W === 936');
+    // 17.10.2026: эталон 936 остался, но теперь домножается на CARD_SCALE_NUDGE (−2%,
+    // по прямому указанию "уменьши все файлы карточек на 2%") — пиннуем формулу, не число.
+    assert(/const CARD_TARGET_W = 936 \* CARD_SCALE_NUDGE;/.test(src), 'CARD_TARGET_W === 936 * CARD_SCALE_NUDGE (эталон 936 + −2% нудж)');
 }
 
 console.log('\nTest 2: _applyCardScale выставляет width И height НЕЗАВИСИМО (не единый пропорциональный scale)');

@@ -49,10 +49,10 @@ console.log('\nTest 1: svod-scroll.js — маска списка помечен
         'interactive НЕ ставится — иначе маска (добавлена в parent ПОСЛЕ cardsContainer, значит выше по z-order) перехватывала бы клики по карточкам даже вне режима редактора');
 }
 
-console.log('\nTest 2: svod-scroll.js — бегунок скролла сдвинут на -1px');
+console.log('\nTest 2: svod-scroll.js — бегунок скролла (17.10.2026: сдвинут на +1px по X, было -1px — пользователь попросил сдвинуть на 2px вправо)');
 {
-    assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) - 1;/.test(svodScrollSrc),
-        'формула позиции бегунка получила "-1" в конце (было без него)');
+    assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1;/.test(svodScrollSrc),
+        'формула позиции бегунка получила "+1" в конце (было "-1")');
 }
 
 console.log('\nTest 3: dvor-dice-screen.js — задний фон зариков рендерится тем же способом (BASE+файл, y=15); 02.10.2026 (найдено при разборе полного прогона tests/, см. dice-screen-correct-themed-background.test.js): файл с тех пор переименован на "задний фон зарики новыйй.png" (новая картинка, без дата-комментария с обоснованием, но реально 1280×705 и в предзагрузке) — код рендера (BASE+имя, y=15) не менялся, меняется только проверяемое имя файла');

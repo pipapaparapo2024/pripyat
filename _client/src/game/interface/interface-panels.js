@@ -25,8 +25,11 @@ export function attachInterfacePanels(proto){
             // только хитбокс, то, что игрок РЕАЛЬНО видит на экране, оставалось на месте. Правка
             // в interface_elements.min.js (см. коммент там же) добавила имя `butt_settings_icon`
             // для этого спрайта — двигаем оба объекта вместе, чтобы хитбокс не разъехался с иконкой.
-            this.up.butt_settings.y += 2;
-            if(this.up.butt_settings_icon) this.up.butt_settings_icon.y += 2;
+            //
+            // 17.10.2026 (по прямому указанию, новый снимок редактора позиций —
+            // "butt_settings.png x:1237 y:23 scale:1.000"): это ровно БАЗОВАЯ позиция из FLA
+            // (см. коммент выше, f.setTransform(1237,23)) — компенсация +2px от 04.10.2026
+            // убрана, сдвиг больше не нужен.
         }
 
         if(this.up.butt_energy_plus){

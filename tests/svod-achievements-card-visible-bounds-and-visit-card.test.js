@@ -120,7 +120,7 @@ console.log('\nTest 3: внутренние элементы карточки (�
     assert(/const PTS_Y           = 50;/.test(svodAchSrc), 'очки/прогресс-бар — y=50, до нижней границы (50+высота бара ≤ 70)');
     assert(/iconTxt\.x = ICON_X; iconTxt\.y = ICON_CENTER_Y;/.test(svodAchSrc), 'иконка (фолбэк-эмодзи) привязана к ICON_X/ICON_CENTER_Y (было голое число 60)');
     assert(/nameTxt\.x = NAME_X; nameTxt\.y = NAME_Y;/.test(svodAchSrc), 'имя привязано к NAME_X/NAME_Y (было голое число 120)');
-    assert(/star\.x = CARD_W - 60; star\.y = ICON_CENTER_Y;/.test(svodAchSrc), 'звезда привязана к ICON_CENTER_Y');
+    assert(/star\.x = CARD_W - 60; star\.y = ICON_CENTER_Y \+ 2;/.test(svodAchSrc), 'звезда привязана к ICON_CENTER_Y (17.10.2026 +2px)');
     assert(!/const chevron = new PIXI\.Text/.test(svodAchSrc), 'стрелка раскрытия убрана: тема раскрывается кликом по карточке');
 }
 

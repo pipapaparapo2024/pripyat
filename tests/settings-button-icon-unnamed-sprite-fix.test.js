@@ -55,21 +55,18 @@ console.log('\nTest 2: interface_elements.min.js — регресс-гвард, 
         '_bst по-прежнему создаётся на (1237,23) — позиционную логику самого спрайта не трогали, только экспорт имени');
 }
 
-console.log('\nTest 3: interface-panels.js — нудж применяется к ОБОИМ объектам (хитбоксу и видимой иконке), не только к хитбоксу');
+// 17.10.2026 (по прямому указанию, новый снимок редактора позиций — "butt_settings.png
+// x:1237 y:23 scale:1.000", то есть ровно БАЗОВАЯ позиция без компенсации): нудж +2px,
+// проверявшийся здесь раньше (Test 3), убран целиком — конечная позиция снова совпадает с
+// необcмещённой базой (1237,23) из interface_elements.min.js, двигать нечего.
+console.log('\nTest 3: interface-panels.js — компенсирующий нудж +2px убран, конечная позиция иконки = база (1237,23)');
 {
     const start = panelsSrc.indexOf('if(this.up.butt_settings){');
     const end   = panelsSrc.indexOf('\n        }', start);
     const body  = panelsSrc.slice(start, end);
 
-    assert(/this\.up\.butt_settings\.y \+= 2;/.test(body), 'хитбокс (butt_settings) по-прежнему сдвигается на 2px — клик-зона остаётся актуальной');
-    assert(/if\(this\.up\.butt_settings_icon\) this\.up\.butt_settings_icon\.y \+= 2;/.test(body),
-        'КРИТИЧНО (сам фикс): видимая иконка (butt_settings_icon) теперь ТОЖЕ сдвигается на 2px — именно её раньше не трогали');
-}
-
-console.log('\nTest 4: регресс-гвард — defensive-проверка существования объекта перед сдвигом (на случай если PIXI.Texture.from когда-нибудь вернёт EMPTY и _bst окажется null)');
-{
-    assert(/if\(this\.up\.butt_settings_icon\)/.test(panelsSrc),
-        'сдвиг иконки обёрнут проверкой на существование — защита от TypeError, если _bst не создался (см. guard `if(m&&m!==PIXI.Texture.EMPTY)` в interface_elements.min.js)');
+    assert(!/butt_settings\.y \+=/.test(body), 'хитбокс (butt_settings) больше не сдвигается — y совпадает с базой из FLA');
+    assert(!/butt_settings_icon\.y \+=/.test(body), 'видимая иконка (butt_settings_icon) больше не сдвигается — y совпадает с базой из FLA');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

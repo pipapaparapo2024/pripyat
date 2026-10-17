@@ -94,7 +94,12 @@ export function attachPlayerProfile(proto){
         // Персонаж — те же координаты, что Home.init() (506,204).
         // 24.09.2026 (по прямому указанию — "в пропущенных местах тоже замени на новый файл"):
         // та же замена, что и в home.js — pers.png -> "персонаж который сидит.png".
-        const persSpr = new PIXI.Sprite(PIXI.Texture.from('./images/персонаж который сидит.png'));
+        const persTex = PIXI.Texture.from('./images/персонаж который сидит.png');
+        // 17.10.2026: см. докблок в home.js (тот же файл, тот же баг "пиксельный при мелком
+        // показе") — форсирует мипмапы на WebGL2, безопасный no-op на WebGL1.
+        persTex.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        persTex.baseTexture.update();
+        const persSpr = new PIXI.Sprite(persTex);
         persSpr.anchor.set(0, 0);
         persSpr.x = 506; persSpr.y = 204;
         persSpr.width = 273; persSpr.height = 389;

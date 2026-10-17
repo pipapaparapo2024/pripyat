@@ -112,7 +112,12 @@ const BOSS_SPINE = [
       x: 680, y: 673, scale: 0.40, anim: 'animation',    // 1 — Счастливчик
       explosion: { atlas: 'lucky_explosion.atlas', json: 'lucky_explosion.json', anim: 'animation',
                    x: 680, y: 673, scale: 0.44 } },
-    { atlas: 'yastreb.atlas',    json: 'yastreb.json',
+    // 17.10.2026 (по прямому указанию, новый экспорт "yeastreb test.zip"): все 3 файла
+    // (atlas/json/webp) реально изменились (md5 всех трёх разошёлся со старыми) — переименованы
+    // под yastreb_v2.* для cache-bust (_loadSpineSkeleton() грузит fetch() без query-параметра,
+    // см. комментарий в шапке файла). Внутренняя ссылка на текстуру в самом .atlas (строка 1)
+    // тоже исправлена на yastreb_v2.webp — иначе атлас продолжил бы искать старое имя файла.
+    { atlas: 'yastreb_v2.atlas', json: 'yastreb_v2.json',
       x: 680, y: 673, scale: 0.40, anim: 'animation' },  // 2 — Ястреб
     // 15.10.2026 (новый экспорт "Mechennii (2).zip"): третье обновление — только json изменился
     // (55 костей/31 слот — было 60/31, тот же паттерн упрощения рига, что и у Охотника выше;

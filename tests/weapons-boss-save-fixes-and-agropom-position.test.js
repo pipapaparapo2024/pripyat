@@ -125,7 +125,7 @@ console.log('\nTest 5: zone_screen.js — индивидуальный override 
     const end   = zoneScreenSrc.indexOf('// Кнопка ЗАХВАТИТЬ');
     const body  = zoneScreenSrc.slice(start, end);
     assert(/spr\.x = SLOT_CX \+ CARD_OFFSET_X;/.test(body), 'рендер карточки использует общую формулу (без ветвления на override)');
-    assert(/spr\.y = SLOT_CY \+ CARD_OFFSET_Y;/.test(body), 'то же для Y');
+    assert(/spr\.y = SLOT_CY \+ CARD_OFFSET_Y(?: \+ CARD_Y_NUDGE)?;/.test(body), 'то же для Y (17.10.2026 + CARD_Y_NUDGE на 4px)');
     // 22.09.2026: единый CARD_SCALE на все 5 локаций обрезал Агропром.png маской карусели
     // (native выше остальных 4) — заменено на per-текстурную нормализацию к CARD_TARGET_H.
     // 22.09.2026 (повторная правка того же дня, по прямому указанию — одинаковый размер всех

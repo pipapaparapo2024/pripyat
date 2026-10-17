@@ -444,7 +444,11 @@ export function attachYashik(proto){
 		// ранее откатанную (yashik.openBox) награду. "НАЗАД" этот колбэк не вызывает вообще —
 		// награда сгорает вместе с yashik_session при следующем открытии ящика (тот же UX,
 		// что был у клиента: rewardGiven здесь только защищает от двойного клика/начисления).
-		const collectReward = () => {
+		// 17.10.2026 (по прямому указанию — "при нажатии ЗАБРАТЬ в ящике поп-ап награды не
+		// нужен"): collectReward() общая для крестика И кнопки ЗАБРАТЬ (см. коммент выше) —
+		// суппрессию попапа нужно только для ЗАБРАТЬ, крестик оставлен как был. Параметр
+		// suppressPopup прокинут явным true только с обработчика кнопки ЗАБРАТЬ ниже.
+		const collectReward = (suppressPopup) => {
 			if(rewardGiven) return;
 			rewardGiven = true;
 			console.log('[yashik._openOtkrytYashik] → сервер: yashik.collect');
@@ -467,7 +471,7 @@ export function attachYashik(proto){
 						{type:'exp', amount:expGain},
 					];
 					if(shmotItem) _items.push({type:'shmot', amount:1});
-					iface._showRewardPopup(_items);
+					if(!suppressPopup) iface._showRewardPopup(_items);
 					iface.updateUp();
 				}
 				// 21.09.2026 (аудит "достижения появляются с задержкой") — applyPatch() сама
@@ -515,7 +519,7 @@ export function attachYashik(proto){
 		zabratBtn.on('pointerout', ()=>{ _sa(zabratBtn, 1); zabratBtn.scale.set(1); });
 		zabratBtn.on('pointerdown', ()=>{
 			this._showConfirmPopup('Забрать награду?', ()=>{
-				collectReward();
+				collectReward(true); // suppressPopup — см. коммент у collectReward выше
 				win.visible = false;
 				if(win.parent) win.parent.removeChild(win);
 			});
