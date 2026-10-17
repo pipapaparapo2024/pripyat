@@ -43,9 +43,9 @@ console.log('\nTest 1: CARD_TOP_OFFSET = 0, применён и к бегуще�
         'начальное значение высоты скролла тоже учитывает отступ (до первого refresh)');
 }
 
-console.log('\nTest 2: шаг между карточками (CARD_GAP) уменьшен на 4px — 6px, было 10px');
+console.log('\nTest 2: шаг между карточками (CARD_GAP) — 17.10.2026 уменьшен ещё на 7px (6→-1), было -4 (10→6)');
 {
-    assert(/const CARD_W = 672, CARD_GAP = 6;/.test(src), 'CARD_GAP=6 (было 10, -4 по указанию)');
+    assert(/const CARD_W = 672, CARD_GAP = 6 - 7;/.test(src), 'CARD_GAP = 6 - 7 (= -1, было 6)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

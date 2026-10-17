@@ -83,9 +83,9 @@ console.log('\nTest 5: svod-achievements.js — arrowX унифицирован 
         'КРИТИЧНО: arrowX:1034 (было 1033) — стрелки вверх/вниз теперь на той же X, что и в Общем топе; trackY/arrowUpY тоже унифицированы');
 }
 
-console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на arrowX:1034 (эталон, не менялся этим батчем)');
+console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на arrowX:1034 по умолчанию (эталон для respect/ach; 17.10.2026 — «урон» отдельно сдвинут на -2, см. DAMAGE_SCROLL_ARROW_X)');
 {
-    assert(/trackX: 1035, arrowX: 1034, arrowDownY: 480,/.test(lbSrc), 'leaderboard остаётся эталонной точкой сверки');
+    assert(/const SCROLL_TRACK_X = 1035, SCROLL_ARROW_X = 1034;/.test(lbSrc), 'leaderboard остаётся эталонной точкой сверки (дефолтные константы)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -34,7 +34,7 @@ const leaderSrc  = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'sv
 
 console.log('\nTest 1: CARD_GAP уменьшен на 4px (10→6), CARD_TOP_OFFSET увеличен (10→14→34), затем 23.09.2026 убран обратно (→0)');
 {
-    assert(/const CARD_W = 672, CARD_GAP = 6;/.test(achSrc), 'CARD_GAP=6 (было 10)');
+    assert(/const CARD_W = 672, CARD_GAP = 6 - 7;/.test(achSrc), 'CARD_GAP = 6 - 7 (было 10, затем 6, 17.10.2026 — -1)');
     // 22.09.2026: CARD_TOP_OFFSET получил ВТОРУЮ правку в тот же день (+20 сверху) — см.
     // svod-icon-position-rounding-and-subtab-sync-fix.test.js.
     // 23.09.2026 (по прямому указанию — "убери лишний отступ, сделай как в топе по урону"):

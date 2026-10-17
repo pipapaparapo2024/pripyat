@@ -220,18 +220,23 @@ export function attachBossResultPopup(proto){
             // раньше тут писался остаток (текущий / максимум). Убрано целиком. Вместо него —
             // только общий (максимальный) HP босса, на новых координатах с редактора позиций
             // (та же величина, что показывает hpBarTxt на экране победы).
+            // 17.10.2026 (по прямому указанию — "опусти вниз на 2 пикселя и сделай белым
+            // шрифтом"): y 415→417, цвет был тёмным, стал белым — тот же, что уже был у
+            // hpBarTxt на экране победы (см. ветку else ниже).
             const hpTxt = new PIXI.Text(
                 window.bosses ? bosses._fmt(opts.maxHp || 0) : String(opts.maxHp || 0),
-                { fontFamily: 'Southbank LT', fontSize: 14, fill: '#1a1208' }
+                { fontFamily: 'Southbank LT', fontSize: 14, fill: '#ffffff' }
             );
             hpTxt.anchor.set(0.5, 0.5);
-            hpTxt.x = 492; hpTxt.y = 415;
+            hpTxt.x = 492; hpTxt.y = 417;
             hpTxt.scale.set(1.000);
             win.addChild(hpTxt);
         } else {
             // 22.09.2026: "количество хп, которое было у босса" — на победном экране это его
             // максимальный HP (сам босс уже повержен), белым шрифтом поверх красной полоски,
             // вшитой в файл портрета.
+            // 17.10.2026 (по прямому указанию — "опусти вниз на 2 пикселя"): +2 к Y (уже был
+            // белым, см. fill выше — вторая часть указания тут уже выполнена).
             const hpBarTxt = new PIXI.Text(
                 window.bosses ? bosses._fmt(opts.maxHp || 0) : String(opts.maxHp || 0),
                 {
@@ -241,7 +246,7 @@ export function attachBossResultPopup(proto){
             );
             hpBarTxt.anchor.set(0.5, 0.5);
             hpBarTxt.x = PORTRAIT_POS.x + HP_BAR_OFFSET.x;
-            hpBarTxt.y = PORTRAIT_POS.y + HP_BAR_OFFSET.y;
+            hpBarTxt.y = PORTRAIT_POS.y + HP_BAR_OFFSET.y + 2;
             win.addChild(hpBarTxt);
         }
 

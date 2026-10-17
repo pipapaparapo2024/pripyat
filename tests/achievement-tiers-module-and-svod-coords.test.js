@@ -79,7 +79,7 @@ console.log('\nTest 3: координаты карточки «Мои дости
     assert(/const LIST_TOP = 236;/.test(leaderSrc), 'LIST_TOP = 236 — позиция первой ячейки (точное значение)');
     // 19.09.2026: зазор поднят с 3 до 6px по прямому указанию пользователя, см.
     // svod-achievements-bg-and-weapon-tier-damage.test.js — здесь просто синхронизируем значение.
-    assert(/const ROW_W = 669, CELL_H = 36, ROW_GAP = 6;/.test(leaderSrc), 'высота ячейки 36px и зазор 6px заданы явно');
+    assert(/const ROW_W = 669, CELL_H = 36, ROW_GAP = 6 - 7;/.test(leaderSrc), 'высота ячейки 36px и зазор заданы явно (17.10.2026: зазор 6-7=-1, было 6)');
     assert(/const ROW_H = CELL_H \+ ROW_GAP;/.test(leaderSrc), 'шаг между ячейками = высота ячейки + зазор (42px)');
 }
 

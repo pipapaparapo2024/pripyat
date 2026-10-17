@@ -23,19 +23,19 @@ console.log('\nTest 1: текста "Осталось HP" больше нет в
     assert(!/Осталось HP/.test(content), '"Осталось HP" удалён из попапа результата боя');
 }
 
-console.log('\nTest 2: вместо него — maxHp на новых координатах x:492,y:415');
+console.log('\nTest 2: вместо него — maxHp на координатах x:492,y:417 (17.10.2026: y опущен ещё на 2px, было 415)');
 {
     const idx = content.indexOf("if(!isWin){");
     const endIdx = content.indexOf('} else {', idx);
     const block = content.slice(idx, endIdx !== -1 ? endIdx : idx + 900);
     assert(/bosses\._fmt\(opts\.maxHp \|\| 0\)/.test(block), 'текст строится из opts.maxHp (общий HP босса), не из hpLeft');
-    assert(/hpTxt\.x = 492; hpTxt\.y = 415;/.test(block), 'координаты нового текста x:492 y:415');
+    assert(/hpTxt\.x = 492; hpTxt\.y = 417;/.test(block), 'координаты нового текста x:492 y:417');
     assert(/hpTxt\.scale\.set\(1\.000\)/.test(block), 'scale выставлен явно 1.000 как в координатах редактора');
 }
 
-console.log('\nTest 3: экран победы (isWin:true, hpBarTxt) не тронут — показывает maxHp как и раньше');
+console.log('\nTest 3: экран победы (isWin:true, hpBarTxt) — показывает maxHp как и раньше, позиция/цвет см. отдельный тест');
 {
-    assert(/hpBarTxt\.x = PORTRAIT_POS\.x \+ HP_BAR_OFFSET\.x;/.test(content), 'hpBarTxt на экране победы не менялся');
+    assert(/hpBarTxt\.x = PORTRAIT_POS\.x \+ HP_BAR_OFFSET\.x;/.test(content), 'hpBarTxt на экране победы не менялся по X');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

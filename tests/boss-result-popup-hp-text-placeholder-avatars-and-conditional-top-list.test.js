@@ -69,7 +69,7 @@ console.log('\nTest 2: белый HP-текст на красной полоск
     const body = bossResultSrc.slice(elseIdx, elseEnd);
     assert(/fill:\s*'#ffffff'/.test(body), 'HP-текст на полоске — белый шрифт');
     assert(/hpBarTxt\.x = PORTRAIT_POS\.x \+ HP_BAR_OFFSET\.x;/.test(body), 'X считается от PORTRAIT_POS + HP_BAR_OFFSET');
-    assert(/hpBarTxt\.y = PORTRAIT_POS\.y \+ HP_BAR_OFFSET\.y;/.test(body), 'Y считается от PORTRAIT_POS + HP_BAR_OFFSET');
+    assert(/hpBarTxt\.y = PORTRAIT_POS\.y \+ HP_BAR_OFFSET\.y \+ 2;/.test(body), 'Y считается от PORTRAIT_POS + HP_BAR_OFFSET (17.10.2026: +2px ниже)');
     assert(/opts\.maxHp \|\| 0/.test(body), 'текст — это maxHp босса ("сколько HP у него было"), а не текущий/оставшийся HP');
 }
 

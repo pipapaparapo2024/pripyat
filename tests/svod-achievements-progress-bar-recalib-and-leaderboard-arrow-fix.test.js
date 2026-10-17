@@ -54,10 +54,13 @@ console.log('\nTest 3: svod-scroll.js — arrowUpY/arrowDownY из cfg реал�
         'arrowDown.y использует override, если передан, иначе прежняя формула (viewY+viewH+2)');
 }
 
-console.log('\nTest 4: svod-leaderboard.js — передаёт arrowDownY:480, arrowX:1034 (координаты с редактора)');
+console.log('\nTest 4: svod-leaderboard.js — передаёт arrowDownY:480, X — 1034 по умолчанию (координаты с редактора)');
 {
-    assert(/trackX: 1035, arrowX: 1034, arrowDownY: 480,/.test(lbSrc),
-        'leaderboard передаёт точечную Y для стрелки вниз и обновлённый X (было 1033)');
+    // 17.10.2026: X трека/стрелки стал условным (SCROLL_TRACK_X=1035 по умолчанию,
+    // сдвинут на -2 только для «Топ по урону», см. DAMAGE_SCROLL_TRACK_X) — раньше был
+    // одним литералом на все 3 вкладки, теперь проверяем сами константы.
+    assert(/const SCROLL_TRACK_X = 1035, SCROLL_ARROW_X = 1034;/.test(lbSrc), 'дефолтный X трека/стрелки — 1035/1034, как раньше');
+    assert(/arrowDownY: 480,/.test(lbSrc), 'leaderboard передаёт точечную Y для стрелки вниз');
 }
 
 console.log('\nTest 5: svod-achievements.js — 24.09.2026, по прямому указанию, теперь ТОЖЕ передаёт arrowDownY:480 (репорт: "стрелка вниз в Мои достижения на y543, а в Общем топе на y480, сделай одинаково")');

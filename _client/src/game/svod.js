@@ -97,6 +97,10 @@ export default class Svod{
             panel = this._buildLeaderboardPanel({
                 cat: 4, bg: 'задний фон топы по авторитету.png', valueLabel: 'АВТОРИТЕТ',
                 secondScope: 'friends', secondBtnActive: 'друзья актив.png', secondBtnPassive: 'друзья неактив.png',
+                // 17.10.2026 (по прямому указанию): окно списка расширено до h:286 (x:356,y:236,
+                // w:669 — уже совпадали с ROW_X/LIST_TOP/ROW_W, менялась только высота). «Топ по
+                // урону» явно остался прежним (242) — см. listH в svod-leaderboard.js.
+                listH: 286,
             });
         } else if(key === 'damage'){
             panel = this._buildLeaderboardPanel({
@@ -129,6 +133,9 @@ export default class Svod{
             panel = this._buildLeaderboardPanel({
                 cat: 5, bg: 'задний фон топы по достижения.png', valueLabel: 'ОЧКИ',
                 secondBtnActive: 'мои достижения актив.png', secondBtnPassive: 'мои достижения пассив.png',
+                // 17.10.2026 (по прямому указанию) — то же расширение окна, что у «Топ по
+                // авторитету», см. коммент там.
+                listH: 286,
                 onSecondTab: () => {
                     panel.visible = false;
                     achPanel.visible = true;

@@ -50,9 +50,9 @@ console.log('\nTest 1: у "Топ по достижениям" — собств�
         'старый (временный) фон "авторитету" больше не используется для вкладки достижений');
 }
 
-console.log('\nTest 2: зазор между строками рейтинга — 6px (было 3px)');
+console.log('\nTest 2: зазор между строками рейтинга — 6px (было 3px); 17.10.2026 уменьшен ещё на 7px, см. достижения-* тесты');
 {
-    assert(/const ROW_W = 669, CELL_H = 36, ROW_GAP = 6;/.test(leaderSrc), 'ROW_GAP = 6');
+    assert(/const ROW_W = 669, CELL_H = 36, ROW_GAP = 6 - 7;/.test(leaderSrc), 'ROW_GAP = 6 - 7 (= -1)');
 }
 
 console.log('\nTest 3: bosses.php.attack() учитывает бонус тира прокачки оружия');
