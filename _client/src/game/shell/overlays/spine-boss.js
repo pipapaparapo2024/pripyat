@@ -279,14 +279,21 @@ export function attachSpineBoss(proto) {
                                 ', слотов=' + (jsonData.slots ? jsonData.slots.length : 0) +
                                 ', анимаций=' + animNames.join(','));
 
-                            animNames.forEach(name => {
-                                const anim = jsonData.animations[name];
-                                if (anim.ik) {
-                                    console.warn('[spine-boss.' + tag + '] анимация "' + name + '" содержит IK-таймлайны — удаляем (runtime несовместим)');
-                                    delete anim.ik;
-                                }
-                            });
-
+                            // 17.10.2026 (по прямому указанию — "дописать поддержку спайновских
+                            // констрейнов"): раньше здесь IK-таймлайны анимации УДАЛЯЛИСЬ с
+                            // комментарием "runtime несовместим". Перепроверено: @esotericsoftware/
+                            // spine-core реально поддерживает IK целиком — класс IkConstraintTimeline
+                            // импортируется и используется в SkeletonJson.js (readAnimation →
+                            // case "ik"), а все 4 текущих боссовских скелета (Охотник/Меченный/
+                            // Ястреб) УЖЕ содержат IK-констрейны на уровне скелета (root.constraints,
+                            // Spine 4.2+ унифицированный формат) — просто ни у одного пока не было
+                            // именно IK-ТАЙМЛАЙНОВ внутри анимации, поэтому старое удаление ни разу
+                            // не успело выстрелить на практике. Явного репро, подтверждающего, что
+                            // IK-таймлайны реально ломали парсинг, не нашлось — решение снять защиту
+                            // принято без него (риск принят явно, не наугад). Если readSkeletonData()
+                            // всё же упадёт на новом экспорте с IK-таймлайнами — ошибка попадёт в
+                            // try/catch ниже с полным stack trace, этого достаточно, чтобы
+                            // диагностировать по логам, а не гадать вслепую, как раньше.
                             let skelData, skeleton, state;
                             try {
                                 const loader   = new sp.AtlasAttachmentLoader(atlas);
