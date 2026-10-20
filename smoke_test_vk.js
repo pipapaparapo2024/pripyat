@@ -19,8 +19,10 @@
  * Протокол повторяет modules/server.js (клиентское кодирование запроса к universal.php):
  * JSON.stringify → UTF-8-safe base64 (дважды) → spec_encode (подстановочный шифр) → POST
  * application/x-www-form-urlencoded. Подпись (sign) — та же HMAC-SHA256 схема, что проверяет
- * security.php.getToken() (api_secret публично лежит в server/core/models/registry.php — тот же
- * файл, что уже закоммичен в репозиторий, здесь не новый секрет, просто переиспользуется).
+ * security.php.getToken(). API_ID/API_SECRET ниже — значения ТЕСТОВОГО VK-приложения
+ * (app54679940), а НЕ прод-значения из закоммиченного registry.php (с 05.10.2026 они разные,
+ * см. AGENTS.md "registry.php на тесте и проде") — прочитаны по SSH из registry.php на самом
+ * тестовом сервере, 20.10.2026, после того как скрипт молча ломался со старым прод-секретом.
  *
  * Тестовый аккаунт — СИНТЕТИЧЕСКИЙ uid (см. TEST_UID ниже), не реальный VK-пользователь. Живёт
  * только в БД stalker_test, прод не затрагивает ни при каких обстоятельствах.
@@ -32,8 +34,16 @@ const https = require('https');
 const { URLSearchParams } = require('url');
 
 const HOST = 'test-pripyat-game.ru';
-const API_ID = 54574178; // registry.php: 'api_id'
-const API_SECRET = 'NbEEnoAYijdh9yQACIHL'; // registry.php: 'api_secret' — уже публично в репозитории
+// 20.10.2026 (баг найден по прямому указанию — getToken стал молча падать "подпись не прошла"
+// после рутинного супер деплоя, которые раньше проходили с тем же скриптом): этот скрипт бьёт
+// test-pripyat-game.ru, но был подписан ПРОД-секретом (api_id 54574178) — рабочим, пока у теста
+// был тот же api_id/api_secret, что у прода. С 05.10.2026 (см. AGENTS.md, "registry.php на
+// тесте и проде — РАЗНЫЙ файл") у теста СВОЁ VK-приложение (app54679940, отдельный api_secret) —
+// скрипт это изменение не подхватил ни разу с тех пор. Значения ниже прочитаны по SSH напрямую
+// из /var/www/stalker-test/server/core/models/registry.php (read-only, тот же секрет, что и
+// так публично доступен на диске тестового сервера).
+const API_ID = 54679940; // test registry.php: 'api_id' (НЕ прод 54574178 — другое VK-приложение)
+const API_SECRET = 'WuAnBFaVeG2VQoO8rrxC'; // test registry.php: 'api_secret'
 const TEST_UID = 999000001; // синтетический smoke-test аккаунт, НЕ реальный VK-игрок
 // 04.10.2026: второй синтетический аккаунт — для живой проверки "друг реально попадает в
 // rating/friendsDamage" (прямая живая защита бага 04.10.2026, см. AGENTS.md — друзьям сюда
