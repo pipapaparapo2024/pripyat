@@ -244,7 +244,7 @@ export default class Hata {
 
         // Текст внутри карточки (X=485–806, Y=463–601)
         const styleTitle = {
-            fontFamily:'Southbank LT', fontSize:20, fill:'#ffcc44',
+            fontFamily:'Southbank LT', fontSize:24, fill:'#ffcc44',
             dropShadow:true, dropShadowColor:'#000', dropShadowDistance:1,
         };
         const styleDesc = {
@@ -255,13 +255,18 @@ export default class Hata {
 
         const titleTxt = new PIXI.Text('', styleTitle);
         titleTxt.anchor.set(0.5, 0.5);
-        titleTxt.x = 645; titleTxt.y = 510;
+        // 20.10.2026 (редактор позиций, по прямому указанию — "x:650,y:507,w:184,h:26,
+        // fontsize:24", bbox top-left → якорь-центр: x=650+184/2=742, y=507+26/2=520): было
+        // x:645,y:510, fontSize styleTitle 20→24.
+        titleTxt.x = 742; titleTxt.y = 520;
         win.addChild(titleTxt);
         this._titleTxt = titleTxt;
 
         const descTxt = new PIXI.Text('', styleDesc);
         descTxt.anchor.set(0.5, 0.5);
-        descTxt.x = 645; descTxt.y = 540;
+        // 20.10.2026 (редактор позиций, по прямому указанию — "x:645,y:532,w:87,h:15", bbox
+        // top-left → якорь-центр: x=645+87/2=688.5, y=532+15/2=539.5): было x:645,y:540.
+        descTxt.x = 688.5; descTxt.y = 539.5;
         win.addChild(descTxt);
         this._descTxt = descTxt;
 

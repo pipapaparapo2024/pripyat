@@ -83,8 +83,15 @@ console.log('\nTest 3: верхний HUD (рубли/верхняя строк�
     // сухари, не рубли — её "+" ведёт во вкладку 'cigarettes'.
     assert(/btnRubPlus\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\('cigarettes'\)/.test(topCurSrc),
         'правая статичная плашка "+" → _openCurrencyPurchasePopup(\'cigarettes\')');
-    assert(/iconPrimary\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\(this\._topCurPinned\)/.test(topCurSrc),
-        'иконка верхней строки → _openCurrencyPurchasePopup(this._topCurPinned)');
+    // 20.10.2026 (рефакторинг — плашка верхней строки тоже стала интерактивной, см.
+    // oct20-batch2-...test.js Test 2c): клик иконки и клик плашки используют общий
+    // обработчик _openPrimaryPurchase вместо инлайновой стрелочной функции.
+    assert(/const _openPrimaryPurchase = \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\(this\._topCurPinned\)/.test(topCurSrc),
+        '_openPrimaryPurchase → _openCurrencyPurchasePopup(this._topCurPinned)');
+    assert(/iconPrimary\.on\('pointerdown', _openPrimaryPurchase\);/.test(topCurSrc),
+        'иконка верхней строки вызывает _openPrimaryPurchase');
+    assert(/platePrimary\.on\('pointerdown', _openPrimaryPurchase\);/.test(topCurSrc),
+        'плашка верхней строки тоже вызывает _openPrimaryPurchase');
     assert(/btnSecondaryPlus\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\(otherKey\(this\._topCurPinned\)\)/.test(topCurSrc),
         'нижняя строка "+" → _openCurrencyPurchasePopup(otherKey(this._topCurPinned))');
     assert(/shopBtn\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\('stew'\)/.test(topCurSrc),

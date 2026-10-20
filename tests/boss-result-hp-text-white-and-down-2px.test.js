@@ -27,23 +27,23 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const content = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8');
 
-console.log('\nTest 1: поражение (isWin:false) — hpTxt белым, координаты x:494,y:422 (19.10.2026)');
+console.log('\nTest 1: поражение (isWin:false) — hpTxt белым, координаты x:494,y:419 (20.10.2026, -3px)');
 {
     const idx = content.indexOf("if(!isWin){");
     const endIdx = content.indexOf('} else {', idx);
     const block = content.slice(idx, endIdx !== -1 ? endIdx : idx + 900);
     assert(/fill: '#ffffff'/.test(block), 'hpTxt — fill белый (#ffffff), не тёмный #1a1208');
     assert(!/#1a1208/.test(block), 'старый тёмный цвет (#1a1208) больше не используется в этой ветке');
-    assert(/hpTxt\.x = 494; hpTxt\.y = 422;/.test(block), 'hpTxt — x:494,y:422 (19.10.2026, редактор позиций)');
+    assert(/hpTxt\.x = 494; hpTxt\.y = 419;/.test(block), 'hpTxt — x:494,y:419 (20.10.2026, редактор позиций, было 422)');
 }
 
-console.log('\nTest 2: победа (isWin:true) — hpBarTxt остаётся белым, те же координаты x:494,y:422');
+console.log('\nTest 2: победа (isWin:true) — hpBarTxt остаётся белым, те же координаты x:494,y:419');
 {
     const idx = content.indexOf('} else {');
     const block = content.slice(idx, idx + 1200);
     assert(/fill: '#ffffff'/.test(block), 'hpBarTxt — fill белый (не менялся, уже был белым)');
-    assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 422;/.test(block),
-        'hpBarTxt — x:494,y:422 (19.10.2026: захардкожено вместо формулы PORTRAIT_POS+HP_BAR_OFFSET)');
+    assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 419;/.test(block),
+        'hpBarTxt — x:494,y:419 (20.10.2026, было 422)');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

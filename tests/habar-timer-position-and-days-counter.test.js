@@ -26,14 +26,13 @@ function assert(ok, message){ if(!ok) throw new Error(message); console.log('  �
 const habarSrc = read('_client/src/game/habar.js');
 const usersSrc = read('server/core/controllers/users.php');
 
-console.log('\nПозиция таймера — уточнена редактором позиций 03.10.2026 (x:971 y:506 для купленного слота Элитный)');
-assert(/const TIMER_OFFSET_X = 26, TIMER_OFFSET_Y = 17;/.test(habarSrc), 'новое смещение +26/+17 от BTN_X[i]/BTN_Y[i] (даёт 971/506 для слота 3, было +40/+15)');
+console.log('\nПозиция таймера — уточнена редактором позиций 20.10.2026 (x:1013 y:507 для купленного слота Элитный)');
+assert(/const TIMER_OFFSET_X = 68, TIMER_OFFSET_Y = 18;/.test(habarSrc), 'новое смещение +68/+18 от BTN_X[i]/BTN_Y[i] (даёт 1013/507 для слота 3, было +26/+17)');
 assert(/timer\.x = BTN_X\[i\] \+ TIMER_OFFSET_X;/.test(habarSrc), 'X таймера использует новую константу смещения');
 assert(/timer\.y = BTN_Y\[i\] \+ TIMER_OFFSET_Y;/.test(habarSrc), 'Y таймера использует новую константу смещения');
-// 08.10.2026 (фикс пикселизации текста): fontSize:18×scale(1.258) заменены на итоговый
-// fontSize:23 без scale.
-assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:23,/.test(habarSrc),
-    'таймер получил итоговый fontSize:23 (18×1.258), не через scale');
+// 20.10.2026 (редактор позиций, по прямому указанию): fontSize поднят 23→28.
+assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:28,/.test(habarSrc),
+    'таймер получил новый fontSize:28 (было 23)');
 assert(!/timer\.scale\.set\(/.test(habarSrc), 'scale.set() для timer больше не вызывается');
 
 console.log('\nСчётчик "N/30" — убран целиком 20.10.2026 (по прямому указанию: "количество сборов можешь записывай, но не выставляй на экран")');

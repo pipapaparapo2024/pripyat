@@ -100,8 +100,8 @@ console.log('\n=== 5. HP босса на странице результата �
     const src = read('_client', 'src', 'game', 'shell', 'popups', 'boss_result.js');
     const matches = src.match(/fontSize: 14, fill: '#ffffff', fontWeight: 'bold',\s*\n\s*dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,/g) || [];
     assert(matches.length === 2, 'оба текста HP (победа и поражение) используют fontSize 14 (было 16) — найдено: ' + matches.length);
-    assert((src.match(/hpTxt\.x = 494; hpTxt\.y = 422;/g) || []).length === 1, 'hpTxt (поражение) — координаты x:494,y:422');
-    assert((src.match(/hpBarTxt\.x = 494; hpBarTxt\.y = 422;/g) || []).length === 1, 'hpBarTxt (победа) — те же координаты x:494,y:422');
+    assert((src.match(/hpTxt\.x = 494; hpTxt\.y = 419;/g) || []).length === 1, 'hpTxt (поражение) — координаты x:494,y:419 (20.10.2026, было 422)');
+    assert((src.match(/hpBarTxt\.x = 494; hpBarTxt\.y = 419;/g) || []).length === 1, 'hpBarTxt (победа) — те же координаты x:494,y:419 (20.10.2026, было 422)');
 }
 
 console.log('\n=== 6. Редактор позиций — font-size для текста ===');

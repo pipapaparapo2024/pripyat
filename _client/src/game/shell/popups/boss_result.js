@@ -180,7 +180,8 @@ export function attachBossResultPopup(proto){
         // они условны, см. ниже).
         const cigIcon = new PIXI.Sprite(PIXI.Texture.from(BASE + 'боевка награда сухари.png'));
         cigIcon.anchor.set(0.5, 0.5);
-        cigIcon.x = 593; cigIcon.y = 291;
+        // 20.10.2026 (редактор позиций, по прямому указанию): было 593,291.
+        cigIcon.x = 596; cigIcon.y = 293;
         cigIcon.width = 44; cigIcon.height = 50;
         win.addChild(cigIcon);
 
@@ -254,7 +255,8 @@ export function attachBossResultPopup(proto){
                 }
             );
             hpTxt.anchor.set(0.5, 0.5);
-            hpTxt.x = 494; hpTxt.y = 422;
+            // 20.10.2026 (по прямому указанию — "подними вверх на 3 пикселя"): было 422.
+            hpTxt.x = 494; hpTxt.y = 419;
             hpTxt.scale.set(1.000);
             win.addChild(hpTxt);
         } else {
@@ -274,7 +276,8 @@ export function attachBossResultPopup(proto){
                 }
             );
             hpBarTxt.anchor.set(0.5, 0.5);
-            hpBarTxt.x = 494; hpBarTxt.y = 422;
+            // 20.10.2026: было 422.
+            hpBarTxt.x = 494; hpBarTxt.y = 419;
             win.addChild(hpBarTxt);
         }
 

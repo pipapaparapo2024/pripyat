@@ -93,7 +93,8 @@ export function attachTopCurrency(proto){
         // width/height сохраняют прежний размер на экране (38×42), старый файл остаётся на диске
         // неиспользуемым (не удалён).
         const iconRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'боевка награда сухари.png'));
-        iconRub.x = 909; iconRub.y = 9;
+        // 20.10.2026 (редактор позиций, по прямому указанию — "x:918,y:9"): было 909,9.
+        iconRub.x = 918; iconRub.y = 9;
         iconRub.width = 38; iconRub.height = 42;
         up.addChild(iconRub);
 
@@ -129,10 +130,22 @@ export function attachTopCurrency(proto){
         // клик по самой иконке верхней строки — стрелка теперь ВСЕГДА только раскрывает/прячет.
         iconPrimary.interactive = true; iconPrimary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(iconPrimary);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(iconPrimary);
-        iconPrimary.on('pointerdown', () => {
+        const _openPrimaryPurchase = () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(this._topCurPinned);
-        });
+        };
+        iconPrimary.on('pointerdown', _openPrimaryPurchase);
+        // 20.10.2026 (репорт по прямому указанию — "при наведении на плюс/кнопку вниз/плашку
+        // ресурсов как будто hover-эффект всё ещё есть"): проверено — ни одна из этих кнопок не
+        // навешивает scale (все три используют только _addHoverBright, растущего эффекта в коде
+        // нет). Но у ЭТОЙ (верхней, всегда видимой) плашки был РОВНО ТОТ ЖЕ баг-класс, что уже
+        // чинили для нижней раскрытой плашки (plateSecondary/iconSecondary, см. ниже): сама
+        // плашка не была интерактивна, подсвечивалась только иконка внутри неё — курсор,
+        // двигаясь по плашке мимо иконки, то включал, то выключал подсветку, что и читалось как
+        // "мигающий/дёргающийся эффект". Плашка сделана интерактивной и сгруппирована с иконкой.
+        platePrimary.interactive = true; platePrimary.buttonMode = true;
+        if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(platePrimary);
+        platePrimary.on('pointerdown', _openPrimaryPurchase);
+        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([platePrimary, iconPrimary]);
         up.addChild(iconPrimary);
 
         const txtPrimary = new PIXI.Text('0', TXT_STYLE);
@@ -269,7 +282,8 @@ export function attachTopCurrency(proto){
             // 20.10.2026 (по прямому указанию, редактор позиций — "окно/заглушка под иконку
             // игрока" x:12,y:8,scale:1.333,w:76,h:76): позиция/масштаб уточнены относительно
             // нативных FLA-координат.
-            up.ava.x = 12; up.ava.y = 8;
+            // 20.10.2026 (по прямому указанию — "опусти иконку персонажа вниз на 7 пикселей"): было y=8.
+            up.ava.x = 12; up.ava.y = 15;
             up.ava.scale.set(1.333);
         }
 

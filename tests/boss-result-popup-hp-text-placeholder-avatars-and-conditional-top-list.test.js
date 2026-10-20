@@ -69,9 +69,9 @@ console.log('\nTest 2: белый HP-текст на красной полоск
     const body = bossResultSrc.slice(elseIdx, elseEnd);
     assert(/fill:\s*'#ffffff'/.test(body), 'HP-текст на полоске — белый шрифт');
     // 19.10.2026 (по прямому указанию, снято редактором позиций заново): x/y переведены с
-    // формулы PORTRAIT_POS+HP_BAR_OFFSET на хардкод x:494,y:422 — те же координаты, что и на
+    // формулы PORTRAIT_POS+HP_BAR_OFFSET на хардкод x:494,y:419 (20.10.2026, было 422) — те же координаты, что и на
     // экране поражения ("неважно выиграл или проиграл"), см. oct19-batch-....test.js.
-    assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 422;/.test(body), 'X/Y — захардкожены 494/422 (19.10.2026, было по формуле PORTRAIT_POS+HP_BAR_OFFSET)');
+    assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 419;/.test(body), 'X/Y — захардкожены 494/422 (19.10.2026, было по формуле PORTRAIT_POS+HP_BAR_OFFSET)');
     assert(/opts\.maxHp \|\| 0/.test(body), 'текст — это maxHp босса ("сколько HP у него было"), а не текущий/оставшийся HP');
 }
 

@@ -143,9 +143,12 @@ export default class Habar{
                 // 03.10.2026 (редактор позиций, по прямому указанию — "время в хабаре сколько
                 // осталось до следующего", измерено на купленном слоте Элитный X:945/Y:489 →
                 // x:971 y:506): было +40/+15, стало +26/+17.
-                const TIMER_OFFSET_X = 26, TIMER_OFFSET_Y = 17;
+                // 20.10.2026 (редактор позиций, по прямому указанию — "x:1013 y:507"): было
+                // +26/+17 (давало 971/506 для слота Элитный X:945/Y:489), стало +68/+18;
+                // размер шрифта поднят 23→28.
+                const TIMER_OFFSET_X = 68, TIMER_OFFSET_Y = 18;
                 const timer = new PIXI.Text('', {
-                    fontFamily:'Southbank LT', fontSize:23, fill:'#f0e2c4',
+                    fontFamily:'Southbank LT', fontSize:28, fill:'#f0e2c4',
                     align:'center', fontWeight:'bold',
                     dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
                 });
