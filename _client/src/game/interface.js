@@ -141,9 +141,11 @@ export default class Interface{
 					// w:52,h:52"): x 4→6, y 2→4; w/h уже были верными (52).
 					// 20.10.2026 (редактор позиций — "x:0,y:0,scale:0.556,w:60,h:60"): S 52→60,
 					// x/y 6/4→0/0.
-					const S = 60;
+					// 20.10.2026 (ещё раз тем же днём, редактор позиций — "x:-6,y:-8,scale:0.694,
+					// w:75,h:75"): S 60→75, x/y 0/0→-6/-8.
+					const S = 75, AX = -6, AY = -8;
 					bm.width = S; bm.height = S;
-					bm.x = 0; bm.y = 0;
+					bm.x = AX; bm.y = AY;
 					// 18.10.2026 (баг найден по скрину — "иконка обрезается очень некорректно",
 					// квадратное фото торчало углами за пределы круглой рамки портала): фото
 					// раньше вставлялось без маски — добавлена круглая маска по размеру аватара.
@@ -161,7 +163,7 @@ export default class Interface{
 					if(!this._avatarRing){
 						const ring = new PIXI.Sprite(PIXI.Texture.from('./images/кольцо верхний худ.png'));
 						ring.anchor.set(0.5, 0.5);
-						ring.x = S / 2; ring.y = S / 2;
+						ring.x = AX + S / 2; ring.y = AY + S / 2;
 						this.up.ava.icon_mc.addChild(ring);
 						this._avatarRing = ring;
 					}

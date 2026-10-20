@@ -241,6 +241,11 @@ export function attachTopCurrency(proto){
             // автоматически — тот же механизм, что уже используют произвольные Graphics-метки
             // (см. win._uDraggable в zone.js._showCpReward()).
             up.ava._uDraggable = true;
+            // 20.10.2026 (по прямому указанию, редактор позиций — "окно/заглушка под иконку
+            // игрока" x:12,y:8,scale:1.333,w:76,h:76): позиция/масштаб уточнены относительно
+            // нативных FLA-координат.
+            up.ava.x = 12; up.ava.y = 8;
+            up.ava.scale.set(1.333);
         }
 
         this._topCur = { txtRub, txtPrimary, txtSecondary, fmt };
