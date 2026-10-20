@@ -36,17 +36,14 @@ assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', f
     'таймер получил итоговый fontSize:23 (18×1.258), не через scale');
 assert(!/timer\.scale\.set\(/.test(habarSrc), 'scale.set() для timer больше не вызывается');
 
-console.log('\nСчётчик "N/30" — новый текст, правее таймера, тот же Y, та же видимость');
-assert(/this\._habarDaysLabels = \[\];/.test(habarSrc), 'массив меток дней инициализирован рядом с массивом таймеров');
-assert(/daysTxt\.x = timer\.x \+ 86;/.test(habarSrc), 'X = таймер + 86px (уточнено редактором позиций 03.10.2026, было +62)');
-assert(/daysTxt\.y = timer\.y;/.test(habarSrc), 'Y — тот же, что у таймера');
-// 08.10.2026 (фикс пикселизации текста): fontSize:18×scale(1.253) заменены на итоговый
-// fontSize:23 без scale.
-assert(/const daysTxt = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:23,/.test(habarSrc),
-    'счётчик дней получил итоговый fontSize:23 (18×1.253), не через scale');
-assert(!/daysTxt\.scale\.set\(/.test(habarSrc), 'scale.set() для daysTxt больше не вызывается');
-assert(/daysTxt\.visible = !canCollect;/.test(habarSrc), 'видимость синхронна с таймером (появляется/исчезает вместе)');
-assert(/daysTxt\.text = Math\.min\(collected, 30\) \+ '\/30';/.test(habarSrc), 'текст — N/30, где N = habar_days_collected (капнуто на 30)');
+console.log('\nСчётчик "N/30" — убран целиком 20.10.2026 (по прямому указанию: "количество сборов можешь записывай, но не выставляй на экран")');
+// 20.10.2026: срок действия хабара перестал зависеть от числа сборов (теперь 30 КАЛЕНДАРНЫХ
+// дней от habar_bought_ts, см. habar-30-days-from-purchase-msk-daily-reset.test.js) — счётчик
+// "N/30" на экране терял смысл и мог вводить в заблуждение (число сборов ≠ оставшиеся дни),
+// поэтому убран из UI целиком. Сервер по-прежнему пишет habar_days_collected (статистика).
+assert(!/this\._habarDaysLabels/.test(habarSrc), 'массив меток дней (daysTxt) больше не существует');
+assert(!/const daysTxt = /.test(habarSrc), 'daysTxt как PIXI.Text больше не создаётся');
+assert(!/\+ '\/30'/.test(habarSrc), 'текст вида "N/30" нигде не формируется');
 
 console.log('\nПерсистентность на сервере — прямой ответ на вопрос пользователя (актуализировано после переноса хабара на сервер)');
 assert(/TS\.php\('habar\.collectDay', \{\}, \(res\) => \{/.test(habarSrc),

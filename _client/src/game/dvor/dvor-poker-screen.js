@@ -93,13 +93,18 @@ export function attachPokerScreen(proto){
         win.addChild(levelTxt);
         this._pokerLevelTxt = levelTxt;
 
-        // 04.10.2026 (по прямому указанию — "полоску опыта... стоит опустить вниз на пару
-        // пикселей"): вся шкала (фон + заливка + маска в _updatePokerUI) сдвинута на +2px.
-        const barBg = new PIXI.Graphics();
-        barBg.beginFill(0x333333, 0.85);
-        barBg.drawRoundedRect(510, 118, 162, 10, 2);
-        barBg.endFill();
-        win.addChild(barBg);
+        // 20.10.2026 (по прямому указанию — "почему-то есть серое такое окошко, это старый
+        // уровень, убери"): плоская серая Graphics-подложка (старая заглушка трека шкалы,
+        // существовавшая ДО текстурной заливки ниже) убрана целиком, заменена двумя реальными
+        // файлами — рамка и чёрная база-подложка (та же схема "рамка + база + растущая цветная
+        // заливка", что и у шкал зариков/блэкджека).
+        const levelFrame = new PIXI.Sprite(PIXI.Texture.from('./images/покер рамка уровень.png'));
+        levelFrame.x = 508; levelFrame.y = 108;
+        win.addChild(levelFrame);
+
+        const levelBlackFill = new PIXI.Sprite(PIXI.Texture.from('./images/покер заливка черная уровень.png'));
+        levelBlackFill.x = 510; levelBlackFill.y = 111;
+        win.addChild(levelBlackFill);
 
         // 04.10.2026 (по прямому указанию, новый файл "заливка желтыя уровень покера.png",
         // нативный размер 163×9) — тот же паттерн "текстура + растущая маска", что уже

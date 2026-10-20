@@ -101,8 +101,10 @@ export function attachDiceScreen(proto){
             fontFamily:'Southbank LT', fontSize:22, fill:'#ffffff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
+        // 20.10.2026 (по прямому указанию, редактор позиций — хитбокс x:316,y:92,w:47,h:35):
+        // текст центрируется в хитбоксе, было x:342,y:113.
         levelTxt.anchor.set(0.5, 0.5);
-        levelTxt.x = 342; levelTxt.y = 113;
+        levelTxt.x = 316 + 47 / 2; levelTxt.y = 92 + 35 / 2;
         win.addChild(levelTxt);
         this._diceLevelTxt = levelTxt;
 
@@ -133,8 +135,10 @@ export function attachDiceScreen(proto){
             fontFamily:'Southbank LT', fontSize:22, fill:'#ffffff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
+        // 20.10.2026 (по прямому указанию, редактор позиций — хитбокс x:907,y:90,w:47,h:35):
+        // текст центрируется в хитбоксе, было x:934,y:113.
         nextLvlTxt.anchor.set(0.5, 0.5);
-        nextLvlTxt.x = 934; nextLvlTxt.y = 113;
+        nextLvlTxt.x = 907 + 47 / 2; nextLvlTxt.y = 90 + 35 / 2;
         win.addChild(nextLvlTxt);
         this._diceNextLvlTxt = nextLvlTxt;
 

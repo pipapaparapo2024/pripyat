@@ -71,15 +71,11 @@ console.log('\nTest 3: bosses_fight.js._openNoWeaponPopup — купитьActiv 
     assert(/купитьActiv\.scale\.set\(1\.000\);/.test(body), 'масштаб кнопки — 1.000 (нативный размер)');
 }
 
-console.log('\nTest 4: habar.js — daysTxt смещение от таймера +62 (было +40), Y не менялся');
+console.log('\nTest 4: habar.js — daysTxt ("N/30") убран из UI целиком 20.10.2026 (по прямому указанию)');
 {
-    const s = habarSrc.indexOf("daysTxt.anchor.set(0.5, 0.5);");
-    const e = habarSrc.indexOf('daysTxt.interactive = false;', s);
-    const body = habarSrc.slice(s, e);
-    // 03.10.2026: offset уточнён редактором позиций повторно — +62 → +86 (x:971,y:506 для слота 3).
-    assert(/daysTxt\.x = timer\.x \+ 86;/.test(body), 'offset +86 (снято редактором позиций: x:1057 для купленного слота 3)');
-    assert(/daysTxt\.y = timer\.y;/.test(body), 'Y не менялся — уже совпадал (504)');
-    assert(!/daysTxt\.x = timer\.x \+ 40;/.test(body), 'старое значение +40 убрано');
+    // Раньше здесь проверялось смещение daysTxt от таймера — сам daysTxt больше не существует
+    // (см. habar-timer-position-and-days-counter.test.js, раздел "Счётчик N/30 — убран целиком").
+    assert(!/const daysTxt = /.test(habarSrc), 'daysTxt как PIXI.Text больше не создаётся');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

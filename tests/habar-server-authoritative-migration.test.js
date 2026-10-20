@@ -33,8 +33,10 @@ function assert(ok, message){ if(!ok) throw new Error(message); console.log('  �
 console.log('\nНовый каталог наград — 1-в-1 с прежним хардкодом habar.js.containers');
 {
     const cfg = JSON.parse(read('server/json/habar_daily_config.json'));
-    assert(cfg.cooldown_ms === 86400000, 'кулдаун — 24 часа (86400000мс), как и было в HABAR_COLLECT_COOLDOWN_MS');
-    assert(cfg.total_days === 30, 'лимит — 30 дней сбора');
+    // 20.10.2026 (по прямому указанию — переход на МСК-полночь вместо скользящего 24ч-кулдауна):
+    // cooldown_ms убран из конфига целиком, см. habar-30-days-from-purchase-msk-daily-reset.test.js.
+    assert(cfg.cooldown_ms === undefined, 'cooldown_ms убран из конфига (кулдаун теперь МСК-календарный день, не скользящее окно)');
+    assert(cfg.total_days === 30, 'лимит — 30 дней действия хабара (теперь от даты ПОКУПКИ, не от числа сборов)');
     assert(Array.isArray(cfg.containers) && cfg.containers.length === 4, '4 тира контейнера, как и в клиентском this.containers');
     const elite = cfg.containers.find(c => c.id === 3);
     assert(!!elite && elite.price.amount === 500, 'тир "Элитный" (id3) — цена 500, как в клиенте');
@@ -52,13 +54,19 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     assert(/function collectDay\(\)\{/.test(src), 'collectDay() определён');
     assert(/\$boughtIdx = \$this->ops->i\(\$user, 'habar_bought'\) - 1;/.test(src), 'читает habar_bought из ПОЛНОЙ строки (loadUser), не из client-writable whitelist');
     assert(/if\(\$boughtIdx < 0\) return \$this->ops->fail\(57\);/.test(src), 'отклоняет сбор, если хабар не куплен');
-    // 05.10.2026 (стале-пин, не регрессия — см. аудит гонок состояний 04.10.2026, параллельная
-    // сессия добавила SELECT...FOR UPDATE в collectDay(): проверки/инкременты теперь идут на
-    // залоченной копии $lockedUser, фейл-ветки обёрнуты в rollback/close перед return).
-    assert(/if\(\$collected >= \$totalDays\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(src), 'отклоняет сбор сверх лимита дней (сервер считает сам, не доверяя клиенту)');
-    assert(/if\(\$lastTs > 0 && \(\$now - \$lastTs\) < \$cooldownMs\)\{[\s\S]{0,120}?return \$this->ops->fail\(59\);/.test(src), 'отклоняет сбор до истечения кулдауна — СЕРВЕРНЫМ временем (microtime), не клиентским Date.now()');
-    assert(/\$lockedUser\['habar_days_collected'\]  = \$collected \+ 1;/.test(src), 'инкремент дней пишется на сервере');
-    assert(/\$lockedUser\['habar_last_collect_ts'\] = \$now;/.test(src), 'таймер кулдауна пишется на сервере, серверным временем');
+    // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней от даты покупки, не от
+    // числа сборов; обнуление раз в сутки по МСК, 00:00"): замена двух проверок, см. полный
+    // разбор в habar-30-days-from-purchase-msk-daily-reset.test.js — здесь только факт того, что
+    // старые формулы (collected>=totalDays, now-lastTs<cooldownMs) реально заменены.
+    assert(/if\(\$now >= \$boughtTs \+ \$totalDays \* 86400000\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(src),
+        'отклоняет сбор, если 30 дней с момента ПОКУПКИ (habar_bought_ts) истекли — не от числа сборов');
+    assert(!/if\(\$collected >= \$totalDays\)/.test(src), 'старая формула "collected>=totalDays" (лимит по числу сборов) убрана');
+    assert(/mskDailyDate\(intval\(\$lastTs \/ 1000\)\) === \$this->ops->mskDailyDate\(intval\(\$now \/ 1000\)\)/.test(src),
+        'отклоняет повторный сбор В ТОТ ЖЕ МСК-календарный день (Gameops::mskDailyDate, не скользящее окно cooldownMs)');
+    assert(!/\(\$now - \$lastTs\) < \$cooldownMs/.test(src), 'старая формула скользящего 24ч-кулдауна убрана');
+    assert(/\$lockedUser\['habar_days_collected'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'habar_days_collected'\) \+ 1;/.test(src),
+        'инкремент дней по-прежнему пишется на сервере (статистика, не влияет на истечение)');
+    assert(/\$lockedUser\['habar_last_collect_ts'\] = \$now;/.test(src), 'таймер последнего сбора пишется на сервере, серверным временем');
     assert(/if\(!\$this->ops->saveUser\(\$user\)\) return \$this->ops->fail\(99\);/.test(src), 'реально сохраняет через Gameops::saveUser (полная строка, не whitelist)');
 
     console.log('\nhabar.php — buy() тоже считает stew_spent на сервере (раньше это делал клиент)');

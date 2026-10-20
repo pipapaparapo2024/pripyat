@@ -804,6 +804,10 @@
                 // их больше не коснётся без явного перечисления здесь, как и остальные server-only
                 // поля в этом списке.
                 'habar_bought'           => 0,
+                // 20.10.2026 (переход хабара на 30 дней от даты ПОКУПКИ, а не от числа сборов —
+                // по прямому указанию, см. habar.php.collectDay()): новое поле, та же логика
+                // сброса, что у остальных server-only полей в этом списке.
+                'habar_bought_ts'        => 0,
                 'habar_days_collected'   => 0,
                 // 25.09.2026: ryukzak_points убран из $allowed в save() выше (см. коммент там) —
                 // обычный сброс аккаунта (users.save) больше его не коснётся без явного
@@ -1417,7 +1421,7 @@
                 'stash_count'=>'0',
                 'boss_kills_0'=>'0','boss_kills_1'=>'0','boss_kills_2'=>'0',
                 'bj_games'=>'0','dice_games'=>'0','energy_spent'=>'0',
-                'habar_bought'=>'0','habar_days_collected'=>'',
+                'habar_bought'=>'0','habar_bought_ts'=>'0','habar_days_collected'=>'',
                 'sedoy_dmg_total'=>'0','sedoy_dmg_left'=>'0',
                 'achievements'=>'', 'achievement_stars'=>'0', 'ach_score'=>'0',
                 'coins_spent'=>'0','votes_spent'=>'0','str_xp_total'=>'0','login_streak'=>'0','last_login_day'=>'',

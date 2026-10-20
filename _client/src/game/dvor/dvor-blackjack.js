@@ -107,16 +107,14 @@ export function attachBlackjack(proto){
         // 04.10.2026 (по прямому указанию — "ты растянул фон блекджека, не нужно это делать,
         // вставляй файл в натуральном размере"): отменяет правку 03.10.2026 (тогда просили
         // letterbox-вписывание с масштабом 1.3218× — см. старый коммент в истории файла).
-        // Нативный размер файла 838×522, БЕЗ width/height (никакого масштабирования), по центру
-        // области 1280×690 (y начинается с 15, как у остальных экранов): x=(1280-838)/2=221,
-        // y=15+(690-522)/2=99. Сплошная подложка — чистое чёрное поле вокруг изображения вместо
-        // полупрозрачного darkBg (тот скрывает тонкие непокрытые края, не широкие поля).
-        const bgLetterbox = new PIXI.Graphics();
-        bgLetterbox.beginFill(0x000000, 1);
-        bgLetterbox.drawRect(0, 15, 1280, 690);
-        bgLetterbox.endFill();
-        win.addChild(bgLetterbox);
-
+        // Нативный размер файла, БЕЗ width/height (никакого масштабирования), по центру области
+        // 1280×690 (y начинается с 15, как у остальных экранов).
+        // 20.10.2026 (по прямому указанию — "задний фон чёрный, а не затемнённый, сделай чтобы
+        // просто немного затемнялся"): сплошная ОПАСНАЯ чёрная подложка (alpha:1) вокруг
+        // изображения убрана целиком — darkBg выше (alpha:0.6, тот же стиль, что и у покера,
+        // см. dvor-poker-screen.js) уже закрывает непокрытые края полупрозрачным затемнением,
+        // отдельный opaque-слой поверх него превращал его в сплошной чёрный.
+        //
         // 17.10.2026 (по прямому указанию — замена фона на сухари-версию): новый файл 853×533
         // (был 838×522) — та же логика натурального размера без растяжения, центр пересчитан
         // под новые размеры: x=(1280-853)/2=213, y=15+(690-533)/2=94.
@@ -207,8 +205,9 @@ export function attachBlackjack(proto){
             fontFamily:'Southbank LT', fontSize:23, fill:'#ffffff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:335,y:154"): было 355,141.
         swapsTxt.anchor.set(0.5, 0.5);
-        swapsTxt.x = 355; swapsTxt.y = 141;
+        swapsTxt.x = 335; swapsTxt.y = 154;
         win.addChild(swapsTxt);
         this._bjSwapsTxt = swapsTxt;
 
@@ -276,9 +275,10 @@ export function attachBlackjack(proto){
         // Кнопка Играть
         // 18.10.2026 (по прямому указанию — влево на 30px).
         // 18.10.2026 (повторное указание тем же днём — ещё влево на 20px, вниз на 10px).
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:420,y:565"): было 435,554.
         const playBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек кнопка играть.png'));
         playBtn.anchor.set(0.5, 0.5);
-        playBtn.x = 485 - 30 - 20; playBtn.y = 544 + 10;
+        playBtn.x = 420; playBtn.y = 565;
         playBtn.interactive = true; playBtn.buttonMode = true;
         playBtn.on('pointerover', ()=>{ _sa(playBtn, 0.85); playBtn.scale.set(1.08); });
         playBtn.on('pointerout', ()=>{ _sa(playBtn, 1); playBtn.scale.set(1); });
@@ -292,9 +292,11 @@ export function attachBlackjack(proto){
         // "запечён" в картинке). Позиция не менялась.
         // 18.10.2026: сдвинута вместе с playBtn (та же слот-позиция, см. комментарий выше про
         // влево на 30px) — иначе при переключении Играть⇄Готово кнопка визуально прыгала бы.
+        // 20.10.2026: сдвинута вместе с новой позицией playBtn (420,565) — тот же относительный
+        // сдвиг +6 по Y между ними, что был и раньше (544→550).
         const doneGfx = new PIXI.Sprite(PIXI.Texture.from(BASE + 'кнопка вскрыться для игр.png'));
         doneGfx.anchor.set(0.5, 0.5);
-        doneGfx.x = 485 - 30 - 20; doneGfx.y = 550 + 10;
+        doneGfx.x = 420; doneGfx.y = 565 + 6;
         doneGfx.interactive = true; doneGfx.buttonMode = true;
         doneGfx.visible = false;
         doneGfx.on('pointerover', ()=>{ _sa(doneGfx, 0.85); doneGfx.scale.set(1.08); });
@@ -309,16 +311,18 @@ export function attachBlackjack(proto){
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
         freeLbl.anchor.set(0.5, 0.5);
-        freeLbl.x = 670; freeLbl.y = 489; // 21.09.2026: снято через редактор позиций
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:427,y:521"): было 670,489.
+        freeLbl.x = 427; freeLbl.y = 521;
         freeLbl.visible = false;
         win.addChild(freeLbl);
         this._bjFreeLbl = freeLbl;
 
         // Ценник (1 монета) — 18.10.2026 (по прямому указанию): влево на 30px.
         // 18.10.2026 (повторное указание тем же днём — ещё влево на 20px, вниз на 10px).
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:550,y:579"): было 565,562.
         const priceSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек ценник.png'));
         priceSpr.anchor.set(0.5, 0.5);
-        priceSpr.x = 615 - 30 - 20; priceSpr.y = 552 + 10;
+        priceSpr.x = 550; priceSpr.y = 579;
         win.addChild(priceSpr);
         this._bjPriceSpr = priceSpr;
 
@@ -330,7 +334,8 @@ export function attachBlackjack(proto){
     // 9 строк разом, не экстраполяция): заменяет предыдущую калибровку по одной точке
     // ("семерки"), которая давала +26 дельту ко всем остальным строкам приблизительно.
     const BJ_ROW_Y = {
-        'туз':       245,
+        // 20.10.2026 (по прямому указанию — "подсветку AA [туз+туз] опусти вниз на 3px"): 245→248.
+        'туз':       248,
         'король':    282,
         'дама':      318,
         'валет':     352,

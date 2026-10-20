@@ -95,7 +95,10 @@ console.log('\nTest 4: habar_days_collected — реальный писател�
     const habarPhp = fs.readFileSync(path.join(root, 'server/core/controllers/habar.php'), 'utf-8');
     // 05.10.2026 (стале-пин, не регрессия — collectDay() получил SELECT...FOR UPDATE, см.
     // tests/habar-server-authoritative-migration.test.js — $lockedUser вместо $user).
-    assert(/\$lockedUser\['habar_days_collected'\]\s*=\s*\$collected \+ 1;/.test(habarPhp),
+    // 20.10.2026 (стале-пин, не регрессия — хабар перешёл на 30 дней от даты ПОКУПКИ, не от
+    // числа сборов; инкремент habar_days_collected остался — просто больше не читает отдельную
+    // переменную $collected, см. habar-30-days-from-purchase-msk-daily-reset.test.js).
+    assert(/\$lockedUser\['habar_days_collected'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'habar_days_collected'\) \+ 1;/.test(habarPhp),
         'habar.php.collectDay() реально инкрементирует habar_days_collected при каждом сборе — задачи теперь двигаются вместе с игровым прогрессом');
     assert(!/habar_opened/.test(habarPhp), 'habar.php больше нигде не упоминает habar_opened (мёртвое поле, писателя не осталось)');
 }

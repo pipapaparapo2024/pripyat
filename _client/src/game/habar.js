@@ -1,6 +1,15 @@
 import { applyPatch } from '../modules/patch.js';
 
-const HABAR_COLLECT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+// 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от дня
+// покупки, а не от количества сборов; обнуление — раз в сутки по московскому времени, 00:00"):
+// скользящий 24-часовой кулдаун (с момента ПРЕДЫДУЩЕГО сбора) заменён фиксированной границей
+// МСК-полуночи — та же формула, что уже используют bosses.js._today()/Gameops::mskDailyDate()
+// на сервере (единственный источник правды, это только клиентская UX-подсказка).
+const HABAR_TOTAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+function _mskDayKey(tsMs){
+    const d = new Date(tsMs + 3 * 60 * 60 * 1000);
+    return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+}
 
 export default class Habar{
     constructor(mc){
@@ -108,7 +117,6 @@ export default class Habar{
         const boughtIdx = parseInt(udata['habar_bought'] || 0) - 1; // -1 = ничего не куплено
         this._habarBtns = [];
         this._habarTimerLabels = [];
-        this._habarDaysLabels = [];
 
         for(let i = 0; i < 4; i++){
             if(boughtIdx === i){
@@ -148,28 +156,6 @@ export default class Habar{
                 timer.visible = false;
                 win.addChild(timer);
                 this._habarTimerLabels[i] = timer;
-
-                // 24.09.2026 (по прямому указанию — "справа от времени, на том же Y, но правее
-                // на 40px, покажи сколько дней уже собрано — N/30"): та же видимость, что и у
-                // таймера (появляется вместе с ним, во время кулдауна/после полного сбора).
-                // 25.09.2026 (по прямому указанию, редактор позиций — "Выбрано: x:1047 y:504
-                // scale:1.000" для купленного слота 3/Элитный): было timer.x+40 (=1025 для слота
-                // 3) — offset уточнён до +62, даёт ровно 1047 для слота 3; Y уже совпадал (504),
-                // не менялся. Формула общая для всех 4 слотов, как и раньше.
-                const daysTxt = new PIXI.Text('', {
-                    fontFamily:'Southbank LT', fontSize:23, fill:'#f0e2c4',
-                    align:'center', fontWeight:'bold',
-                    dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
-                });
-                // 03.10.2026 (редактор позиций — "кол-во уже собранных хабаров", измерено на
-                // слоте Элитный → x:1057 y:505): было timer.x+62, стало timer.x+86.
-                daysTxt.anchor.set(0.5, 0.5);
-                daysTxt.x = timer.x + 86;
-                daysTxt.y = timer.y;
-                daysTxt.interactive = false;
-                daysTxt.visible = false;
-                win.addChild(daysTxt);
-                this._habarDaysLabels[i] = daysTxt;
             } else {
                 const btn = new PIXI.Sprite(PIXI.Texture.from('./images/хабар кнопка купить.png'));
                 btn.anchor.set(0, 0);
@@ -195,21 +181,28 @@ export default class Habar{
         this._pixiWin = win;
     }
 
-    // Кулдаун 24ч между сборами. Когда сбор доступен, видна интерактивная кнопка
-    // "СОБРАТЬ". Пока он недоступен, кнопка полностью скрыта и на её месте тикает
-    // некликабельный таймер — без ошибочного поп-апа по клику.
+    // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней от даты покупки, а не от
+    // числа сборов; обнуление — раз в сутки по московскому времени, 00:00"): кнопка "СОБРАТЬ"
+    // видна, когда хабар куплен, не истёк (30 дней от habar_bought_ts) и ещё не собирался
+    // сегодня по МСК-календарю (habar_last_collect_ts — другой МСК-день, чем сейчас). Когда
+    // сбор недоступен, кнопка скрыта, вместо неё тикает некликабельный таймер до ближайшей
+    // МСК-полуночи — без ошибочного поп-апа по клику. Счётчик собранных дней (habar_days_
+    // collected) по-прежнему пишется сервером, но на экране больше не показывается.
     _updateHabarTimer(){
         const boughtIdx = parseInt(udata['habar_bought'] || 0) - 1;
         if(boughtIdx < 0) return;
 
-        const lastTs   = parseInt(udata['habar_last_collect_ts'] || 0);
-        const remainMs = HABAR_COLLECT_COOLDOWN_MS - (Date.now() - lastTs);
         const btn = this._habarBtns && this._habarBtns[boughtIdx];
         if(!btn) return;
         const timer = this._habarTimerLabels && this._habarTimerLabels[boughtIdx];
-        const collected = parseInt(udata['habar_days_collected'] || 0);
-        const waiting = collected < 30 && lastTs > 0 && remainMs > 0;
-        const canCollect = collected < 30 && !waiting;
+
+        const boughtTs = parseInt(udata['habar_bought_ts'] || 0);
+        const now = Date.now();
+        const expired = boughtTs > 0 && now >= boughtTs + HABAR_TOTAL_DAYS_MS;
+
+        const lastTs = parseInt(udata['habar_last_collect_ts'] || 0);
+        const collectedToday = lastTs > 0 && _mskDayKey(lastTs) === _mskDayKey(now);
+        const canCollect = !expired && !collectedToday;
 
         btn.visible = canCollect;
         btn.interactive = canCollect;
@@ -218,23 +211,20 @@ export default class Habar{
 
         if(timer){
             timer.visible = !canCollect;
-            if(collected >= 30){
-                timer.text = 'СОБРАНО';
+            if(expired){
+                timer.text = 'ХАБАР ИСТЁК';
             } else {
-                const totalSeconds = Math.max(0, Math.ceil(remainMs / 1000));
+                // Ближайшая МСК-полночь — тот же сдвиг эпохи +3ч, что и в _mskDayKey()/
+                // bosses.js._today(), только в обратную сторону (следующая календарная граница).
+                const mskNow = new Date(now + 3 * 60 * 60 * 1000);
+                const mskMidnightUtc = Date.UTC(mskNow.getUTCFullYear(), mskNow.getUTCMonth(), mskNow.getUTCDate() + 1);
+                const nextResetMs = mskMidnightUtc - 3 * 60 * 60 * 1000;
+                const totalSeconds = Math.max(0, Math.ceil((nextResetMs - now) / 1000));
                 const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
                 const mm = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
                 const ss = String(totalSeconds % 60).padStart(2, '0');
                 timer.text = hh + ':' + mm + ':' + ss;
             }
-        }
-
-        // 24.09.2026 (по прямому указанию — "справа от времени, на том же Y, но правее на
-        // 40px, покажи сколько дней уже собрано — N/30"): та же видимость, что у таймера рядом.
-        const daysTxt = this._habarDaysLabels && this._habarDaysLabels[boughtIdx];
-        if(daysTxt){
-            daysTxt.visible = !canCollect;
-            daysTxt.text = Math.min(collected, 30) + '/30';
         }
     }
 
@@ -290,8 +280,9 @@ export default class Habar{
     // сервер (habar.php.collectDay()) сам проверяет покупку/кулдаун/лимит 30 дней и сам решает,
     // что начислить — клиент только просит и применяет результат через applyPatch().
     //
-    // Ежедневный сбор наград купленного контейнера — 30 сборов на весь хабар, не чаще
-    // одного раза в 24 часа (habar_last_collect_ts, см. HABAR_COLLECT_COOLDOWN_MS).
+    // Ежедневный сбор наград купленного контейнера — доступен 30 КАЛЕНДАРНЫХ дней от момента
+    // покупки (habar_bought_ts, не от числа успешных сборов — см. 20.10.2026 ниже у
+    // _updateHabarTimer), не чаще раза за МСК-календарный день (habar_last_collect_ts).
     // 26.09.2026 (баг найден по прямому указанию — "после повторного сбора хабара урон седого
     // откатывается на старый остаток вместо свежей выдачи"): collectDay() пишет несколько полей
     // (coins/cigarettes/weapons/sedoy_dmg_* и т.д.) напрямую через Gameops::saveUser(), в обход
@@ -334,17 +325,20 @@ export default class Habar{
             if(window.iface && typeof iface._showRewardPopup === 'function'){
                 iface._showRewardPopup(habarRewards);
             } else {
-                notify.showResult({text:'«' + (con ? con.name : 'Хабар') + '»: день ' + res.daysCollected + '/30 получен!'}, 1);
+                // 20.10.2026: счётчик "день N/30" убран из UI (хабар больше не истекает по числу
+                // сборов, см. _updateHabarTimer выше) — тост просто подтверждает получение.
+                notify.showResult({text:'«' + (con ? con.name : 'Хабар') + '»: награда получена!'}, 1);
             }
         }, (err) => {
             this._habarCollecting = false;
             if(window.resumePlayerSave) resumePlayerSave('habar_collect_day');
             console.error('[habar._collectDay] ← ошибка сервера:', JSON.stringify(err));
-            // Коды: 57 — хабар не куплен, 58 — все 30 дней уже собраны, 59 — кулдаун ещё не
-            // прошёл. Во всех случаях просто синхронизируем UI-состояние с реальностью сервера
-            // (кнопка/таймер) — без попапа ошибки, в обычном интерфейсе сюда попасть нельзя
-            // (во время кулдауна кнопка скрыта, вместо неё тикает таймер).
-            if(err && err.code === 58) notify.showResult({text:'Хабар этого месяца собран полностью!'}, 0);
+            // Коды: 57 — хабар не куплен, 58 — 30 дней с момента покупки истекли (20.10.2026:
+            // раньше было "все 30 дней уже собраны"), 59 — сегодня уже собрано (по МСК). Во всех
+            // случаях просто синхронизируем UI-состояние с реальностью сервера (кнопка/таймер) —
+            // без попапа ошибки, в обычном интерфейсе сюда попасть нельзя (кнопка скрыта, пока
+            // недоступна, вместо неё тикает таймер).
+            if(err && err.code === 58) notify.showResult({text:'Хабар истёк — 30 дней с момента покупки прошли!'}, 0);
             this._updateHabarTimer();
         });
     }

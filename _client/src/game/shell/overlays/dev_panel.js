@@ -794,7 +794,7 @@ export function attachDevPanel(proto){
                 stash_data:'', stash_count:'0',
                 boss_kills_0:'0', boss_kills_1:'0', boss_kills_2:'0',
                 bj_games:'0', dice_games:'0', energy_spent:'0',
-                habar_bought:'0', habar_days_collected:'',
+                habar_bought:'0', habar_bought_ts:'0', habar_days_collected:'',
                 sedoy_dmg_total:'0', sedoy_dmg_left:'0',
                 achievements:'', achievement_stars:'0',
                 coins_spent:'0', votes_spent:'0', str_xp_total:'0', login_streak:'0', last_login_day:'',

@@ -46,8 +46,10 @@ console.log('\nTest 2: заливка прогресса (barFill, маска т
 
 console.log('\nTest 3: текст текущего/следующего уровня — новая позиция');
 {
-    assert(/levelTxt\.x = 342; levelTxt\.y = 113;/.test(diceScreenSrc), 'levelTxt (текущий уровень): x=342 y=113');
-    assert(/nextLvlTxt\.x = 934; nextLvlTxt\.y = 113;/.test(diceScreenSrc), 'nextLvlTxt (следующий уровень): x=934 y=113');
+    // 20.10.2026 (по прямому указанию, редактор позиций — хитбоксы x:316,y:92,w:47,h:35 и
+    // x:907,y:90,w:47,h:35): текст центрируется в хитбоксах, было x:342/934,y:113.
+    assert(/levelTxt\.x = 316 \+ 47 \/ 2; levelTxt\.y = 92 \+ 35 \/ 2;/.test(diceScreenSrc), 'levelTxt (текущий уровень) центрирован в хитбоксе x:316,y:92,w:47,h:35');
+    assert(/nextLvlTxt\.x = 907 \+ 47 \/ 2; nextLvlTxt\.y = 90 \+ 35 \/ 2;/.test(diceScreenSrc), 'nextLvlTxt (следующий уровень) центрирован в хитбоксе x:907,y:90,w:47,h:35');
 }
 
 console.log('\nTest 4: кнопка «купить поинты» — новая Y (X не менялся)');

@@ -150,9 +150,12 @@ console.log('\n6) interface-bottom-nav.js — ЗАМЕНЕНО 18.10.2026 (4-е 
 
 console.log('\n7) dvor-blackjack.js — доп. сдвиг Играть/Готово/ценник, новая координата непарной комбинации');
 {
-    assert(/playBtn\.x = 485 - 30 - 20; playBtn\.y = 544 \+ 10;/.test(bjSrc), 'playBtn — ещё -20x/+10y поверх -30x');
-    assert(/doneGfx\.x = 485 - 30 - 20; doneGfx\.y = 550 \+ 10;/.test(bjSrc), 'doneGfx — тот же доп. сдвиг (тот же слот, что playBtn)');
-    assert(/priceSpr\.x = 615 - 30 - 20; priceSpr\.y = 552 \+ 10;/.test(bjSrc), 'priceSpr — ещё -20x/+10y поверх -30x');
+    // 20.10.2026 (по прямому указанию, редактор позиций): позиции заменены на прямые координаты
+    // (было 485-30-20/544+10 и т.п. формулой) — playBtn/priceSpr сняты напрямую (420,565 /
+    // 550,579), doneGfx держит тот же относительный +6 по Y от playBtn, что и раньше.
+    assert(/playBtn\.x = 420; playBtn\.y = 565;/.test(bjSrc), 'playBtn — x:420,y:565 (снято редактором позиций)');
+    assert(/doneGfx\.x = 420; doneGfx\.y = 565 \+ 6;/.test(bjSrc), 'doneGfx — тот же X, что playBtn, +6 по Y (та же относительная формула, что и раньше)');
+    assert(/priceSpr\.x = 550; priceSpr\.y = 579;/.test(bjSrc), 'priceSpr — x:550,y:579 (снято редактором позиций)');
     assert(/'__nonpair':\s*530,/.test(bjSrc), 'BJ_ROW_Y.__nonpair — 530 (было 522)');
 }
 

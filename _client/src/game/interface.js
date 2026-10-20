@@ -298,8 +298,11 @@ export default class Interface{
 		// и цвет теперь те же, что TXT_STYLE в interface-top-currency.js (28pt, #d6d5d5) —
 		// fontFamily уже совпадал с прошлой правки (Bebas Neue Pro Middle), dropShadow оставлен
 		// как было (в задаче явно требовались только шрифт/цвет/размер, не отказ от тени).
+		// 20.10.2026 (по прямому указанию, снимок панели "Символ" Photoshop + палитра цвета
+		// текста — шрифт Southbank LT Regular, цвет #cec1b8): никнейм и уровень переведены со
+		// шрифта верхнего худа (Bebas Neue Pro Middle/#d6d5d5) на этот — и подняты вверх на 3px.
 		this.nick_txt = new PIXI.Text('Сталкер', {
-			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5',
+			fontFamily: 'Southbank LT', fontSize: 28, fill: '#cec1b8',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
 		// 18.10.2026 (повторное указание, новые координаты со снимка редактора позиций):
@@ -310,7 +313,8 @@ export default class Interface{
 		// разных игроков) больше не сдвигает видимый центр подписи вправо/влево.
 		this.nick_txt.anchor.x = 0.5;
 		this.nick_txt.x = 146 + 152 / 2;
-		this.nick_txt.y = 27;
+		// 20.10.2026 (по прямому указанию — "никнейм и уровень подними вверх на 3px"): 27→24.
+		this.nick_txt.y = 24;
 
 		const nickHit = new PIXI.Graphics();
 		nickHit.beginFill(0xffffff, 0.001);
@@ -324,11 +328,13 @@ export default class Interface{
 		nickHit.on('pointerdown', ()=>this._openNickPopup());
 		this._nickHit = nickHit;
 
+		// 20.10.2026 (по прямому указанию — тот же шрифт/цвет, что и никнейм; см. коммент выше).
 		this.level_txt = new PIXI.Text('1', {
-			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5'
+			fontFamily: 'Southbank LT', fontSize: 28, fill: '#cec1b8'
 		});
 		this.level_txt.x = 396;
-		this.level_txt.y = 38;
+		// 20.10.2026 (по прямому указанию — "никнейм и уровень подними вверх на 3px"): 38→35.
+		this.level_txt.y = 35;
 
 		this.exp_bar_bg = new PIXI.Graphics();
 		this.exp_bar_bg.beginFill(0x111111, 0.8);
@@ -403,8 +409,9 @@ export default class Interface{
 			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
+		// 20.10.2026 (по прямому указанию — "кол-во энергии у игрока подними вверх на 7px"): y 17→10.
 		this.energy_txt.x = 541;
-		this.energy_txt.y = 17;
+		this.energy_txt.y = 10;
 		// 18.10.2026 (по прямому указанию — "попап покупки энергии открывать по нажатию на
 		// количество энергии", заодно butt_energy_buy.png убран целиком — см. energy_buy.js):
 		// сам текст "20/130" теперь кликабелен.

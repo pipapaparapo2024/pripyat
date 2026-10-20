@@ -38,7 +38,11 @@ const bossesPhp = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', '
 
 console.log('\nTest 1: хабар — новые ассеты кнопок + 24-часовой кулдаун сбора + таймер');
 {
-    assert(/const HABAR_COLLECT_COOLDOWN_MS = 24 \* 60 \* 60 \* 1000;/.test(habar), 'константа кулдауна — ровно 24 часа');
+    // 20.10.2026 (по прямому указанию — "обнуление раз в сутки по московскому времени, 00:00"):
+    // скользящий 24ч-кулдаун (HABAR_COLLECT_COOLDOWN_MS) заменён фиксированной МСК-полночью —
+    // см. habar-30-days-from-purchase-msk-daily-reset.test.js.
+    assert(!/HABAR_COLLECT_COOLDOWN_MS/.test(habar), 'старая константа скользящего кулдауна убрана целиком');
+    assert(/function _mskDayKey\(tsMs\)\{/.test(habar), 'МСК-календарная дата вычисляется локальным хелпером _mskDayKey (тот же сдвиг +3ч, что на сервере)');
     // Имена файлов уникальные (с префиксом "хабар кнопка ...") — общее "купить.png" уже занято
     // магазином одежды (shmot_shop.js) под СВОЙ, визуально другой ассет; переиспользование
     // того же файла для хабара при деплое перезаписывало его на сервере и ломало магазин.
@@ -49,8 +53,10 @@ console.log('\nTest 1: хабар — новые ассеты кнопок + 24-
     // 24.09.2026 (перенос экономики хабара на сервер, по прямому указанию): блокировку
     // повторного сбора и запись timestamp теперь делает ТОЛЬКО сервер (habar.php.collectDay()) —
     // клиент больше не решает сам, можно собирать или нет, и не пишет habar_last_collect_ts;
-    // waiting/canCollect в _updateHabarTimer() — чисто отображение, не защита от читерства.
-    assert(/waiting = collected < 30 && lastTs > 0 && remainMs > 0;/.test(habar), '_updateHabarTimer вычисляет waiting только для отображения таймера (не блокирует запрос к серверу)');
+    // expired/collectedToday/canCollect в _updateHabarTimer() — чисто отображение, не защита от
+    // читерства (реальное решение всегда принимает сервер, habar.php.collectDay()).
+    assert(/const collectedToday = lastTs > 0 && _mskDayKey\(lastTs\) === _mskDayKey\(now\);/.test(habar),
+        '_updateHabarTimer вычисляет collectedToday (МСК-день) только для отображения таймера (не блокирует запрос к серверу)');
     assert(!/udata\['habar_last_collect_ts'\]\s*=/.test(habar), 'habar.js больше НЕ пишет habar_last_collect_ts сам — это делает только сервер');
     assert(/_updateHabarTimer\(\)/.test(habar), 'есть метод обновления кулдауна кнопки');
     // Актуальное решение: во время кулдауна кнопка скрыта и некликабельна, на её месте

@@ -42,7 +42,10 @@ Class Habar {
         // копии $lockedUser с АКТУАЛЬНЫМИ значениями под SELECT...FOR UPDATE (та же физическая
         // блокировка строки, что и у остальных уже защищённых полей) — $user[поле] для
         // залоченных колонок остаётся НЕТРОНУТЫМ до конца функции (см. комментарий ниже).
-        $lockCols = ['habar_bought', 'habar_counts', $cur];
+        // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от
+        // дня покупки, а не от количества сборов"): habar_bought_ts фиксирует момент покупки —
+        // collectDay() ниже считает истечение 30 дней от НЕГО, а не от числа успешных сборов.
+        $lockCols = ['habar_bought', 'habar_bought_ts', 'habar_counts', $cur];
         if($cur === 'stew') $lockCols[] = 'stew_spent';
         $link = $this->_rawLink();
         $lockedUser = $user;
@@ -75,6 +78,7 @@ Class Habar {
         $counts[$idx] = intval($counts[$idx]) + 1;
         $lockedUser['habar_counts'] = json_encode($counts);
         $lockedUser['habar_bought'] = $idx + 1;
+        $lockedUser['habar_bought_ts'] = intval(round(microtime(true) * 1000));
 
         if($link){
             $sets = [];
@@ -97,7 +101,7 @@ Class Habar {
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
-        $patchKeys = array_merge([$cur, 'habar_counts', 'habar_bought'], $cur === 'stew' ? ['stew_spent'] : []);
+        $patchKeys = array_merge([$cur, 'habar_counts', 'habar_bought', 'habar_bought_ts'], $cur === 'stew' ? ['stew_spent'] : []);
         $patch = $this->ops->patchCurrencies($user, $patchKeys);
         $this->ops->ok(['patch' => $patch]);
     }
@@ -141,7 +145,7 @@ Class Habar {
         // SELECT...FOR UPDATE; $user[поле] для залоченных колонок остаётся НЕТРОНУТЫМ до конца
         // функции, чтобы общий saveUser() ниже не перезаписал уже закоммиченное устаревшим
         // снимком (тот же принцип, что в weapons.php.buy()).
-        $lockCols = ['habar_days_collected', 'habar_last_collect_ts', 'coins', 'cigarettes',
+        $lockCols = ['habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts', 'coins', 'cigarettes',
             'dice_points', 'blue_points', 'poker_chips', 'sedoy_dmg_total', 'sedoy_dmg_left',
             'weapons', 'ammo_machete', 'ammo_gun', 'ammo_auto'];
         $link = $this->_rawLink();
@@ -154,19 +158,40 @@ Class Habar {
             if($row !== null) $lockedUser = array_merge($lockedUser, $row);
         }
 
-        $collected = $this->ops->i($lockedUser, 'habar_days_collected');
+        $now = intval(round(microtime(true) * 1000));
+
+        // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от
+        // дня покупки, а не от количества сборов"): истечение больше не считается по числу
+        // успешных сборов (habar_days_collected) — игрок, пропустивший часть дней, раньше мог
+        // растянуть один хабар на МНОГО больше 30 календарных дней. Теперь единственный критерий
+        // — 30 дней от habar_bought_ts. habar_days_collected по-прежнему пишется ниже (нужен для
+        // статистики/дебага), просто не участвует в проверке и не показывается на экране
+        // (см. habar.js — счётчик "N/30" убран из UI).
+        $boughtTs = $this->ops->i($lockedUser, 'habar_bought_ts');
+        if($boughtTs <= 0){
+            // Бэкфилл для аккаунтов, купивших хабар ДО этого перехода (у них нет записанного
+            // момента покупки) — считаем точкой отсчёта сегодняшний день, а не мгновенно
+            // просрочиваем уже оплаченную покупку.
+            $boughtTs = $now;
+            $lockedUser['habar_bought_ts'] = $boughtTs;
+        }
         $totalDays = intval($cfg['total_days']);
-        if($collected >= $totalDays){
+        if($now >= $boughtTs + $totalDays * 86400000){
             if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(58); // хабар этого месяца собран полностью
+            return $this->ops->fail(58); // 30 дней с момента покупки истекли
         }
 
+        // 20.10.2026 (по прямому указанию — "обнуление раз в сутки по московскому времени, в
+        // 00:00"): раньше кулдаун был "24 часа с момента ПРЕДЫДУЩЕГО сбора" (скользящее окно) —
+        // собрав в 23:00, игрок не мог собрать снова до следующих 23:00. Теперь — фиксированная
+        // граница МСК-полуночи (Gameops::mskDailyDate(), тот же источник правды, что у дневных
+        // лимитов боссов/покера/блэкджека): доступно не чаще раза за календарный день по МСК,
+        // ровно в 00:00 МСК становится доступно СНОВА, независимо от точного времени предыдущего
+        // сбора.
         $lastTs = $this->ops->i($lockedUser, 'habar_last_collect_ts');
-        $now = intval(round(microtime(true) * 1000));
-        $cooldownMs = intval($cfg['cooldown_ms']);
-        if($lastTs > 0 && ($now - $lastTs) < $cooldownMs){
+        if($lastTs > 0 && $this->ops->mskDailyDate(intval($lastTs / 1000)) === $this->ops->mskDailyDate(intval($now / 1000))){
             if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(59); // кулдаун ещё не прошёл
+            return $this->ops->fail(59); // сегодня уже собрано (по МСК)
         }
 
         $patchKeys = [];
@@ -189,7 +214,9 @@ Class Habar {
             }
         }
 
-        $lockedUser['habar_days_collected']  = $collected + 1;
+        // Счётчик по-прежнему пишется (статистика/дебаг) — просто больше не влияет на то, когда
+        // хабар истекает (см. комментарий у habar_bought_ts выше) и не выводится в UI.
+        $lockedUser['habar_days_collected']  = $this->ops->i($lockedUser, 'habar_days_collected') + 1;
         $lockedUser['habar_last_collect_ts'] = $now;
 
         if($link){
@@ -208,8 +235,8 @@ Class Habar {
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
-        $patch = $this->ops->patchCurrencies($user, array_unique(array_merge($patchKeys, ['habar_days_collected', 'habar_last_collect_ts'])));
-        $this->ops->ok(['patch' => $patch, 'rewards' => $con['rewards'], 'daysCollected' => $collected + 1]);
+        $patch = $this->ops->patchCurrencies($user, array_unique(array_merge($patchKeys, ['habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts'])));
+        $this->ops->ok(['patch' => $patch, 'rewards' => $con['rewards'], 'daysCollected' => $this->ops->i($user, 'habar_days_collected')]);
     }
 
     // Портировано из poker.php._grantWeaponReward() — тот же приём, начисляет и qty в
