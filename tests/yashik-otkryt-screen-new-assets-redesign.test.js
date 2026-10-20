@@ -18,6 +18,8 @@
  *    новым файлом "ящик открытый сухари.png" (актуальный ресурс, старый "сиги.png" убран из
  *    кода целиком — ни display, ни preload). Явные width/height (100 × 690/1044, нативный
  *    размер картинки 1044×690) вместо scale.
+ *  - 20.10.2026 (ещё раз тем же днём, редактор позиций — "x:637,y:364,scale:0.102,w:107,h:71"):
+ *    позиция/масштаб уточнены, width/height заменены на scale.set(0.102).
  *
  * Run: node tests/yashik-otkryt-screen-new-assets-redesign.test.js
  */
@@ -54,9 +56,8 @@ console.log('\nTest 2: 5 слоёв добавлены с координатам
     // явным размером (ширина 100px, высота пропорциональна нативному 1044×690).
     assert(/const sukhariSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'ящик открытый сухари\.png'\)\);/.test(yashikSrc),
         'sukhariSpr грузит новый файл "ящик открытый сухари.png"');
-    assert(/sukhariSpr\.x = 627; sukhariSpr\.y = 356;/.test(yashikSrc), 'сухари: x=627,y=356 (та же позиция, что была у сигарет)');
-    assert(/sukhariSpr\.width = 100; sukhariSpr\.height = 100 \* \(690 \/ 1044\);/.test(yashikSrc),
-        'явные width/height — ширина 100px, высота пропорциональна (690/1044 от нативного размера)');
+    assert(/sukhariSpr\.x = 637; sukhariSpr\.y = 364;/.test(yashikSrc), 'сухари: x=637,y=364 (уточнено редактором позиций 20.10.2026)');
+    assert(/sukhariSpr\.scale\.set\(0\.102\);/.test(yashikSrc), 'сухари: scale=0.102 (уточнено редактором позиций 20.10.2026)');
     assert(!/const sigiSpr = /.test(yashikSrc), 'sigiSpr (старый файл сигарет) больше нигде не создаётся');
     assert(!/tablichkaSpr\.anchor/.test(yashikSrc) && !/caseSpr\.anchor/.test(yashikSrc),
         'anchor не переопределён ни у одного нового спрайта — используется дефолт (0,0), как у bg');
@@ -69,7 +70,7 @@ console.log('\nTest 3: порядок addChild — все 5 слоёв доба�
     const caseIdx     = yashikSrc.indexOf('caseSpr.x = 404');
     const rublitIdx   = yashikSrc.indexOf('rublitSpr.x = 494');
     const nychkiIdx   = yashikSrc.indexOf('nychkiSpr.x = 779');
-    const sukhariIdx  = yashikSrc.indexOf('sukhariSpr.x = 627');
+    const sukhariIdx  = yashikSrc.indexOf('sukhariSpr.x = 637');
     const leftPanelIdx= yashikSrc.indexOf('Левая панель: шмотка');
     assert(bgIdx > -1 && bgIdx < tablichkaIdx && tablichkaIdx < caseIdx && caseIdx < rublitIdx && rublitIdx < nychkiIdx && nychkiIdx < sukhariIdx,
         'порядок в файле: фон → табличка → кейс → рублит → нычки → сухари');

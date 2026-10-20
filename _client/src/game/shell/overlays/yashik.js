@@ -425,12 +425,11 @@ export function attachYashik(proto){
 		// пятый декоративный слой (сиги) временно убран из отображения.
 		// 20.10.2026 (позже тем же днём, по прямому указанию): вернули — старый файл сигарет
 		// заменён на "ящик открытый сухари.png" (актуальный ресурс после ребрендинга 17.10.2026).
-		// Явные width/height вместо scale — ширина 100px, высота пропорциональна нативному
-		// размеру картинки (1044×690), та же формула, что и у остальных fixedW/fixedH-спрайтов
-		// в проекте (interface-currency-purchase.js и т.п.).
+		// 20.10.2026 (повторное указание, редактор позиций — "x:637,y:364,scale:0.102,w:107,h:71"):
+		// позиция/масштаб уточнены (было x:627,y:356,width:100,height:66.09).
 		const sukhariSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый сухари.png'));
-		sukhariSpr.x = 627; sukhariSpr.y = 356;
-		sukhariSpr.width = 100; sukhariSpr.height = 100 * (690 / 1044);
+		sukhariSpr.x = 637; sukhariSpr.y = 364;
+		sukhariSpr.scale.set(0.102);
 		win.addChild(sukhariSpr);
 
 		// --- Левая панель: шмотка или "УВЫ БРАТ" ---
