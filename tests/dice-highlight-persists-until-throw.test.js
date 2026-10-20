@@ -4,6 +4,11 @@
  * должна оставаться видна до момента, пока игрок не нажмёт БРОСИТЬ (новая партия), а не
  * исчезать по таймеру.
  *
+ * 20.10.2026: подсветка переведена с ОДНОГО переиспользуемого Graphics на 18 независимых
+ * маркеров (_diceComboHighlights, см. tests/dice-poker-bj-combo-highlight-editor-markers.
+ * test.js) — этот файл обновлён под новую структуру (markers[idx] вместо одной переменной h),
+ * поведение (нет авто-гашения по таймеру) не менялось.
+ *
  * Run: node tests/dice-highlight-persists-until-throw.test.js
  */
 
@@ -29,10 +34,10 @@ console.log('\nTest 1: _diceShowComboHighlight больше не гасит се
     assert(!!m, '_diceShowComboHighlight найден');
     if(m){
         const body = m[1];
-        assert(!/setTimeout\(\(\)=>\{ h\.visible = false; \}, 3000\);/.test(body), 'setTimeout-фолбэк на 3 сек убран');
+        assert(!/setTimeout\(\(\)=>\{ m\.visible = false; \}, 3000\);/.test(body), 'setTimeout-фолбэк на 3 сек не добавлен');
         assert(!/alpha:0, duration:0\.5, delay:1\.2/.test(body), 'gsap-затухание до alpha:0 убрано');
-        assert(/\.to\(h, \{alpha:1, duration:0\.3\}\);/.test(body), 'пульс при появлении оканчивается на alpha:1 (не на invisible)');
-        assert(/h\.visible = true;/.test(body), 'при успешном показе строка становится видимой');
+        assert(/\.to\(m, \{alpha:1, duration:0\.3\}\);/.test(body), 'пульс при появлении оканчивается на alpha:1 (не на invisible)');
+        assert(/m\.visible = active;/.test(body), 'при показе каждый маркер получает видимость по своему индексу (active/не active)');
     }
 }
 
@@ -45,9 +50,11 @@ console.log('\nTest 2: _playDiceNewScreen (кнопка БРОСИТЬ) явно
     assert(!!m, 'начало _playDiceNewScreen (до запроса к серверу) найдено');
     if(m){
         const body = m[1];
-        assert(/if\(this\._diceComboHighlight\)\{/.test(body), 'проверяет наличие объекта подсветки');
-        assert(/gsap\.killTweensOf\(this\._diceComboHighlight\);/.test(body), 'останавливает любой текущий твин пульса перед гашением');
-        assert(/this\._diceComboHighlight\.visible = false;/.test(body), 'явно скрывает подсветку старой партии при старте новой');
+        // 20.10.2026: прямое обращение к this._diceComboHighlight (один объект) заменено общим
+        // хелпером _diceHideComboHighlight() — см. tests/dice-poker-bj-combo-highlight-editor-
+        // markers.test.js для проверки самого хелпера.
+        assert(/this\._diceHideComboHighlight === 'function'\) this\._diceHideComboHighlight\(\);/.test(body),
+            'явно скрывает подсветку старой партии при старте новой через _diceHideComboHighlight()');
     }
 }
 

@@ -91,11 +91,11 @@ console.log('\nTest 4: координаты текста строки — точ
     assert(/placeTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*placeTxt\.x = centerX\(CELL_BLOCKS\.place\); placeTxt\.y = 6;/.test(body),
         'placeTxt: центрирован в блоке «место», y=6 (scale свёрнут в fontSize:19)');
     assert(!/placeTxt\.scale\.set\(/.test(body), 'placeTxt.scale.set() больше не вызывается');
-    assert(/fontSize:19,\s*fill:'#e8d9b8'/.test(lbSrc), 'placeTxt fontSize=19 (было 16 × scale 1.2)');
+    assert(/fontSize:19,\s*fill:'#b9a693'/.test(lbSrc), 'placeTxt fontSize=19 (было 16 × scale 1.2), цвет #b9a693 (18.10.2026)');
     assert(/nameTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*nameTxt\.x = centerX\(CELL_BLOCKS\.name\); nameTxt\.y = 10;/.test(body),
         'nameTxt: центрирован в блоке «никнейм», y=10 (scale свёрнут в fontSize:12)');
     assert(!/nameTxt\.scale\.set\(/.test(body), 'nameTxt.scale.set() больше не вызывается');
-    assert(/fontSize:12, fill:'#ffffff'/.test(lbSrc), 'nameTxt fontSize=12 (было 13 × scale 0.954)');
+    assert(/fontSize:12, fill:'#c5c5c5'/.test(lbSrc), 'nameTxt fontSize=12 (было 13 × scale 0.954), цвет #c5c5c5 (18.10.2026)');
     assert(/valTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*valTxt\.x = centerX\(CELL_BLOCKS\.value\); valTxt\.y = 9; valTxt\.scale\.set\(1\.000\);/.test(body),
         'valTxt: центрирован в блоке «урон авторитет» (было anchor 1,0 у правого края), y=9, scale=1.0');
 }

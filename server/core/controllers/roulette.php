@@ -225,7 +225,11 @@ Class Roulette {
 
         $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot', 'max_energy']);
         $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
-        $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'clientRewards' => $clientRewards, 'debug' => $debug]);
+        // 20.10.2026 (по прямому указанию — "сделай так, чтобы при наведении писалась шмотка
+        // которая выпала"): tatuItemId раньше уходил только в $debug (error_log) — клиент не мог
+        // узнать, КАКОЙ именно предмет выпал, чтобы показать название по наведению (как уже
+        // сделано для баннера "шанс на шмотку" в рюкзаке). Теперь отдаётся и в основном ответе.
+        $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'clientRewards' => $clientRewards, 'debug' => $debug]);
     }
 
     // 26.09.2026 (по прямому указанию — аудит "покупка поинтов зариков/рулетки за рубли

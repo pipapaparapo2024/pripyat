@@ -89,12 +89,14 @@ console.log('\nTest 3: dev_panel.js._resetAccount() — weapons/shmot сбрас
 
 console.log('\nTest 4: ryukzak.js — бирка/иконка тушёнки/число "20" на новых координатах (редактор позиций)');
 {
-    assert(/tushenkaTagSpr\.x = 774; tushenkaTagSpr\.y = 558;/.test(ryukzakSrc), 'бирка — x:774 y:558');
+    // 18.10.2026 (по прямому указанию — "вниз на 40px, влево на 20px"): применено поверх
+    // прежних координат.
+    assert(/tushenkaTagSpr\.x = 774 - 20; tushenkaTagSpr\.y = 558 \+ 40;/.test(ryukzakSrc), 'бирка — -20x/+40y');
     assert(/tushenkaTagSpr\.scale\.set\(1\.162\);/.test(ryukzakSrc), 'бирка — scale 1.162');
-    assert(/tushenkaIconSpr\.x = 831; tushenkaIconSpr\.y = 599;/.test(ryukzakSrc), 'иконка тушёнки — x:831 y:599');
+    assert(/tushenkaIconSpr\.x = 831 - 20; tushenkaIconSpr\.y = 599 \+ 40;/.test(ryukzakSrc), 'иконка тушёнки — -20x/+40y');
     assert(/tushenkaIconSpr\.scale\.set\(1\.054\);/.test(ryukzakSrc), 'иконка тушёнки — scale 1.054');
     assert(/tushenkaIconSpr\.rotation = 52 \* Math\.PI \/ 180;/.test(ryukzakSrc), 'иконка тушёнки повёрнута на 52°');
-    assert(/tushenkaQtyTxt\.x = 810; tushenkaQtyTxt\.y = 594;/.test(ryukzakSrc), 'число "20" — x:810 y:594');
+    assert(/tushenkaQtyTxt\.x = 810 - 20; tushenkaQtyTxt\.y = 594 \+ 40;/.test(ryukzakSrc), 'число "20" — -20x/+40y');
     // 08.10.2026 (фикс пикселизации текста): fontSize:24×scale(1.328) заменены на итоговый
     // fontSize:32 без scale.
     assert(/fontSize: 32,/.test(ryukzakSrc) && !/tushenkaQtyTxt\.scale\.set\(/.test(ryukzakSrc),

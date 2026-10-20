@@ -133,6 +133,18 @@ export function attachUniversalPosEditor(proto){
         //    кого именно трогали, чтобы вернуть как было при выключении режима.
         this._uForcedVisible = [];
         this._uScanForceActive();
+
+        // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+        // выпадения комбинаций"): подсветки комбинаций в азартных играх (зарики/покер/блэкджек)
+        // обычно показывают только ОДНУ (или несколько) реально выигранных строк за раз — чтобы
+        // откалибровать ВСЕ строки таблицы, пришлось бы дождаться каждой комбинации в реальной
+        // игре по очереди. Если нужный экран сейчас открыт — временно показываем сразу все
+        // варианты; про-игровая подсветка возвращается в _disableUniversalEdit ниже.
+        if(window.dvor){
+            if(typeof dvor._diceShowAllComboVariants === 'function') dvor._diceShowAllComboVariants();
+            if(typeof dvor._pokerShowAllComboVariants === 'function') dvor._pokerShowAllComboVariants();
+            if(typeof dvor._bjShowAllComboVariants === 'function') dvor._bjShowAllComboVariants();
+        }
         console.log('[universal_pos_editor._enableUniversalEdit] принудительно показано «активных» состояний:', this._uForcedVisible.length);
         // Popup'ы (например "купить патрон для ящика") часто создаются ПОСЛЕ включения
         // режима редактора — разовый скан выше их не увидит. Перепроверяем периодически,
@@ -473,8 +485,23 @@ export function attachUniversalPosEditor(proto){
     // Меняет равномерный (uniform) масштаб объекта на deltaPx "экранных пикселей" ширины —
     // конвертируем через собственную нативную ширину текстуры объекта (orig), чтобы шаг
     // ощущался как реальные пиксели независимо от того, насколько крупная исходная картинка.
+    //
+    // 19.10.2026 (по прямому указанию — "при увеличении текста должен увеличиваться именно
+    // font-size, а не width/height/scale"): PIXI.Text раньше попадал в ту же общую ветку, что
+    // и Sprite — PageUp/PageDown крутили obj.scale.x/y (через nativeW, взятый из obj.width,
+    // т.к. у Text нет texture.orig), а это реально растягивало уже отрисованный в канвас текст
+    // пиксель-в-пиксель, не перерисовывая его на новом кегле — визуально мылило буквы вместо
+    // честного укрупнения шрифта. Текст — отдельная ветка: меняем style.fontSize напрямую
+    // (PIXI сам перерисовывает текстуру при следующем рендере), scale не трогаем вовсе.
     proto._uScaleStep = function(obj, deltaPx){
-        if(!obj || !obj.scale) return;
+        if(!obj) return;
+        if(obj instanceof PIXI.Text){
+            const curSize = parseFloat(obj.style.fontSize) || 16;
+            const nextSize = Math.max(4, Math.round(curSize + deltaPx));
+            obj.style.fontSize = nextSize;
+            return;
+        }
+        if(!obj.scale) return;
         const nativeW = (obj.texture && obj.texture.orig && obj.texture.orig.width)
             ? obj.texture.orig.width
             : (obj.scale.x ? obj.width / obj.scale.x : (obj.width || 100));
@@ -760,7 +787,13 @@ export function attachUniversalPosEditor(proto){
         // законно отличается (зависит от нативного разрешения исходной картинки), а вот
         // width/height — это то, что реально видно на экране, и должно совпадать у одинаковых
         // по смыслу объектов (например, у карт покера — все должны быть одного размера).
-        const scaleTxt = s.scale ? '  scale: ' + s.scale.x.toFixed(3) : '';
+        //
+        // 19.10.2026 (по прямому указанию — "при наведении на текст писать его font-size"):
+        // для PIXI.Text scale всегда 1 (PageUp/PageDown теперь крутят style.fontSize, см.
+        // _uScaleStep выше) — показываем fontSize вместо бесполезного "scale: 1.000".
+        const isTextObj = s instanceof PIXI.Text;
+        const scaleTxt = isTextObj ? '  fontSize: ' + (parseFloat(s.style.fontSize) || 16)
+            : (s.scale ? '  scale: ' + s.scale.x.toFixed(3) : '');
         const sizeTxt  = '  w: ' + Math.round(s.width) + '  h: ' + Math.round(s.height);
         // 18.09.2026: поворот теперь универсален для любого объекта (раньше — только с
         // флагом _uRotatable), поэтому rot показываем всегда, без условия.
@@ -885,6 +918,14 @@ export function attachUniversalPosEditor(proto){
         if(this._uForcedVisible){
             this._uForcedVisible.forEach(spr => { spr.visible = false; });
             this._uForcedVisible = null;
+        }
+
+        // 20.10.2026: возвращаем подсветку комбинаций (см. _enableUniversalEdit выше) к тому,
+        // что реально было бы показано в игре — а не оставляем все варианты видимыми.
+        if(window.dvor){
+            if(typeof dvor._diceRestoreComboHighlight === 'function') dvor._diceRestoreComboHighlight();
+            if(typeof dvor._pokerRestoreComboHighlight === 'function') dvor._pokerRestoreComboHighlight();
+            if(typeof dvor._bjRestoreComboHighlight === 'function') dvor._bjRestoreComboHighlight();
         }
         if(this._uCapture){
             if(this._uCapHandlers){

@@ -119,7 +119,7 @@ console.log('\nTest 7: zone.js.collectLocIncome() — сбор прибыли б
     assert(/if\(window\.achievements\) achievements\._checkAll\(\);/.test(src.slice(start, end)), 'вызов найден сразу после applyPatch(res.patch) в collectLocIncome()');
 }
 
-console.log('\nTest 8: dvor.js — _collectCig() (облачка сигарет) и общий _give() (джекпот рулетки, все казино-награды) проверяют достижения');
+console.log('\nTest 8: dvor.js — _collectCig() (облачка сигарет) проверяет достижения');
 {
     const src = readSrc('game/dvor.js');
     // 26.09.2026 (обновлено вслед за переносом _collectCig() на сервер, см.
@@ -132,10 +132,17 @@ console.log('\nTest 8: dvor.js — _collectCig() (облачка сигарет)
     const collectEnd   = src.indexOf('\n    _showFloatingText', collectStart);
     assert(/if\(window\.achievements\) achievements\._checkAll\(\);/.test(src.slice(collectStart, collectEnd)), '_collectCig() проверяет достижения (в колбэке TS.php, после applyPatch)');
 
-    const giveStart = src.indexOf('_give(type, amount){');
-    const giveEnd   = src.indexOf('\n    }', src.indexOf("udata['dvor_games']", giveStart));
-    assert(/if\(window\.achievements\) achievements\._checkAll\(\);/.test(src.slice(giveStart, giveEnd)),
-        '_give() проверяет достижения безусловно для ЛЮБОГО типа награды (закрывает разом джекпот рулетки и приз мини-игры "9 стаканчиков", которые оба идут через _give)');
+    // 19.10.2026 (расследование "Антикризиса", см. tests/exp-respect-whitelist-console-exploit-fix.test.js):
+    // общий _give(type, amount) УДАЛЁН целиком — grep по всему _client/src подтвердил, что он
+    // НЕ вызывался ни одним реальным игровым путём (все казино-игры мигрированы на
+    // server-authoritative начисление), а был единственным живым способом эксплуатации
+    // 'exp'/'respect'/'coins_earned'/'stash_count'/'dvor_games' из консоли браузера, пока эти
+    // поля оставались в client-writable whitelist users.php. Проверка достижений для джекпота
+    // рулетки/приза мини-игры "9 стаканчиков" теперь нужно искать не здесь — roulette.pickCup()/
+    // claimPrize() (dvor-roulette-minigame.js) применяют награду через applyPatch(res.patch), но
+    // НЕ вызывают achievements._checkAll() явно в своём колбэке (проверено grep — это отдельный,
+    // не связанный с безопасностью вопрос полноты UX, не часть этого аудита).
+    assert(!/_give\(type, amount\)\{/.test(src), '_give(type, amount) больше не определён в dvor.js (удалён как мёртвый код/эксплойт)');
 }
 
 console.log('\nTest 9: battlepass.js._claimLevel() проверяет достижения');

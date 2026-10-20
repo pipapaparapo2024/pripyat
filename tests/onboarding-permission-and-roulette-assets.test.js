@@ -83,7 +83,7 @@ test('VK-подтверждение вызывается только через
     (popup.match(/dispatchEvent\(new Event\('pripyat:friends-permission-request'\)\)/g) || []).length === 1 &&
     popup.includes("this._finish();\n            if(needsFriendsPermission) window.dispatchEvent(new Event('pripyat:friends-permission-request'));"));
 test('Новый фон зариков и все изображения рулетки есть в сборочных ассетах',
-    ['задний фон зарики новыйй.png', 'рулетка новая страница.png', 'рулетка описание.png',
+    ['двор зарики фон экран.png', 'рулетка новая страница.png', 'рулетка описание.png',
      'рулетка описание клик.png', 'опыт и уровни описание.png', 'опыт и уровни описание клик.png']
         .every(name => fs.existsSync(asset(name))));
 test('Рулетка использует новый лист, карточки описаний и общий затемнитель',
@@ -98,7 +98,7 @@ test('На первом шаге обучения Двора все игровы
 test('Отладочные надписи колеса и связки ключей не выводятся игроку',
     !roulette.includes("dbgTxt.text = 'колесо | url:") && !shop.includes("dbgTxt.text = 'связка ключей | url:"));
 test('Зарики используют новый фон, который ранне предзагружается',
-    dice.includes("'задний фон зарики новыйй.png'") && boot.includes("'задний фон зарики новыйй.png'"));
+    dice.includes("'двор зарики фон экран.png'") && boot.includes("'двор зарики фон экран.png'"));
 test('Счётчик перебросов зариков стоит в заданной точке',
     dice.includes('availTxt.x = 807; availTxt.y = 144;'));
 test('Аватары рейтинга урона имеют заданный масштаб, а ник окрашен как урон',

@@ -42,7 +42,10 @@ console.log('\nTest 3: _showStashPickup — та же анимация, что �
 {
     const idx = zoneSrc.indexOf('_showStashPickup(){');
     assert(idx !== -1, '_showStashPickup найден');
-    const body = zoneSrc.slice(idx, idx + 1200);
+    // 19.10.2026: окно расширено с 1200 до 1500 — правка "заначка встаёт 4-м рядом под
+    // уважением" добавила докблок-комментарий и новые константы (STASH_ROW_Y/ROW_TEXT_X/
+    // ROW_ICON_X) перед gsap/addChild, сдвинув их за старую границу среза.
+    const body = zoneSrc.slice(idx, idx + 1500);
     assert(/Texture\.from\('\.\/images\/заначка эмблема\.png'\)/.test(body), 'использует новую картинку заначка эмблема.png');
     assert(/win\.x = 640; win\.y = 290;/.test(body), 'та же точка появления на экране, что у _showCpReward (640,290)');
     assert(/y: win\.y - 90, alpha: 0, duration: 1\.6/.test(body), 'та же анимация: взлёт на 90px + затухание за 1.6с');

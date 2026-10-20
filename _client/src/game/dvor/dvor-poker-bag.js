@@ -18,8 +18,10 @@ export function attachPokerBag(proto){
         win.addChild(blocker);
 
         // 18.09.2026: нативный размер файла 1280×690 — вставляется без масштабирования.
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/poker_bag.png'));
-        bg.y = 15;
+        // 17.10.2026 (по прямому указанию — замена сигарет на сухари): новый файл 1279×555 —
+        // та же логика натурального размера, по центру области 15..705 (y=15+(690-555)/2≈83).
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/двор покер сумка закрытая экран.png'));
+        bg.y = 83;
         win.addChild(bg);
 
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from('./images/выход.png'));
@@ -37,32 +39,37 @@ export function attachPokerBag(proto){
         win.addChild(exitBtn);
 
         // 27.09.2026 (по прямому указанию, скриншоты — "2200 на экране покера vs 60 в сумке"):
-        // читалась чужая валюта roulette_spichki (спички рулетки, тратятся на кейс рулетки) —
-        // должна быть poker_spichki (спички покера, та же, что показывает счётчик на самом
-        // экране покера и что реально списывает сервер, см. poker.php.openBag()).
-        const spichkiCount = parseInt(udata['poker_spichki']||0);
+        // тогда это считалось багом (poker_spichki/roulette_spichki были разными валютами).
+        // 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+        // решение пересмотрено — обе валюты ОБЪЕДИНЕНЫ, канонический столбец roulette_spichki
+        // (см. poker.php.openBag()), poker_spichki больше нигде не пишется.
+        const spichkiCount = parseInt(udata['roulette_spichki']||0);
         const spTxt = new PIXI.Text(String(spichkiCount), {
-            fontFamily:'Southbank LT', fontSize:35, fill:'#88ccff',
+            fontFamily:'Southbank LT', fontSize:29, fill:'#88ccff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
-        // 03.10.2026 (редактор позиций): было x:240,y:288, без scale.
+        // 18.10.2026 (редактор позиций): x:270 y:320, fontSize 35→31 (-4px).
+        // 18.10.2026 (повторное указание тем же днём — новые координаты x:309,y:323,
+        // fontSize ещё -2px): 31→29.
         spTxt.anchor.set(0.5, 0);
-        spTxt.x = 241; spTxt.y = 283;
+        spTxt.x = 309; spTxt.y = 323;
         win.addChild(spTxt);
 
-        const _spichkiNow = parseInt(udata['poker_spichki']||0);
+        const _spichkiNow = parseInt(udata['roulette_spichki']||0);
         const _canOpen   = _spichkiNow >= 150;
         const openBtn = new PIXI.Sprite(PIXI.Texture.from(
             _canOpen ? './images/poker_bag_btn_activ.png' : './images/poker_bag_btn.png'
         ));
         openBtn.anchor.set(0.5, 0);
-        openBtn.x = 608; openBtn.y = 218;
+        openBtn.x = 629; openBtn.y = 286; // 18.10.2026: снято редактором позиций
         openBtn.interactive = true; openBtn.buttonMode = true;
         openBtn.on('pointerover', ()=>{ _sa(openBtn, 0.85); openBtn.scale.set(1.08); });
         openBtn.on('pointerout', ()=>{ _sa(openBtn, 1); openBtn.scale.set(1); });
         openBtn.on('pointerdown', ()=>{
             const cost = 150;
-            const have = parseInt(udata['poker_spichki']||0);
+            // 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+            // poker_spichki/roulette_spichki объединены в одну валюту — читаем общий столбец.
+            const have = parseInt(udata['roulette_spichki']||0);
             if(have < cost){ if(window.iface) iface._openSidorovichError('Недостаточно голубых спичек!', 'Нужно: ' + cost + ' • У вас: ' + have); return; }
             // 22.09.2026 (по прямому указанию — "нет попап предупреждение стоимости открытия
             // сумки"): подтверждение стоимости ПЕРЕД списанием, тот же _showConfirmPopup, что
@@ -110,7 +117,7 @@ export function attachPokerBag(proto){
             this._updatePokerUI();
             if(win.parent) win.parent.removeChild(win);
             this._pokerBagWin = null;
-            this._openPokerBagOpenedScreen(res.reward, res.clientRewards || [], !!res.hasTatu);
+            this._openPokerBagOpenedScreen(res.reward, res.clientRewards || [], !!res.hasTatu, res.shmotItemId);
         }, (err) => {
             this._pokerBagReqInFlight = false;
             console.error('[dvor-poker-bag._reallyOpenPokerBag] ← ошибка сервера:', JSON.stringify(err));
@@ -130,7 +137,7 @@ export function attachPokerBag(proto){
     // выдавалось прямо здесь клиентским вызовом dvor._give с типом шмотки (client-writable
     // users.save, который users.php._sanitizeShmot() молча отклонял — приз не доходил до игрока).
     // Шанс дропа тату по-прежнему 0 (выключено в бете) — см. константу в poker.php.
-    proto._openPokerBagOpenedScreen = function(reward, clientRewards, hasTatu){
+    proto._openPokerBagOpenedScreen = function(reward, clientRewards, hasTatu, shmotItemId){
         if(this._pokerBagOpenedWin && this._pokerBagOpenedWin.parent)
             this._pokerBagOpenedWin.parent.removeChild(this._pokerBagOpenedWin);
 
@@ -149,9 +156,19 @@ export function attachPokerBag(proto){
         blocker.interactive = true;
         win.addChild(blocker);
 
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/покер сумка открытая.png'));
-        bg.anchor.set(0.5, 0);
-        bg.x = 640; bg.y = 67;
+        // 17.10.2026 (по прямому указанию — замена сигарет на сухари): новый комплект —
+        // "фон стол" (1280×538, фон на всю ширину, центрирован по высоте области 15..705) +
+        // "содержимое" (937×478, уже нарисованные иконки наград) поверх по продиктованным
+        // координатам (218,125). Суммы (_addAmt ниже) рисуются поверх иконок — старые
+        // координаты текста оставлены как стартовое приближение (центр содержимого ~686
+        // близок к старому центру 640), точная подгонка под новый макет — через редактор
+        // позиций при визуальной сверке на тесте.
+        const bgTable = new PIXI.Sprite(PIXI.Texture.from('./images/двор покер сумка открытая фон стол.png'));
+        bgTable.x = 0; bgTable.y = 91;
+        win.addChild(bgTable);
+
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/двор покер сумка открытая содержимое.png'));
+        bg.x = 156; bg.y = 119; // 18.10.2026: снято редактором позиций
         win.addChild(bg);
 
         // 04.10.2026 (по прямому указанию — "на вкладке открытые сумки в покере сделай все
@@ -168,20 +185,28 @@ export function attachPokerBag(proto){
             t.scale.set(1.25);
             win.addChild(t);
         };
-        _addAmt('+' + exp,   624, 207);
-        _addAmt('+' + cig,   378, 370);
-        _addAmt('+' + stash, 610, 436);
-        _addAmt('+' + coins, 836, 332);
-        { const tatu = new PIXI.Text(hasTatu ? '1' : 'нету', AMT_STYLE);
+        // 18.10.2026: новые координаты сняты редактором позиций (scale 1.250 — уже заложен
+        // в _addAmt/tatu ниже через t.scale.set(1.25), не трогаем отдельно).
+        _addAmt('+' + exp,   635, 242);
+        _addAmt('+' + cig,   449, 387);
+        _addAmt('+' + stash, 630, 439);
+        _addAmt('+' + coins, 795, 257);
+        // 18.10.2026 (по прямому указанию — "уменьши фонт сайз на 2px"): у остальных карточек
+        // (_addAmt) AMT_STYLE задаёт размер шрифта 20 и затем ставится scale.set(1.25) —
+        // эффективно 25px на экране, этот текст был таким же. Вместо той же пары (её ловит
+        // tests/no-text-fontsize-scale-pixelation.test.js как блочный/пиксельный рендер текста
+        // при scale≠1) итоговый размер 25-2=23 задан сразу в размере шрифта, без отдельного
+        // scale — тот самый способ, которым просил чинить дизайнер.
+        { const tatuStyle = Object.assign({}, AMT_STYLE, { fontSize: 23 });
+            const tatu = new PIXI.Text(hasTatu ? '1' : 'нету', tatuStyle);
             tatu.anchor.set(0.5, 0.5);
-            tatu.x = 790; tatu.y = 440 + 2;
-            tatu.scale.set(1.25);
+            tatu.x = 899; tatu.y = 411 + 2;
             tatu.rotation = -10 * Math.PI / 180;
             win.addChild(tatu); }
 
         const takeBtn = new PIXI.Sprite(PIXI.Texture.from('./images/покер сумка открытая кнопка забрать.png'));
         takeBtn.anchor.set(0.5, 0.5);
-        takeBtn.x = 616; takeBtn.y = 550;
+        takeBtn.x = 636; takeBtn.y = 527; // 18.10.2026: снято редактором позиций
         takeBtn.interactive = true; takeBtn.buttonMode = true;
         takeBtn.on('pointerover', ()=>{ _sa(takeBtn, 0.85); takeBtn.scale.set(1.08); });
         takeBtn.on('pointerout', ()=>{ _sa(takeBtn, 1); takeBtn.scale.set(1); });
@@ -194,14 +219,12 @@ export function attachPokerBag(proto){
             (clientRewards || []).forEach(cr => {
                 if(cr.type === 'battlepass_xp'){ if(window.battlepass) battlepass.addXp(cr.amt); }
             });
-            const rewards = [
-                {type:'exp', amount:exp},
-                {type:'cig', amount:cig},
-                {type:'stash', amount:stash},
-                {type:'coins', amount:coins},
-            ];
-            if(hasTatu) rewards.push({type:'tatu', amount:1});
-            if(window.iface) iface._showRewardPopup(rewards);
+            // 20.10.2026 (по прямому указанию, скриншот — "после нажатия ЗАБРАТЬ не вылезал попап
+            // награды"): сам этот экран УЖЕ показывает все награды (_addAmt выше рисует exp/cig/
+            // stash/coins/шмотку прямо на фоне сумки) — отдельный popups/reward.js поверх был
+            // дублем, тот же баг-класс, что уже чинили 17.10.2026 для ящика (yashik.js) и
+            // рюкзака (ryukzak.js). Здесь только одна кнопка выхода (ЗАБРАТЬ) — суппрессия не
+            // нужна, попап просто больше не вызывается.
             if(win.parent) win.parent.removeChild(win);
             this._pokerBagOpenedWin = null;
             if(this._pokerWin) this._updatePokerUI();

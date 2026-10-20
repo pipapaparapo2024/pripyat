@@ -3,19 +3,18 @@
  * видимо не синхронизированно" — экран покера показывал 2200, а сумка ("СУМКА ЗА СПИЧКИ",
  * открывается прямо с экрана покера) показывала 60 и требовала 150).
  *
- * Причина — НЕ рассинхронизация отображения, а реальное расхождение валют на сервере.
- * poker.php.resolve() честно начисляет udata['poker_spichki'] за покерные комбинации
- * (straight/three_of_a_kind/high_card, см. poker_config.json) — та же валюта, что с 27.09.2026
- * (см. poker-spichki-counter-wrong-currency-field.test.js) показывает счётчик "ГОЛУБЫЕ СПИЧКИ"
- * на самом экране покера. Но poker.php.openBag() (стоимость сумки, введено 22.09.2026) по
- * ошибке проверяла и списывала ЧУЖУЮ валюту udata['roulette_spichki'] (спички РУЛЕТКИ — тратятся
- * на кейс рулетки, dvor-roulette-buy.js/dvor-roulette-screen.js) — почти всегда маленький,
- * не связанный с игрой в покер остаток. Игрок гриндил покер, накапливал тысячи poker_spichki,
- * но сумка требовала другие 150 спичек рулетки, которых у него почти не было.
+ * Тогда причина была найдена в реальном расхождении ДВУХ валют на сервере: poker.php.resolve()
+ * начислял udata['poker_spichki'], а poker.php.openBag() по ошибке списывал ЧУЖУЮ
+ * udata['roulette_spichki'] — фикс развёл их: у покерной сумки стала своя валюта poker_spichki
+ * (по аналогии с рулеткой, у которой свой кейс тратит свои spichki).
  *
- * Фикс — по аналогии с рулеткой (свой кейс тратит свои spichki), у покерной сумки теперь тоже
- * своя валюта: poker.php.openBag() и dvor-poker-bag.js (клиентские display/проверки ДО запроса
- * к серверу — реальное списание всегда решает сервер) переведены на poker_spichki.
+ * 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"): решение
+ * пересмотрено — poker_spichki и roulette_spichki ОБЪЕДИНЕНЫ в одну общую валюту "голубые
+ * спички", общую для покера и рулетки. Канонический столбец — roulette_spichki (у него больше
+ * мест начисления, см. roulette.php) — poker.php.openBag()/resolve() и клиентские
+ * dvor-poker-bag.js/dvor-poker-screen.js переведены читать/писать именно его. poker_spichki
+ * больше нигде не пишется (мёртвое поле в БД, старый баланс переносится одноразовой миграцией
+ * server/migrate49.php, не трогаем структуру таблицы — ПРАВИЛО №3).
  *
  * Run: node tests/poker-bag-currency-matches-poker-spichki.test.js
  */
@@ -34,37 +33,37 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 const pokerPhp = readSrc('server/core/controllers/poker.php');
 const bagJs    = readSrc('_client/src/game/dvor/dvor-poker-bag.js');
 
-console.log('\nTest 1: сервер (poker.php.openBag) списывает poker_spichki, а не roulette_spichki');
+console.log('\nTest 1: сервер (poker.php.openBag) списывает roulette_spichki (общая валюта), не poker_spichki');
 {
-    assert(/if\(!\$this->ops->deduct\(\$user, 'poker_spichki', \$cost\)\) return \$this->ops->fail\(50\);/.test(pokerPhp),
-        'deduct() читает и списывает poker_spichki (валюта покера)');
-    assert(!/deduct\(\$user, 'roulette_spichki', \$cost\)/.test(pokerPhp),
-        'больше не списывает roulette_spichki (чужая валюта — спички рулетки)');
+    assert(/if\(!\$this->ops->deduct\(\$user, 'roulette_spichki', \$cost\)\) return \$this->ops->fail\(50\);/.test(pokerPhp),
+        'deduct() читает и списывает roulette_spichki (общая валюта с рулеткой)');
+    assert(!/deduct\(\$user, 'poker_spichki', \$cost\)/.test(pokerPhp),
+        'больше не списывает отдельную poker_spichki — поле мёртвое, см. server/migrate49.php');
 }
 
-console.log('\nTest 2: patch ответа openBag() возвращает актуальный баланс poker_spichki');
+console.log('\nTest 2: patch ответа openBag() возвращает актуальный баланс roulette_spichki');
 {
-    assert(/patchCurrencies\(\$user, \['poker_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot'/.test(pokerPhp),
-        'patchCurrencies включает poker_spichki (клиент должен увидеть остаток именно этой валюты после списания)');
+    assert(/patchCurrencies\(\$user, \['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot'/.test(pokerPhp),
+        'patchCurrencies включает roulette_spichki (клиент должен увидеть остаток именно этой общей валюты после списания)');
 }
 
 console.log('\nTest 3: клиентский экран сумки (dvor-poker-bag.js) отображает и проверяет ту же валюту, что и сервер');
 {
     const activeLines = bagJs.split('\n').filter(l => !l.trim().startsWith('//'));
-    const pokerSpichkiReads = activeLines.filter(l => l.includes("udata['poker_spichki']")).length;
-    assert(pokerSpichkiReads >= 3,
-        'все 3 места (текст счётчика, флаг доступности кнопки, проверка при клике) читают udata[\'poker_spichki\'], нашлось: ' + pokerSpichkiReads);
-    assert(!activeLines.some(l => l.includes("udata['roulette_spichki']")),
-        'ни одна активная строка сумки покера не читает udata[\'roulette_spichki\'] — это валюта другой игры (рулетки), не задета фиксом');
+    const rouletteSpichkiReads = activeLines.filter(l => l.includes("udata['roulette_spichki']")).length;
+    assert(rouletteSpichkiReads >= 3,
+        'все 3 места (текст счётчика, флаг доступности кнопки, проверка при клике) читают udata[\'roulette_spichki\'], нашлось: ' + rouletteSpichkiReads);
+    assert(!activeLines.some(l => l.includes("udata['poker_spichki']")),
+        'ни одна активная строка сумки покера не читает мёртвое поле udata[\'poker_spichki\']');
 }
 
-console.log('\nTest 4: серверная валюта и клиентская валюта (проверка ДО запроса) теперь СОВПАДАЮТ');
+console.log('\nTest 4: серверная валюта и клиентская валюта (проверка ДО запроса) совпадают — теперь намеренно, не по ошибке');
 {
-    const serverUsesPokerSpichki = /deduct\(\$user, 'poker_spichki', \$cost\)/.test(pokerPhp);
-    const clientUsesPokerSpichki = bagJs.split('\n').filter(l => !l.trim().startsWith('//'))
-        .every(l => !l.includes("udata['roulette_spichki']"));
-    assert(serverUsesPokerSpichki && clientUsesPokerSpichki,
-        'счётчик на экране покера, дисплей сумки и реальное списание на сервере смотрят в одно и то же поле (poker_spichki) — картинки 1 и 2 из репорта больше не разойдутся');
+    const serverUsesRouletteSpichki = /deduct\(\$user, 'roulette_spichki', \$cost\)/.test(pokerPhp);
+    const clientUsesRouletteSpichki = bagJs.split('\n').filter(l => !l.trim().startsWith('//'))
+        .every(l => !l.includes("udata['poker_spichki']"));
+    assert(serverUsesRouletteSpichki && clientUsesRouletteSpichki,
+        'счётчик на экране покера, дисплей сумки и реальное списание на сервере смотрят в одно и то же поле (roulette_spichki) — та же общая валюта, что у рулетки');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

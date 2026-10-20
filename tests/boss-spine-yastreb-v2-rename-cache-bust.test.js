@@ -32,10 +32,14 @@ const spineDir = path.join(root, '_client', 'development', 'images', 'spine');
 
 function sha256(p){ return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); }
 
-console.log('\nTest 1: BOSS_SPINE[2] (Ястреб) ссылается на новое имя (yastreb_v2), не на оригинал без версии');
+console.log('\nTest 1: BOSS_SPINE[2] (Ястреб) ссылается на новое имя (yastreb_v2 atlas), не на оригинал без версии');
 {
-    assert(/\{ atlas: 'yastreb_v2\.atlas', json: 'yastreb_v2\.json',/.test(src),
-        'конфиг Ястреба указывает на yastreb_v2.atlas/yastreb_v2.json');
+    // 17.10.2026: json обновлён ещё раз (второй новый экспорт в тот же день) — yastreb_v2.json →
+    // yastreb_v3.json, atlas/webp не трогали (см. boss-fight-new-locations-and-layered-plates.test.js).
+    // 17.10.2026 (тем же днём, третий экспорт "Yastreb без ограничителей.zip"): json снова
+    // обновлён — yastreb_v3.json → yastreb_v4.json, atlas/webp опять не трогали (md5 совпадает).
+    assert(/\{ atlas: 'yastreb_v2\.atlas', json: 'yastreb_v4\.json',/.test(src),
+        'конфиг Ястреба указывает на yastreb_v2.atlas/yastreb_v4.json');
     assert(!/atlas:\s*'yastreb\.atlas'/.test(src) && !/json:\s*'yastreb\.json'/.test(src),
         'старые имена (yastreb.atlas/yastreb.json, без версии) больше не используются как активная ссылка в конфиге');
 }

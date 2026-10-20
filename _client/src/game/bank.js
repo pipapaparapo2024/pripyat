@@ -89,7 +89,29 @@ export default class Bank{
 	init(tab){
 		let keys_slot = ['stew', 'coins', 'cigarettes'];
 		const tabNames = {stew: 'тушенка', coins: 'монеты', cigarettes: 'сиги'};
-		const defaultTab = (tab && keys_slot.includes(tab)) ? tab : 'stew';
+		const defaultTab = (tab && keys_slot.includes(tab) && tab !== 'cigarettes') ? tab : 'stew';
+
+		// 18.10.2026 (та же находка, что в sidorovich.js — "до сих пор покупка сигарет"):
+		// вкладка "сиги" внутри ЭТОГО окна (FLA-объект, slot.icon.gotoAndStop('cigarettes') —
+		// запечённые старые кадры, правило №2 AGENTS.md не позволяет их перерисовать) была
+		// реально доступна игроку — открыть банк через рубли/тушёнку и переключиться на вкладку
+		// "сиги" внутренним тумблером ниже. Сухари теперь продаются ТОЛЬКО через отдельный
+		// попап (interface-sukhari-purchase.js) — прячем саму вкладку-кнопку, чтобы до старой
+		// графики нельзя было добраться никаким путём.
+		// 18.10.2026 (баг найден по живому скриншоту — "до сих пор видна пачка сигарет 'ЗВЕЗДА'
+		// на вкладке, покупка сухарей так и не открывается"): butt_slot_cigarettes — это ТОЛЬКО
+		// невидимый хитбокс (тот же паттерн, что уже документирован для butt_settings/
+		// butt_settings_icon в interface-panels.js) — реальная ВИДИМАЯ картинка пачки лежит в
+		// ОТДЕЛЬНОМ объекте cigarettes_icon (имя подтверждено прямо в скомпилированном
+		// interface_elements.min.js). Прятать нужно оба — иначе хитбокс не кликается, но старая
+		// графика сигарет всё равно видна на экране ровно как на скриншоте.
+		if(this.atm.win.butt_slot_cigarettes){
+			this.atm.win.butt_slot_cigarettes.visible = false;
+			this.atm.win.butt_slot_cigarettes.interactive = false;
+		}
+		if(this.atm.win.cigarettes_icon){
+			this.atm.win.cigarettes_icon.visible = false;
+		}
 
 		for(let i = 0; i < keys_slot.length; i++)this.atm.win['active_slot_'+keys_slot[i]].visible = false;
 

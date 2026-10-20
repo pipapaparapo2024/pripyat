@@ -30,18 +30,9 @@ const ENERGY_PRICE_FINE_TUNE = {
 };
 
 export function attachEnergyBuy(proto){
-	proto._initEnergyBuyBtn = function(){
-		const btn = new PIXI.Sprite(PIXI.Texture.from('./images/hud/butt_energy_buy.png'));
-		btn.x = 450 + 240 + 30 - 50 - 12 - 5 + 2;
-		btn.y = 28;
-		btn.interactive = true;
-		btn.buttonMode = true;
-		btn.on('pointerover',  ()=>{ btn.tint = 0xFFDD88; });
-		btn.on('pointerout',   ()=>{ btn.tint = 0xFFFFFF; });
-		btn.on('pointerdown',  ()=>this._openEnergyPopup());
-		this.up.addChild(btn);
-		this._energyBuyBtn = btn;
-	};
+	// 18.10.2026 (по прямому указанию — "butt_energy_buy.png вообще убери"): отдельная
+	// кнопка-плюс в HUD убрана целиком — попап энергии теперь открывается кликом по самому
+	// тексту количества энергии (energy_txt, см. interface.js.initNickLabel()).
 
 	proto._openEnergyPopup = function(){
 		if(this._energyWin){
@@ -124,8 +115,10 @@ export function attachEnergyBuy(proto){
 			const price = isOk() ? opt.price_ok : opt.votes;
 			// 09.10.2026 (правка тем же днём): fontSize 18→16 (-2px), цвет #ffdd44 (золотой) →
 			// #ffffff (белый) — по прямому указанию, для ОБЕИХ площадок одинаково.
+			// 18.10.2026 (по прямому указанию — "сделай текст голосов такой же, как на картинке
+			// 2": Southbank LT, 18.34pt ≈ 18px, белый): fontSize возвращён на 18.
 			const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), {
-				fontFamily:'Southbank LT', fontSize:16, fill:'#ffffff',
+				fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff',
 				dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
 			});
 			priceTxt.anchor.set(0.5, 0.5);

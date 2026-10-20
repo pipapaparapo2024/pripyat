@@ -34,7 +34,7 @@ assert(/hasFriendsScopeGrantedLocal/.test(gate) && /_persistFriendsScopeGranted\
 console.log('\n3) Имена в рейтингах белые');
 // 08.10.2026 (фикс пикселизации текста): fontSize:13×scale(0.954) заменены на итоговый
 // fontSize:12 без scale (13×0.954≈12 — практически та же видимая величина).
-assert(/fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff'/.test(leaderboard), 'имена игроков во всех вкладках рейтинга рендерятся белым, fontSize:12 (13×0.954)');
+assert(/fontFamily:'Southbank LT', fontSize:12, fill:'#c5c5c5'/.test(leaderboard), 'имена игроков во всех вкладках рейтинга рендерятся цветом #c5c5c5, fontSize:12 (13×0.954) — 18.10.2026, было белым');
 
 console.log(`\n${'─'.repeat(50)}`);
 if(failed){ console.error(`❌ ${failed} failed, ${passed} passed`); process.exit(1); }

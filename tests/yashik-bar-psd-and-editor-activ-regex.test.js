@@ -43,9 +43,22 @@ console.log('\nTest 2: universal_pos_editor.js — regex ловит файлы "
 
 console.log('\nTest 3: sidorovich.js действительно использует именно такие "_activ" имена (подтверждаем, что фикс закрывает реальный кейс)');
 {
-    for(const fname of ['banka_activ.png', 'konserva_activ.png', 'sig_activ.png', 'yashik_activ.png', 'sumka_activ.png']){
+    // 17.10.2026 (замена сигарет на сухари): sig_activ.png → "сидорович сухари актив.png".
+    // 18.10.2026 (тот же батч, новый раунд файлов — банка/консервы/сумка/посылка получили
+    // отдельные idle+hover спрайты с новыми именами, см. докблок у bankaIdle в sidorovich.js):
+    // banka_activ.png/konserva_activ.png/sumka_activ.png заменены на "сидорович банка
+    // актив.png"/"сидорович консервы актив.png"/"сидорович сумка актив.png".
+    // 18.10.2026 (повторное указание тем же днём — "yashik_activ.png убери из игры"):
+    // hover-оверлей ящика на sidorovich.js убран целиком — больше НЕ ожидаем эту ссылку.
+    // 18.10.2026 (ЕЩЁ раз тем же днём — "убери прозрачные отступы у всех файлов Сидоровича"):
+    // все 4 файла переобрезаны по альфа-каналу и переименованы с суффиксом "v2" — см.
+    // oct18-batch4-sidorovich-crop-energy-relocate-ryukzak-fixes.test.js для полной проверки.
+    for(const fname of ['сидорович банка актив v2.png', 'сидорович консервы актив v2.png', 'сидорович сухари актив v2.png', 'сидорович сумка актив v2.png']){
         assert(sidSrc.includes(fname), `sidorovich.js реально ссылается на ${fname}`);
     }
+    // Регекс ищет реальный ВЫЗОВ Texture.from(...), не голую подстроку — та легитимно
+    // встречается в пояснительном комментарии чуть выше ("yashik_activ.png убери из игры").
+    assert(!/Texture\.from\([^)]*yashik_activ\.png/.test(sidSrc), 'sidorovich.js БОЛЬШЕ не создаёт текстуру из yashik_activ.png (убран по прямому указанию)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -143,7 +143,7 @@ export function attachBossPreFight(proto){
         const REWARD_KEY_Y       = 521;
 
         const rewardItems = [
-            { url: B+'боевка награда Сиги.png', pos: REWARD_SIGI_POS, tip: ()=>{ const m=window.bosses?bosses.DIFF_MULT[selectedDiff].cig:1; return _fmtN(Math.floor((bData?bData.reward.cig:0)*m))+' сигарет'; } },
+            { url: B+'боевка награда сухари.png', pos: REWARD_SIGI_POS, tip: ()=>{ const m=window.bosses?bosses.DIFF_MULT[selectedDiff].cig:1; return _fmtN(Math.floor((bData?bData.reward.cig:0)*m))+' сухарей'; } },
             { url: B+'опыт эмблема.png', pos: REWARD_EXP_POS, tip: ()=>{ const m=window.bosses?bosses.DIFF_MULT[selectedDiff].exp:1; return _fmtN(Math.floor((bData?bData.reward.exp:0)*m))+' опыта'; } },
             { url: B+'очки рюкзака.png', pos: REWARD_RYUKZAK_POS, tip: ()=>(RYUKZAK_PTS[bossIdx]||0)+' очков рюкзака' },
             ...givesKeys.map((ki, ki_i) => ({
@@ -287,7 +287,7 @@ export function attachBossPreFight(proto){
 
             let reqText;
             if(item.price){
-                const unit = {coins:'монет', stew:'тушёнки', cig:'сигарет'}[item.price.type] || '';
+                const unit = {coins:'монет', stew:'тушёнки', cig:'сухарей'}[item.price.type] || '';
                 reqText = 'Цена: ' + item.price.a + ' ' + unit;
             } else {
                 reqText = item.source || '?';

@@ -32,7 +32,11 @@ for (const combo of pokerOrder) assert(new RegExp(combo + ':\\s*\\{').test(poker
 assert(poker.combos.flush.type === 'stew' && poker.combos.flush.amt === 15, 'флеш выдаёт 15 тушёнки по таблице');
 // 26.09.2026: призы покерных комбинаций переведены с roulette_spichki на poker_spichki
 // (poker.resolve() начисляет их сам, сервер-авторитетно) — тест обновлён вслед за фиксом.
-assert(poker.combos.straight.type === 'poker_spichki' && poker.combos.straight.amt === 300 && poker.combos.straight.sp === 300, 'стрит выдаёт 300 спичек покера по таблице');
+// 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"): решение
+// пересмотрено — poker_spichki и roulette_spichki ОБЪЕДИНЕНЫ в одну валюту, канонический
+// столбец roulette_spichki (см. poker.php.openBag()) — тип комбинации снова roulette_spichki,
+// но на этот раз НЕ по ошибке 27.09.2026, а потому что это теперь буквально одна валюта.
+assert(poker.combos.straight.type === 'roulette_spichki' && poker.combos.straight.amt === 300 && poker.combos.straight.sp === 300, 'стрит выдаёт 300 общих голубых спичек по таблице');
 
 console.log('\nЗарики: серверные комбинации сопоставляются с индексами таблицы');
 assert(dice.table.length === 18, 'серверная таблица зариков содержит все 18 строк');

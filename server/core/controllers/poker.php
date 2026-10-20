@@ -119,19 +119,20 @@
         // в клиенте), сюда не включено.
         // 27.09.2026 (репорт со скриншотами — "счётчик спичек на экране покера (2200) не сходится
         // со счётчиком в сумке (60)"): изначально (22.09.2026) стоимость сумки по ошибке списывала
-        // ЧУЖУЮ валюту roulette_spichki (спички РУЛЕТКИ, тратятся на кейс рулетки — см.
-        // dvor-roulette-buy.js/dvor-roulette-screen.js) вместо poker_spichki (спички ПОКЕРА,
-        // начисляются здесь же в resolve() за стрит/сет/старшую карту, см. currencyMap выше и
-        // poker_config.json). Игрок гриндил покер, видел растущий счётчик "ГОЛУБЫЕ СПИЧКИ" на
-        // экране покера (poker_spichki — фикс дисплея от того же дня, см.
-        // tests/poker-spichki-counter-wrong-currency-field.test.js), но сумка проверяла и
-        // списывала другое, почти всегда пустое поле. По аналогии с рулеткой (свой кейс — свои
-        // spichki) у покерной сумки должна быть своя валюта — poker_spichki.
+        // ЧУЖУЮ валюту roulette_spichki вместо poker_spichki — тогда это считалось багом, у
+        // покера и рулетки были РАЗНЫЕ валюты. 20.10.2026 (по прямому указанию — "это должны
+        // быть одинаковые спички, исправь"): решение пересмотрено — poker_spichki и
+        // roulette_spichki ОБЪЕДИНЕНЫ в одну общую валюту "голубые спички", общую для покера и
+        // рулетки. Канонический столбец — roulette_spichki (у него больше мест начисления, см.
+        // roulette.php), poker_spichki больше не пишется нигде (оставлен в БД как мёртвое поле —
+        // Правило №3 "не трогать БД", сюда не входит безопасное обнуление через отдельную
+        // миграцию, см. migrate35.php). Старым игрокам баланс poker_spichki переносится в
+        // roulette_spichki той же миграцией — код этого файла накопленный баланс не трогает.
         function openBag(){
             $cost = 150;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
-            if(!$this->ops->deduct($user, 'poker_spichki', $cost)) return $this->ops->fail(50); // не хватает спичек
+            if(!$this->ops->deduct($user, 'roulette_spichki', $cost)) return $this->ops->fail(50); // не хватает спичек
 
             // 09.10.2026 (аудит гонок состояний по всему проекту): openBag() не брал НИКАКОГО
             // лока (ни GET_LOCK, ни FOR UPDATE), хотя пишет stash_count/shmot/max_energy — все
@@ -203,9 +204,11 @@
             ];
             error_log('[poker.openBag] ' . json_encode($debug));
 
-            $patch = $this->ops->patchCurrencies($user, ['poker_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot', 'max_energy']);
+            $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot', 'max_energy']);
             $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
-            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'clientRewards' => $clientRewards, 'debug' => $debug]);
+            // 20.10.2026 (та же правка, что у roulette.php.openCase() — "наведение должно
+            // показывать название выпавшей шмотки"): tatuItemId раньше уходил только в $debug.
+            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'clientRewards' => $clientRewards, 'debug' => $debug]);
         }
 
         private function _catalog(){
@@ -623,9 +626,10 @@
             $lockBefore = [];
             foreach($lockFields as $f) $lockBefore[$f] = $user[$f] ?? null;
 
-            // AchievementEngine reads poker_spichki for poker thresholds.  It must
-            // be awarded here, rather than reconstructed from a browser callback.
-            $currencyMap = ['coins','stew','cigarettes','exp','respect','poker_chips','poker_spichki','roulette_spichki'];
+            // AchievementEngine reads roulette_spichki for poker thresholds too (20.10.2026,
+            // currencies merged — see openBag() comment above). It must be awarded here, rather
+            // than reconstructed from a browser callback.
+            $currencyMap = ['coins','stew','cigarettes','exp','respect','poker_chips','roulette_spichki'];
             if(in_array($c['type'], $currencyMap, true)){
                 $this->ops->add($user, $c['type'], intval($c['amt']));
             }
@@ -680,7 +684,7 @@
             error_log('[poker.resolve] ' . json_encode($debug)
                 . ($verify['mismatch'] ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
 
-            $patchKeys = ['coins','stew','cigarettes','exp','respect','poker_chips','poker_spichki','roulette_spichki','dvor_games','shmot'];
+            $patchKeys = ['coins','stew','cigarettes','exp','respect','poker_chips','roulette_spichki','dvor_games','shmot'];
             if(in_array($c['type'], ['auto','gun','machete'], true)){
                 $patchKeys[] = 'weapons';
                 $patchKeys[] = 'ammo_' . $c['type'];

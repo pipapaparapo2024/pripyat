@@ -20,11 +20,14 @@ let passed = 0;
 function assert(ok, message){ if(!ok) throw new Error(message); console.log('  ✅ ' + message); passed++; }
 
 console.log('\nstarPtsTxt создан в пуле карточек, спозиционирован на самой звезде, скрыт по умолчанию');
-assert(/const starPtsTxt = new PIXI\.Text\('', \{ fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff', fontWeight:'bold' \}\);/.test(src),
-    'новый текстовый узел под число очков внутри звезды');
+// 17.10.2026 (по прямому указанию — "увеличь фонт сайз на 2px"): fontSize 12 → 14.
+assert(/const starPtsTxt = new PIXI\.Text\('', \{ fontFamily:'Southbank LT', fontSize:14, fill:'#ffffff' \}\);/.test(src),
+    'новый текстовый узел под число очков внутри звезды (fontSize:14)');
 // 29.09.2026 (по прямому указанию): x сдвинут на +1px (star.x + 1) — число сидело чуть левее
 // геометрического центра иконки; y по-прежнему совпадает со star/starFill.
-assert(/starPtsTxt\.x = star\.x \+ 1; starPtsTxt\.y = star\.y;/.test(src), 'позиция — на звезде, с поправкой +1px по X (та же Y-точка, что star/starFill)');
+// 17.10.2026 (по прямому указанию, тот же день — "сдвинь влево и вниз на по 1px"): x вернулась
+// на star.x (отменяет +1 от 29.09.2026), y стала star.y + 1.
+assert(/starPtsTxt\.x = star\.x; starPtsTxt\.y = star\.y \+ 1;/.test(src), 'позиция — x=star.x (без сдвига), y=star.y+1 (было star.x+1/star.y)');
 assert(/starPtsTxt\.visible = false;/.test(src), 'по умолчанию скрыт в пуле (как и остальные элементы карточки)');
 
 console.log('\nstarPtsTxt попадает в co (пул переиспользуемых карточек)');

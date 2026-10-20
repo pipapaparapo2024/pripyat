@@ -41,8 +41,12 @@ console.log('\nTest 2: dvor-poker-bag.js — открытие сумки теп�
     const start = pokerBagSrc.indexOf("openBtn.on('pointerdown', ()=>{");
     const end   = pokerBagSrc.indexOf('\n        });', start);
     const body  = pokerBagSrc.slice(start, end);
+    // 20.10.2026: тем же днём был короткий заход "уточнить спичек покера/рулетки" (решив, что
+    // это рассинхрон двух разных валют), пользователь поправил — это ОДНА общая валюта,
+    // poker_spichki/roulette_spichki объединены (канонический столбец roulette_spichki, см.
+    // tests/poker-bag-currency-matches-poker-spichki.test.js) — текст вернулся к общему "голубых спичек".
     assert(/iface\._showConfirmPopup\('Открыть сумку за ' \+ cost \+ ' голубых спичек\?', \(\) => \{/.test(body),
-        'вызывает _showConfirmPopup с текстом, явно включающим стоимость (150 спичек)');
+        'вызывает _showConfirmPopup с текстом, явно включающим стоимость (150 голубых спичек)');
     assert(/this\._reallyOpenPokerBag\(cost, have, win\);/.test(body), 'реальное списание вынесено в отдельный метод, вызываемый ТОЛЬКО после согласия');
     assert(!/udata\['roulette_spichki'\] = \(have - cost\)\.toString\(\);\s*\n\s*if\(win\.parent\) win\.parent\.removeChild\(win\);\s*\n\s*this\._pokerBagWin = null;\s*\n\s*if\(this\._pokerWin\) this\._updatePokerUI\(\);\s*\n\s*this\._openPokerBagOpenedScreen\(\);\s*\n\s*\}\);\s*\n\s*win\.addChild\(openBtn\);/.test(pokerBagSrc),
         'старое безусловное списание прямо в pointerdown-обработчике убрано (перенесено в _reallyOpenPokerBag)');
@@ -59,7 +63,9 @@ console.log('\nTest 2: dvor-poker-bag.js — открытие сумки теп�
     // 25.09.2026 (регресс найден повторным прогоном тестов): следом добавился третий параметр
     // hasTatu (тату-дроп тоже переехал на сервер, см. casino-bag-tatu-shmot-server-authoritative
     // .test.js) — сигнатура вызова выросла ещё раз, до (reward, clientRewards, hasTatu).
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu\);/.test(reallyBody), '_reallyOpenPokerBag() открывает экран результата после списания, передавая готовую награду от сервера');
+    // 20.10.2026: сигнатура выросла ещё раз, до (reward, clientRewards, hasTatu, shmotItemId) —
+    // наведение на выпавшую шмотку в попапе награды показывает её название.
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(reallyBody), '_reallyOpenPokerBag() открывает экран результата после списания, передавая готовую награду и id шмотки от сервера');
 }
 
 console.log('\nTest 3: dvor-roulette-buy.js — открытие кейса тоже требует подтверждения с указанием стоимости');
@@ -67,8 +73,10 @@ console.log('\nTest 3: dvor-roulette-buy.js — открытие кейса то
     const start = roulBuySrc.indexOf("openBtn.on('pointerdown', ()=>{");
     const end   = roulBuySrc.indexOf('\n        });', start);
     const body  = roulBuySrc.slice(start, end);
+    // 20.10.2026: короткий заход "спичек рулетки" тем же днём отменён — валюты объединены
+    // (см. tests/poker-bag-currency-matches-poker-spichki.test.js), текст вернулся к общему.
     assert(/iface\._showConfirmPopup\('Открыть кейс за ' \+ cost \+ ' голубых спичек\?', _reallyOpen\);/.test(body),
-        'вызывает _showConfirmPopup с текстом, явно включающим стоимость (150 спичек)');
+        'вызывает _showConfirmPopup с текстом, явно включающим стоимость (150 голубых спичек)');
     assert(/const _reallyOpen = \(\) => \{/.test(body), 'реальное списание вынесено в отдельную функцию, вызываемую ТОЛЬКО после согласия');
     assert(/if\(!window\.iface \|\| typeof iface\._showConfirmPopup !== 'function'\)\{ _reallyOpen\(\); return; \}/.test(body),
         'есть безопасный fallback, если iface._showConfirmPopup почему-то недоступен — не блокирует игру полностью');

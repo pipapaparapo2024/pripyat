@@ -146,6 +146,11 @@ export function attachPlayerProfile(proto){
                 def = catalog.find(it => it.id === equippedIdx);
                 if(def && def.imgFile){
                     spr.texture = PIXI.Texture.from('./images/shmot/' + def.imgFile);
+                    // 18.10.2026 (тот же фикс, что в home.js.updateClothes()/shmot_shop.js —
+                    // см. докблок в character-sprite-mipmap-fix.test.js): без мипмапа крупные
+                    // исходники шмоток дают алиасинг при сжатии мелким manScale.
+                    spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                    spr.texture.baseTexture.update();
                     spr.x = s.x + (def.manDx || 0);
                     spr.y = s.y + (def.manDy || 0) + (def.imgFile === 'штаны_1.png' ? -28 : 0);
                     spr.scale.set(def.manScale || 1);
@@ -160,6 +165,8 @@ export function attachPlayerProfile(proto){
         // CLOTH_SLOTS выше (значит, выше по z-индексу Торса/Головы), persSpr здесь тоже
         // в 506,204, поэтому те же абсолютные координаты.
         const leftForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левое предплечье.png'));
+        leftForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftForearmSpr.texture.baseTexture.update();
         leftForearmSpr.anchor.set(0, 0);
         leftForearmSpr.x = 514; leftForearmSpr.y = 324;
         leftForearmSpr.scale.set(0.197);
@@ -169,14 +176,20 @@ export function attachPlayerProfile(proto){
         // персонажа (та же поза, тот же offset (506,204)) — баг найден 19.09.2026: профиль
         // ЧУЖОГО игрока их не рисовал вообще, руки "пропадали" при переходе на другой профиль.
         const phalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+        phalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        phalanxSpr.texture.baseTexture.update();
         phalanxSpr.x = 634; phalanxSpr.y = 441;
         win.addChild(phalanxSpr);
 
         const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
+        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandSpr.texture.baseTexture.update();
         rightHandSpr.x = 630; rightHandSpr.y = 369;
         win.addChild(rightHandSpr);
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
+        leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftHandSpr.texture.baseTexture.update();
         leftHandSpr.x = 534; leftHandSpr.y = 385;
         win.addChild(leftHandSpr);
 
@@ -195,20 +208,14 @@ export function attachPlayerProfile(proto){
         const nick = String(profile.nick || '').trim() || String(fallbackNick || '').trim() || ('Игрок ' + profile.id);
         profile.displayNick = nick;
 
-        const nameTxt = new PIXI.Text(nick, {
-            fontFamily: 'Southbank LT', fontSize: 26, fill: '#ffcc44', fontWeight: 'bold',
-            dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
-        });
-        nameTxt.x = 40; nameTxt.y = 30;
-        // 22.09.2026 (по прямому указанию — "все тексты при переходе на игрока поверни
-        // против часовой стрелки на +1°") — тот же приём "слегка небрежно положенного
-        // полароида", что уже применён к самой визитке (см. CARD_ROTATION_DEG ниже).
-        nameTxt.rotation = TEXT_ROTATION_DEG * Math.PI / 180;
-        win.addChild(nameTxt);
+        // 17.10.2026 (по прямому указанию + скриншот — "сверху слева дублируется ник жёлтым
+        // шрифтом, такого быть не должно, нужно убрать"): отдельная подпись-заголовок с ником
+        // (x:40,y:30, жёлтым) рисовалась поверх всего экрана ПОМИМО ника, который и так уже
+        // показывает визитка (_buildVisitCard ниже, nickTxt, белым) — визуально одно и то же
+        // имя дважды. Убрана целиком; сам ник остаётся только внутри визитки.
         profile._setDisplayNick = (resolvedNick) => {
             if(String(profile.nick || '').trim() || !String(resolvedNick || '').trim()) return;
             profile.displayNick = String(resolvedNick).trim();
-            nameTxt.text = profile.displayNick;
         };
 
         // 21.09.2026 (по прямому указанию — "убери надпись сзади, где написано уровень
@@ -292,6 +299,14 @@ export function attachPlayerProfile(proto){
         const avatarMask = new PIXI.Graphics();
         avatarMask.beginFill(0xffffff); avatarMask.drawRect(0, 0, AVATAR_SIZE, AVATAR_SIZE); avatarMask.endFill();
         avatarMask.x = AVATAR_X; avatarMask.y = AVATAR_Y;
+        // 20.10.2026 (по прямому указанию — "это точно не входит в изображение? сделай так,
+        // чтобы это можно было редактировать через редактор"): подтверждено, обрезающее окно —
+        // код (PIXI.Graphics-маска), не часть PNG. avatarMask одновременно и .mask спрайта
+        // фото, и обычный ребёнок card — универсальный редактор позиций подхватывает любой
+        // объект с _uDraggable=true тем же способом, что и обычные Sprite/Text (драг двигает,
+        // PageUp/PageDown меняет scale — т.к. это Graphics без .texture, _uScaleStep сам
+        // использует .width/.scale.x как базу шага, см. universal_pos_editor.js).
+        avatarMask._uDraggable = true;
         const avatarSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);
         avatarSpr.x = AVATAR_X; avatarSpr.y = AVATAR_Y;
         avatarSpr.width = AVATAR_SIZE; avatarSpr.height = AVATAR_SIZE;
@@ -519,11 +534,15 @@ export function attachPlayerProfile(proto){
     // позиция снята через редактор позиций: X=0, Y=71. Тот же таймлайн проявления/удержания/
     // затухания, что уже используется для попапа достижений (achievement.js) — не закрывается
     // тапом, гаснет сам.
+    // 17.10.2026 (по прямому указанию — новый арт того же назначения): 'качнул силу.png' →
+    // 'прокачал бицуху.png' (1280×531, старый файл оставлен на диске неиспользуемым). Размер
+    // расходится на 7px по высоте — не критично, явного height в коде нет (нативный размер,
+    // x/y=0,71 не трогались).
     proto._showGymPumpBanner = function(){
         if(this._gymPumpBannerWin && this._gymPumpBannerWin.parent){
             this._gymPumpBannerWin.parent.removeChild(this._gymPumpBannerWin);
         }
-        const banner = new PIXI.Sprite(PIXI.Texture.from('./images/качнул силу.png'));
+        const banner = new PIXI.Sprite(PIXI.Texture.from('./images/прокачал бицуху.png'));
         banner.x = 0; banner.y = 71;
         banner.alpha = 0;
         root.layer2_mc.addChild(banner);

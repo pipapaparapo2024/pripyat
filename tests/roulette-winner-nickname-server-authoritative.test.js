@@ -120,7 +120,12 @@ console.log('\nTest 3: users.php — roulette_winner убран из client-writ
     // ловушка регекса, см. CLAUDE.md).
     assert(!/'roulette_winner',/.test(allowedBlock),
         "'roulette_winner' отсутствует СРЕДИ ЭЛЕМЕНТОВ \$allowed (клиент не может подделать его через users.save) — упоминание в пояснительном комментарии не в счёт");
-    assert(/'stash_data','stash_count',/.test(allowedBlock), 'соседние поля stash_data/stash_count остались на месте (регресс-гвард)');
+    // 19.10.2026: 'stash_count' убран из $allowed той же причине, что 'exp' (см. большой
+    // коммент там, расследование "Антикризиса") — был в whitelist ДВАЖДЫ и параллельно писался
+    // сервером (zone.php/poker.php/roulette.php). 'stash_data' (соседнее, но другое поле —
+    // JSON-объект тайника, не счётчик) остаётся не затронутым этим аудитом.
+    assert(/'stash_data',/.test(allowedBlock), "'stash_data' осталось на месте (регресс-гвард)");
+    assert(!/'stash_count',/.test(allowedBlock), "'stash_count' УБРАНО из whitelist (19.10.2026, тот же класс дыры, что у 'exp')");
 }
 
 console.log('\nTest 4: dvor-roulette-screen.js — клиент больше не пишет roulette_winner напрямую');

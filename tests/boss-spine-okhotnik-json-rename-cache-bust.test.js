@@ -43,6 +43,22 @@
  *    (55 костей/31 слот — было 60/31). atlas/webp (mechennii.atlas/mechennii.webp) снова
  *    побайтово совпадают с уже лежащими — не переименованы.
  *
+ * 17.10.2026 (новые экспорты "okhotnik_new.zip" и "Mechennii new.zip", закинуты одним запросом):
+ * седьмое и четвёртое обновления —
+ *  - Охотник: 'okhotnik_v5.json' → 'okhotnik_v6.json'. Риг снова упрощён (35 костей/26 слотов —
+ *    было 39/26; leg3/leg4/leg11/leg22/hand2 заменены одной костью 'legs'). ⚠️ В ОТЛИЧИЕ от
+ *    прошлых обновлений Охотника — v5 ДО СИХ ПОР содержал рабочий `ik`-массив (5 констрейнтов),
+ *    v6 его впервые теряет (`ik: null`), присоединяясь к тому же паттерну регрессии, что уже был
+ *    у Ястреба/Меченного. atlas/webp (okhotnik2.atlas/okhotnik2.webp) побайтово совпадают с уже
+ *    используемыми — не переименованы.
+ *  - Меченный: 'mechennii_v4.json' → 'mechennii_v5.json' (повторная заливка того же файла,
+ *    который уже был подготовлен ранее тем же днём — байтовая идентичность подтверждена).
+ *
+ * 17.10.2026 (новый экспорт "meshennii_test.zip", тем же днём): шестое обновление Меченного —
+ * ИСПРАВЛЕНИЕ регрессии v5, не новая поломка. 'mechennii_v5.json' → 'mechennii_v6.json' —
+ * 55 костей/31 слот (снова, как в v4), `ik`-массив СНОВА содержит 4 рабочих констрейнта на ноги
+ * (leg1/leg2/leg11/leg22). atlas/webp снова побайтово совпадают с уже используемыми.
+ *
  * Run: node tests/boss-spine-okhotnik-json-rename-cache-bust.test.js
  */
 const fs   = require('fs');
@@ -61,28 +77,30 @@ const spineDir = path.join(root, '_client', 'development', 'images', 'spine');
 
 function sha256(p){ return crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex'); }
 
-console.log('\nTest 1: BOSS_SPINE[0] (Охотник) ссылается на САМОЕ НОВОЕ имя json-файла (v5), не на v4/v3/v2/оригинал');
+console.log('\nTest 1: BOSS_SPINE[0] (Охотник) ссылается на САМОЕ НОВОЕ имя json-файла (v6), не на v5/v4/v3/v2/оригинал');
 {
-    assert(/\{ atlas: 'okhotnik2\.atlas',\s*json: 'okhotnik_v5\.json',/.test(src),
-        'конфиг Охотника указывает на okhotnik_v5.json');
-    assert(!/json:\s*'okhotnik\.json'/.test(src) && !/json:\s*'okhotnik_v2\.json'/.test(src) && !/json:\s*'okhotnik_v3\.json'/.test(src) && !/json:\s*'okhotnik_v4\.json'/.test(src),
-        'ни одно из старых имён (okhotnik.json/_v2/_v3/_v4) больше не используется как активная ссылка в конфиге');
+    assert(/\{ atlas: 'okhotnik2\.atlas',\s*json: 'okhotnik_v6\.json',/.test(src),
+        'конфиг Охотника указывает на okhotnik_v6.json');
+    assert(!/json:\s*'okhotnik\.json'/.test(src) && !/json:\s*'okhotnik_v2\.json'/.test(src) && !/json:\s*'okhotnik_v3\.json'/.test(src) && !/json:\s*'okhotnik_v4\.json'/.test(src) && !/json:\s*'okhotnik_v5\.json'/.test(src),
+        'ни одно из старых имён (okhotnik.json/_v2/_v3/_v4/_v5) больше не используется как активная ссылка в конфиге');
 }
 
-console.log('\nTest 2: все пять файлов Охотника (оригинал, v2-v5) реально существуют на диске — старые не удалены, просто не используются');
+console.log('\nTest 2: все шесть файлов Охотника (оригинал, v2-v6) реально существуют на диске — старые не удалены, просто не используются');
 {
     const origPath = path.join(spineDir, 'okhotnik.json');
     const v2Path   = path.join(spineDir, 'okhotnik_v2.json');
     const v3Path   = path.join(spineDir, 'okhotnik_v3.json');
     const v4Path   = path.join(spineDir, 'okhotnik_v4.json');
     const v5Path   = path.join(spineDir, 'okhotnik_v5.json');
+    const v6Path   = path.join(spineDir, 'okhotnik_v6.json');
     assert(fs.existsSync(origPath) && fs.statSync(origPath).size > 0, 'оригинальный okhotnik.json существует (не удалён)');
     assert(fs.existsSync(v2Path) && fs.statSync(v2Path).size > 0, 'okhotnik_v2.json существует (не удалён)');
     assert(fs.existsSync(v3Path) && fs.statSync(v3Path).size > 0, 'okhotnik_v3.json существует (не удалён)');
     assert(fs.existsSync(v4Path) && fs.statSync(v4Path).size > 0, 'okhotnik_v4.json существует (не удалён)');
-    assert(fs.existsSync(v5Path) && fs.statSync(v5Path).size > 0, 'новый okhotnik_v5.json существует и не пустой');
-    const h = [origPath, v2Path, v3Path, v4Path, v5Path].map(sha256);
-    assert(new Set(h).size === 5, 'все пять файлов реально различаются по содержимому (не пустые переименования без смены контента)');
+    assert(fs.existsSync(v5Path) && fs.statSync(v5Path).size > 0, 'okhotnik_v5.json существует (не удалён)');
+    assert(fs.existsSync(v6Path) && fs.statSync(v6Path).size > 0, 'новый okhotnik_v6.json существует и не пустой');
+    const h = [origPath, v2Path, v3Path, v4Path, v5Path, v6Path].map(sha256);
+    assert(new Set(h).size === 6, 'все шесть файлов реально различаются по содержимому (не пустые переименования без смены контента)');
 }
 
 console.log('\nTest 3: 12.10.2026 — ВПЕРВЫЕ переименован и сам atlas Охотника (не только json), т.к. его содержимое реально изменилось (ссылка на текстуру)');
@@ -110,26 +128,32 @@ console.log('\nTest 3: 12.10.2026 — ВПЕРВЫЕ переименован и
         'okhotnik2.webp побайтово совпадает с уже использовавшейся текстурой okhotnik1.webp (та же картинка, новое имя под новый atlas)');
 }
 
-console.log('\nTest 4: BOSS_SPINE[3] (Меченный) ссылается на САМОЕ НОВОЕ имя json-файла (v4), не на v3/v2/оригинал');
+console.log('\nTest 4: BOSS_SPINE[3] (Меченный) ссылается на САМОЕ НОВОЕ имя json-файла (v6), не на v5/v4/v3/v2/оригинал');
 {
-    assert(/\{ atlas: 'mechennii\.atlas',\s*json: 'mechennii_v4\.json',/.test(src),
-        'конфиг Меченного указывает на mechennii_v4.json');
-    assert(!/json:\s*'mechennii\.json'/.test(src) && !/json:\s*'mechennii_v2\.json'/.test(src) && !/json:\s*'mechennii_v3\.json'/.test(src),
-        'ни оригинал mechennii.json, ни предыдущие _v2/_v3 больше не используются как активная ссылка в конфиге');
+    // 17.10.2026 (новый экспорт "meshennii_test.zip", тем же днём): v5 → v6 — ИСПРАВЛЕНИЕ
+    // регрессии (v5 потерял IK ног, v6 его восстанавливает — 4 констрейнта снова на месте).
+    assert(/\{ atlas: 'mechennii\.atlas',\s*json: 'mechennii_v6\.json',/.test(src),
+        'конфиг Меченного указывает на mechennii_v6.json');
+    assert(!/json:\s*'mechennii\.json'/.test(src) && !/json:\s*'mechennii_v2\.json'/.test(src) && !/json:\s*'mechennii_v3\.json'/.test(src) && !/json:\s*'mechennii_v4\.json'/.test(src) && !/json:\s*'mechennii_v5\.json'/.test(src),
+        'ни оригинал mechennii.json, ни предыдущие _v2/_v3/_v4/_v5 больше не используются как активная ссылка в конфиге');
 }
 
-console.log('\nTest 5: все четыре файла Меченного (оригинал, v2-v4) реально существуют на диске, атлас/текстура НЕ переименованы (побайтово не менялись ни разу)');
+console.log('\nTest 5: все шесть файлов Меченного (оригинал, v2-v6) реально существуют на диске, атлас/текстура НЕ переименованы (побайтово не менялись ни разу)');
 {
     const origPath = path.join(spineDir, 'mechennii.json');
     const v2Path   = path.join(spineDir, 'mechennii_v2.json');
     const v3Path   = path.join(spineDir, 'mechennii_v3.json');
     const v4Path   = path.join(spineDir, 'mechennii_v4.json');
+    const v5Path   = path.join(spineDir, 'mechennii_v5.json');
+    const v6Path   = path.join(spineDir, 'mechennii_v6.json');
     assert(fs.existsSync(origPath) && fs.statSync(origPath).size > 0, 'оригинальный mechennii.json существует (не удалён)');
     assert(fs.existsSync(v2Path) && fs.statSync(v2Path).size > 0, 'mechennii_v2.json существует (не удалён)');
     assert(fs.existsSync(v3Path) && fs.statSync(v3Path).size > 0, 'mechennii_v3.json существует (не удалён)');
-    assert(fs.existsSync(v4Path) && fs.statSync(v4Path).size > 0, 'новый mechennii_v4.json существует и не пустой');
-    const h = [origPath, v2Path, v3Path, v4Path].map(sha256);
-    assert(new Set(h).size === 4, 'все четыре файла реально различаются по содержимому');
+    assert(fs.existsSync(v4Path) && fs.statSync(v4Path).size > 0, 'mechennii_v4.json существует (не удалён)');
+    assert(fs.existsSync(v5Path) && fs.statSync(v5Path).size > 0, 'mechennii_v5.json существует (не удалён)');
+    assert(fs.existsSync(v6Path) && fs.statSync(v6Path).size > 0, 'новый mechennii_v6.json существует и не пустой');
+    const h = [origPath, v2Path, v3Path, v4Path, v5Path, v6Path].map(sha256);
+    assert(new Set(h).size === 6, 'все шесть файлов реально различаются по содержимому');
 
     assert(/atlas:\s*'mechennii\.atlas'/.test(src), 'atlas по-прежнему mechennii.atlas (ни разу не переименован — содержимое не менялось)');
     const atlasPath = path.join(spineDir, 'mechennii.atlas');

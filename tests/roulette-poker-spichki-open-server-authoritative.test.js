@@ -45,17 +45,19 @@ console.log('\nTest 1: poker.php — permits содержит openBag, мето�
     assert(start !== -1, 'метод openBag() существует');
     const body = pokerPhp.slice(start, end);
     assert(/\$cost = 150;/.test(body), 'цена совпадает с клиентской (150 голубых спичек)');
-    // 27.09.2026 (устаревший тест, найдено полным прогоном): openBag() списывал ЧУЖУЮ валюту
-    // roulette_spichki (спички рулетки) вместо poker_spichki (спички покера) — реальный баг,
-    // исправлено, см. поле-специфичный tests/poker-bag-currency-matches-poker-spichki.test.js.
-    assert(/if\(!\$this->ops->deduct\(\$user, 'poker_spichki', \$cost\)\) return \$this->ops->fail\(50\);/.test(body),
+    // 27.09.2026: openBag() одно время списывал ЧУЖУЮ валюту roulette_spichki вместо
+    // poker_spichki — тогда это считалось багом (валюты были разными). 20.10.2026 (по прямому
+    // указанию — "это должны быть одинаковые спички, исправь"): решение пересмотрено — обе
+    // валюты объединены, канонический столбец снова roulette_spichki, но теперь намеренно (та
+    // же общая валюта, что у рулетки) — см. tests/poker-bag-currency-matches-poker-spichki.test.js.
+    assert(/if\(!\$this->ops->deduct\(\$user, 'roulette_spichki', \$cost\)\) return \$this->ops->fail\(50\);/.test(body),
         'списание идёт через Gameops::deduct (проверяет баланс, отклоняет при нехватке — код 50, тот же, что и у hata.php)');
     assert(/\$this->ops->saveUser\(\$user\)/.test(body), 'изменение сохраняется на сервере');
     // 23.09.2026: patchCurrencies() расширен доп. полями (exp/cigarettes/stash_count/coins/
     // coins_earned) — та же сумка/кейс теперь ещё и начисляет награду на сервере (см.
     // tests/roulette-case-poker-bag-server-reward.test.js), валюта сумки по-прежнему
     // первый ключ в списке.
-    assert(/patchCurrencies\(\$user, \['poker_spichki', /.test(body), 'возвращает patch с новым балансом poker_spichki (и остальных полей награды)');
+    assert(/patchCurrencies\(\$user, \['roulette_spichki', /.test(body), 'возвращает patch с новым балансом roulette_spichki (общая валюта, и остальных полей награды)');
 }
 
 console.log('\nTest 2: roulette.php — permits содержит openCase, метод списывает roulette_spichki через Gameops::deduct');

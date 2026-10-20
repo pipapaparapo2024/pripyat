@@ -223,12 +223,15 @@ export function attachYashik(proto){
 		// напрямую координаты точнее (видимый файл слегка смещён внутри канваса).
 		const buyActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'купить актив.png'));
 		buyActiv.anchor.set(0.5, 0.5);
-		buyActiv.x = 564; buyActiv.y = 413; buyActiv.scale.set(1.000);
+		// 17.10.2026 (по прямому указанию — "кнопку купить актив подними вверх и сдвинь вправо
+		// на 1 пиксель"): x 564→565, y 413→412.
+		buyActiv.x = 565; buyActiv.y = 412; buyActiv.scale.set(1.000);
 		buyActiv.visible = false;
 		win.addChild(buyActiv);
 
 		const cancelActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'отмена актив.png'));
-		cancelActiv.x = 683 - 10; cancelActiv.y = 393 - 32 - 2; // компенсация внутреннего отступа отмена актив.png
+		// 17.10.2026 (по прямому указанию — "кнопка отмена сдвинь вправо на 1 пиксель"): +1 к X.
+		cancelActiv.x = 683 - 10 + 1; cancelActiv.y = 393 - 32 - 2; // компенсация внутреннего отступа отмена актив.png
 		cancelActiv.visible = false;
 		win.addChild(cancelActiv);
 
@@ -391,9 +394,37 @@ export function attachYashik(proto){
 		win.interactive = true;
 
 		// Фон
-		const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'yashik_otkryt.png'));
+		// 17.10.2026 (по прямому указанию — новый комплект ассетов для экрана открытого ящика):
+		// старый цельный "yashik_otkryt.png" заменён на отдельный фон + 4 декоративных слоя
+		// поверх него (кейс/табличка/рублит/нычки), координаты сняты пользователем вручную.
+		// Имена переименованы под неймспейс "ящик открытый ..." — исходные имена (фон.png,
+		// кейс.png и т.п.) слишком общие, есть риск коллизии с другими экранами (см. CLAUDE.md
+		// "Коллизии имён файлов-ассетов").
+		const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый фон.png'));
 		bg.interactive = true;
 		win.addChild(bg);
+
+		const tablichkaSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый табличка.png'));
+		tablichkaSpr.x = 84; tablichkaSpr.y = 103;
+		win.addChild(tablichkaSpr);
+
+		const caseSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый кейс.png'));
+		caseSpr.x = 404; caseSpr.y = 145;
+		win.addChild(caseSpr);
+
+		const rublitSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый рублит.png'));
+		rublitSpr.x = 494; rublitSpr.y = 360;
+		win.addChild(rublitSpr);
+
+		const nychkiSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'ящик открытый нычки.png'));
+		nychkiSpr.x = 779; nychkiSpr.y = 374;
+		win.addChild(nychkiSpr);
+
+		// 17.10.2026 (добавлен, по прямому указанию) → 20.10.2026 (по прямому указанию, перед
+		// супер деплоем на прод — "убери этот файл, это файл сигарет, просто пока его убери"):
+		// пятый декоративный слой (сиги, x:627,y:356) временно убран из отображения. Файл и
+		// preload-запись (game-boot.js) оставлены на месте — решение обратимое, просто не
+		// рисуем спрайт.
 
 		// --- Левая панель: шмотка или "УВЫ БРАТ" ---
 		if(shmotItem){
@@ -446,8 +477,10 @@ export function attachYashik(proto){
 		// что был у клиента: rewardGiven здесь только защищает от двойного клика/начисления).
 		// 17.10.2026 (по прямому указанию — "при нажатии ЗАБРАТЬ в ящике поп-ап награды не
 		// нужен"): collectReward() общая для крестика И кнопки ЗАБРАТЬ (см. коммент выше) —
-		// суппрессию попапа нужно только для ЗАБРАТЬ, крестик оставлен как был. Параметр
-		// suppressPopup прокинут явным true только с обработчика кнопки ЗАБРАТЬ ниже.
+		// сначала суппрессию включили только для ЗАБРАТЬ, крестик оставили как был.
+		// 17.10.2026 (тем же днём, по факту тестирования — "попап всё ещё выскакивает при выходе
+		// из ящика, его не должно быть"): решение пересмотрено — крестик теперь ТОЖЕ зовёт
+		// collectReward(true), suppressPopup включён для обоих способов выхода из ящика.
 		const collectReward = (suppressPopup) => {
 			if(rewardGiven) return;
 			rewardGiven = true;
@@ -484,7 +517,13 @@ export function attachYashik(proto){
 			});
 		};
 
-		// --- X-кнопка (крестик) --- закрыть + начислить + попап
+		// --- X-кнопка (крестик) --- закрыть + начислить, БЕЗ попапа
+		// 17.10.2026 (по прямому указанию — "попап награды всё ещё выскакивает при выходе из
+		// открытого ящика, его не должно быть"): раньше крестик сознательно оставляли показывать
+		// попап (только ЗАБРАТЬ подавлял, см. коммент у collectReward выше) — по факту тестирования
+		// игрок закрывает ящик именно крестиком, и попап всё равно вылезает. Решение пересмотрено:
+		// теперь suppressPopup=true и здесь тоже — попап не показывается НИ при каком способе выхода
+		// из ящика.
 		const xCloseBtn = new PIXI.Sprite(PIXI.Texture.from('./images/выход.png?' + (window.session_hash || '')));
 		xCloseBtn.anchor.set(0.5, 0.5);
 		xCloseBtn.scale.set(0.5);
@@ -493,7 +532,7 @@ export function attachYashik(proto){
 		xCloseBtn.on('pointerover', ()=>{ xCloseBtn.alpha = 0.75; });
 		xCloseBtn.on('pointerout',  ()=>{ xCloseBtn.alpha = 1; });
 		xCloseBtn.on('pointerdown', ()=>{
-			collectReward();
+			collectReward(true);
 			win.visible = false;
 			if(win.parent) win.parent.removeChild(win);
 		});

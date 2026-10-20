@@ -31,10 +31,10 @@ const top = read('_client/src/game/svod/svod-leaderboard.js');
 // (14 → 18); позиция x/y не менялась.
 must(top, "resetTxt.x = 462; resetTxt.y = 496;", 'новая позиция таймера сброса');
 if(top.includes('resetTxt.scale.set(')) throw new Error('resetTxt.scale.set() больше не должен вызываться — scale свёрнут в fontSize');
-must(top, "fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', fontWeight:'bold', align:'center',", 'resetTxt fontSize=18 (было 14 × scale 1.3)');
+must(top, "fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', align:'center',", 'resetTxt fontSize=18 (было 14 × scale 1.3)');
 // 25.09.2026 (см. комментарий у nameTxt в svod-leaderboard.js): строка-пул для ника — ОДНА общая
 // функция для всех вкладок Сводки (Общий топ/Друзья/Топ по урону/Топ по авторитету/Топ по
 // достижениям), поэтому цвет ника везде одинаковый (белый), а не условный по tabCfg.cat.
 // 08.10.2026: fontSize 13 → 12 (scale.set(0.954) свёрнут в fontSize, см. docblock у nameTxt).
-must(top, "fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff',", 'ник в топе урона (и во всех остальных вкладках) рендерится одной общей белой строкой');
+must(top, "fontFamily:'Southbank LT', fontSize:12, fill:'#c5c5c5',", 'ник в топе урона (и во всех остальных вкладках) рендерится одной общей строкой цвета #c5c5c5 (18.10.2026, было #ffffff)');
 console.log('OK zone/boss/UI fixes');

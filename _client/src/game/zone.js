@@ -256,7 +256,7 @@ export default class Zone{
                 if(window.iface && typeof iface._showRewardPopup === 'function'){
                     iface._showRewardPopup(rewardItems);
                 } else {
-                    notify.showResult({text:'Локация "' + loc.name + '" зачищена! +' + res.capture.cig + ' сигарет, +' + res.capture.resp + ' уважения, +' + res.capture.exp + ' опыта'}, 1);
+                    notify.showResult({text:'Локация "' + loc.name + '" зачищена! +' + res.capture.cig + ' сухарей, +' + res.capture.resp + ' уважения, +' + res.capture.exp + ' опыта'}, 1);
                 }
             }
 
@@ -296,42 +296,57 @@ export default class Zone{
         // открывало на локации последнее получение опыта/сигарет/уважения для правки".
         win._uDraggable = true;
 
-        // Три одинаковых по типографике блока. Между визуальными строками оставляем
-        // ровно 14 px: высота строки 24 px + промежуток 14 px = шаг 38 px.
+        // 19.10.2026 (по прямому указанию, снято редактором позиций — "сухари x15 y7, опыт x14
+        // y-55 [сверху, как и раньше], иконка сухарика x18 y5, эмблема опыта x17 y-56; дистанцию
+        // между рядами посчитай сам"): шаг между рядами пересчитан от разницы опыт↔сухари
+        // (7 - (-55) = 62, было 38) — применён и к ряду уважения, и к новому 4-му ряду заначки
+        // ниже (см. _showStashPickup). X унифицирован по общему столбцу (текст ~15, иконка ~18)
+        // для всех рядов — для уважения/заначки отдельных чисел не продиктовано.
         const REWARD_FONT_SIZE = 24;
-        const REWARD_ROW_GAP = 14;
-        const REWARD_ROW_STEP = REWARD_FONT_SIZE + REWARD_ROW_GAP;
+        const REWARD_ROW_STEP = 62;
         const REWARD_STYLE = {
             fontFamily:'Southbank LT', fontSize:REWARD_FONT_SIZE, fill:'#ffffff',
             fontWeight:'bold', dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
         };
-        const xpY = -REWARD_ROW_STEP;
-        const cigY = 0;
-        const respY = REWARD_ROW_STEP;
+        const ROW_TEXT_X = 15, ROW_ICON_X = 18;
+        const xpY   = -55;
+        const cigY  = 7;
+        const respY = cigY + REWARD_ROW_STEP;
 
-        const xpTxt = new PIXI.Text('+' + xp + ' XP', REWARD_STYLE);
-        xpTxt.anchor.set(0.5, 0.5);
-        xpTxt.x = 0; xpTxt.y = xpY;
+        // 19.10.2026 (по прямому указанию — "вместо XP пиши не опыт, а эмблему опыта"):
+        // текстовый суффикс " XP" заменён на иконку "опыт эмблема.png" — тот же паттерн
+        // текст+иконка, что у сухарей/уважения ниже (раньше был единственным текстом без иконки).
+        const xpTxt = new PIXI.Text('+' + xp, REWARD_STYLE);
+        xpTxt.anchor.set(1, 0.5);
+        xpTxt.x = ROW_TEXT_X; xpTxt.y = xpY;
         win.addChild(xpTxt);
+
+        const xpIcon = new PIXI.Sprite(PIXI.Texture.from('./images/опыт эмблема.png'));
+        xpIcon.anchor.set(0, 0.5);
+        // Исходник 100×100 (как и заначка эмблема.png) — приводим к тем же ~40px, что и
+        // остальные иконки ряда (сухари 38×42, уважение 35×40), см. _showStashPickup ниже.
+        xpIcon.width = 40; xpIcon.height = 40;
+        xpIcon.x = ROW_ICON_X; xpIcon.y = xpY - 1;
+        win.addChild(xpIcon);
 
         const cigTxt = new PIXI.Text('+' + cig, REWARD_STYLE);
         cigTxt.anchor.set(1, 0.5);
-        cigTxt.x = -6; cigTxt.y = cigY;
+        cigTxt.x = ROW_TEXT_X; cigTxt.y = cigY;
         win.addChild(cigTxt);
 
-        const cigIcon = new PIXI.Sprite(PIXI.Texture.from('./images/сиги эмблема.png'));
+        const cigIcon = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ иконка сухари.png'));
         cigIcon.anchor.set(0, 0.5);
-        cigIcon.x = 0; cigIcon.y = cigY;
+        cigIcon.x = ROW_ICON_X; cigIcon.y = cigY - 2;
         win.addChild(cigIcon);
 
         if(resp){
             const respTxt = new PIXI.Text('+' + resp, REWARD_STYLE);
             respTxt.anchor.set(1, 0.5);
-            respTxt.x = -6; respTxt.y = respY;
+            respTxt.x = ROW_TEXT_X; respTxt.y = respY;
             win.addChild(respTxt);
             const respIcon = new PIXI.Sprite(PIXI.Texture.from('./images/уважение эмблема.png'));
             respIcon.anchor.set(0, 0.5);
-            respIcon.x = 0; respIcon.y = respY;
+            respIcon.x = ROW_ICON_X; respIcon.y = respY;
             win.addChild(respIcon);
         }
 
@@ -350,17 +365,30 @@ export default class Zone{
     // Плавающая иконка получения заначки (карточки коллекции) — визуально копирует
     // _showCpReward() (взлёт на 90px вверх + затухание за 1.6с), новая картинка
     // "./images/заначка эмблема.png" (15.09.2026, папка C:\Users\HONOR\Desktop\vk_game).
+    //
+    // 19.10.2026 (по прямому указанию — "выводи эти значки [+1] ниже эмблемы уважения на таком
+    // же расстоянии, на котором находятся все остальные [ряды] друг от друга"): раньше всплывал
+    // независимо, в центре экрана (x:0,y:0 от своего win). _showStashPickup() вызывается ИЗ ТОГО
+    // ЖЕ обработчика zone._attack(), сразу после _showCpReward(xp,cig,resp) — оба всплывают
+    // одновременно при дропе заначки, поэтому 4-й ряд встаёт НИЖЕ ряда уважения на тот же шаг
+    // (62px, см. REWARD_ROW_STEP/respY в _showCpReward выше) — числа продублированы явно здесь
+    // (не читаются из this.* — _showStashPickup может сработать и БЕЗ _showCpReward в принципе,
+    // полагаться на состояние соседнего вызова было бы хрупко).
     _showStashPickup(){
         const win = new PIXI.Container();
         win.x = 640; win.y = 290;
 
+        const STASH_ROW_Y = 7 + 62 + 62; // cigY(7) + REWARD_ROW_STEP(62) [= respY] + ещё один шаг
+        const ROW_TEXT_X = 15, ROW_ICON_X = 18;
+
         const bagIcon = new PIXI.Sprite(PIXI.Texture.from('./images/заначка эмблема.png'));
         bagIcon.anchor.set(0, 0.5);
         // Картинка исходно 100×100 — по прямому указанию размер должен совпадать с иконками
-        // наград за прохождение локации (сиги эмблема.png 32×42, уважение эмблема.png 35×40,
-        // рендерятся БЕЗ явного масштаба, т.е. в нативном размере) — приводим к тем же ~40px.
+        // наград за прохождение локации (верхний худ иконка сухари.png 38×42, уважение
+        // эмблема.png 35×40, рендерятся БЕЗ явного масштаба, т.е. в нативном размере) —
+        // приводим к тем же ~40px.
         bagIcon.width = 40; bagIcon.height = 40;
-        bagIcon.x = 0; bagIcon.y = 0;
+        bagIcon.x = ROW_ICON_X; bagIcon.y = STASH_ROW_Y;
         win.addChild(bagIcon);
 
         const plusTxt = new PIXI.Text('+1', {
@@ -368,7 +396,7 @@ export default class Zone{
             fontWeight:'bold', dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
         });
         plusTxt.anchor.set(1, 0.5);
-        plusTxt.x = -8; plusTxt.y = 0;
+        plusTxt.x = ROW_TEXT_X; plusTxt.y = STASH_ROW_Y;
         win.addChild(plusTxt);
 
         root.layer2_mc.addChild(win);
@@ -384,19 +412,22 @@ export default class Zone{
     }
 
     // «Рамка уважения» на карточках локаций (16.09.2026) — кто заработал больше всего
-    // уважения именно с ЭТОЙ локации, глобально среди всех игроков. Копит личный итог в
-    // udata['loc_respect_N'] (сохраняется штатно через users.save, whitelist users.php) и
-    // сообщает НОВЫЙ ИТОГ (не дельту) на сервер (zone.recordRespect) — сервер сам решает,
-    // стал ли игрок новым рекордсменом (GREATEST в SQL, см. zone.php), гонки между разными
-    // игроками ему не страшны. Fire-and-forget, как bosses-combat.js._resolveVkUsers-соседи —
-    // ошибка сети тут не должна мешать основному начислению уважения.
+    // уважения именно с ЭТОЙ локации, глобально среди всех игроков. udata['loc_respect_N']
+    // пишет ТОЛЬКО сервер (zone.php.fillCheckpoint()/_applyCaptureIfFull()/collectIncome()
+    // через Gameops) — 19.10.2026 убрано из client-writable whitelist users.php (та же дыра,
+    // что у 'exp', см. коммент там): zone.recordRespect теперь сам читает авторитетное
+    // значение из БД, amount здесь только триггерит проверку «не стал ли игрок новым
+    // рекордсменом», сервер его не использует для сравнения. Локальная строка ниже остаётся
+    // оптимистичным эхо для мгновенного отображения на карточке — безвредный no-op при
+    // автосейве. Fire-and-forget, как bosses-combat.js._resolveVkUsers-соседи — ошибка сети
+    // тут не должна мешать основному начислению уважения.
     _addLocRespect(locIdx, amount){
         if(!amount) return;
         const key = 'loc_respect_' + locIdx;
         const total = parseInt(udata[key] || 0) + amount;
         udata[key] = String(total);
         if(window.TS){
-            TS.php('zone.recordRespect', {loc: locIdx, amount: total}, ()=>{}, (e)=>{
+            TS.php('zone.recordRespect', {loc: locIdx}, ()=>{}, (e)=>{
                 console.error('[zone._addLocRespect] ошибка zone.recordRespect | locIdx:', locIdx, '| total:', total, '| error:', e);
             });
         }
@@ -453,7 +484,7 @@ export default class Zone{
             if(window.iface && typeof iface._showRewardPopup === 'function'){
                 iface._showRewardPopup(rewardItems);
             } else {
-                notify.showResult({text:'Локация "' + loc.name + '" зачищена! +' + res.capture.cig + ' сигарет, +' + res.capture.resp + ' уважения, +' + res.capture.exp + ' опыта'}, 1);
+                notify.showResult({text:'Локация "' + loc.name + '" зачищена! +' + res.capture.cig + ' сухарей, +' + res.capture.resp + ' уважения, +' + res.capture.exp + ' опыта'}, 1);
             }
         }, (err) => {
             this._captureInFlight = false;
@@ -524,7 +555,7 @@ export default class Zone{
         const cost = biz.costs[biz.level];
 
         if(parseInt(udata['cigarettes'] || 0) < cost){
-            notify.showResult({text:'Недостаточно сигарет! Нужно ' + cost}, 0);
+            notify.showResult({text:'Недостаточно сухарей! Нужно ' + cost}, 0);
             return;
         }
 

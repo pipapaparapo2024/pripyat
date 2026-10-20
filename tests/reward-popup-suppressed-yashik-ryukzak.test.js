@@ -2,11 +2,19 @@
  * Test: 17.10.2026, по прямому указанию — "поп-ап награды не нужен в двух случаях: кнопка
  * ЗАБРАТЬ в ящике, и кнопка ЗАБРАТЬ в сумке/рюкзаке". Уточнено в диалоге — "сумка" это рюкзак
  * (ryukzak.js), открывается ТОЛЬКО из Сидоровича (sidorovich.js bagHit) — НЕ сумка покера
- * (dvor-poker-bag.js, проверено grep — там _showRewardPopup остался нетронутым, это другой,
- * не затронутый этим запросом экран).
+ * (dvor-poker-bag.js) — изначально оставлена нетронутой (Test 5 ниже проверял, что попап там
+ * ПРОДОЛЖАЕТ показываться).
  *
- * yashik.js: collectReward() общая для крестика И кнопки ЗАБРАТЬ — крестик должен продолжать
- * показывать попап (не трогали), только ЗАБРАТЬ передаёт suppressPopup=true.
+ * 20.10.2026 (по прямому указанию, скриншот открытой сумки покера — "после нажатия ЗАБРАТЬ не
+ * вылезал попап награды"): решение пересмотрено, тот же баг-класс добрался и до сумки покера —
+ * экран УЖЕ показывает все награды инлайн (_addAmt рисует exp/cig/stash/coins/шмотку прямо на
+ * фоне), отдельный popups/reward.js поверх был дублем. Test 5 переписан наоборот — теперь
+ * проверяет ОТСУТСТВИЕ попапа в сумке покера.
+ *
+ * yashik.js: collectReward() общая для крестика И кнопки ЗАБРАТЬ. Изначально только ЗАБРАТЬ
+ * передавал suppressPopup=true, крестик оставляли как был (показывал попап) — по прямому
+ * указанию пользователя тем же днём это решение пересмотрено по факту тестирования (попап
+ * всё равно вылезал при выходе крестиком): теперь оба пути передают suppressPopup=true.
  * ryukzak.js: раньше this._showRewardPopup(rewards, onClose) — теперь попап не показывается,
  * но вся логика onClose (сброс уровня рюкзака, честное превью) выполняется напрямую и сразу.
  *
@@ -32,11 +40,11 @@ console.log('\nTest 1: yashik.js — collectReward принимает suppressPo
     assert(/if\(!suppressPopup\) iface\._showRewardPopup\(_items\);/.test(yashik), 'показ попапа условный — только если НЕ suppressPopup');
 }
 
-console.log('\nTest 2: yashik.js — крестик (xCloseBtn) зовёт collectReward() БЕЗ true (попап остаётся)');
+console.log('\nTest 2: yashik.js — крестик (xCloseBtn) ТОЖЕ зовёт collectReward(true) (17.10.2026, решение пересмотрено)');
 {
-    const xIdx = yashik.indexOf("xCloseBtn.on('pointerdown'");
-    const xBlock = yashik.slice(xIdx, xIdx + 200);
-    assert(/collectReward\(\);/.test(xBlock), 'крестик вызывает collectReward() без аргумента — попап как раньше');
+    const xIdx = yashik.indexOf("const xCloseBtn = new PIXI.Sprite");
+    const xBlock = yashik.slice(xIdx, xIdx + 500);
+    assert(/collectReward\(true\);/.test(xBlock), 'крестик вызывает collectReward(true) — suppressPopup включён, попап не показывается');
 }
 
 console.log('\nTest 3: yashik.js — кнопка ЗАБРАТЬ (zabratBtn) зовёт collectReward(true) — попап подавлен');
@@ -58,11 +66,12 @@ console.log('\nTest 4: ryukzak.js — this._showRewardPopup(...) для нагр
     assert(/_fetchHonestPreview\(\);/.test(fnBody), 'честное превью с сервера всё ещё запрашивается после сброса');
 }
 
-console.log('\nTest 5: dvor-poker-bag.js — НЕ затронут (это другая "сумка", не из этого запроса)');
+console.log('\nTest 5: dvor-poker-bag.js — попап награды при ЗАБРАТЬ больше не показывается (20.10.2026, тот же баг-класс)');
 {
     const tIdx = pokerBag.indexOf("takeBtn.on('pointerdown'");
     const tBlock = pokerBag.slice(tIdx, pokerBag.indexOf("win.addChild(takeBtn)", tIdx));
-    assert(/_showRewardPopup\(rewards\)/.test(tBlock), 'сумка покера продолжает показывать попап награды как раньше — не трогали');
+    assert(!/_showRewardPopup/.test(tBlock), 'iface._showRewardPopup больше не вызывается — экран сумки уже показывает награды инлайн');
+    assert(/if\(win\.parent\) win\.parent\.removeChild\(win\);/.test(tBlock), 'ЗАБРАТЬ по-прежнему закрывает экран сумки');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

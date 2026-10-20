@@ -14,7 +14,17 @@
  *    приходил с новым реальным результатом и обновлял всё разом). Фикс: тот же двухфазный приём,
  *    что и при самом открытии экрана (_renderRewardIcons() с грубым локальным ориентиром СРАЗУ,
  *    затем честный ryukzak.preview() с сервера) — вынесен в отдельную переиспользуемую функцию
- *    _fetchHonestPreview(), которая теперь зовётся и при открытии, и сразу после сброса уровня.
+ *    _fetchHonestPreview(), которая зовётся и при открытии, и сразу после сброса уровня.
+ *
+ * 17.10.2026 (по прямому указанию — замена сигарет на сухари, полная переработка грида наград
+ * рюкзака, см. sukhari-replace-cigarettes-ui-rebuild.test.js §8): отдельный floating-спрайт
+ * ключа (keyIconSpr) с собственным hover-тултипом УДАЛЁН ЦЕЛИКОМ — ключ теперь просто одна из
+ * карточек общего грида (KEY_BOSS_CARD), уже подписанная именем босса в самом арте карточки,
+ * отдельный тултип избыточен. Тесты 1-3 (ниже) теперь проверяют, что этот код действительно
+ * убран, а не оставлен мёртвым. Тесты 4-6 (двухфазный честный-превью фикс) сохранены по сути,
+ * обновлены под новую сигнатуру: _setKeyPreview() больше нет (ключ идёт через
+ * _renderRewardIcons(reward) вместе со всем остальным), lvlTxt теперь содержит только число
+ * (подпись "УРОВЕНЬ РЮКЗАКА :" вшита в новую плашку, не дублируется текстом).
  *
  * Run: node tests/ryukzak-key-tooltip-and-preview-refresh-after-claim.test.js
  */
@@ -31,30 +41,13 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const ryuk = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'ryukzak.js'), 'utf-8');
 
-console.log('\nTest 1: keyIconSpr — интерактивен, имеет pointerover/pointerout с тултипом');
+console.log('\nTest 1-3: старый отдельный keyIconSpr с hover-тултипом убран целиком (заменён карточкой в общем гриде)');
 {
-    assert(/keyIconSpr\.interactive = true; keyIconSpr\.buttonMode = true;/.test(ryuk), 'keyIconSpr интерактивен (иначе pointerover никогда не сработает)');
-    assert(/keyIconSpr\.on\('pointerover', \(\) => \{/.test(ryuk), 'pointerover обработчик навешен');
-    assert(/keyIconSpr\.on\('pointerout', \(\) => \{ keyTooltip\.visible = false; \}\);/.test(ryuk), 'pointerout скрывает тултип');
-}
-
-console.log('\nTest 2: текст тултипа берётся из window.bosses.data (не дублирует отдельный массив имён боссов)');
-{
-    const start = ryuk.indexOf("keyIconSpr.on('pointerover'");
-    const end   = ryuk.indexOf("keyIconSpr.on('pointerout'", start);
-    const body  = ryuk.slice(start, end);
-    assert(/window\.bosses && window\.bosses\.data && window\.bosses\.data\[keyTooltipBossId\]/.test(body),
-        'имя босса читается из общего window.bosses.data (та же карта id→name, что рисует список боссов)');
-    assert(/keyTooltipTxt\.text = 'Ключ босса «' \+ bossName \+ '»';/.test(body), 'текст тултипа формируется с реальным именем босса');
-}
-
-console.log('\nTest 3: _setKeyPreview() запоминает bossId для тултипа при каждой перерисовке (превью и реальная награда)');
-{
-    const start = ryuk.indexOf('const _setKeyPreview = (count, bossId) => {');
-    const end   = ryuk.indexOf('\n\t\t};', start);
-    const body  = ryuk.slice(start, end);
-    assert(/keyTooltipBossId = bossId;/.test(body), '_setKeyPreview() обновляет keyTooltipBossId при каждом вызове — тултип не отстаёт от того, какой ключ реально показан');
-    assert(/keyTooltip\.visible = false;/.test(body), 'если ключа в награде нет (count<=0) — тултип тоже скрывается вместе с иконкой');
+    assert(!/const keyIconSpr = new PIXI\.Sprite/.test(ryuk), 'keyIconSpr больше не создаётся');
+    assert(!/const keyTooltip = new PIXI\.Container/.test(ryuk), 'keyTooltip больше не создаётся');
+    assert(!/const _setKeyPreview = \(count, bossId\) => \{/.test(ryuk), '_setKeyPreview() больше не определена');
+    assert(/KEY_BOSS_CARD = \{ 1:'рюкзак карточка счастливчик\.png', 2:'рюкзак карточка ястреб\.png', 3:'рюкзак карточка меченный\.png' \}/.test(ryuk),
+        'вместо этого — карта id→файл карточки (уже подписана именем босса в самом арте, отдельный тултип не нужен)');
 }
 
 console.log('\nTest 4: честное превью (ryukzak.preview) вынесено в переиспользуемую функцию _fetchHonestPreview()');
@@ -64,17 +57,17 @@ console.log('\nTest 4: честное превью (ryukzak.preview) вынес�
     const end   = ryuk.indexOf('\n\t\t};', start);
     const body  = ryuk.slice(start, end);
     assert(/TS\.php\('ryukzak\.preview', \{\}, \(res\) => \{/.test(body), '_fetchHonestPreview() реально зовёт ryukzak.preview на сервере');
-    assert(/_renderRewardIcons\(res\);/.test(body) && /_setKeyPreview\(res\.k \|\| 0, res\.key_boss\);/.test(body),
-        '_fetchHonestPreview() обновляет и иконки награды, и превью ключа из честного ответа сервера');
+    assert(/_renderRewardIcons\(res\);/.test(body) && /lvlTxt\.text = String\(res\.level\);/.test(body),
+        '_fetchHonestPreview() обновляет и иконки награды (включая ключ, уже часть reward), и текст уровня из честного ответа сервера');
 }
 
-console.log('\nTest 5: _fetchHonestPreview() вызывается при ПЕРВОМ открытии экрана (как и раньше)');
+console.log('\nTest 5: _fetchHonestPreview() вызывается при ПЕРВОМ открытии экрана (не для mock-превью dev-кнопки)');
 {
-    const roughIdx  = ryuk.indexOf('_setKeyPreview(previewTier.k || 0, previewTier.key_boss);');
+    const roughIdx  = ryuk.indexOf('_renderRewardIcons({');
     const defIdx    = ryuk.indexOf('const _fetchHonestPreview = () => {', roughIdx);
-    const firstCall = ryuk.indexOf('_fetchHonestPreview();', defIdx);
+    const firstCall = ryuk.indexOf('if(!mockReward) _fetchHonestPreview();', defIdx);
     assert(roughIdx !== -1 && defIdx !== -1 && firstCall !== -1 && roughIdx < defIdx && defIdx < firstCall,
-        'после грубого локального ориентира при открытии экрана объявляется и сразу зовётся _fetchHonestPreview()');
+        'после грубого локального ориентира при открытии экрана объявляется и зовётся _fetchHonestPreview() — но НЕ для mockReward (dev-превью)');
 }
 
 console.log('\nTest 6 (сам баг-фикс): после закрытия попапа награды (сброс уровня) экран ЗАНОВО перерисовывает иконки, а не только текст уровня/прогресс-бар');
@@ -84,15 +77,13 @@ console.log('\nTest 6 (сам баг-фикс): после закрытия по
     const nextCallIdx = ryuk.indexOf('if(win.parent) root.layer2_mc.addChild(win);', resetIdx);
     const body = ryuk.slice(resetIdx, nextCallIdx === -1 ? resetIdx + 1500 : nextCallIdx);
 
-    assert(/lvlTxt\.text = 'УРОВЕНЬ РЮКЗАКА : ' \+ resetLevel;/.test(body), 'sanity: текст уровня по-прежнему сбрасывается (это уже работало верно)');
+    assert(/lvlTxt\.text = String\(resetLevel\);/.test(body), 'sanity: текст уровня по-прежнему сбрасывается (это уже работало верно)');
     assert(/_renderProgress\(resetLevel\);/.test(body), 'sanity: прогресс-бар по-прежнему сбрасывается (это уже работало верно)');
     // Сам фикс — раньше здесь обрывалось, иконки оставались от предыдущей награды.
     assert(/const resetLvIdx = Math\.max\(0, Math\.min\(19, resetLevel - 1\)\);/.test(body),
         'КРИТИЧНО: вычисляется тир НОВОГО (сброшенного) уровня для грубого локального ориентира');
-    assert(/_renderRewardIcons\(\{\s*cig: resetTier\.cig, c: resetTier\.c, exp: resetTier\.exp,\s*mach: 0, pist: 0, ak: resetTier\.w,\s*\}\);/.test(body),
-        'КРИТИЧНО: иконки награды перерисовываются грубым ориентиром НОВОГО уровня сразу после сброса (раньше не перерисовывались вообще)');
-    assert(/_setKeyPreview\(resetTier\.k \|\| 0, resetTier\.key_boss\);/.test(body),
-        'КРИТИЧНО: превью ключа тоже перерисовывается под новый уровень (включая возможное исчезновение иконки ключа, если на новом уровне ключей нет)');
+    assert(/_renderRewardIcons\(\{\s*cig: resetTier\.cig, c: resetTier\.c, exp: resetTier\.exp,\s*mach: 0, pist: 0, ak: resetTier\.w,\s*k: resetTier\.k, key_boss: resetTier\.key_boss,\s*\}\);/.test(body),
+        'КРИТИЧНО: иконки награды (включая карточку ключа — теперь часть того же вызова, не отдельный _setKeyPreview) перерисовываются грубым ориентиром НОВОГО уровня сразу после сброса');
     assert(/_fetchHonestPreview\(\);/.test(body),
         'КРИТИЧНО: следом запрашивается честное превью с сервера — та же гарантия "превью=реальная награда", что и при открытии экрана');
 }

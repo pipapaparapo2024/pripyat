@@ -63,11 +63,41 @@ export function pauseBackgroundMusicWatchdog(){
     _watchdog = null;
 }
 
+// 17.10.2026 (повторный репорт после фикса 06.10.2026 — "зашёл в игру, свернул вкладку, зашёл
+// обратно — музыка двоится"): watchdog-гонка от 06.10 закрыта (сторож-таймер не тикает в фоне),
+// но остаётся ДРУГОЙ путь к тому же симптому — обычный complete ТЕКУЩЕГО трека теоретически
+// может долететь, пока вкладка ещё в фоне (не все браузеры одинаково полностью замораживают
+// колбэки/события WebAudio при pauseAll(), в отличие от setTimeout, который гарантированно не
+// тикает) — тогда _advance() легитимно запускает СЛЕДУЮЩИЙ трек ещё в фоне, а когда вкладка
+// возвращается, PIXI.sound.resumeAll() снимает паузу с ОБОИХ Sound-объектов разом (resumeAll
+// глобальный, не завязан на то, какой алиас сейчас "актуальный" по мнению _trackIdx) — старый
+// трек, которому просто не дали нормально увидеть collection своего complete, оживает ПАРАЛЛЕЛЬНО
+// с новым. Корень минимален и не стоит того, чтобы разбирать внутренности pixi-sound (3rd-party,
+// минифицирован) — вместо этого страхуемся: прямо здесь, в момент возврата из фона, явно
+// останавливаем Sound-объект КАЖДОГО трека плейлиста, который не является текущим (_trackIdx) и
+// при этом сам считает себя играющим (sound.isPlaying) — это не меняет обычное поведение ни на
+// йоту (в норме посторонних играющих алиасов нет, функция ничего не делает), но гарантированно
+// убивает именно симптом "двоится", независимо от того, какой из путей гонки его вызвал.
+function _stopStrayTracks(activeIdx){
+    for(let i = 0; i < TRACKS.length; i++){
+        if(i === activeIdx) continue;
+        const alias = 'bg_music_' + i;
+        const stray = PIXI.sound.exists(alias) ? PIXI.sound.find(alias) : null;
+        if(stray && stray.isPlaying){
+            console.error('[background-music._stopStrayTracks] обнаружен и остановлен дублирующийся трек', i + 1, '(alias', alias + ') — играл параллельно с актуальным треком', activeIdx + 1);
+            try{ stray.stop(); } catch(e){
+                console.error('[background-music._stopStrayTracks] ошибка при остановке дублирующегося трека:', e.message);
+            }
+        }
+    }
+}
+
 export function resumeBackgroundMusicWatchdog(){
     if(!_playing || !_instance) return;
     const idx   = _trackIdx % TRACKS.length;
     const alias = 'bg_music_' + idx;
     const myGen = _gen;
+    _stopStrayTracks(idx);
     const _sound = PIXI.sound.find(alias);
     const _durationMs = (_sound && _sound.duration) ? _sound.duration * 1000 : 60000;
     console.log('[background-music.resumeBackgroundMusicWatchdog] приложение развёрнуто — перевзвожаю сторож-таймер трека', idx + 1, 'с полным запасом (время в фоне не засчитывается)');

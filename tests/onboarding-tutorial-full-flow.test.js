@@ -257,8 +257,9 @@ console.log('\n13) Рука-указатель — target (кнопка) и hand
     assert(/hand: \{ x: 1092, y: 223, scale: 1\.000, rot: -63 \}/.test(dataSrc),
         'hand Двора — новая трансформация спрайта руки, снятая через живой тест (x/y/scale/rot независимы от target)');
     assert(/target: \{ x: 1123, y: 236 \}/.test(dataSrc), 'target Базы сохранён как раньше (вычислен из HUD-разметки)');
-    assert(/target: \{ x: 986, y: 632 \}/.test(dataSrc),
-        'target Зоны обновлён по скриншоту нижнего ряда ХУДа — старое (1101,508) не совпадало с реальной кнопкой (баг "зависло на Зоне")');
+    // 20.10.2026 (по прямому указанию — "сдвинь вправо пульсацию на 130px"): x 986→1116.
+    assert(/target: \{ x: 1116, y: 632 \}/.test(dataSrc),
+        'target Зоны сдвинут вправо на 130px (было 986, баг "зависло на Зоне" уже чинили раньше — исходное 1101,508 в истории)');
 
     const overlayBody = tourSrc.slice(tourSrc.indexOf('_buildTourOverlay = function'), tourSrc.indexOf('_destroyTourOverlay = function'));
     assert(/const target = tab\.target;/.test(overlayBody), 'пульс/хит-зона строятся по tab.target');
@@ -325,16 +326,20 @@ console.log('\n18) Координаты руки заданы для всех 8 
 {
     const HAND_BY_KEY = {
         dvor:       { x: 1092, y: 223, rot: -63 },
-        zone:       { x: 1029, y: 668, rot: -146 },
+        // 20.10.2026 (по прямому указанию, редактор позиций — "сдвинь вправо руку"): x 1029→1159.
+        zone:       { x: 1159, y: 668, rot: -146 },
         baza:       { x: 1090, y: 282, rot: -60 },
         habar:      { x: 1083, y: 336, rot: -50 },
-        bosses:     { x: 405,  y: 673, rot: -140 },
+        // 20.10.2026 (по прямому указанию — "сдвинь вправо на 130px"): x 405→535.
+        bosses:     { x: 535,  y: 673, rot: -140 },
         svod:       { x: 1085, y: 399, rot: -53 },
-        shmot:      { x: 881,  y: 672, rot: -140 },
-        sidorovich: { x: 226,  y: 671, rot: -143 },
+        // 20.10.2026 (по прямому указанию, два захода тем же днём — "-100px", затем "-80px"): x 881→782→702.
+        shmot:      { x: 702,  y: 672, rot: -140 },
+        // 20.10.2026 (по прямому указанию — "сдвинь влево на 80px"): x 226→146.
+        sidorovich: { x: 146,  y: 671, rot: -143 },
     };
     for(const [key, h] of Object.entries(HAND_BY_KEY)){
-        const re = new RegExp("key: '" + key + "'[\\s\\S]{0,900}hand: \\{ x: " + h.x + ", y: " + h.y + ", scale: 1\\.000, rot: " + h.rot + " \\}");
+        const re = new RegExp("key: '" + key + "'[\\s\\S]{0,1000}hand: \\{ x: " + h.x + ", y: " + h.y + ", scale: 1\\.000, rot: " + h.rot + " \\}");
         assert(re.test(dataSrc), 'шаг "' + key + '" — hand задан (x:' + h.x + ', y:' + h.y + ', rot:' + h.rot + '°)');
     }
 }

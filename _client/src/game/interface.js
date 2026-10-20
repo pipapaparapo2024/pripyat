@@ -18,6 +18,9 @@ import { attachBossPreFight } from './shell/overlays/bosses_prefight.js';
 import { attachBossesSkills } from './shell/overlays/bosses_skills.js';
 import { attachYashik } from './shell/overlays/yashik.js';
 import { attachInterfacePanels } from './interface/interface-panels.js';
+import { attachTopCurrency } from './interface/interface-top-currency.js';
+import { attachCurrencyPurchase } from './interface/interface-currency-purchase.js';
+import { attachBottomNav } from './interface/interface-bottom-nav.js';
 import { attachAchievementDesc } from './interface/interface-achievements.js';
 import { attachDevPanel } from './shell/overlays/dev_panel.js';
 import { attachUniversalPosEditor } from './shell/overlays/universal_pos_editor.js';
@@ -59,9 +62,62 @@ export default class Interface{
 		if(this._hudStack.length !== before) this.restoreHud();
 	}
 
+	// 18.10.2026 (найдено по снимку редактора позиций — два элемента "interface_elements_atlas_1.png"
+	// без имени, x:-33 y:-199 w:1280 h:158 и x:1 y:157 w:1306 h:73, пользователь: "удали"): FLA-
+	// экспорт `up_panel`/`down_panel` кладёт на таймлайн не только именованные instance (val_stew,
+	// butt_bosses и т.д.), но и фоновую графику БЕЗ instance name — такой child недоступен по
+	// имени из JS вообще, только обходом `children[]` (видно по снимку: `_uFileLabel()` в
+	// universal_pos_editor.js смог достать только сырой URL общего атласа, не осмысленное имя
+	// файла — только НАЗВАННЫЕ объекты получают распознаваемый textureCacheIds/filename, см.
+	// duplicateButtons чуть ниже для сравнения). Матчим по РАЗМЕРУ (в снимке scale:1.000, значит
+	// w/h — нативный кадр текстуры в атласе, стабильный идентификатор), не по имени — имени нет.
+	// 18.10.2026 (баг найден по прямому указанию — "серый прямоугольник снизу остался, нижний
+	// худ старый ещё в проекте?"): первая версия этого метода обходила только ПРЯМЫХ детей
+	// container.children — для именованных дублей-кнопок (duplicateButtons в downInit()) этого
+	// достаточно, они лежат плоско. Но реальные имена двух "лишних" спрайтов — прочитаны прямо
+	// из _client/development/images/interface_elements_atlas_1.json (frames{}) —
+	// `interface_up_panel_bg` (1306×73) и `interface_down_panel_bg` (1280×158): это ФОНОВЫЕ
+	// подложки старых панелей целиком, которые PIXI.animate оборачивает в собственный
+	// MovieClip-контейнер (не голый Sprite на уровне this.up/this.down), значит вложены ещё на
+	// уровень глубже — плоский проход их не видел и не находил, отсюда и жалоба "фикс не
+	// помог". Теперь обход РЕКУРСИВНЫЙ (тот же принцип, что уже использует _uCollectAt() в
+	// universal_pos_editor.js — он-то эти спрайты и находил по клику/наведению, значит обход
+	// обязан идти вглубь), удаление — у РЕАЛЬНОГО родителя найденного спрайта (child.parent),
+	// не у верхнего container, если спрайт был вложен не на первом уровне.
+	_removeStrayAtlasArt(container){
+		if(!container) return;
+		const STRAY_SIZES = [
+			{ w: 1280, h: 158 }, // interface_down_panel_bg — старая подложка нижней панели
+			{ w: 1306, h: 73 },  // interface_up_panel_bg — старая подложка верхней панели
+			// 18.10.2026 (по прямому указанию, новый снимок редактора позиций — "x:16 y:132
+			// w:69 h:69, убери, не нужен"): третий безымянный декоративный остаток того же
+			// FLA-экспорта (не одна из двух уже известных фоновых подложек выше).
+			{ w: 69, h: 69 },
+		];
+		const _walk = (node) => {
+			if(!node || !node.children) return;
+			for(const child of [...node.children]){
+				if(child instanceof PIXI.Sprite && child.texture){
+					const base = child.texture.baseTexture;
+					const url = (base && base.resource && base.resource.url) || '';
+					if(/interface_elements_atlas_1\.png(?:[?#]|$)/i.test(url)){
+						const w = Math.round(child.width), h = Math.round(child.height);
+						if(STRAY_SIZES.some(s => s.w === w && s.h === h)){
+							if(child.parent) child.parent.removeChild(child);
+							continue; // удалённый узел не обходим дальше
+						}
+					}
+				}
+				_walk(child);
+			}
+		};
+		_walk(container);
+	}
+
 	init(){
 		this.upInit();
 		this.downInit();
+		this._buildBottomNav();
 		// 24.09.2026 (найден по репорту "нижний ХУД вообще не кликабельный"): initButtons()
 		// (interface-panels.js) — единственное место, где вешаются pointerdown на кнопки
 		// нижней панели (weapons/shmot/bosses/zone/vassilich) и части верхней (bank/settings/
@@ -79,10 +135,34 @@ export default class Interface{
 				if(this.up && this.up.ava && this.up.ava.icon_mc){
 					// 17.10.2026 (по прямому указанию, редактор позиций — "иконка игрока в верхнем
 					// попапе" x:4,y:2,scale:0.509,w:55,h:55): было S=69,x=-4,y=-5.
-					const S = 55;
+					// 17.10.2026 (повторное указание тем же днём — "сделай его 52 на 52
+					// пикселя"): 55 → 52, x/y не менялись.
+					// 17.10.2026 (ещё раз тем же днём, редактор позиций — "x:6,y:4,scale:0.481,
+					// w:52,h:52"): x 4→6, y 2→4; w/h уже были верными (52).
+					const S = 52;
 					bm.width = S; bm.height = S;
-					bm.x = 4; bm.y = 2;
+					bm.x = 6; bm.y = 4;
+					// 18.10.2026 (баг найден по скрину — "иконка обрезается очень некорректно",
+					// квадратное фото торчало углами за пределы круглой рамки портала): фото
+					// раньше вставлялось без маски — добавлена круглая маска по размеру аватара.
+					// 19.10.2026 (по прямому указанию — "убери эту маску под фото, она там не
+					// нужна"): маска радиусом S/2=26px оказалась СИЛЬНО меньше декоративного
+					// кольца "кольцо верхний худ.png" (его реальный файл 110×108px, выводится БЕЗ
+					// scale — см. this._avatarRing ниже), из-за чего видимый кружок фото выглядел
+					// крошечным внутри гораздо большей рамки. Убрана целиком — фото показывается
+					// как есть (52×52), ограничивающей маски больше нет.
 					this.up.ava.icon_mc.addChild(bm);
+
+					// 18.10.2026 (по прямому указанию — новый файл "кольцо верхний худ.png",
+					// накладывается ПОВЕРХ иконки игрока, та — поверх верхнего HUD): добавляется
+					// один раз (не на каждую перезагрузку фото), т.к. не зависит от bm/avaMask.
+					if(!this._avatarRing){
+						const ring = new PIXI.Sprite(PIXI.Texture.from('./images/кольцо верхний худ.png'));
+						ring.anchor.set(0.5, 0.5);
+						ring.x = 6 + S / 2; ring.y = 4 + S / 2;
+						this.up.ava.icon_mc.addChild(ring);
+						this._avatarRing = ring;
+					}
 				}
 			}, url || null);
 		};
@@ -98,6 +178,25 @@ export default class Interface{
 
 		let keys_val = ['stew', 'coins', 'cigarettes'];
 		for(let i = 0; i < keys_val.length; i++) this.up['val_'+keys_val[i]].icon.gotoAndStop(keys_val[i]);
+
+		// 18.10.2026 (найдено по живому репорту + снимку редактора позиций — "два элемента
+		// interface_elements_atlas_1.png, один висит сверху (нога), удали"): помимо именованных
+		// val_stew/val_coins/val_cigarettes, FLA-экспорт `up_panel` кладёт на таймлайн ещё и
+		// БЕЗЫМЯННУЮ декоративную графику (без instance name в Animate — такой child недоступен
+		// по имени из JS, только обходом children[]) — по тому же принципу, что уже починено для
+		// нижней панели ниже (см. duplicateButtons в downInit(), тот же старый экспорт дублирует
+		// готовые PNG поверх атласа). Раньше это не мешало — старые val_* перекрывали её ровно в
+		// нужном месте; после замены на новый JS-виджет (см. ниже) она ничем не прикрыта.
+		// У обеих найденных по снимку фигур нет собственного cache-id/имени — только сырой URL
+		// общего атласа, поэтому матчим по РАЗМЕРУ (scale:1.000 в снимке ⇒ w/h = нативный кадр
+		// текстуры), а не по строке имени, как у именованных дублей ниже.
+		this._removeStrayAtlasArt(this.up);
+
+		// 17.10.2026 (по прямому указанию — сигареты заменены на сухари, модерация VK): новый
+		// блок валют (рубли/тушёнка/сухари с аккордеоном) строится поверх старого FLA-объекта,
+		// см. interface/interface-top-currency.js — старые val_* выше прячутся внутри этого
+		// метода, не трогаем вручную здесь.
+		this._buildTopCurrencyWidget();
 
 		// 24.09.2026 (найдено при разборе консольной ошибки "Cannot set properties of undefined
 		// (setting 'text') at updateNick"): initNickLabel() создаёт nick_txt/level_txt/exp_bar/
@@ -168,24 +267,54 @@ export default class Interface{
 
 	updateUp(){
 		const fmt = (v) => helper.formatKK(parseInt(v || 0));
+		// Старые FLA-объекты скрыты (см. _buildTopCurrencyWidget), но текст в них всё равно
+		// обновляем — дешёво, и подстраховка на случай, если виджет ещё не успел построиться.
 		this.up.val_stew.tf_txt.text        = fmt(udata['stew']);
 		this.up.val_coins.tf_txt.text       = fmt(udata['coins']);
 		this.up.val_cigarettes.tf_txt.text  = fmt(udata['cigarettes']);
+		this._updateTopCurrency();
 	}
 
 	initNickLabel(){
+		// 18.10.2026 (по прямому указанию — прислан реальный .ttf): верхний худ (ник/уровень/
+		// энергия) переключён на "Bebas Neue Pro Middle" (см. fonts/fonts.css) — до этого в
+		// проекте физически не было нужного начертания, использовалось ближайшее 'AA Bebas Neue'.
+		// 18.10.2026 (повторное указание тем же днём — "font size и цвет шрифта у никнейма,
+		// энергии и уровня сделай такое же, как количество рублей/тушенки/сухариков"): размер
+		// и цвет теперь те же, что TXT_STYLE в interface-top-currency.js (28pt, #d6d5d5) —
+		// fontFamily уже совпадал с прошлой правки (Bebas Neue Pro Middle), dropShadow оставлен
+		// как было (в задаче явно требовались только шрифт/цвет/размер, не отказ от тени).
 		this.nick_txt = new PIXI.Text('Сталкер', {
-			fontFamily: 'Southbank LT', fontSize: 20, fill: '#ffffff',
+			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
-		this.nick_txt.x = 90;
-		this.nick_txt.y = 23;
+		// 18.10.2026 (повторное указание, новые координаты со снимка редактора позиций):
+		// уровень по-прежнему пишется просто цифрой (без префикса "УР.").
+		// 18.10.2026 (по прямому указанию — "хитбокс для никнейма x:146,y:19,w:152,h:42,
+		// никнейм центрируется по горизонтали в этом хитбоксе"): ник теперь якорится по
+		// центру (anchor.x=0.5) и ставится в середину хитбокса — длина текста (разная у
+		// разных игроков) больше не сдвигает видимый центр подписи вправо/влево.
+		this.nick_txt.anchor.x = 0.5;
+		this.nick_txt.x = 146 + 152 / 2;
+		this.nick_txt.y = 27;
 
-		this.level_txt = new PIXI.Text('УР.1', {
-			fontFamily: 'Southbank LT', fontSize: 18, fill: '#ffffff'
+		const nickHit = new PIXI.Graphics();
+		nickHit.beginFill(0xffffff, 0.001);
+		nickHit.drawRect(0, 0, 152, 42);
+		nickHit.endFill();
+		// 18.10.2026 (по прямому указанию — "хитбокс для никнейма подними вверх на 1 пиксель"): -1.
+		nickHit.x = 146; nickHit.y = 19 - 1;
+		nickHit.interactive = true;
+		nickHit.buttonMode = true;
+		if(window.isMobile) helper.touchPad(nickHit);
+		nickHit.on('pointerdown', ()=>this._openNickPopup());
+		this._nickHit = nickHit;
+
+		this.level_txt = new PIXI.Text('1', {
+			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5'
 		});
-		this.level_txt.x = 245;
-		this.level_txt.y = 22;
+		this.level_txt.x = 396;
+		this.level_txt.y = 38;
 
 		this.exp_bar_bg = new PIXI.Graphics();
 		this.exp_bar_bg.beginFill(0x111111, 0.8);
@@ -198,11 +327,18 @@ export default class Interface{
 		this.exp_bar.x = 90;
 		this.exp_bar.y = 50;
 
+		// 18.10.2026 (по прямому указанию — "при наведении на шкалу уровня трек должен
+		// показываться тултип опыта, сейчас какой-то хитбокс стоит, не нужен для этого"):
+		// хитбокс тултипа существовал и раньше (ниже, та же логика), но был подогнан под
+		// старую плоскую Graphics-полоску уровня (190×20) — реальный спрайт трека
+		// (lvl_bar_track, см. выше x:95,y:55,w:261,h:29) шире и выше, часть трека оставалась
+		// "мёртвой" зоной без тултипа. Хитбокс теперь занимает ровно область спрайта трека.
 		const expHit = new PIXI.Graphics();
 		expHit.beginFill(0xffffff, 0.001);
-		expHit.drawRect(0, -6, 190, 20);
+		expHit.drawRect(0, 0, 261, 29);
 		expHit.endFill();
-		expHit.x = 90; expHit.y = 50;
+		// 18.10.2026 (по прямому указанию — "хитбокс для уровня сдвинь влево на 3 пикселя"): -3.
+		expHit.x = 95 - 3; expHit.y = 55;
 		expHit.interactive = true;
 		expHit.on('pointerover', ()=>{
 			if(this._xpTooltip && this._xpTooltip.parent) return;
@@ -248,12 +384,19 @@ export default class Interface{
 		});
 		this._expHit = expHit;
 
+		// 18.10.2026: размер/цвет — те же, что у текстов валют (см. коммент у nick_txt выше).
 		this.energy_txt = new PIXI.Text('150/150', {
-			fontFamily: 'Southbank LT', fontSize: 20, fill: '#ffffff',
+			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
-		this.energy_txt.x = 442;
-		this.energy_txt.y = 27;
+		this.energy_txt.x = 541;
+		this.energy_txt.y = 17;
+		// 18.10.2026 (по прямому указанию — "попап покупки энергии открывать по нажатию на
+		// количество энергии", заодно butt_energy_buy.png убран целиком — см. energy_buy.js):
+		// сам текст "20/130" теперь кликабелен.
+		this.energy_txt.interactive = true; this.energy_txt.buttonMode = true;
+		if(window.isMobile) helper.touchPad(this.energy_txt);
+		this.energy_txt.on('pointerdown', () => this._openEnergyPopup());
 
 		this.energy_bar_bg = new PIXI.Graphics();
 		this.energy_bar_bg.beginFill(0x111111, 0.8);
@@ -266,24 +409,49 @@ export default class Interface{
 		this.energy_bar.x = 442;
 		this.energy_bar.y = 50;
 
+		// 17.10.2026 (по прямому указанию — замена сигарет на сухари, заодно новый визуал шкал):
+		// текстурные трек+заливка поверх старых плоских Graphics-полосок (exp_bar/energy_bar
+		// выше остаются для расчёта прогресса и скрытого hit-теста тултипа — просто visible=false).
+		// Y трека энергии продиктован как 308 — не сходится ни с заливкой (44), ни с остальным
+		// рядом (везде ~50); беру 44, как у заливки, чтобы шкала не улетела в середину экрана —
+		// при визуальной сверке на тесте поправим через редактор позиций, если понадобится.
+		this.exp_bar_bg.visible = false;
+		this.exp_bar.visible = false;
+		this.energy_bar_bg.visible = false;
+		this.energy_bar.visible = false;
+
+		this.lvl_bar_track = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала уровня трек.png'));
+		this.lvl_bar_track.x = 95; this.lvl_bar_track.y = 55;
+
+		this.lvl_bar_fill = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала уровня заливка.png'));
+		this.lvl_bar_fill.x = 103; this.lvl_bar_fill.y = 62;
+		this._lvlBarFillMaxW = this.lvl_bar_fill.texture.width;
+
+		this.nrg_bar_track = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала энергии трек.png'));
+		this.nrg_bar_track.x = 489; this.nrg_bar_track.y = 44;
+
+		this.nrg_bar_fill = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала энергии заливка.png'));
+		// 20.10.2026 (по прямому указанию — "опусти вниз на 5px"): y 44→49.
+		this.nrg_bar_fill.x = 495; this.nrg_bar_fill.y = 49;
+		this._nrgBarFillMaxW = this.nrg_bar_fill.texture.width;
+
 		this.energy_timer_txt = new PIXI.Text('', {
 			fontFamily: 'Arial', fontSize: 10, fill: '#aaaaaa'
 		});
 		this.energy_timer_txt.anchor.x = 1;
-		this.energy_timer_txt.x = 682;
-		this.energy_timer_txt.y = 58;
+		// 18.10.2026 (по прямому указанию, редактор позиций — x:665,y:63): было 682,58.
+		this.energy_timer_txt.x = 665;
+		this.energy_timer_txt.y = 63;
 
 		this.up.addChild(
 			this.exp_bar_bg, this.exp_bar,
 			this.energy_bar_bg, this.energy_bar,
+			this.lvl_bar_track, this.lvl_bar_fill,
+			this.nrg_bar_track, this.nrg_bar_fill,
 			this.nick_txt, this.level_txt,
 			this.energy_txt, this.energy_timer_txt,
-			this._expHit
+			this._expHit, this._nickHit
 		);
-
-		this.nick_txt.interactive = true;
-		this.nick_txt.buttonMode = true;
-		this.nick_txt.on('pointerdown', ()=>this._openNickPopup());
 
 	}
 
@@ -309,7 +477,7 @@ export default class Interface{
 		let exp = parseInt(udata['exp'] || 0);
 		let level = Math.max(0, Math.floor((-1 + Math.sqrt(1 + exp / 5)) / 2));
 		const prevLevel = parseInt(udata['level'] || 0);
-		this.level_txt.text = 'УР.' + level;
+		this.level_txt.text = String(level); // 18.10.2026: просто цифрой, без префикса "УР."
 
 		if(level > prevLevel && this._nickReady){
 			setTimeout(()=>this._openLevelUpPopup(level), 500);
@@ -330,6 +498,11 @@ export default class Interface{
 			this.exp_bar.drawRect(0, 0, Math.max(4, Math.floor(190 * progress)), 8);
 			this.exp_bar.endFill();
 		}
+
+		if(this.lvl_bar_fill){
+			this.lvl_bar_fill.width = Math.max(0, Math.floor(this._lvlBarFillMaxW * progress));
+			this.lvl_bar_fill.visible = progress > 0;
+		}
 	}
 
 	updateEnergy(){
@@ -339,14 +512,18 @@ export default class Interface{
 		let max = TIMERS.ENERGY_MAX;
 		this.energy_txt.text = cur + '/' + max;
 
+		let prog = max > 0 ? Math.max(0, Math.min(1, cur / max)) : 0;
 		if(this.energy_bar){
 			this.energy_bar.clear();
-			let prog = max > 0 ? Math.max(0, Math.min(1, cur / max)) : 0;
 			if(prog > 0){
 				this.energy_bar.beginFill(0x7c9868);
 				this.energy_bar.drawRect(0, 0, Math.max(4, Math.floor(240 * prog)), 8);
 				this.energy_bar.endFill();
 			}
+		}
+		if(this.nrg_bar_fill){
+			this.nrg_bar_fill.width = Math.max(0, Math.floor(this._nrgBarFillMaxW * prog));
+			this.nrg_bar_fill.visible = prog > 0;
 		}
 
 		if(cur < max){
@@ -374,6 +551,10 @@ export default class Interface{
 			if(base && base.resource && base.resource.url) urls.push(base.resource.url);
 			if(urls.some(url => duplicateButtons.test(String(url)))) this.down.removeChild(child);
 		}
+		// 18.10.2026 — тот же старый экспорт оставляет на `down_panel` ещё и безымянную
+		// декоративную графику без instance name (см. комментарий у вызова этого же хелпера для
+		// `this.up` в upInit() — там же объяснение, почему матчим по размеру, а не по имени).
+		this._removeStrayAtlasArt(this.down);
 
 		const _hideBack = () => {
 			if(this.down.butt_back){ this.down.butt_back.visible = false; this.down.butt_back.interactive = false; }
@@ -429,6 +610,9 @@ attachBossPreFight(Interface.prototype);
 attachBossesSkills(Interface.prototype);
 attachYashik(Interface.prototype);
 attachInterfacePanels(Interface.prototype);
+attachTopCurrency(Interface.prototype);
+attachCurrencyPurchase(Interface.prototype);
+attachBottomNav(Interface.prototype);
 attachAchievementDesc(Interface.prototype);
 attachDevPanel(Interface.prototype);
 attachUniversalPosEditor(Interface.prototype);

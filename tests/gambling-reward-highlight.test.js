@@ -36,7 +36,9 @@ const roulScreenSrc  = fs.readFileSync(path.join(root, 'dvor-roulette-screen.js'
 
 console.log('\nTest 1: покер — подсветка строки таблицы комбинаций');
 {
-    assert(/this\._pokerComboHighlight = comboHighlight;/.test(pokerScreenSrc), 'Graphics-подсветка создаётся на экране покера');
+    // 20.10.2026: ОДИН переиспользуемый Graphics заменён на 10 независимых маркеров (по
+    // одному на combo-ключ) — см. tests/dice-poker-bj-combo-highlight-editor-markers.test.js.
+    assert(/this\._pokerComboHighlights\[key\] = m;/.test(pokerScreenSrc), 'Graphics-подсветки (по одной на combo) создаются на экране покера');
     assert(/const COMBO_ROW_POS = \{/.test(pokerScreenSrc), 'таблица позиций строк по combo-ключам');
     assert(/proto\._pokerShowComboHighlight = function\(combo\)\{/.test(pokerScreenSrc), 'метод показа подсветки определён');
     // 26.09.2026: формула (база+шаг+офсет) заменена на точный замер редактором позиций по
@@ -50,7 +52,9 @@ console.log('\nTest 1: покер — подсветка строки табли
 
 console.log('\nTest 2: карты — подсветка строки таблицы выплат (по рангу пары)');
 {
-    assert(/this\._bjComboHighlight = comboHighlight;/.test(bjSrc), 'Graphics-подсветка создаётся на экране карт');
+    // 20.10.2026: ОДИН переиспользуемый Graphics заменён на 9 независимых маркеров (по
+    // одному на ключ BJ_ROW_Y) — см. tests/dice-poker-bj-combo-highlight-editor-markers.test.js.
+    assert(/this\._bjComboHighlights\[key\] = m;/.test(bjSrc), 'Graphics-подсветки (по одной на ранг) создаются на экране карт');
     assert(/const BJ_ROW_Y = \{/.test(bjSrc), 'таблица Y-координат строк по рангу (туз/король/дама/.../__nonpair)');
     assert(/proto\._bjShowComboHighlight = function\(rank\)\{/.test(bjSrc), 'метод показа подсветки определён');
     assert(/this\._bjShowComboHighlight\(bestRank\);/.test(bjSrc), '_resolveBlackjack вызывает подсветку (включая непарный случай — __nonpair fallback)');
@@ -58,7 +62,10 @@ console.log('\nTest 2: карты — подсветка строки табли
 
 console.log('\nTest 3: зарики — подсветка строки таблицы наград (по индексу TABLE)');
 {
-    assert(/this\._diceComboHighlight = comboHighlight;/.test(diceScreenSrc), 'Graphics-подсветка создаётся на экране зариков');
+    // 20.10.2026: ОДИН переиспользуемый Graphics (position всегда 0,0) заменён на 18
+    // независимых маркеров (по одному на строку DICE_ROW) — см.
+    // tests/dice-poker-bj-combo-highlight-editor-markers.test.js.
+    assert(/this\._diceComboHighlights = DICE_ROW\.map\(/.test(diceScreenSrc), 'Graphics-подсветки (по одной на строку) создаются на экране зариков');
     // 04.10.2026 (реальный замер редактора позиций для всех 18 строк разом): массив чисел
     // DICE_ROW_Y заменён на карту {x,y} DICE_ROW (центр каждой строки, X тоже разный построчно).
     assert(/const DICE_ROW = \[/.test(diceScreenSrc),

@@ -47,15 +47,31 @@ export function attachPokerScreen(proto){
         win.addChild(bg);
 
         // Подсветка строки в напечатанной на фоне "ТАБЛИЦЕ КОМБИНАЦИЙ" (справа) — вместо
-        // текстового попапа с наградой (см. _pokerShowComboHighlight). Координаты строк —
-        // приблизительные (сняты по скриншоту фона), поправить точно через редактор позиций.
-        const comboHighlight = new PIXI.Graphics();
-        comboHighlight.visible = false;
-        // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
-        // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
-        comboHighlight._uDraggable = true;
-        win.addChild(comboHighlight);
-        this._pokerComboHighlight = comboHighlight;
+        // текстового попапа с наградой (см. _pokerShowComboHighlight).
+        // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+        // выпадения комбинаций"): раньше это был ОДИН общий Graphics, переиспользуемый и
+        // перерисовываемый под КАЖДУЮ отдельную комбинацию (h.position.set(pos.x,pos.y) при
+        // каждом вызове _pokerShowComboHighlight) — координаты при этом были корректными
+        // (не 0,0, в отличие от зариков), но увидеть/откалибровать все 10 строк ОДНОВРЕМЕННО
+        // было невозможно, не дождавшись реального выпадения каждой комбинации в игре. Теперь —
+        // 10 независимых маркеров (по одному на комбинацию из COMBO_ROW_POS), каждый сразу
+        // стоит на своей итоговой позиции.
+        this._pokerComboHighlights = {};
+        Object.keys(COMBO_ROW_POS).forEach(key => {
+            const pos = COMBO_ROW_POS[key];
+            const m = new PIXI.Graphics();
+            m.lineStyle(3, 0xffdd44, 1);
+            m.beginFill(0xffdd44, 0.18);
+            m.drawRoundedRect(-COMBO_ROW_W / 2, -COMBO_ROW_H / 2, COMBO_ROW_W, COMBO_ROW_H, 6);
+            m.endFill();
+            m.x = pos.x; m.y = pos.y;
+            m.visible = false;
+            // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
+            // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
+            m._uDraggable = true;
+            win.addChild(m);
+            this._pokerComboHighlights[key] = m;
+        });
 
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from('./images/выход.png'));
         exitBtn.scale.set(0.5);
@@ -374,23 +390,16 @@ export function attachPokerScreen(proto){
     const COMBO_ROW_W = 257, COMBO_ROW_H = 37;
 
     proto._pokerShowComboHighlight = function(combo){
-        const h = this._pokerComboHighlight;
+        const markers = this._pokerComboHighlights;
+        if(!markers) return;
+        this._pokerLastCombo = combo; // для восстановления после "показать все" в редакторе
+        Object.keys(markers).forEach(key => {
+            const m = markers[key];
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = false; m.alpha = 1;
+        });
+        const h = markers[combo];
         if(!h) return;
-        const pos = COMBO_ROW_POS[combo];
-        if(!pos){ h.visible = false; return; }
-        // Позиция ставится в центр строки, а прямоугольник рисуется в ЛОКАЛЬНЫХ
-        // координатах, центрированных на (0,0) — при pivot=0 (по умолчанию) это даёт
-        // ровно ту же картинку, что и раньше (screen = local + position), но
-        // PageUp/PageDown (масштаб через редактор) теперь сжимает/растит рамку
-        // СИММЕТРИЧНО вокруг центра. (Предыдущая правка ошибочно ставила ЕЩЁ и pivot
-        // в ту же точку — pivot и position взаимно гасили друг друга, и рамка рисовалась
-        // у экранного (0,0) вместо стола — тем самым "подсветки не было видно" вообще.)
-        h.position.set(pos.x, pos.y);
-        h.clear();
-        h.lineStyle(3, 0xffdd44, 1);
-        h.beginFill(0xffdd44, 0.18);
-        h.drawRoundedRect(-COMBO_ROW_W / 2, -COMBO_ROW_H / 2, COMBO_ROW_W, COMBO_ROW_H, 6);
-        h.endFill();
         h.visible = true;
         h.alpha = 1;
         // Пока открыт универсальный редактор позиций — не прячем рамку по таймеру,
@@ -403,6 +412,27 @@ export function attachPokerScreen(proto){
                 .to(h, {alpha:0, duration:0.5, delay:1.2, onComplete:()=>{ h.visible = false; }});
         } else {
             setTimeout(()=>{ h.visible = false; }, 3000);
+        }
+    };
+
+    // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+    // выпадения комбинаций"): показывает ВСЕ 10 маркеров разом, для живой калибровки через
+    // универсальный редактор позиций. Вызывается из universal_pos_editor.js.
+    proto._pokerShowAllComboVariants = function(){
+        const markers = this._pokerComboHighlights;
+        if(!markers) return;
+        Object.keys(markers).forEach(key => {
+            const m = markers[key];
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = true; m.alpha = 1;
+        });
+    };
+
+    // Возвращает подсветку к тому, что реально показывалось ДО включения редактора.
+    proto._pokerRestoreComboHighlight = function(){
+        if(this._pokerLastCombo) this._pokerShowComboHighlight(this._pokerLastCombo);
+        else if(this._pokerComboHighlights){
+            Object.keys(this._pokerComboHighlights).forEach(key => { this._pokerComboHighlights[key].visible = false; });
         }
     };
 
@@ -460,15 +490,14 @@ export function attachPokerScreen(proto){
         }
 
         if(this._pokerChipsTxt)   this._pokerChipsTxt.text   = String(parseInt(udata['poker_chips']||0));
-        // 27.09.2026 (баг "спички не выдаются за покер", по прямому указанию — расследование
-        // показало, что сервер (poker.php.resolve()) честно начисляет poker_spichki при
-        // каждом high_card/three_of_a_kind/straight, и код на 155.212.211.202 подтверждён
-        // байт-в-байт идентичным этому файлу — награда реально попадает в БД). Настоящая
-        // причина — здесь: счётчик "спички" на экране ПОКЕРА копипастой читал чужую валюту
-        // roulette_spichki (спички РУЛЕТКИ, отдельное поле udata, см. CLAUDE.md "Поля udata")
-        // вместо poker_spichki. Игрок никогда не видел, что счётчик растёт (он и не должен
-        // расти от игры в рулетку), отсюда ощущение "спички вообще не начисляются".
-        if(this._pokerSpichkiTxt) this._pokerSpichkiTxt.text = String(parseInt(udata['poker_spichki']||0));
+        // 27.09.2026 (баг "спички не выдаются за покер"): тогда poker_spichki и roulette_spichki
+        // были РАЗНЫМИ валютами, счётчик читал не то поле — фикс был "читать poker_spichki".
+        // 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+        // решение пересмотрено — валюты ОБЪЕДИНЕНЫ в одну, канонический столбец
+        // roulette_spichki (см. poker.php.openBag()/poker_config.json). Счётчик на экране
+        // покера снова читает roulette_spichki — на этот раз НЕ по ошибке, а потому что это
+        // теперь буквально одна и та же общая валюта с рулеткой.
+        if(this._pokerSpichkiTxt) this._pokerSpichkiTxt.text = String(parseInt(udata['roulette_spichki']||0));
         if(this._pokerTriesTxt)   this._pokerTriesTxt.text   = this._pokerUsed + '/25';
 
         const playing = this._pokerState === 1;

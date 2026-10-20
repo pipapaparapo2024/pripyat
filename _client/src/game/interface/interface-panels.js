@@ -2,11 +2,14 @@
 export function attachInterfacePanels(proto){
 
     proto.initButtons = function(){
-        this._addHoverGlow(this.up.butt_bank);
-        this.up.butt_bank.on('pointerdown', ()=>{
-            bank.init();
-            if(window.iface) iface.restoreHud();
-        });
+        // 18.10.2026 (по прямому указанию — "пройдись по всему проекту где есть покупка, FLA →
+        // обычные изображения"): старый хитбокс butt_bank вёл на FLA-окно банка (bank.init()) —
+        // тот же баг-класс, что уже чинили для CURRENCY_INFO (interface-panels.js, 18.10.2026,
+        // см. bank-currency-hud-restore.test.js): _buildTopCurrencyWidget() (вызывается ПОЗЖЕ,
+        // см. interface.js init()) прячет этот объект (interactive=false), но _addHoverGlow()
+        // здесь всё равно принудительно включал interactive=true через setButton() — рабочим
+        // путём кнопка не была (порядок вызовов спасал), но оставалась миной на будущее. Кнопка
+        // "магазин" в новом верхнем HUD (interface-top-currency.js) уже полностью её заменяет.
 
         // 25.09.2026 (по прямому указанию, редактор позиций — "x:1237 y:23 scale:1.000"): раньше
         // здесь стоял компенсирующий "+= 10" (хитбокс 45×45 не совпадал с иконкой) — теперь
@@ -36,39 +39,25 @@ export function attachInterfacePanels(proto){
             this.up.butt_energy_plus.visible = false;
             this.up.butt_energy_plus.interactive = false;
         }
-        this._initEnergyBuyBtn();
+        // 18.10.2026 (по прямому указанию — "butt_energy_buy.png вообще убери, покупку энергии
+        // открывать по нажатию на количество энергии"): кнопка-плюс больше не создаётся — см.
+        // energy_txt.on('pointerdown', ...) в interface.js (initNickLabel()).
 
-        const CURRENCY_INFO = {
-            val_stew:       { label: 'Тушенка',  key: 'stew' },
-            val_coins:      { label: 'Рубли',    key: 'coins' },
-            val_cigarettes: { label: 'Сигареты', key: 'cigarettes' },
-        };
-        ['val_stew', 'val_coins', 'val_cigarettes'].forEach(key => {
-            if(this.up[key]){
-                setButton(this.up[key]);
-                this.up[key].on('pointerover', ()=>{
-                    const bx = this.up[key].x;
-                    const bw = this.up[key].width || 100;
-                    const info = CURRENCY_INFO[key];
-                    // +40px по прямому указанию 19.09.2026 (облачко тушенки/рублей/сигарет
-                    // стояло слишком левее нужного).
-                    const gx = Math.round((this.up.x || 0) + bx + bw / 2 - 130 + 50 + 40);
-                    const gy = Math.round((this.up.y || 0)) + 62;
-                    this._openCurrencyPopup(gx, gy, info.label, udata[info.key]);
-                });
-                this.up[key].on('pointerout', ()=>{
-                    if(this._currencyWin){ root.layer2_mc.removeChild(this._currencyWin); this._currencyWin = null; }
-                });
-                this.up[key].on('pointerdown', ()=>{
-                    if(this._currencyWin){ root.layer2_mc.removeChild(this._currencyWin); this._currencyWin = null; }
-                    if(window.bank) bank.init(CURRENCY_INFO[key].key);
-                    // sidorovich.js после bank.init() всегда сразу вызывает restoreHud() — здесь
-                    // (открытие по клику на иконку валюты в HUD) этого не было, из-за чего нижний
-                    // HUD не поднимался поверх свежедобавленного попапа и перекрывался им.
-                    if(window.iface) iface.restoreHud();
-                });
-            }
-        });
+        // 18.10.2026 (баг найден по прямому указанию — "в магазине всё ещё сигареты, старые
+        // ассеты на месте", подтверждено снимком редактора позиций: клик вёл на объект из
+        // interface_elements_atlas_1.png, 879×491 — это bank_bg, СТАРОЕ окно банка, не новый
+        // попап покупки сухарей): здесь раньше висел легаси-обработчик клика ПРЯМО на старых
+        // FLA-объектах val_stew/val_coins/val_cigarettes — `interface-top-currency.js`
+        // (_buildTopCurrencyWidget(), вызывается раньше в upInit()) уже прячет эти объекты
+        // (visible=false, interactive=false) и полностью заменяет их новым виджетом с
+        // собственными кнопками/попапами. Но этот код ниже (initButtons() выполняется ПОСЛЕ
+        // upInit()) заново звал setButton(this.up[key]) → interactive=true, buttonMode=true —
+        // и вешал pointerdown, который для val_cigarettes напрямую звал bank.init('cigarettes')
+        // (СТАРОЕ окно банка на вкладке сигарет, с label 'Сигареты' — даже текст не был
+        // обновлён на "Сухари"). Невидимый, но интерактивный объект в этой версии PIXI всё
+        // равно ловил клики — именно он перехватывал попытки открыть новый попап сухарей.
+        // Весь блок удалён целиком — новый виджет верхнего HUD полностью замещает эту
+        // функциональность (клик по иконке/кнопке "+" каждой из трёх валют).
 
 
 
@@ -83,21 +72,12 @@ export function attachInterfacePanels(proto){
             this.down.butt_gangs.interactive = false;
             this.down.butt_gangs.buttonMode = false;
             this.down.butt_gangs.alpha = 0.45;
-
-            // Плашка "СКОРО" (21.09.2026, по прямому указанию) — банда пока не готова к
-            // бета-тесту (см. BETA_LOCKED в gangs.php), помечаем кнопку визуально явным
-            // статусом, а не просто затемнением. Позиция снята пользователем через
-            // универсальный редактор позиций (X:465 Y:620) — вставлена в нативном размере.
-            // 22.09.2026 (баг найден по живому репорту — "файл СКОРО всё ещё не отображается"):
-            // Y=620 был АБСОЛЮТНОЙ координатой канваса (там, где значок визуально должен
-            // сидеть на панели), но gangSoonBadge — ребёнок this.down, а this.down.y=596
-            // (см. downInit() в interface.js) — итоговая позиция рендера была 596+620=1216,
-            // далеко за пределами холста (720px высотой). Файл всё это время был на месте и
-            // корректно грузился — просто улетал за экран. Y переведён в ЛОКАЛЬНые координаты
-            // this.down (620-596=24), X не трогаем (this.down.x не смещается).
-            const gangSoonBadge = new PIXI.Sprite(PIXI.Texture.from('./images/скоро банда.png'));
-            gangSoonBadge.x = 465; gangSoonBadge.y = 620 - 596;
-            this.down.addChild(gangSoonBadge);
+            // 18.10.2026 (баг найден по снимку редактора позиций — "скоро банда.png"
+            // задвоился): плашка "СКОРО" (изначально добавлена здесь 21.09.2026) теперь
+            // строится в interface-bottom-nav.js (_bottomNavSoonBadge, поверх новой кнопки
+            // "Банда" нового нижнего HUD, батч 17.10.2026) — старая копия, которая раньше
+            // сидела прямо на this.down по координатам X:465 Y:24 (локальные, см. историю
+            // правок в git), больше не нужна и убрана, чтобы на экране не было двух значков.
         }
         if(this.down.butt_bosses){
             this._addHoverGlow(this.down.butt_bosses);
@@ -186,6 +166,16 @@ export function attachInterfacePanels(proto){
 
     proto._closeAllPanels = function(){
         console.log('[interface._closeAllPanels] called | _openModuleName:', this._openModuleName, '| habar open:', window.habar && window.habar._pixiWin && window.habar._pixiWin.parent ? 'YES' : 'no');
+        // 17.10.2026 (баг найден по прямому указанию + скриншот — "зашёл к игроку в гости,
+        // нажал на вкладку Зоны — открылась визитка гостя вместо Зоны"): визитка чужого игрока
+        // (player_profile.js) — отдельный полноэкранный оверлей, который никогда не участвовал
+        // в этом общем закрытии вкладок (в отличие от Зоны/Сидоровича/Ящика/Хабара/Шмоток/Сводки
+        // выше) — её закрывал ТОЛЬКО собственный крестик (_closePlayerProfile, см. exitBtn в
+        // player_profile.js). Полноэкранный blocker визитки (alpha 0.001, но interactive=true)
+        // продолжал перехватывать клики поверх реально открывшегося под ним экрана Зоны — тур
+        // никак не падал с ошибкой, экран просто визуально оставался тем же самым. Закрываем
+        // здесь же, как и остальные оверлеи выше — единая точка входа при переключении вкладки.
+        if(this._profileWin && this._profileWin.parent) this._closePlayerProfile();
         if(this._zoneWin && this._zoneWin.visible){
             clearInterval(this._zoneTimerInterval);
             this._zoneTimerInterval = null;

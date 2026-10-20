@@ -97,7 +97,12 @@ console.log('\nTest 2: шарик — файл скопирован, спрай�
 
     const ballDeclIdx = src.indexOf("const ballSpr = new PIXI.Sprite(PIXI.Texture.from('./images/шарик суперигра.png'));");
     const ballAddIdx = src.indexOf('cup.addChild(ballSpr);');
-    const closedDeclIdx = src.indexOf("const closedSpr = new PIXI.Sprite(PIXI.Texture.from('./images/стаканчик суперигра.png'));");
+    // 17.10.2026 (замена сигарет на сухари, заодно 3 дизайна стаканчика по группам): closedSpr
+    // больше не грузит один захардкоженный файл — выбирает из CUP_FILES по индексу, но
+    // порядок добавления в cup (z-order) не изменился, проверяем ИМЕННО его.
+    // 20.10.2026 (по прямому указанию — "три одинаковых подряд, нужно вперемешку"): выбор
+    // переехал с CUP_FILES[Math.floor(i/3)] (3 группы подряд) на CUP_FILES[i % 3] (чередование).
+    const closedDeclIdx = src.indexOf("const closedSpr = new PIXI.Sprite(PIXI.Texture.from('./images/' + CUP_FILES[i % 3]));");
     assert(ballDeclIdx !== -1 && ballAddIdx !== -1 && closedDeclIdx !== -1, 'ballSpr и closedSpr созданы и добавлены в контейнер стаканчика');
     assert(ballAddIdx < closedDeclIdx,
         '10.10.2026 (по прямому указанию "шарик должен находиться за стаканчиком") — ballSpr добавлен в cup РАНЬШЕ closedSpr, значит рисуется ЗА ним (PIXI addChild-порядок = z-порядок)');

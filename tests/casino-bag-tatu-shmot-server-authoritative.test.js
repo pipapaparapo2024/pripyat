@@ -81,10 +81,11 @@ console.log('\nTest 3: dvor-poker-bag.js — hasTatu берётся из отв�
 {
     assert(!/this\._give\(['"]shmot['"]/.test(pokerBagJs), 'this._give(\'shmot\', ...) удалён целиком — больше нет client-writable записи владения шмоткой');
     assert(!/const hasTatu = false;/.test(pokerBagJs), 'клиентский хардкод hasTatu удалён — решение теперь только у сервера');
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu\);/.test(pokerBagJs),
-        'hasTatu прокидывается из ответа сервера (res.hasTatu) в экран результата');
-    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu\)\{/.test(pokerBagJs),
-        '_openPokerBagOpenedScreen принимает hasTatu параметром, а не вычисляет сам');
+    // 20.10.2026: сигнатура выросла до (reward, clientRewards, hasTatu, shmotItemId).
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(pokerBagJs),
+        'hasTatu и shmotItemId прокидываются из ответа сервера в экран результата');
+    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu, shmotItemId\)\{/.test(pokerBagJs),
+        '_openPokerBagOpenedScreen принимает hasTatu и shmotItemId параметрами, а не вычисляет сам');
     assert(/if\(res\.patch\.shmot !== undefined && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(pokerBagJs),
         'после applyPatch клиент перечитывает shmot из udata (тот же паттерн, что dvor-blackjack.js/dvor-poker-game.js/dvor-dice.js)');
 }
@@ -93,8 +94,9 @@ console.log('\nTest 4: dvor-roulette-buy.js — hasTatu берётся из от
 {
     assert(!/this\._give\(['"]shmot['"]/.test(rouletteBuyJs), 'this._give(\'shmot\', ...) удалён целиком');
     assert(!/const hasTatu = false;/.test(rouletteBuyJs), 'клиентский хардкод hasTatu удалён');
-    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\]\);/.test(rouletteBuyJs),
-        'hasTatu прокидывается из ответа сервера (res.hasTatu) в экран результата');
+    // 20.10.2026: сигнатура выросла до (hasTatu, reward, clientRewards, shmotItemId).
+    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId\);/.test(rouletteBuyJs),
+        'hasTatu и shmotItemId прокидываются из ответа сервера в экран результата');
     assert(/if\(res\.patch\.shmot !== undefined && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(rouletteBuyJs),
         'после applyPatch клиент перечитывает shmot из udata');
 }

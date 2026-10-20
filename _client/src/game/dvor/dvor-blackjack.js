@@ -117,31 +117,50 @@ export function attachBlackjack(proto){
         bgLetterbox.endFill();
         win.addChild(bgLetterbox);
 
-        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек фон v2.png'));
-        bg.x = 221; bg.y = 99;
+        // 17.10.2026 (по прямому указанию — замена фона на сухари-версию): новый файл 853×533
+        // (был 838×522) — та же логика натурального размера без растяжения, центр пересчитан
+        // под новые размеры: x=(1280-853)/2=213, y=15+(690-533)/2=94.
+        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'двор блекджек фон экран.png'));
+        bg.x = 213; bg.y = 94;
         win.addChild(bg);
 
         // Подсветка строки в напечатанной на фоне "ТАБЛИЦЕ ВЫПЛАТ" (справа) — вместо
-        // текстового результата отдельно. Координаты — приблизительные (сняты по
-        // скриншоту фона), поправить точно через редактор позиций.
-        const comboHighlight = new PIXI.Graphics();
-        comboHighlight.visible = false;
-        // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
-        // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
-        comboHighlight._uDraggable = true;
-        win.addChild(comboHighlight);
-        this._bjComboHighlight = comboHighlight;
+        // текстового результата отдельно.
+        // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+        // выпадения комбинаций"): раньше ОДИН общий Graphics переиспользовался и перерисовывался
+        // под каждый отдельный ранг (h.position.set при каждом вызове _bjShowComboHighlight) —
+        // теперь 9 независимых маркеров (по одному на ключ BJ_ROW_Y), каждый сразу стоит на
+        // своей итоговой позиции — редактор может показать и откалибровать их все одновременно.
+        this._bjComboHighlights = {};
+        Object.keys(BJ_ROW_Y).forEach(key => {
+            const m = new PIXI.Graphics();
+            m.lineStyle(3, 0xffdd44, 1);
+            m.beginFill(0xffdd44, 0.18);
+            m.drawRoundedRect(-BJ_ROW_W / 2, -BJ_ROW_H / 2, BJ_ROW_W, BJ_ROW_H, 6);
+            m.endFill();
+            m.x = BJ_ROW_X; m.y = BJ_ROW_Y[key];
+            m.visible = false;
+            // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
+            // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
+            m._uDraggable = true;
+            win.addChild(m);
+            this._bjComboHighlights[key] = m;
+        });
 
         // Шкала уровня блэкджека — отдельный ассет из макета.
+        // 18.10.2026 (по прямому указанию — "всё что связано с уровнем в Blackjack влево на
+        // 10px"): применено ко всем элементам шкалы уровня ниже (levelScale/levelTrack/
+        // levelFill/levelTrackLit — x-10; levelTopTxt/levelBottomTxt считаются от levelScale.x,
+        // сдвигаются автоматически).
         const levelScale = new PIXI.Sprite(PIXI.Texture.from(BASE + 'уровень фон.png'));
-        levelScale.x = 228;
+        levelScale.x = 228 - 10;
         levelScale.y = 89;
         win.addChild(levelScale);
         this._bjLevelScale = levelScale;
 
         // Заполнение шкалы идет сверху вниз по прогрессу текущего уровня.
         const levelTrack = new PIXI.Sprite(PIXI.Texture.from(BASE + 'уровень игры.png'));
-        levelTrack.position.set(238, 138);
+        levelTrack.position.set(238 - 10, 138);
         win.addChild(levelTrack);
 
         // Маска-геометрия заполнения — сама не рисуется (renderable=false), только задаёт
@@ -156,7 +175,7 @@ export function attachBlackjack(proto){
         // Тонированная копия той же самой картинки линейки — закрашенная часть выглядит
         // так, будто закрашивается сама картинка, а не лежит отдельный цветной блок сверху.
         const levelTrackLit = new PIXI.Sprite(PIXI.Texture.from(BASE + 'уровень игры.png'));
-        levelTrackLit.position.set(238, 138);
+        levelTrackLit.position.set(238 - 10, 138);
         levelTrackLit.tint = 0xffab2e;
         levelTrackLit.mask = levelFill;
         levelTrackLit.visible = false;
@@ -206,9 +225,11 @@ export function attachBlackjack(proto){
         // 4 карты в позициях 2×2
         const CW = 101;
         const CH = 152;
+        // 18.10.2026 (по прямому указанию — "карта, кнопка «Играть» и ценник влево на 30px"):
+        // применено поверх уже выставленных x.
         const POSITIONS = [
-            {x: 325, y: 179 + 18}, {x: 445, y: 179 + 18},
-            {x: 325, y: 337 + 18}, {x: 445, y: 337 + 18},
+            {x: 325 - 30, y: 179 + 18}, {x: 445 - 30, y: 179 + 18},
+            {x: 325 - 30, y: 337 + 18}, {x: 445 - 30, y: 337 + 18},
         ];
 
         this._bjCardSprites = [];
@@ -237,7 +258,7 @@ export function attachBlackjack(proto){
         }
 
         // Иконка сигарет (рядом с результатом)
-        const cigSpr = new PIXI.Sprite(PIXI.Texture.from('./images/боевка награда Сиги.png'));
+        const cigSpr = new PIXI.Sprite(PIXI.Texture.from('./images/боевка награда сухари.png'));
         cigSpr.anchor.set(0.5, 0.5);
         cigSpr.x = 598; cigSpr.y = 497;
         cigSpr.visible = false;
@@ -253,9 +274,11 @@ export function attachBlackjack(proto){
         this._bjResultTxt = resultTxt;
 
         // Кнопка Играть
+        // 18.10.2026 (по прямому указанию — влево на 30px).
+        // 18.10.2026 (повторное указание тем же днём — ещё влево на 20px, вниз на 10px).
         const playBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек кнопка играть.png'));
         playBtn.anchor.set(0.5, 0.5);
-        playBtn.x = 485; playBtn.y = 544;
+        playBtn.x = 485 - 30 - 20; playBtn.y = 544 + 10;
         playBtn.interactive = true; playBtn.buttonMode = true;
         playBtn.on('pointerover', ()=>{ _sa(playBtn, 0.85); playBtn.scale.set(1.08); });
         playBtn.on('pointerout', ()=>{ _sa(playBtn, 1); playBtn.scale.set(1); });
@@ -267,9 +290,11 @@ export function attachBlackjack(proto){
         // тема кнопок "вскрытия" для азартных игр): текстовая Graphics-кнопка "ГОТОВО"
         // заменена на sprite с новым арт-файлом "кнопка вскрыться для игр.png" (текст уже
         // "запечён" в картинке). Позиция не менялась.
+        // 18.10.2026: сдвинута вместе с playBtn (та же слот-позиция, см. комментарий выше про
+        // влево на 30px) — иначе при переключении Играть⇄Готово кнопка визуально прыгала бы.
         const doneGfx = new PIXI.Sprite(PIXI.Texture.from(BASE + 'кнопка вскрыться для игр.png'));
         doneGfx.anchor.set(0.5, 0.5);
-        doneGfx.x = 485; doneGfx.y = 550;
+        doneGfx.x = 485 - 30 - 20; doneGfx.y = 550 + 10;
         doneGfx.interactive = true; doneGfx.buttonMode = true;
         doneGfx.visible = false;
         doneGfx.on('pointerover', ()=>{ _sa(doneGfx, 0.85); doneGfx.scale.set(1.08); });
@@ -289,10 +314,11 @@ export function attachBlackjack(proto){
         win.addChild(freeLbl);
         this._bjFreeLbl = freeLbl;
 
-        // Ценник (1 монета)
+        // Ценник (1 монета) — 18.10.2026 (по прямому указанию): влево на 30px.
+        // 18.10.2026 (повторное указание тем же днём — ещё влево на 20px, вниз на 10px).
         const priceSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек ценник.png'));
         priceSpr.anchor.set(0.5, 0.5);
-        priceSpr.x = 615; priceSpr.y = 552;
+        priceSpr.x = 615 - 30 - 20; priceSpr.y = 552 + 10;
         win.addChild(priceSpr);
         this._bjPriceSpr = priceSpr;
 
@@ -312,7 +338,7 @@ export function attachBlackjack(proto){
         'девятка':   421,
         'восьмерка': 455,
         'семерка':   489,
-        '__nonpair': 522,
+        '__nonpair': 530, // 18.10.2026 (по прямому указанию, редактор позиций — x:895,y:530): x не менялся
     };
     // 26.09.2026 (баг найден по прямому указанию — "подсветка сдвинута вправо примерно на
     // 140px"): BJ_ROW_X считался как ЛЕВЫЙ край строки, и в cx ниже к нему ЕЩЁ добавлялась
@@ -326,21 +352,17 @@ export function attachBlackjack(proto){
     // ширина/высота, что и остальные 8 строк (раньше была отдельной, чуть шире/выше).
 
     proto._bjShowComboHighlight = function(rank){
-        const h = this._bjComboHighlight;
-        if(!h) return;
+        const markers = this._bjComboHighlights;
+        if(!markers) return;
         const key = rank || '__nonpair';
-        if(BJ_ROW_Y[key] === undefined){ h.visible = false; return; }
-        const cy = BJ_ROW_Y[key];
-        // Позиция — в центр строки, прямоугольник рисуется в локальных координатах,
-        // центрированных на (0,0) — при pivot=0 (по умолчанию) даёт ту же картинку, что
-        // раньше, но масштаб (PageUp/PageDown через редактор) теперь симметричен.
-        // (pivot туда же НЕ ставим — он гасит position, см. dvor-poker-screen.js.)
-        h.position.set(BJ_ROW_X, cy);
-        h.clear();
-        h.lineStyle(3, 0xffdd44, 1);
-        h.beginFill(0xffdd44, 0.18);
-        h.drawRoundedRect(-BJ_ROW_W / 2, -BJ_ROW_H / 2, BJ_ROW_W, BJ_ROW_H, 6);
-        h.endFill();
+        this._bjLastComboKey = key; // для восстановления после "показать все" в редакторе
+        Object.keys(markers).forEach(k => {
+            const m = markers[k];
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = false; m.alpha = 1;
+        });
+        const h = markers[key];
+        if(!h) return;
         h.visible = true;
         h.alpha = 1;
         // Результат остаётся подсвеченным до начала следующей партии. Раньше рамка исчезала
@@ -349,6 +371,38 @@ export function attachBlackjack(proto){
         if(window.gsap){
             gsap.killTweensOf(h);
         }
+    };
+
+    // Прячет подсветку целиком — вызывается при начале новой партии/раздачи (см. call sites
+    // ниже), заменяет прежнее прямое обращение к this._bjComboHighlight (теперь объект-карта).
+    proto._bjHideComboHighlight = function(){
+        const markers = this._bjComboHighlights;
+        if(!markers) return;
+        Object.keys(markers).forEach(k => {
+            const m = markers[k];
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = false; m.alpha = 1;
+        });
+        this._bjLastComboKey = null;
+    };
+
+    // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+    // выпадения комбинаций"): показывает ВСЕ 9 маркеров разом — для живой калибровки через
+    // универсальный редактор позиций. Вызывается из universal_pos_editor.js.
+    proto._bjShowAllComboVariants = function(){
+        const markers = this._bjComboHighlights;
+        if(!markers) return;
+        Object.keys(markers).forEach(k => {
+            const m = markers[k];
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = true; m.alpha = 1;
+        });
+    };
+
+    // Возвращает подсветку к тому, что реально показывалось ДО включения редактора.
+    proto._bjRestoreComboHighlight = function(){
+        if(this._bjLastComboKey) this._bjShowComboHighlight(this._bjLastComboKey);
+        else this._bjHideComboHighlight();
     };
 
     proto._updateBlackjackUI = function(){
@@ -360,14 +414,15 @@ export function attachBlackjack(proto){
             const ratio = levelInfo.next > 0 ? Math.min(1, levelInfo.cur / levelInfo.next) : 0;
             const fillH = Math.round(407 * ratio);
             this._bjLevelFill.clear();
-            this._bjLevelFill.pivot.set(250, 138);
-            this._bjLevelFill.position.set(250, 138);
+            // 18.10.2026 (по прямому указанию — элементы шкалы уровня влево на 10px).
+            this._bjLevelFill.pivot.set(250 - 10, 138);
+            this._bjLevelFill.position.set(250 - 10, 138);
             this._bjLevelFill.rotation = (2 / 7) * Math.PI / 180; // угол уменьшен в 7 раз, как в рулетке
             if(fillH > 0){
                 // Цвет тут не важен (маска использует только форму/альфу) — реальный
                 // "цвет заливки" задаёт tint у levelTrackLit выше.
                 this._bjLevelFill.beginFill(0xffffff, 1);
-                this._bjLevelFill.drawRoundedRect(238 + 2, 138, 23 - 2 - 1, fillH, 6);
+                this._bjLevelFill.drawRoundedRect(238 - 10 + 2, 138, 23 - 2 - 1, fillH, 6);
                 this._bjLevelFill.endFill();
             }
             if(this._bjLevelTrackLit) this._bjLevelTrackLit.visible = fillH > 0;
@@ -451,15 +506,15 @@ export function attachBlackjack(proto){
     proto._bjRestoreSession = function(active){
         console.log('[dvor-blackjack._bjRestoreSession] найдена незавершённая раздача, восстанавливаю:', JSON.stringify(active));
         this._bjPlaying = true;
+        // 18.10.2026 (баг найден по прямому указанию — "ценник пропадает на время
+        // перелистывания карты"): _bjPriceSpr (иконка/цена "1 монета" у кнопки Играть) больше
+        // не прячется на время раздачи — прятался только _bjFreeLbl ("БЕСПЛАТНО!"/обратный
+        // отсчёт, эти лейблы реально теряют смысл во время активного раунда), ценник остаётся
+        // видимым постоянно.
         if(this._bjFreeLbl)  this._bjFreeLbl.visible = false;
-        if(this._bjPriceSpr) this._bjPriceSpr.visible = false;
         if(this._bjResultTxt) this._bjResultTxt.text = '';
         if(this._bjCigSpr) this._bjCigSpr.visible = false;
-        if(this._bjComboHighlight){
-            if(window.gsap) gsap.killTweensOf(this._bjComboHighlight);
-            this._bjComboHighlight.visible = false;
-            this._bjComboHighlight.alpha = 1;
-        }
+        if(typeof this._bjHideComboHighlight === 'function') this._bjHideComboHighlight();
         if(this._bjPlayBtn) this._bjPlayBtn.visible = false;
 
         const [rank2, rank3] = active.hand;
@@ -534,9 +589,9 @@ export function attachBlackjack(proto){
 
             this._bjPlaying = true;
 
-            // Скрываем лэйблы бесплатности
+            // Скрываем лэйбл бесплатности (ценник больше не прячем — см. комментарий в
+            // _bjRestoreSession выше, тот же фикс).
             if(this._bjFreeLbl)  this._bjFreeLbl.visible  = false;
-            if(this._bjPriceSpr) this._bjPriceSpr.visible = false;
 
             // Скрываем карты
             for(let i = 0; i < 4; i++){
@@ -549,11 +604,7 @@ export function attachBlackjack(proto){
             }
             if(this._bjResultTxt) this._bjResultTxt.text = '';
             if(this._bjCigSpr)   this._bjCigSpr.visible = false;
-            if(this._bjComboHighlight){
-                if(window.gsap) gsap.killTweensOf(this._bjComboHighlight);
-                this._bjComboHighlight.visible = false;
-                this._bjComboHighlight.alpha = 1;
-            }
+            if(typeof this._bjHideComboHighlight === 'function') this._bjHideComboHighlight();
 
             // Слоты 2/3 — "настоящие" карты, честно розданные сервером (только они формируют
             // пару, включая гарантированный премиум, если порог пити уже выбит). Слоты 0/1 —

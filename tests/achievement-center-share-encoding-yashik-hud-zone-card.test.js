@@ -121,7 +121,7 @@ console.log('\nTest 4: карточка локации кликабельна т
     // 22.09.2026 (повторная правка того же дня, по прямому указанию — "сделай все карточки
     // локаций одним размером"): нормализация только высоты оставляла разную ШИРИНУ (разное
     // соотношение сторон исходников) — заменено на фиксацию width И height (CARD_TARGET_W/H).
-    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H; \};/.test(cardBlock),
+    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump; \};/.test(cardBlock),
         'масштаб — фиксированные width И height (CARD_TARGET_W/H), не пропорциональный scale от одной высоты');
 
     // Кнопка ЗАХВАТИТЬ — по-прежнему открывает попап локации по клику; 21.09.2026 (карусель

@@ -34,7 +34,10 @@ console.log('\nTest 1: кнопка БРОСИТЬ снова одиночный
     // 28.09.2026: окно расширено 900→1500→2200 — сначала комментарий про suspendPlayerSave, а
     // потом ещё flushPlayerSave-обёртка (см. casino-round-start-flush-before-exp-race.test.js)
     // сдвинули искомую строку дальше за прежнюю границу окна.
-    const body  = gameSrc.slice(start, start + 2200);
+    // 20.10.2026: окно расширено 2200→2500 — комментарий у замены this._diceComboHighlight на
+    // хелпер _diceHideComboHighlight() (см. dice-poker-bj-combo-highlight-editor-markers.test.js)
+    // снова сдвинул искомую строку чуть дальше прежней границы.
+    const body  = gameSrc.slice(start, start + 2500);
     assert(/TS\.php\('dice\.start'/.test(body), '_playDiceNewScreen шлёт dice.start сразу, без промежуточного клика-взвода');
 }
 

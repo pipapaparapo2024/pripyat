@@ -40,7 +40,11 @@ console.log('\nTest 1: dvor-poker-screen.js — явная карта позиц
     }
     assert(/const COMBO_ROW_W = 257, COMBO_ROW_H = 37;/.test(screenSrc), 'единый размер рамки подсветки 257×37 для всех строк');
     assert(!/COMBO_ROW_ORDER/.test(screenSrc), 'старая формула на основе COMBO_ROW_ORDER/шага убрана целиком');
-    assert(/h\.position\.set\(pos\.x, pos\.y\);/.test(screenSrc), 'позиция рамки ставится напрямую из карты, без вычисления cx/cy');
+    // 20.10.2026: позиция переехала из h.position.set(pos.x,pos.y) (вызывался на каждый показ
+    // ОДНОГО переиспользуемого объекта) в m.x = pos.x; m.y = pos.y (ОДНОРАЗОВАЯ постройка
+    // независимого маркера на каждый combo-ключ) — см. dice-poker-bj-combo-highlight-editor-
+    // markers.test.js. Смысл утверждения тот же: позиция напрямую из карты, без вычисления cx/cy.
+    assert(/m\.x = pos\.x; m\.y = pos\.y;/.test(screenSrc), 'позиция маркера ставится напрямую из карты, без вычисления cx/cy');
 }
 
 console.log('\nTest 2: errors.json — недостающие коды казино получили понятный текст');

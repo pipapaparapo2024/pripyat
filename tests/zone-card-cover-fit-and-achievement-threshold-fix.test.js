@@ -75,7 +75,7 @@ console.log('\nTest 1: карточки локаций — нативный ра
     // 22.09.2026 (повторная правка того же дня, по прямому указанию — одинаковый размер всех
     // карточек): нормализация только высоты оставляла разную ширину — теперь width И height
     // фиксированы (CARD_TARGET_W/H), формула по-прежнему одна на все 5 локаций.
-    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H; \};/.test(body),
+    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump; \};/.test(body),
         'масштаб — фиксированные width И height (CARD_TARGET_W/H), не пропорциональный scale, не per-location override');
 }
 

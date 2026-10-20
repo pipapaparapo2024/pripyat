@@ -144,10 +144,11 @@ export function attachRouletteBuy(proto){
         blocker.interactive = true;
         win.addChild(blocker);
 
-        // 18.09.2026: нативный размер 1280×702, независимые width/height давали ~1.7% сжатия
-        // по вертикали — заменено на пропорциональный scale (см. рулетка страница.png).
-        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рулетка закрытый кейс.png'));
-        bg.width = 1280; bg.scale.y = bg.scale.x; bg.y = 15;
+        // 18.10.2026 (по прямому указанию, редактор позиций — x:145,y:92,scale:1.000,
+        // w:957,h:510): отменяет прежнюю пропорциональную растяжку на всю ширину канваса —
+        // теперь натуральный размер файла (957×510) на абсолютной позиции.
+        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'двор рулетка кейс закрытый.png'));
+        bg.x = 145; bg.y = 92; bg.scale.set(1.000);
         win.addChild(bg);
 
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from('./images/выход.png'));
@@ -173,12 +174,18 @@ export function attachRouletteBuy(proto){
 
         const openBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рулетка закрытый кейс кнопка открыть.png'));
         openBtn.anchor.set(0.5, 0.5);
-        openBtn.x = 640; openBtn.y = 467;
+        // 18.10.2026 (по прямому указанию, редактор позиций — x:640,y:459): было y:467.
+        openBtn.x = 640; openBtn.y = 459;
         openBtn.interactive = true; openBtn.buttonMode = true;
         openBtn.on('pointerover', ()=>{ _sa(openBtn, 0.85); openBtn.scale.set(1.08); });
         openBtn.on('pointerout', ()=>{ _sa(openBtn, 1); openBtn.scale.set(1); });
         openBtn.on('pointerdown', ()=>{
             const cost = 150;
+            // 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+            // первый заход тем же днём разделил подписи на "спичек рулетки"/"спичек покера",
+            // решив, что это баг рассинхрона двух РАЗНЫХ валют — пользователь поправил: это
+            // ОДНА общая валюта, roulette_spichki канонический столбец (см. poker.php.
+            // openBag()), текст возвращён к общему "голубых спичек".
             const have = parseInt(udata['roulette_spichki']||0);
             if(have < cost){ if(window.iface) iface._openSidorovichError('Недостаточно голубых спичек!', 'Нужно: ' + cost + ' • У вас: ' + have); return; }
             // 22.09.2026 (по прямому указанию — "нет попап предупреждение стоимости открытия
@@ -224,7 +231,7 @@ export function attachRouletteBuy(proto){
                     // client-writable users.save, который users.php._sanitizeShmot() молча
                     // отклонял (приз не доходил до игрока). Шанс дропа по-прежнему 0 (выключено
                     // в бете) — см. константу в roulette.php.
-                    this._openRouletteCaseOpenedScreen(!!res.hasTatu, res.reward, res.clientRewards || []);
+                    this._openRouletteCaseOpenedScreen(!!res.hasTatu, res.reward, res.clientRewards || [], res.shmotItemId);
                 }, (err) => {
                     this._roulCaseReqInFlight = false;
                     if(window.resumePlayerSave) resumePlayerSave('roulette_open_case');
@@ -249,7 +256,7 @@ export function attachRouletteBuy(proto){
     // 23.09.2026 (перенос награды кейса на сервер — см. roulette.php.openCase()): exp/cig/
     // stash/coins теперь приходят готовыми от сервера (уже начислены через applyPatch до
     // открытия этого экрана) — эта функция только ОТОБРАЖАЕТ их, не катает случайность сама.
-    proto._openRouletteCaseOpenedScreen = function(hasTatu, reward, clientRewards){
+    proto._openRouletteCaseOpenedScreen = function(hasTatu, reward, clientRewards, shmotItemId){
         const BASE = './images/';
         const win = new PIXI.Container();
         win.interactive = true;
@@ -261,16 +268,48 @@ export function attachRouletteBuy(proto){
         blocker.interactive = true;
         win.addChild(blocker);
 
-        const bgFile = hasTatu ? 'рулетка открытый кейс с тату.png' : 'рулетка открытый кейс без тату.png';
-        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + bgFile));
-        // 18.09.2026: нативный размер 1280×702 (у обоих файлов) — пропорциональный scale вместо
-        // независимых width/height, тот же фикс, что и у остальных фонов рулетки.
-        bg.width = 1280; bg.scale.y = bg.scale.x; bg.y = 15;
+        // 17.10.2026 (по прямому указанию — замена сигарет на сухари): новый арт содержимого
+        // кейса ("без тату") — ИЗОЛИРОВАННАЯ картинка кейса (893×540, не цельная сцена на весь
+        // экран, как старый файл), размещается в натуральном размере по продиктованным
+        // координатам (178,62) поверх тёмной подложки — другой подход, чем у остальных фонов
+        // рулетки (где использовалась пропорциональная растяжка на всю ширину). Вариант "с
+        // тату" новым файлом пока не заменён (шанс дропа тату всё равно 0% в бете) — оставлен
+        // старый полноэкранный файл на тот редкий случай, если тату когда-нибудь включат.
+        const darkBg = new PIXI.Graphics();
+        darkBg.beginFill(0x000000, 0.75);
+        darkBg.drawRect(0, 0, 1280, 720);
+        darkBg.endFill();
+        win.addChild(darkBg);
+
+        // 20.10.2026 (баг найден по прямому указанию — dev-кнопка "Кейс рулетки (шмотка
+        // выпала)" открывала старый файл "рулетка открытый кейс с тату.png" вместо актуального
+        // "двор рулетка кейс открытый содержимое.png"): раньше hasTatu=true показывал отдельный
+        // СТАРЫЙ полноэкранный файл (с августа, заменён на новый изолированный арт 17.10.2026
+        // только в ветке else) — шанс дропа тату всё равно 0% в бете, т.е. hasTatu=true в проде
+        // недостижим, единственный живой вызов с hasTatu=true — именно этот dev-превью. Теперь
+        // фон один и тот же для обеих веток — баннер-картинка ("выпала шмотка"/"не выпало")
+        // ниже по-прежнему различается по hasTatu.
+        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'двор рулетка кейс открытый содержимое.png'));
+        bg.x = 178; bg.y = 62;
         win.addChild(bg);
 
-        const takeBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рулетка открытый кейс кнопка забрать.png'));
+        // Баннер результата (выпало ли тату — единственный "элемент шмотки", который сейчас
+        // реально может выпасть из кейса рулетки, см. рекламную табличку кейса "ВОЗМОЖНЫЕ
+        // НАГРАДЫ: ЭЛЕМЕНТ ШМОТКИ") — показывается ТОЛЬКО на этом экране.
+        const resultBanner = new PIXI.Sprite(PIXI.Texture.from(
+            BASE + (hasTatu ? 'двор рулетка банер выпала шмотка.png' : 'двор рулетка банер не выпало.png')
+        ));
+        // 20.10.2026 (по прямому указанию, редактор позиций — "новое расположение для обоих
+        // файлов"): x:520,y:260 (было 580,270), явный размер 226×93.
+        resultBanner.x = 520; resultBanner.y = 260;
+        resultBanner.width = 226; resultBanner.height = 93;
+        win.addChild(resultBanner);
+
+        // 18.10.2026 (по прямому указанию — новый файл, редактор позиций x:621,y:470): заменяет
+        // старый "рулетка открытый кейс кнопка забрать.png" (было x:640,y:490).
+        const takeBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'кнопка забрать кейс рулетка.png'));
         takeBtn.anchor.set(0.5, 0.5);
-        takeBtn.x = 640; takeBtn.y = 490;
+        takeBtn.x = 621; takeBtn.y = 470;
         takeBtn.interactive = true; takeBtn.buttonMode = true;
         takeBtn.on('pointerover', ()=>{ _sa(takeBtn, 0.85); takeBtn.scale.set(1.08); });
         takeBtn.on('pointerout', ()=>{ _sa(takeBtn, 1); takeBtn.scale.set(1); });
@@ -293,7 +332,17 @@ export function attachRouletteBuy(proto){
                 {type:'stash', amount:stash},
                 {type:'coins', amount:coins},
             ];
-            if(hasTatu) rewards.push({type:'tatu', amount:1});
+            // 20.10.2026 (по прямому указанию — "выпала шмотка, а в попапе показывает элемент
+            // тату, используй попап награда шмотка.png и подписывай название по наведению"):
+            // тату из кейса рулетки — это шмотка (grantShmotFromSource), тип награды переведён
+            // с 'tatu' на 'shmot' (ICON_MAP в popups/reward.js рисует для него правильный файл
+            // "попап награда шмотка.png"), плюс имя предмета — popups/reward.js показывает его
+            // по наведению на карточку (тот же приём, что уже есть у баннера рюкзака).
+            if(hasTatu){
+                const shmotItem = (shmotItemId !== null && shmotItemId !== undefined && window.shmot)
+                    ? shmot.items.find(it => it.id === shmotItemId) : null;
+                rewards.push({type:'shmot', amount:1, name: shmotItem ? shmotItem.name : 'Элемент шмотки'});
+            }
             if(window.iface) iface._showRewardPopup(rewards);
             if(win.parent) win.parent.removeChild(win);
         });

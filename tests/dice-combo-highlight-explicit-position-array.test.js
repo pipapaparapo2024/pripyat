@@ -37,7 +37,9 @@ console.log('\nTest 1: DICE_ROW — явная карта {x,y}, не форму
     assert(/const DICE_ROW = \[/.test(diceScreenSrc), 'DICE_ROW объявлен как массив-литерал объектов {x,y}');
     assert(!/const DICE_ROW_Y = /.test(diceScreenSrc), 'старый DICE_ROW_Y (один Y на строку) убран целиком');
     assert(!/const DICE_ROW_X = /.test(diceScreenSrc), 'старый единый DICE_ROW_X убран — X теперь тоже по строкам');
-    assert(/const DICE_ROW_W = 261, DICE_ROW_H = 26;/.test(diceScreenSrc), 'общие W/H (261×26) заданы отдельно — одинаковы для всех строк');
+    // 20.10.2026 (позже тем же днём — реальный замер через 18 независимых маркеров): W/H
+    // обновлены на 264×29 (было 261×26, см. Test 3 ниже за полной историей).
+    assert(/const DICE_ROW_W = 264, DICE_ROW_H = 29;/.test(diceScreenSrc), 'общие W/H (264×29) заданы отдельно — одинаковы для всех строк');
 }
 
 console.log('\nTest 2: DICE_ROW — ровно 18 записей, по одной на каждую строку TABLE, каждая с индексным комментарием-подписью комбинации');
@@ -52,20 +54,32 @@ console.log('\nTest 2: DICE_ROW — ровно 18 записей, по одно�
     });
 }
 
-console.log('\nTest 3: значения пересчитаны 04.10.2026 по реальному замеру ВСЕХ 18 строк (true_y = raw_y + 342)');
+console.log('\nTest 3: значения — РЕАЛЬНЫЙ замер 20.10.2026 через 18 независимых маркеров (scale:1.000 у всех)');
 {
+    // История того же дня (хронологически):
+    // 1) 04.10.2026 — первый реальный замер (формула true_y = raw_y + 342), откат 20.10.2026
+    //    когда следующий снимок (x:42 общий, y:-287..156) оказался замером КОНТЕЙНЕРА общего
+    //    Graphics (position всегда 0,0), а не отдельной строки.
+    // 2) 20.10.2026 (позже тем же днём) — архитектура переделана на 18 независимых маркеров
+    //    (см. dice-poker-bj-combo-highlight-editor-markers.test.js), после чего пользователь
+    //    прислал НОВЫЙ замер — на этот раз scale:1.000 у всех 18 строк (не 0.949, как в
+    //    забракованном снимке) — данные математически монотонны по Y (131→574) и правдоподобны,
+    //    применены как финальные.
     const m = diceScreenSrc.match(/const DICE_ROW = \[([\s\S]*?)\n    \];/);
     const entries = [...(m ? m[1] : '').matchAll(/\{\s*x:\s*(-?\d+),\s*y:\s*(-?\d+)\s*\}/g)]
         .map(e => ({ x: parseInt(e[1]), y: parseInt(e[2]) }));
 
-    const expectedY = [152,175,197,225,249,271,300,322,345,375,397,418,446,468,490,518,541,563];
-    const expectedX = [997,998,998,1000,1000,1000,1004,1004,1004,1004,1004,1004,1004,1009,1009,1009,1009,1009];
+    const expectedY = [131,156,181,212,236,261,292,316,340,371,395,420,449,473,497,526,551,574];
+    const expectedX = [1000,1000,1000,1002,1002,1002,1003,1005,1005,1005,1005,1005,1005,1005,1005,1005,1005,1005];
 
     assert(entries.length === 18, 'ровно 18 записей для сравнения');
     assert(JSON.stringify(entries.map(e => e.y)) === JSON.stringify(expectedY),
-        'все 18 Y-значений соответствуют пересчитанному реальному замеру (raw_y + 342)');
+        'все 18 Y-значений соответствуют новому реальному замеру 20.10.2026 (per-marker, scale:1.000)');
     assert(JSON.stringify(entries.map(e => e.x)) === JSON.stringify(expectedX),
-        'все 18 X-значений соответствуют пересчитанному реальному замеру (raw_x + 1009) — X плавает по строкам (997..1009)');
+        'все 18 X-значений соответствуют новому реальному замеру 20.10.2026 — X плавает по строкам (1000..1005)');
+
+    assert(/const DICE_ROW_W = 264, DICE_ROW_H = 29;/.test(diceScreenSrc),
+        'DICE_ROW_W/H обновлены на реальный замер (w:294-30=264, h:29) — было 261×26');
 }
 
 console.log('\nTest 4: порядок строк в комментариях массива совпадает с порядком TABLE в dvor-dice-game.js (та же комбинация на том же индексе)');
@@ -83,14 +97,35 @@ console.log('\nTest 4: порядок строк в комментариях м�
     assert(tableEntries[17].v === 1 && tableEntries[17].n === 2, 'TABLE[17] — v1n2 (500 сигарет), совпадает с комментарием "17: 2×1" у DICE_ROW[17]');
 }
 
-console.log('\nTest 5: _diceShowComboHighlight читает центр {x,y} из DICE_ROW[idx] построчно (X больше не общий на все строки)');
+console.log('\nTest 5: this._diceComboHighlights — 18 независимых маркеров, каждый на СВОЕЙ позиции из DICE_ROW[idx]');
 {
+    // 20.10.2026 (по прямому указанию — "каждое выпадение комбинации имеет координаты 0,0,
+    // сделай координаты относительно всей плоскости"): отрисовка/позиционирование переехали
+    // из _diceShowComboHighlight (вызывался на каждый бросок, единый Graphics с position
+    // всегда (0,0)) в ОДНОРАЗОВУЮ постройку 18 маркеров — у каждого собственный x/y =
+    // DICE_ROW[idx], поэтому редактор позиций теперь читает осмысленные координаты для
+    // КАЖДОЙ строки отдельно, а не (0,0) контейнера.
+    const buildIdx = diceScreenSrc.indexOf('this._diceComboHighlights = DICE_ROW.map((rowPos, idx) => {');
+    assert(buildIdx !== -1, 'постройка маркеров (this._diceComboHighlights) найдена');
+    const buildEnd = diceScreenSrc.indexOf('});', buildIdx) + 3;
+    const buildBody = diceScreenSrc.slice(buildIdx, buildEnd);
+    assert(/m\.x = rowPos\.x; m\.y = rowPos\.y;/.test(buildBody), 'каждый маркер получает СОБСТВЕННУЮ позицию = DICE_ROW[idx] (не (0,0))');
+    assert(/m\.drawRoundedRect\(-DICE_ROW_W \/ 2 \+ 30, -DICE_ROW_H \/ 2 \+ 14, DICE_ROW_W \+ 30, DICE_ROW_H, 5\);/.test(buildBody),
+        'рамка рисуется ЛОКАЛЬНО (под собственную позицию маркера) со сдвигом +30/+14 и шириной +30 (сужена с +60)');
+    assert(/m\._uDraggable = true;/.test(buildBody), 'каждый маркер отдельно помечен _uDraggable — редактор видит и двигает их по одному');
+
     const start = diceScreenSrc.indexOf('proto._diceShowComboHighlight = function(rowIndex){');
     const end   = diceScreenSrc.indexOf('\n    };', start);
     const body  = diceScreenSrc.slice(start, end);
-    assert(/const \{ x: cx, y: cy \} = DICE_ROW\[idx\];/.test(body), 'координаты строки берутся из DICE_ROW[idx] (и x, и y — построчно)');
-    assert(/h\.drawRoundedRect\(cx - DICE_ROW_W \/ 2, cy - DICE_ROW_H \/ 2, DICE_ROW_W, DICE_ROW_H, 5\);/.test(body),
-        'рамка рисуется вокруг центра (cx,cy) конкретной строки, единой W/H для всех');
+    assert(/markers\.forEach\(\(m, idx\) => \{/.test(body), 'show-функция только переключает visible/alpha маркеров, не рисует и не двигает');
+    assert(!/drawRoundedRect/.test(body), 'show-функция больше не перерисовывает рамку (форма фиксирована при постройке)');
+}
+
+console.log('\nTest 6: редактор позиций — показать все варианты / восстановить (dice)');
+{
+    assert(/proto\._diceShowAllComboVariants = function\(\)\{/.test(diceScreenSrc), '_diceShowAllComboVariants определён (показывает все 18 маркеров разом)');
+    assert(/proto\._diceRestoreComboHighlight = function\(\)\{/.test(diceScreenSrc), '_diceRestoreComboHighlight определён (возвращает реальный результат после редактора)');
+    assert(/proto\._diceHideComboHighlight = function\(\)\{/.test(diceScreenSrc), '_diceHideComboHighlight определён (общий хелпер гашения всех маркеров)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

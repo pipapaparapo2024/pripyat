@@ -210,17 +210,29 @@
 
         // Записывает текущий НАКОПЛЕННЫЙ ИТОГ уважения ТЕКУЩЕГО игрока с данной локации —
         // вызывается с клиента (zone.js._addLocRespect) после каждого начисления уважения за
-        // локацию (чекпоинт/захват/сбор прибыли бизнеса), fire-and-forget. Клиент присылает
-        // именно итог (не дельту) — сервер просто заменяет рекорд, если итог больше текущего
-        // (GREATEST/IF в ON DUPLICATE KEY UPDATE — атомарно, без гонок между игроками).
+        // локацию (чекпоинт/захват/сбор прибыли бизнеса), fire-and-forget. Сервер заменяет
+        // рекорд, если итог больше текущего (GREATEST/IF в ON DUPLICATE KEY UPDATE — атомарно,
+        // без гонок между игроками).
         function recordRespect(){
             $loc = isset($this->registry['user_params']['loc']) ? intval($this->registry['user_params']['loc']) : -1;
-            $amount = isset($this->registry['user_params']['amount']) ? intval($this->registry['user_params']['amount']) : -1;
-            // Аудит безопасности 17.09.2026: раньше $amount ничем не ограничивался сверху —
-            // игрок мог вызвать zone.recordRespect с amount=999999999 и мгновенно стать
-            // «рекордсменом по уважению» на любой локации без единой игры. Потолок ниже —
-            // с большим запасом выше любого реалистичного накопленного уважения.
-            if($loc < 0 || $loc > 4 || $amount < 0 || $amount > 100000000) return $this->registry['tools']->output(['ok' => false]);
+            if($loc < 0 || $loc > 4) return $this->registry['tools']->output(['ok' => false]);
+
+            // 19.10.2026 (аудит по прямому указанию — "почини все подобные моменты", тот же
+            // класс дыры, что у 'exp' в users.php $allowed, см. коммент там): раньше $amount
+            // брался из клиентского параметра напрямую — потолок 100 млн защищал только от
+            // переполнения, но не от подделки. Читер мог вызвать zone.recordRespect({loc:0,
+            // amount:99999999}) прямо из консоли и мгновенно стать «рекордсменом по уважению»
+            // локации без единого реального боя — amount здесь никак не сверялся с тем, что
+            // реально накоплено в loc_respect_<loc> на СВОЕЙ строке игрока. Теперь сервер сам
+            // читает авторитетное значение (то же поле, которое пишет fillCheckpoint()/
+            // _applyCaptureIfFull()/collectIncome() через Gameops — и которое больше не
+            // client-writable, см. users.php) — клиентский параметр amount больше не участвует
+            // в сравнении, только триггерит проверку.
+            $locRespKeyCheck = 'loc_respect_' . $loc;
+            $user = $this->ops->loadUser([$locRespKeyCheck]);
+            if(!$user) return $this->registry['tools']->output(['ok' => false]);
+            $amount = $this->ops->i($user, $locRespKeyCheck);
+            if($amount <= 0) return $this->registry['tools']->output(['ok' => true]);
 
             $link = $this->_rawLink();
             if(!$link) return $this->registry['tools']->output(['ok' => false]);
@@ -303,9 +315,12 @@
             // которое ОДНОВРЕМЕННО читает/пишет как плоский счётчик achievements.js.onStashCollect()
             // — коллизия форматов роняла клиент TypeError'ом при последующем сборе заначки).
             // stash_count — плоский счётчик "сколько нычек всего найдено", без темы/типа
-            // ("нычка есть нычка", по прямому указанию). 15%-й шанс не изменился.
+            // ("нычка есть нычка", по прямому указанию).
+            // 20.10.2026 (по прямому указанию — "сделай шанс не 15%, допустим 7%"): баланс
+            // уменьшен, значение в ТЗ нигде не зафиксировано (проверено — см. память агента),
+            // это осознанная правка баланса, не фикс бага.
             $stashOut = ['dropped' => false];
-            if(mt_rand(1, 100) <= 15){
+            if(mt_rand(1, 100) <= 7){
                 $user['stash_count'] = $this->ops->i($user, 'stash_count') + 1;
                 $stashOut['dropped'] = true;
             }

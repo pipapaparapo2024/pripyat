@@ -27,9 +27,13 @@ const src = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'd
 
 console.log('\nTest 1: фон блэкджека вставляется без width/height — нативный размер, центрирован');
 {
-    const start = src.indexOf("new PIXI.Sprite(PIXI.Texture.from(BASE + 'блекджек фон v2.png'))");
+    // 17.10.2026 (по прямому указанию — замена сигарет на сухари): файл фона сменился на "двор
+    // блекджек фон экран.png" (853×533, было 838×522) — центр пересчитан: x=(1280-853)/2=213,
+    // y=15+(690-533)/2=94.
+    const start = src.indexOf("new PIXI.Sprite(PIXI.Texture.from(BASE + 'двор блекджек фон экран.png'))");
     const line = src.slice(start, src.indexOf('\n', start) + 60);
-    assert(/bg\.x = 221; bg\.y = 99;/.test(line), 'bg.x=221 (центр по ширине 1280 для 838px), bg.y=99 (центр по высоте 690 от y=15 для 522px)');
+    assert(start !== -1, 'текстура "двор блекджек фон экран.png" найдена');
+    assert(/bg\.x = 213; bg\.y = 94;/.test(line), 'bg.x=213 (центр по ширине 1280 для 853px), bg.y=94 (центр по высоте 690 от y=15 для 533px)');
     assert(!/bg\.width = \d+; bg\.height = \d+;/.test(line), 'width/height больше НЕ выставляются (никакого масштабирования)');
 }
 
@@ -40,7 +44,7 @@ console.log('\nTest 2: координаты подсветки таблицы в
     // 04.10.2026 (повторная правка тем же днём — реальный замер ВСЕХ 9 строк разом через
     // редактор позиций): заменяет предыдущую калибровку по одной точке ("семерки").
     assert(/'туз':\s*245,/.test(src), 'BJ_ROW_Y.туз — реальный замер (не экстраполяция)');
-    assert(/'__nonpair':\s*522,/.test(src), 'BJ_ROW_Y.__nonpair — реальный замер (не экстраполяция)');
+    assert(/'__nonpair':\s*530,/.test(src), 'BJ_ROW_Y.__nonpair — 530 (обновлено 18.10.2026, было 522)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -26,9 +26,19 @@ export function attachRyukzak(proto){
 	// хватает тушёнки — очки рюкзака влияют только на то, КАКОЙ из 20 уровней наград достанется,
 	// а не на саму возможность открытия (раньше был неверный гейт "canClaim = level > claimedLevel",
 	// разрешавший забрать только ОДИН раз за уровень — убран целиком).
-	proto._openRyukzakReward = function(){
+	// 17.10.2026 (по прямому указанию — замена сигарет на сухари, модерация VK, заодно полная
+	// переработка визуала): опциональный mockReward — для dev-кнопки "превью шмотки" (см.
+	// dev_panel.js), подаёт готовый объект награды в том же формате, что и res.reward с
+	// сервера (cig/c/exp/mach/pist/ak/k/key_boss), минуя ryukzak.preview — плюс необязательное
+	// поле mockShmotkaName для проверки баннера "шанс на шмотку" с заполненным названием.
+	proto._openRyukzakReward = function(mockReward){
 		this._compassShow();
-		const BASE = './images/layers/popups/sidorovich/';
+		// 17.10.2026: новые ассеты (замена сигарет на сухари) лежат в плоской './images/',
+		// старые ('nagrada_ryukzak_*.png' — бирка/иконка тушёнки/прогресс-сегмент, им замена не
+		// нужна) — по-прежнему в './images/layers/popups/sidorovich/', переименовывать/
+		// перекладывать их не стали, чтобы не трогать работающее.
+		const BASE = './images/';
+		const OLD_BASE = './images/layers/popups/sidorovich/';
 
 		const points       = parseInt(udata && udata['ryukzak_points'] ? udata['ryukzak_points'] : 0);
 		const previewLevel = Math.max(1, _ryukzakLevelFromPoints(points));
@@ -38,15 +48,28 @@ export function attachRyukzak(proto){
 		const win = new PIXI.Container();
 		win.interactive = true;
 
-		// Фон 1280×720 (тату-версия отключена в бете — см. старый комментарий ниже)
+		const blocker = new PIXI.Graphics();
+		blocker.beginFill(0x000000, 0.001);
+		blocker.drawRect(0, 0, 1280, 720);
+		blocker.endFill();
+		blocker.interactive = true;
+		win.addChild(blocker);
+
+		// Фон 900×590 (тату/шмотка-версия отключена в бете — см. старый комментарий ниже)
 		// Бета: выпадение тату отключено. const hasTatu = level >= 20 && Math.random() < 0.15;
-		const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_bez_tatu.png'));
+		// 18.10.2026 (по прямому указанию): файлы без отдельно продиктованных координат —
+		// общий сдвиг y+40 (см. также lvlPlate/progressCont/zabratBtn/TOP_ROW/BOTTOM_ROW ниже).
+		// 18.10.2026 (по прямому указанию, новый снимок редактора позиций — x:183,y:54,
+		// w:900,h:590): нативный размер файла уже 900×590 (сверено), width/height явно не
+		// выставляем — совпадают сами по себе.
+		const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак фон награда.png'));
+		bg.x = 183; bg.y = 54;
 		bg.interactive = true;
 		win.addChild(bg);
 
-		// Кнопка НАЗАД (130×44)
-		const nazadBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_nazad.png'));
-		nazadBtn.x = 974; nazadBtn.y = 88;
+		// Кнопка НАЗАД — новые координаты сняты редактором позиций.
+		const nazadBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак кнопка назад.png'));
+		nazadBtn.x = 893; nazadBtn.y = 80;
 		nazadBtn.interactive = true; nazadBtn.buttonMode = true;
 		nazadBtn.on('pointerover', ()=>{ _sa(nazadBtn, 0.8); });
 		nazadBtn.on('pointerout',  ()=>{ _sa(nazadBtn, 1); });
@@ -57,142 +80,197 @@ export function attachRyukzak(proto){
 		});
 		win.addChild(nazadBtn);
 
+		// 17.10.2026 (по прямому указанию): баннер "ШАНС НА ШМОТКУ" — места под него теперь
+		// ЗАРЕЗЕРВИРОВАНО ВСЕГДА (грид наград слева не сдвигается в зависимости от того, видно
+		// баннер или нет — раньше в похожем макете без баннера всё "уезжало" влево, явно
+		// попросили этого избегать и сейчас, и на будущее). Фичи дропа шмотки в рюкзаке пока
+		// нет (шанс 0%) — баннер всегда в состоянии "пусто", с местом под название шмотки,
+		// которое используется dev-превью (mockShmotkaName) для визуальной проверки макета.
+		// 18.10.2026 (по прямому указанию — "этот файл выводится ТОЛЬКО когда шмотка реально
+		// выпала — а фичи дропа шмоток в рюкзаке пока нет вообще, значит баннер НЕ должен
+		// выводиться никогда, ни в коем случае"): отменяет решение 17.10.2026 "место всегда
+		// зарезервировано" — баннер скрыт целиком, карточки наград сдвинуты вправо на 140px,
+		// заполняя освободившееся место (см. CARD_X_SHIFT ниже). Когда появится реальная фича
+		// дропа шмоток — HAS_SHMOT_DROP должен стать настоящим условием по полю из reward
+		// (например reward.hasShmot), а не жёстким false.
+		// 18.10.2026 (по прямому указанию — dev-превью должно уметь принудительно показать
+		// баннер с мок-данными, см. dev_panel.js): mockReward.forceShmotBanner обходит
+		// HAS_SHMOT_DROP только для ЭТОГО конкретного вызова, реальная фича остаётся выключена.
+		const HAS_SHMOT_DROP = !!(mockReward && mockReward.forceShmotBanner);
+		const shmotBanner = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак банер шанс на шмотку.png'));
+		shmotBanner.x = 747; shmotBanner.y = 154; // 18.10.2026: снято редактором позиций
+		shmotBanner.visible = HAS_SHMOT_DROP;
+		win.addChild(shmotBanner);
+
+		// 18.10.2026 (по прямому указанию — "задел на будущее": при наведении на баннер должно
+		// выскакивать то же окно с описанием, что и при наведении на шмотку во вкладке
+		// «Шмотки» (shmot_shop.js._showShopTip), только БЕЗ строки "Требования"): фичи дропа
+		// шмотки в рюкзаке ещё нет (HAS_SHMOT_DROP всегда false в проде), поэтому полноценных
+		// данных предмета (bonus/set) у нас по умолчанию нет — tooltip собирается из того, что
+		// передано в mockReward (или появится в реальном reward.shmot в будущем), без выдумывания
+		// полей. PIXI не хит-тестит invisible-спрайты — пока HAS_SHMOT_DROP=false, хендлер
+		// просто никогда не сработает, отдельная проверка видимости не нужна.
+		const shmotTipData = (mockReward && mockReward.mockShmot) || null;
+		const shmotTipCard = new PIXI.Container();
+		shmotTipCard.visible = false;
+		win.addChild(shmotTipCard);
+		const _showShmotBannerTip = () => {
+			if(!shmotTipData) return;
+			while(shmotTipCard.children.length) shmotTipCard.removeChildAt(0);
+			const PAD = 12, CONTENT_W = 230;
+			const titleStyle = { fontFamily:'Southbank LT', fontSize:17, fill:'#ac3b26', wordWrap:true, wordWrapWidth:CONTENT_W };
+			const lblStyle   = { fontFamily:'Southbank LT', fontSize:14, fill:'#2a2118' };
+			const valStyle   = { fontFamily:'Southbank LT', fontSize:14, fill:'#ac5238' };
+			let ty = PAD;
+			const title = new PIXI.Text(shmotTipData.name || '', titleStyle);
+			title.x = PAD; title.y = ty;
+			shmotTipCard.addChild(title);
+			ty += title.height + 8;
+			if(shmotTipData.bonus){
+				const bonusLbl = new PIXI.Text('Бонус: ', lblStyle);
+				bonusLbl.x = PAD; bonusLbl.y = ty;
+				shmotTipCard.addChild(bonusLbl);
+				const bonusVal = new PIXI.Text(shmotTipData.bonus, Object.assign({}, valStyle, { wordWrap:true, wordWrapWidth: CONTENT_W - bonusLbl.width }));
+				bonusVal.x = PAD + bonusLbl.width; bonusVal.y = ty;
+				shmotTipCard.addChild(bonusVal);
+				ty += Math.max(bonusLbl.height, bonusVal.height) + 6;
+			}
+			if(shmotTipData.set){
+				const setLbl = new PIXI.Text('Сет: ', lblStyle);
+				setLbl.x = PAD; setLbl.y = ty;
+				shmotTipCard.addChild(setLbl);
+				const setVal = new PIXI.Text(shmotTipData.set, Object.assign({}, valStyle, { wordWrap:true, wordWrapWidth: CONTENT_W - setLbl.width }));
+				setVal.x = PAD + setLbl.width; setVal.y = ty;
+				shmotTipCard.addChild(setVal);
+				ty += Math.max(setLbl.height, setVal.height);
+			}
+			const totalW = CONTENT_W + PAD * 2, totalH = ty + PAD;
+			const bg = new PIXI.Graphics();
+			bg.beginFill(0xfbeee0, 0.97);
+			bg.lineStyle(2, 0xc79a72, 1);
+			bg.drawRoundedRect(0, 0, totalW, totalH, 8);
+			bg.endFill();
+			shmotTipCard.addChildAt(bg, 0);
+			shmotTipCard.x = shmotBanner.x + shmotBanner.width + 8;
+			shmotTipCard.y = shmotBanner.y;
+			shmotTipCard.visible = true;
+		};
+		shmotBanner.interactive = true;
+		shmotBanner.on('pointerover', _showShmotBannerTip);
+		shmotBanner.on('pointerout',  () => { shmotTipCard.visible = false; });
+
+		// Декоративный уголок-ремешок — часть художественного оформления фона. 18.10.2026
+		// (по прямому указанию): новые координаты + теперь добавляется ПОСЛЕ баннера "шанс на
+		// шмотку" (значит рендерится НАД ним) — раньше был частью самого раннего блока и лежал
+		// ПОД баннером, порядок добавления в PIXI и есть z-order.
+		const cornerStrap = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак награда уголок ремешок.png'));
+		cornerStrap.x = 952; cornerStrap.y = 545;
+		win.addChild(cornerStrap);
+
+		const shmotNameTxt = new PIXI.Text(mockReward && mockReward.mockShmotkaName ? mockReward.mockShmotkaName : '', {
+			fontFamily: 'Southbank LT', fontSize: 18, fill: '#d4b99c',
+			dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
+		});
+		shmotNameTxt.anchor.set(0.5, 0.5);
+		// 20.10.2026 (по прямому указанию — "для текста шмотки сдвинь вправо на 3px и вверх на
+		// 12px"): +144→+147, +394→+382.
+		shmotNameTxt.x = shmotBanner.x + 147; shmotNameTxt.y = shmotBanner.y + 382;
+		shmotNameTxt.visible = HAS_SHMOT_DROP;
+		win.addChild(shmotNameTxt);
+
+		// 20.10.2026 (по прямому указанию, редактор позиций — "новый хитбокс для названия
+		// шмотки которая выпала" x:785,y:520,scale:1.392,w:212,h:34): раньше подсказку
+		// "шанс на шмотку" (_showShmotBannerTip) можно было вызвать только наведением на
+		// сам баннер (shmotBanner) — над САМИМ текстом названия (shmotNameTxt) не было
+		// отдельной зоны наведения. Добавлена своя hit-зона прямо над текстом названия,
+		// тот же тултип, что и у баннера.
+		const shmotNameHit = new PIXI.Graphics();
+		shmotNameHit.beginFill(0xffffff, 0.001);
+		shmotNameHit.drawRect(-106, -17, 212, 34);
+		shmotNameHit.endFill();
+		shmotNameHit.x = 785; shmotNameHit.y = 520;
+		shmotNameHit.interactive = true;
+		shmotNameHit.on('pointerover', _showShmotBannerTip);
+		shmotNameHit.on('pointerout',  () => { shmotTipCard.visible = false; });
+		win.addChild(shmotNameHit);
+
 		// --- Иконки наград — рендерятся ОДИН РАЗ, по РЕАЛЬНОЙ награде от сервера (после
 		// успешного ryukzak.open), а не заранее по превью — иначе набор ненулевых иконок
 		// (mach>0/pist>0/ak>0) мог бы разойтись с тем, что реально выпало по RNG сервера.
 		const fmtN = (n) => n >= 10000 ? Math.round(n/1000)+'K' : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n);
 
-		// 02.10.2026 (по прямому указанию — новый арт для ножа/пистолета, координаты даны
-		// пользователем напрямую): заменили старые nagrada_ryukzak_nozh.png/_pistolet.png.
-		// 04.10.2026 (повторная правка, редактор позиций — пистолет x:275 y:185 scale:0.810,
-		// нож x:460 y:350 scale:0.810): scale совпадает с уже заданным глобальным spr.scale.set(0.81)
-		// ниже, менять нужно только x/y этих двух записей.
-		const FIXED_POS = {
-			'награда рюкзак пистолет.png': { x: 275, y: 185 },
-			'nagrada_ryukzak_sigi.png':     { x: 404, y: 178 },
-			'nagrada_ryukzak_rubli.png':    { x: 544, y: 190 },
-			'nagrada_ryukzak_opyt.png':     { x: 682, y: 198 },
-			'награда рюкзак нож.png':      { x: 460, y: 350 },
-			'nagrada_ryukzak_avtomat.png':  { x: 615, y: 342 },
-		};
-		const LABEL_OFFSET = {
-			'награда рюкзак пистолет.png': { dx:  0, dy: -4 },
-			'nagrada_ryukzak_sigi.png':     { dx:  -4, dy: +6 },
-			'nagrada_ryukzak_rubli.png':    { dx:  -2, dy: +6 },
-			'nagrada_ryukzak_opyt.png':     { dx: +22, dy:  0 },
-			'награда рюкзак нож.png':      { dx: +30, dy: -12 },
-			'nagrada_ryukzak_avtomat.png':  { dx: +34, dy: -6 },
-		};
+		// 17.10.2026 (по прямому указанию — полная переработка грида наград, новые файлы вместо
+		// старых отдельных иконок): верхний ряд — 3 ячейки, ВСЕГДА заполнены ресурсами (рубли/
+		// сухари/опыт, в этом порядке). Нижний ряд — до 4 ячеек, заполняются ПО ПОРЯДКУ тем, что
+		// реально выпало (оружие — мачете/макар/калаш по полям mach/pist/ak, последним — ключ
+		// босса, если есть) — "фиксировать места под конкретную награду не нужно", см. промпт.
+		// Координаты — продиктованы пользователем (шаг между ячейками верхнего ряда 121px,
+		// нижнего — 114px). Карточки — уже готовый арт 114×147 (иконка + место под подпись
+		// внизу карточки), рисуются в натуральном размере (без 0.81, как у старых иконок).
+		// 18.10.2026 (по прямому указанию, общий сдвиг y+40 для файлов без отдельных координат):
+		// 18.10.2026 (по прямому указанию): пока баннер "шанс на шмотку" скрыт (HAS_SHMOT_DROP
+		// выше), карточки сдвигаются вправо на 140px, занимая освободившееся место. Когда
+		// баннер снова станет показываться — сдвиг автоматически уберётся.
+		const CARD_X_SHIFT = HAS_SHMOT_DROP ? 0 : 140;
+		const TOP_ROW    = [{x:334+CARD_X_SHIFT,y:203},{x:455+CARD_X_SHIFT,y:203},{x:576+CARD_X_SHIFT,y:203}];
+		const BOTTOM_ROW  = [{x:288+CARD_X_SHIFT,y:345},{x:402+CARD_X_SHIFT,y:345},{x:516+CARD_X_SHIFT,y:345},{x:630+CARD_X_SHIFT,y:345}];
+		const KEY_BOSS_CARD = { 1:'рюкзак карточка счастливчик.png', 2:'рюкзак карточка ястреб.png', 3:'рюкзак карточка меченный.png' };
 
 		const rewardIconsCont = new PIXI.Container();
 		win.addChild(rewardIconsCont);
 
+		const _addCard = (file, value, pos) => {
+			const spr = new PIXI.Sprite(PIXI.Texture.from(BASE + file));
+			spr.x = pos.x; spr.y = pos.y;
+			rewardIconsCont.addChild(spr);
+			if(value === undefined) return; // карточка ключа — без числового лейбла (штучный предмет)
+			const lbl = new PIXI.Text(fmtN(value), {
+				fontFamily: 'Southbank LT', fontSize: 22, fill: '#ffcc44',
+				dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
+			});
+			lbl.anchor.set(0.5, 0.5);
+			// 18.10.2026 (по прямому указанию — "текста кол-ва опусти вниз на 36px вместо 40px"):
+			// карточки (pos.y) сдвинуты на +40 целиком (см. TOP_ROW/BOTTOM_ROW выше), подпись
+			// должна отстать от них на 4px — компенсируем фиксированным -4.
+			const _setLblPos = () => { lbl.x = pos.x + spr.width / 2; lbl.y = pos.y + spr.height - 20 - 4; };
+			if(spr.texture.baseTexture.valid) _setLblPos();
+			else spr.texture.baseTexture.once('loaded', _setLblPos);
+			rewardIconsCont.addChild(lbl);
+		};
+
 		const _renderRewardIcons = (reward) => {
 			rewardIconsCont.removeChildren();
-			const iconItems = [];
-			if(reward.mach > 0) iconItems.push({f:'награда рюкзак нож.png',      v: reward.mach});
-			if(reward.pist > 0) iconItems.push({f:'награда рюкзак пистолет.png', v: reward.pist});
-			if(reward.ak   > 0) iconItems.push({f:'nagrada_ryukzak_avtomat.png',  v: reward.ak});
-			iconItems.push({f:'nagrada_ryukzak_sigi.png',  v: reward.cig});
-			iconItems.push({f:'nagrada_ryukzak_rubli.png', v: reward.c});
-			iconItems.push({f:'nagrada_ryukzak_opyt.png',  v: reward.exp});
 
-			iconItems.forEach((item) => {
-				const pos = FIXED_POS[item.f];
-				if(!pos){ console.warn('[ryukzak] нет позиции для', item.f); return; }
-				const spr = new PIXI.Sprite(PIXI.Texture.from(BASE + item.f));
-				spr.anchor.set(0, 0);
-				spr.scale.set(0.81);
-				spr.x = pos.x; spr.y = pos.y;
-				rewardIconsCont.addChild(spr);
-				const off = LABEL_OFFSET[item.f] || { dx: 0, dy: 0 };
-				const lbl = new PIXI.Text(fmtN(item.v), {
-					fontFamily: 'Southbank LT', fontSize: 24, fill: '#1a1a1a'
-				});
-				lbl.anchor.set(0.5, 0.5);
-				lbl.rotation = 11 * Math.PI / 180;
-				const _setLblPos = () => { lbl.x = pos.x + spr.width/2 + off.dx; lbl.y = pos.y + spr.height * 0.75 + off.dy; };
-				if(spr.texture.baseTexture.valid) _setLblPos();
-				else spr.texture.baseTexture.once('loaded', _setLblPos);
-				rewardIconsCont.addChild(lbl);
-			});
-		};
-		// 02.10.2026 (по прямому указанию — "нужно выводить ключ соответствующего босса, не
-		// текст"): раньше здесь был PIXI.Text с числом ("+7 КЛЮЧА ДЛЯ БОССА..."), что не
-		// совпадало с ожиданием игрока (ключ персональный и выдаётся штучно, не пачкой) —
-		// заменено на иконку конкретного ключа (те же файлы 'ключ <босс>.png', что и в
-		// bosses_prefight.js). Без числового лейбла: количество ключей за один розыгрыш
-		// рюкзака теперь всегда ровно 1 (см. ryukzak_rewards.json/ryukzak_config.json —
-		// значения k>1 на верхних уровнях убраны тем же указанием), так что подписывать
-		// количество отдельно избыточно.
-		// 04.10.2026 (баг найден по прямому указанию — "ключи боссов не отображаются"):
-		// иконка грузилась по BASE ('./images/layers/popups/sidorovich/' + file) — файлов
-		// 'ключ *.png' там нет (есть только в './images/' и './images/layers/popups/bosses/'),
-		// PIXI.Texture.from() тихо отдавал битую/пустую текстуру, keyIconSpr.visible=true
-		// выставлялся корректно, но рисовать было нечего. KEY_BASE — тот же './images/', что
-		// и в bosses_prefight.js (откуда и скопирован этот арт).
-		const KEY_BASE = './images/';
-		const KEY_BOSS_ICON_FILES = { 1:'ключ счастливчик.png', 2:'ключ ястреб.png', 3:'ключ меченный.png' };
-		const keyIconSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);
-		keyIconSpr.anchor.set(0.5, 0.5);
-		// 04.10.2026 (повторная правка, редактор позиций — x:366 y:392 scale:0.331, w:90 h:120):
-		// та же физическая высота/ширина, что и раньше (90×120 на нативных 272×362), просто
-		// заданы через scale вместо явных width/height — используем именно scale.set(), чтобы
-		// соответствовать тому, как редактор позиций сообщает координаты.
-		keyIconSpr.x = 366; keyIconSpr.y = 392;
-		keyIconSpr.scale.set(0.331);
-		keyIconSpr.visible = false;
-		keyIconSpr.interactive = true; keyIconSpr.buttonMode = true;
-		win.addChild(keyIconSpr);
+			const topItems = [
+				{f:'рюкзак карточка рублики.png',  v: reward.c},
+				{f:'рюкзак карточка сухарики.png', v: reward.cig},
+				{f:'рюкзак карточка опыт.png',     v: reward.exp},
+			];
+			topItems.forEach((item, i) => _addCard(item.f, item.v, TOP_ROW[i]));
 
-		// 04.10.2026 (по прямому указанию — "сделай так чтобы при наведении на ключ писалось на
-		// какого босса этот ключ"): тот же паттерн тултипа, что уже используется в skills.js —
-		// тёмная плашка с текстом, показывается на pointerover рядом с иконкой. Имя босса берём
-		// из уже существующего window.bosses.data (та же карта id→name, что рисует список
-		// боссов) — не дублируем отдельным массивом имён.
-		const keyTooltip = new PIXI.Container();
-		keyTooltip.visible = false;
-		const keyTooltipBg = new PIXI.Graphics();
-		const keyTooltipTxt = new PIXI.Text('', { fontFamily: 'Southbank LT', fontSize: 16, fill: '#ffffff' });
-		keyTooltipTxt.anchor.set(0.5, 0.5);
-		keyTooltip.addChild(keyTooltipBg);
-		keyTooltip.addChild(keyTooltipTxt);
-		win.addChild(keyTooltip);
-		let keyTooltipBossId = 0;
-		keyIconSpr.on('pointerover', () => {
-			const bossName = (window.bosses && window.bosses.data && window.bosses.data[keyTooltipBossId])
-				? window.bosses.data[keyTooltipBossId].name : null;
-			if(!bossName) return;
-			keyTooltipTxt.text = 'Ключ босса «' + bossName + '»';
-			const padX = 12, padY = 8;
-			keyTooltipBg.clear();
-			keyTooltipBg.beginFill(0x111111, 0.92); keyTooltipBg.lineStyle(1, 0x5a4a2a);
-			keyTooltipBg.drawRoundedRect(-keyTooltipTxt.width/2 - padX, -keyTooltipTxt.height/2 - padY,
-				keyTooltipTxt.width + padX*2, keyTooltipTxt.height + padY*2, 4);
-			keyTooltipBg.endFill();
-			keyTooltip.x = keyIconSpr.x; keyTooltip.y = keyIconSpr.y - 80;
-			keyTooltip.visible = true;
-		});
-		keyIconSpr.on('pointerout', () => { keyTooltip.visible = false; });
+			const bottomItems = [];
+			if(reward.mach > 0) bottomItems.push({f:'рюкзак карточка мачете.png', v: reward.mach});
+			if(reward.pist > 0) bottomItems.push({f:'рюкзак карточка макар.png',  v: reward.pist});
+			if(reward.ak   > 0) bottomItems.push({f:'рюкзак карточка калаш.png',  v: reward.ak});
+			const keyFile = reward.k > 0 ? KEY_BOSS_CARD[reward.key_boss] : null;
+			if(keyFile) bottomItems.push({f: keyFile, v: undefined});
 
-		const _setKeyPreview = (count, bossId) => {
-			const file = KEY_BOSS_ICON_FILES[bossId];
-			keyTooltipBossId = bossId;
-			if(count > 0 && file){
-				keyIconSpr.texture = PIXI.Texture.from(KEY_BASE + file);
-				keyIconSpr.visible = true;
-			} else {
-				keyIconSpr.visible = false;
-				keyTooltip.visible = false;
+			bottomItems.slice(0, 4).forEach((item, i) => _addCard(item.f, item.v, BOTTOM_ROW[i]));
+			if(bottomItems.length > 4){
+				console.warn('[ryukzak._renderRewardIcons] больше 4 позиций в нижнем ряду, лишние не показаны:', bottomItems.length);
 			}
 		};
+		// 17.10.2026 (по прямому указанию — переработка грида наград): ключ босса теперь просто
+		// одна из карточек нижнего ряда (см. KEY_BOSS_CARD/_renderRewardIcons выше) — отдельный
+		// floating-спрайт keyIconSpr с собственным hover-тултипом ("Ключ босса «X»") убран,
+		// карточка уже сама подписана именем босса в арте.
 		// Грубый ориентир СРАЗУ (нет сетевой задержки) — cig/c/exp фиксированы в тарифе, оружие
 		// пока показываем суммарным "w" под иконкой автомата, пока не пришёл честный ответ сервера.
 		_renderRewardIcons({
 			cig: previewTier.cig, c: previewTier.c, exp: previewTier.exp,
 			mach: 0, pist: 0, ak: previewTier.w,
+			k: previewTier.k, key_boss: previewTier.key_boss,
 		});
-		_setKeyPreview(previewTier.k || 0, previewTier.key_boss);
 
 		// 04.10.2026 (по прямому указанию — "должно сразу рассчитываться какое оружие и в каких
 		// количествах будет в награде рюкзака, и указываться в рюкзаке"): грубый ориентир выше
@@ -212,43 +290,63 @@ export function attachRyukzak(proto){
 				if(this._ryukzakWin !== win) return; // экран успели закрыть/переоткрыть — чужой ответ не трогаем
 				console.log('[ryukzak._openRyukzakReward] ← честное превью сервера:', JSON.stringify(res));
 				_renderRewardIcons(res);
-				_setKeyPreview(res.k || 0, res.key_boss);
-				lvlTxt.text = 'УРОВЕНЬ РЮКЗАКА : ' + res.level;
+				lvlTxt.text = String(res.level);
 				_renderProgress(res.level);
 			}, (err) => {
 				console.error('[ryukzak._openRyukzakReward] ошибка честного превью, остаётся грубый ориентир:', JSON.stringify(err));
 			});
 		};
-		_fetchHonestPreview();
+		// Dev-превью с mockReward не должен затираться реальным честным превью с сервера.
+		if(!mockReward) _fetchHonestPreview();
 
-		// --- Прогресс-бар уровня рюкзака ---
-		const lvlTxt = new PIXI.Text('УРОВЕНЬ РЮКЗАКА : ' + previewLevel, {
-			fontFamily: 'Southbank LT', fontSize: 28, fill: '#ffffff',
+		// --- Плашка и прогресс-бар уровня рюкзака ---
+		const lvlPlate = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак плашка уровень рюкзака.png'));
+		lvlPlate.x = 213; lvlPlate.y = 492; // 18.10.2026: общий сдвиг y+40
+		win.addChild(lvlPlate);
+
+		// Цвет/шрифт — по присланной палитре для надписи "УРОВЕНЬ РЮКЗАКА" (#d4b99c,
+		// Southbank LT 30pt), текст пишется В УЖЕ ВШИТУЮ В ПЛАШКУ метку "УРОВЕНЬ РЮКЗАКА:"
+		// справа от двоеточия — только число, не дублируем подпись целиком.
+		// 18.10.2026 (по прямому указанию, редактор позиций — x:432,y:511,scale:0.390): заменяет
+		// прежнюю формулу от lvlPlate (443,516) — абсолютные координаты, снятые пользователем.
+		// fontSize пересчитан из 30×0.390 напрямую в размер шрифта (12), а не через
+		// lvlTxt.scale.set() — канвас-текст, увеличенный/уменьшенный через scale после рендера,
+		// пикселизуется (размывается при апскейле / теряет чёткость при даунскейле); рендерить
+		// сразу в целевом fontSize — корректный способ, тот же паттерн уже используется по всему
+		// проекту (см. tests/no-text-fontsize-scale-pixelation.test.js).
+		// 20.10.2026 (по прямому указанию — "сдвинь вправо на 32px, опусти вниз на 12px,
+		// увеличь фонт-сайз на 6px"): x 432→464, y 511→523, fontSize 12→18.
+		// 20.10.2026 (повторное указание тем же днём — "опусти вниз ещё на 2px, увеличь фонт-сайз
+		// ещё на 6px"): y 523→525, fontSize 18→24.
+		const lvlTxt = new PIXI.Text(String(previewLevel), {
+			fontFamily: 'Southbank LT', fontSize: 24, fill: '#d4b99c',
 			dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 2
 		});
-		lvlTxt.anchor.set(0.5, 0.5);
-		lvlTxt.x = 644; lvlTxt.y = 490;
+		lvlTxt.anchor.set(0, 0.5);
+		lvlTxt.x = 464; lvlTxt.y = 525;
 		win.addChild(lvlTxt);
 
+		// 8 ячеек заполнения (было 1-5 сегментов на старой плашке) — заполненных ячеек
+		// пропорционально уровню 0..20 → 0..8.
 		const progressCont = new PIXI.Container();
 		win.addChild(progressCont);
 		const _renderProgress = (level) => {
 			progressCont.removeChildren();
-			const bagLvl = level >= 20 ? 5 : level >= 15 ? 4 : level >= 10 ? 3 : level >= 5 ? 2 : 1;
-			for(let s = 0; s < bagLvl; s++){
-				const seg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_progress.png'));
-				seg.scale.set(0.881);
-				seg.x = 473 + s * 73; seg.y = 517;
+			const filled = Math.max(0, Math.min(8, Math.round(level / 20 * 8)));
+			for(let s = 0; s < filled; s++){
+				const seg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак уровень ячейка заполнения.png'));
+				// 20.10.2026 (по прямому указанию — "сдвинь влево на 1px, первая ячейка x:248"): 249→248.
+				seg.x = 248 + s * 50; seg.y = 554; // 18.10.2026: общий сдвиг y+40
 				progressCont.addChild(seg);
 			}
 		};
 		_renderProgress(previewLevel);
 
-		// Кнопка ЗАБРАТЬ (264×68) — теперь ВСЕГДА кликабельна (сервер сам решает, хватает ли
+		// Кнопка ЗАБРАТЬ — теперь ВСЕГДА кликабельна (сервер сам решает, хватает ли
 		// тушёнки); открывает рюкзак заново при каждом клике, награда — реальная, от сервера.
-		const zabratBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_zabrat.png'));
-		zabratBtn.x = Math.round((1280 - 264) / 2) + 14;
-		zabratBtn.y = 552;
+		const zabratBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак кнопка забрать.png'));
+		zabratBtn.x = 460;
+		zabratBtn.y = 583; // 18.10.2026: общий сдвиг y+40
 		zabratBtn.interactive = true; zabratBtn.buttonMode = true;
 		zabratBtn.on('pointerover', ()=>{ _sa(zabratBtn, 0.85); });
 		zabratBtn.on('pointerout',  ()=>{ _sa(zabratBtn, 1); });
@@ -281,8 +379,7 @@ export function attachRyukzak(proto){
 					if(res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
 					const r = res.reward;
 					_renderRewardIcons(r);
-					_setKeyPreview(r.k || 0, r.key_boss);
-					lvlTxt.text = 'УРОВЕНЬ РЮКЗАКА : ' + r.level;
+					lvlTxt.text = String(r.level);
 					_renderProgress(r.level);
 
 					const rewards = [];
@@ -312,12 +409,11 @@ export function attachRyukzak(proto){
 						const pointsAfter = parseInt(udata && udata['ryukzak_points'] ? udata['ryukzak_points'] : 0);
 						const resetLevel  = Math.max(1, _ryukzakLevelFromPoints(pointsAfter));
 						console.log('[ryukzak._openRyukzakReward] попап награды подавлен (по прямому указанию), очки после сброса:', pointsAfter, '→ превью уровня:', resetLevel);
-						lvlTxt.text = 'УРОВЕНЬ РЮКЗАКА : ' + resetLevel;
+						lvlTxt.text = String(resetLevel);
 						_renderProgress(resetLevel);
 						// 04.10.2026 (баг найден по прямому указанию — "следующая награда визуально
 						// никак не меняется"): уровень выше уже сброшен, но иконки/суммы награды на
-						// экране — всё ещё от ТОЛЬКО ЧТО забранного розыгрыша (_renderRewardIcons/
-						// _setKeyPreview с тех пор ни разу не перерисовывались). Тот же двухфазный
+						// экране — всё ещё от ТОЛЬКО ЧТО забранного розыгрыша. Тот же двухфазный
 						// приём, что и при открытии экрана: сразу грубый локальный ориентир по
 						// новому уровню (без сетевой задержки), следом честное превью с сервера.
 						const resetLvIdx = Math.max(0, Math.min(19, resetLevel - 1));
@@ -325,8 +421,8 @@ export function attachRyukzak(proto){
 						_renderRewardIcons({
 							cig: resetTier.cig, c: resetTier.c, exp: resetTier.exp,
 							mach: 0, pist: 0, ak: resetTier.w,
+							k: resetTier.k, key_boss: resetTier.key_boss,
 						});
-						_setKeyPreview(resetTier.k || 0, resetTier.key_boss);
 						_fetchHonestPreview();
 					};
 					_afterRewardClaimed();
@@ -370,13 +466,15 @@ export function attachRyukzak(proto){
 		// должен быть выше кнопки ЗАБРАТЬ"): бирка/иконка тушёнки/число теперь добавляются
 		// ПОСЛЕ zabratBtn — в PIXI позже добавленный ребёнок рисуется поверх, раньше кнопка
 		// (полноразмерный спрайт 264×68, перекрывающий тот же угол) скрывала бирку под собой.
-		const tushenkaTagSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_birka.png'));
-		tushenkaTagSpr.x = 774; tushenkaTagSpr.y = 558;
+		// 18.10.2026 (по прямому указанию — "бирку, цифру количества тушёнки и само отображение
+		// тушёнки опусти вниз на 40px, сдвинь влево на 20px"):
+		const tushenkaTagSpr = new PIXI.Sprite(PIXI.Texture.from(OLD_BASE + 'nagrada_ryukzak_birka.png'));
+		tushenkaTagSpr.x = 774 - 20; tushenkaTagSpr.y = 558 + 40;
 		tushenkaTagSpr.scale.set(1.162);
 		win.addChild(tushenkaTagSpr);
 
-		const tushenkaIconSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_tushenka.png'));
-		tushenkaIconSpr.x = 831; tushenkaIconSpr.y = 599;
+		const tushenkaIconSpr = new PIXI.Sprite(PIXI.Texture.from(OLD_BASE + 'nagrada_ryukzak_tushenka.png'));
+		tushenkaIconSpr.x = 831 - 20; tushenkaIconSpr.y = 599 + 40;
 		tushenkaIconSpr.scale.set(1.054);
 		tushenkaIconSpr.rotation = 52 * Math.PI / 180;
 		win.addChild(tushenkaIconSpr);
@@ -385,13 +483,23 @@ export function attachRyukzak(proto){
 			fontFamily: 'Southbank LT', fontSize: 32, fill: '#1a1a1a'
 		});
 		tushenkaQtyTxt.anchor.set(0.5, 0.5);
-		tushenkaQtyTxt.x = 810; tushenkaQtyTxt.y = 594;
+		tushenkaQtyTxt.x = 810 - 20; tushenkaQtyTxt.y = 594 + 40;
 		tushenkaQtyTxt.rotation = 52 * Math.PI / 180;
 		win.addChild(tushenkaQtyTxt);
 
 		this.pushHud('ryukzak', {});
 		root.layer2_mc.addChild(win);
 		this._ryukzakWin = win;
-		this._compassWaitTex(BASE + 'nagrada_ryukzak_bez_tatu.png');
+		this._compassWaitTex(BASE + 'рюкзак фон награда.png');
+
+		// Dev-превью (см. dev_panel.js) — сразу отрисовать переданную мок-награду, не дожидаясь
+		// честного ответа сервера (которого не будет для синтетических данных).
+		if(mockReward){
+			_renderRewardIcons(mockReward);
+			if(mockReward.level !== undefined){
+				lvlTxt.text = String(mockReward.level);
+				_renderProgress(mockReward.level);
+			}
+		}
 	};
 }

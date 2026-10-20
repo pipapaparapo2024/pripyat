@@ -643,7 +643,7 @@ export function attachBossesCombat(proto){
                     onClose: _doRedirect,
                 });
             } else {
-                notify.showResult({text:'Босс '+d.name+' повержен! +'+rew.cig+' сигарет  +'+rew.exp+' опыта'+keysMsg}, 1, _doRedirect);
+                notify.showResult({text:'Босс '+d.name+' повержен! +'+rew.cig+' сухарей  +'+rew.exp+' опыта'+keysMsg}, 1, _doRedirect);
             }
             // Награда остаётся открытой до закрытия попапа (ЕЩЁ РАЗ / выход).
         }, (err) => {

@@ -51,9 +51,10 @@ console.log('\nTest 1: ящик (общий collectReward — крестик и 
 
 console.log('\nTest 2: ящик — и крестик, и ЗАБРАТЬ используют этот общий collectReward() (не два раздельных пути начисления)');
 {
-    const xStart = yashikSrc.indexOf("xCloseBtn.on('pointerdown'");
+    const xStart = yashikSrc.indexOf("const xCloseBtn = new PIXI.Sprite");
     const xEnd   = yashikSrc.indexOf('win.addChild(xCloseBtn);');
-    assert(/collectReward\(\);/.test(yashikSrc.slice(xStart, xEnd)), 'крестик вызывает collectReward()');
+    assert(/collectReward\(true\);/.test(yashikSrc.slice(xStart, xEnd)),
+        'крестик вызывает collectReward(true) (17.10.2026: решение пересмотрено — попап не нужен и для крестика тоже)');
 
     const zStart = yashikSrc.indexOf("zabratBtn.on('pointerdown'");
     const zEnd   = yashikSrc.indexOf('win.addChild(zabratBtn);');
@@ -83,7 +84,7 @@ console.log('\nTest 3: карточки локаций — фиксирован�
     // сторон исходников — Агропром 4.0 против ~4.25-4.35 у остальных). Явное прямое указание
     // отменяет прежний принцип "сохранять пропорции" — теперь width И height растягиваются
     // независимо (см. zone-cards-uniform-size-and-respect-caption-style.test.js).
-    assert(/spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H;/.test(body),
+    assert(/spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump;/.test(body),
         'width И height выставляются НЕЗАВИСИМО в фиксированные CARD_TARGET_W/H (не единый scale, не сохранение пропорций)');
 }
 

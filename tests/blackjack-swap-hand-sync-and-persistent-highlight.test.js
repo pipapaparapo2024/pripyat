@@ -12,7 +12,10 @@ check(/Array\.isArray\(res\.hand\) && res\.hand\.length === 2/.test(client), 'cl
 check(/for\(let realIdx = 2; realIdx <= 3; realIdx\+\+\)/.test(client), 'both real card sprites are synchronized');
 const highlight = client.slice(client.indexOf('proto._bjShowComboHighlight'), client.indexOf('proto._updateBlackjackUI'));
 check(!/setTimeout/.test(highlight) && !/onComplete/.test(highlight), 'winning row does not auto-hide');
-check(/this\._bjComboHighlight\.visible = false/.test(client), 'old highlight is cleared when a new game starts');
+// 20.10.2026: direct this._bjComboHighlight access replaced by the shared _bjHideComboHighlight()
+// helper (single object -> 9 independent per-rank markers, see
+// tests/dice-poker-bj-combo-highlight-editor-markers.test.js).
+check(/this\._bjHideComboHighlight === 'function'\) this\._bjHideComboHighlight\(\);/.test(client), 'old highlight is cleared when a new game starts');
 check(/'валет':\s+352/.test(client), 'JJ maps to its explicit payout row');
 
 if(failed) process.exit(1);

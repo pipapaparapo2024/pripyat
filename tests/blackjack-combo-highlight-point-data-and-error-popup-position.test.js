@@ -45,7 +45,7 @@ console.log('\nTest 2: блэкджек — BJ_ROW_Y объект-литерал
     // от одной точки) — см. коммент у BJ_ROW_Y в dvor-blackjack.js.
     const expected = {
         'туз': 245, 'король': 282, 'дама': 318, 'валет': 352, 'десятка': 387,
-        'девятка': 421, 'восьмерка': 455, 'семерка': 489, '__nonpair': 522,
+        'девятка': 421, 'восьмерка': 455, 'семерка': 489, '__nonpair': 530,
     };
     for(const [key, val] of Object.entries(expected)){
         const re = new RegExp(`'${key}':\\s*${val},`);
@@ -72,18 +72,27 @@ console.log('\nTest 3: блэкджек — единые X/W/H для всех �
     assert(!/BJ_ROW_Y\[key\] = 235 \+ i \* 35;/.test(bjSrc), 'старая формула (235 + i*35) убрана');
 }
 
-console.log('\nTest 4: блэкджек — _bjShowComboHighlight использует унифицированную ширину/высоту без ветвления isNonpair');
+console.log('\nTest 4: блэкджек — подсветка использует унифицированную ширину/высоту без ветвления isNonpair');
 {
-    const start = bjSrc.indexOf('proto._bjShowComboHighlight = function(rank){');
-    const end   = bjSrc.indexOf('\n    };', start);
-    const body  = bjSrc.slice(start, end);
-    assert(!/isNonpair/.test(body), 'ветвление isNonpair убрано — все 9 строк рисуются одним и тем же кодом');
-    assert(/const cy = BJ_ROW_Y\[key\];/.test(body), 'координата Y берётся напрямую из BJ_ROW_Y[key]');
-    // 26.09.2026: "+ BJ_ROW_W / 2" убран целиком — это и был баг сдвига вправо, X теперь
-    // ставится напрямую как готовый центр строки, тем же вызовом, что и Y (h.position.set).
-    assert(!/BJ_ROW_X \+ BJ_ROW_W/.test(body), 'X больше НЕ считается как левый край + половина ширины (баг сдвига вправо на ~140px)');
-    assert(/h\.position\.set\(BJ_ROW_X, cy\);/.test(body), 'позиция ставится напрямую из готовых центров BJ_ROW_X (X) и cy (Y)');
-    assert(/h\.drawRoundedRect\(-BJ_ROW_W \/ 2, -BJ_ROW_H \/ 2, BJ_ROW_W, BJ_ROW_H, 6\);/.test(body), 'рамка рисуется по единой ширине/высоте (BJ_ROW_W/BJ_ROW_H)');
+    // 20.10.2026 (по прямому указанию — "каждое выпадение комбинации имеет координаты 0,0,
+    // сделай координаты относительно всей плоскости"): позиция/отрисовка переехали с КАЖДОГО
+    // вызова _bjShowComboHighlight на ОДНОРАЗОВУЮ постройку 9 независимых маркеров (по одному
+    // на ключ BJ_ROW_Y) — см. tests/dice-poker-bj-combo-highlight-editor-markers.test.js для
+    // полной проверки. Здесь проверяем, что сама show-функция больше не ветвится по isNonpair
+    // и не содержит унаследованного бага "+ BJ_ROW_W/2".
+    const showStart = bjSrc.indexOf('proto._bjShowComboHighlight = function(rank){');
+    const showEnd   = bjSrc.indexOf('\n    };', showStart);
+    const showBody  = bjSrc.slice(showStart, showEnd);
+    assert(!/isNonpair/.test(showBody), 'ветвление isNonpair убрано — все 9 строк используют один и тот же маркер-поиск по key');
+    assert(!/BJ_ROW_X \+ BJ_ROW_W/.test(showBody), 'X больше НЕ считается как левый край + половина ширины (баг сдвига вправо на ~140px)');
+    assert(/const key = rank \|\| '__nonpair';/.test(showBody), 'непарный случай по-прежнему фолбэчится на __nonpair');
+
+    const buildIdx = bjSrc.indexOf('this._bjComboHighlights = {};');
+    const buildEnd = bjSrc.indexOf('});', buildIdx) + 3;
+    const buildBody = bjSrc.slice(buildIdx, buildEnd);
+    assert(buildIdx !== -1, 'постройка маркеров (this._bjComboHighlights) найдена');
+    assert(/m\.x = BJ_ROW_X; m\.y = BJ_ROW_Y\[key\];/.test(buildBody), 'каждый маркер позиционируется напрямую из готовых центров BJ_ROW_X (X) и BJ_ROW_Y[key] (Y)');
+    assert(/m\.drawRoundedRect\(-BJ_ROW_W \/ 2, -BJ_ROW_H \/ 2, BJ_ROW_W, BJ_ROW_H, 6\);/.test(buildBody), 'рамка рисуется по единой ширине/высоте (BJ_ROW_W/BJ_ROW_H), один раз при постройке');
 }
 
 console.log('\nTest 5: блэкджек — highlight вызывается ТОЛЬКО из ответа resolve (не при простом отображении раздачи)');

@@ -405,6 +405,12 @@ export default class Base{
 			console.log('[base.open] загрузка персонаж который сидит.png, texture valid:', persTex && !persTex.noFrame);
 			persTex.on('loaded', ()=>{ console.log('[base.open] персонаж который сидит.png ЗАГРУЖЕНА успешно, width:', persTex.width, 'height:', persTex.height); });
 			persTex.on('error', (e)=>{ console.error('[base.open] персонаж который сидит.png ОШИБКА загрузки:', e); });
+			// 18.10.2026 (баг найден по прямому указанию — "режется качество одежды и
+			// персонажа"): тот же фикс мипмапов, что уже стоит в home.js/player_profile.js/
+			// shmot_shop.js, пропущен здесь при правке 17.10.2026 — на этом экране (База)
+			// персонаж уменьшался 1224×1737 → 273×389 БЕЗ сглаживания даже на WebGL2.
+			persTex.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			persTex.baseTexture.update();
 			this._persSpr = new PIXI.Sprite(persTex);
 			this._persSpr.anchor.set(0, 0);
 			this._persSpr.x = 546; // 40 + 506
@@ -419,6 +425,8 @@ export default class Base{
 		// +9x/+123y от персонажа), пересчитано под сдвиг этого экрана (+40,+19).
 		if(!this._leftForearmSpr){
 			this._leftForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левое предплечье.png'));
+			this._leftForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._leftForearmSpr.texture.baseTexture.update();
 			this._leftForearmSpr.anchor.set(0, 0);
 			this._leftForearmSpr.x = 554; // 40 + 514
 			this._leftForearmSpr.y = 343; // 19 + 324

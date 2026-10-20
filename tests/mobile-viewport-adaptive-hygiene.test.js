@@ -136,7 +136,8 @@ console.log('\nTest 4: helper.touchPad() — зона нажатия под па
     assert(/if\(padX === 0 && padY === 0\) return obj;/.test(helper),
         'объектам, которые и так крупнее минимума, hitArea не навязывается');
 
-    // Применение: все 26 стандартных кнопок выхода.
+    // Применение: все 27 стандартных кнопок выхода (17.10.2026: +1 — новый попап покупки
+    // сухарей, interface-sukhari-purchase.js, тот же стандартный паттерн exitBtn).
     const walk = (dir, acc = []) => {
         for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
             const p = path.join(dir, e.name);
@@ -158,7 +159,7 @@ console.log('\nTest 4: helper.touchPad() — зона нажатия под па
         scaleSites += (s.match(/exitBtn\.scale\.set\(0\.5\);(?!\s*\}\))/g) || []).length;
         padSites   += (s.match(/helper\.touchPad\(exitBtn\)/g)  || []).length;
     }
-    assert(scaleSites === 26, 'найдено 26 стандартных кнопок выхода (было столько же до правки), факт: ' + scaleSites);
+    assert(scaleSites === 27, 'найдено 27 стандартных кнопок выхода (было 26 до правки, +1 — попап покупки сухарей), факт: ' + scaleSites);
     assert(padSites === scaleSites,
         'у каждой кнопки выхода расширена зона нажатия, факт: ' + padSites + ' из ' + scaleSites);
 }

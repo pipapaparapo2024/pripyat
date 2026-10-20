@@ -80,13 +80,14 @@ console.log('\nTest 4: svod-leaderboard.js — аватарка позицион
     assert(/avatar\.x = AVATAR_X; avatar\.y = AVATAR_Y;/.test(leaderSrc), 'avatar.x/y использует AVATAR_X/AVATAR_Y (маска и аватарка синхронизированы)');
 }
 
-console.log('\nTest 5: svod-leaderboard.js — колонка "Уровень": точная позиция (434,11) и белый цвет');
+console.log('\nTest 5: svod-leaderboard.js — колонка "Уровень": точная позиция (434,11) и цвет #c5c5c5');
 {
     // 19.09.2026: levelTxt теперь центрируется по горизонтали в собственном блоке
     // «блок под уровень.png» (см. svod-leaderboard-anchor-center-level-col.test.js), поэтому
     // x — не константа 434, а centerX(CELL_BLOCKS.level); проверяем цвет/anchor/y отдельно.
-    assert(/fill:'#ffffff'\s*\}\);\s*\n\s*levelTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*levelTxt\.x = centerX\(CELL_BLOCKS\.level\); levelTxt\.y = 11;/.test(leaderSrc),
-        'levelTxt — белый цвет (#ffffff), центрирован в блоке «уровень» (anchor 0.5), y=11');
+    // 18.10.2026 (по прямому указанию, снято пипеткой с картинки 1): #ffffff → #c5c5c5.
+    assert(/fill:'#c5c5c5'\s*\}\);\s*\n\s*levelTxt\.anchor\.set\(0\.5, 0\);\s*\n\s*levelTxt\.x = centerX\(CELL_BLOCKS\.level\); levelTxt\.y = 11;/.test(leaderSrc),
+        'levelTxt — цвет #c5c5c5, центрирован в блоке «уровень» (anchor 0.5), y=11');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

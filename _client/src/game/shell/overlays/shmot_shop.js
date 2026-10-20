@@ -72,6 +72,8 @@ export function attachShmotShop(proto){
         // пересчитаны под манекен (тот же сдвиг +224/+4, что и во всех остальных
         // MAN_SLOTS относительно home.js: 634+224=858, 441+4=445).
         const rightHandPhalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+        rightHandPhalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandPhalanxSpr.texture.baseTexture.update();
         rightHandPhalanxSpr.anchor.set(0, 0);
         rightHandPhalanxSpr.x = 858;
         rightHandPhalanxSpr.y = 445;
@@ -95,6 +97,8 @@ export function attachShmotShop(proto){
         // +9x/+123y от персонажа) — persSpr здесь в (730,208), та же разница +224/+4, что
         // у остальных MAN_SLOTS относительно home.js: 739=730+9, 331=208+123.
         const leftForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левое предплечье.png'));
+        leftForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftForearmSpr.texture.baseTexture.update();
         leftForearmSpr.anchor.set(0, 0);
         leftForearmSpr.x = 738; leftForearmSpr.y = 328;
         leftForearmSpr.scale.set(0.197);
@@ -104,12 +108,16 @@ export function attachShmotShop(proto){
         // Кисти рук персонажа — рисуются ПОСЛЕ одежды (торс/штаны/обувь/голова/аксессуар),
         // чтобы быть поверх неё
         const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
+        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandSpr.texture.baseTexture.update();
         rightHandSpr.anchor.set(0, 0);
         rightHandSpr.x = 862 - 8; rightHandSpr.y = 373;
         win.addChild(rightHandSpr);
         this._manRightHandSpr = rightHandSpr;
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
+        leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftHandSpr.texture.baseTexture.update();
         leftHandSpr.anchor.set(0, 0);
         leftHandSpr.x = 756 + 2; leftHandSpr.y = 389;
         win.addChild(leftHandSpr);
@@ -423,7 +431,7 @@ export function attachShmotShop(proto){
 
         let reqText;
         if(item.price){
-            const unit = {coins:'монет', stew:'тушёнки', cig:'сигарет'}[item.price.type] || '';
+            const unit = {coins:'монет', stew:'тушёнки', cig:'сухарей'}[item.price.type] || '';
             reqText = 'Цена: ' + item.price.a + ' ' + unit;
         } else {
             reqText = item.source || '?';
@@ -506,6 +514,11 @@ export function attachShmotShop(proto){
             if(item && item.imgFile){
                 const imgUrl = './images/shmot/' + item.imgFile;
                 const imgTex = PIXI.Texture.from(imgUrl);
+                // 18.10.2026 (тот же фикс, что и для манекена — см. докблок в
+                // character-sprite-mipmap-fix.test.js): иконки каталога тоже крупные
+                // исходники, сжатые ещё мельче (в ячейку 78×118) через cellScale/авто-fit.
+                imgTex.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                imgTex.baseTexture.update();
                 const img = new PIXI.Sprite(imgTex);
                 img.anchor.set(0.5, 0.5);
                 // 25.09.2026 (по прямому указанию, снято редактором позиций поверх ~58 предметов
@@ -615,6 +628,11 @@ export function attachShmotShop(proto){
             const eq = (this.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
             if(eq && eq.imgFile){
                 spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);
+                // 18.10.2026 (тот же фикс, что в home.js.updateClothes() — см. докблок там):
+                // крупные исходники шмоток, сжатые мелким manScale, без мипмапов дают заметный
+                // алиасинг/зерно на мелких деталях одежды.
+                spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                spr.texture.baseTexture.update();
                 spr.visible = true;
 
                 const base = this._manSlotBases && this._manSlotBases[parseInt(cat)];

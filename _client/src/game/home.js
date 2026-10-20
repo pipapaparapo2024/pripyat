@@ -130,6 +130,8 @@ export default class Home{
 		// (старые с PSD-слоя "фаланга мезинца" не совпадали с реальной рукой на экране).
 		if(!this._rightHandPhalanxSpr){
 			this._rightHandPhalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+			this._rightHandPhalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._rightHandPhalanxSpr.texture.baseTexture.update();
 			this._rightHandPhalanxSpr.anchor.set(0, 0);
 			this._rightHandPhalanxSpr.x = 634;
 			this._rightHandPhalanxSpr.y = 441;
@@ -149,6 +151,8 @@ export default class Home{
         // позиций (как и остальные позиционные правки в этом проекте).
 		if(!this._leftForearmSpr){
 			this._leftForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левое предплечье.png'));
+			this._leftForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._leftForearmSpr.texture.baseTexture.update();
 			this._leftForearmSpr.anchor.set(0, 0);
 			// 24.09.2026 (уточнено пользователем через редактор позиций — x:515 y:327
 			// scale:0.197): персонаж (this._persSpr) здесь в (506,204), значит смещение
@@ -166,6 +170,8 @@ export default class Home{
 		// небольшое расхождение: правая на 7px правее, левая на 2px левее нужного).
 		if(!this._rightHandSpr){
 			this._rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
+			this._rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._rightHandSpr.texture.baseTexture.update();
 			this._rightHandSpr.anchor.set(0, 0);
 			this._rightHandSpr.x = 630;
 			this._rightHandSpr.y = 369;
@@ -174,6 +180,8 @@ export default class Home{
 
 		if(!this._leftHandSpr){
 			this._leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
+			this._leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._leftHandSpr.texture.baseTexture.update();
 			this._leftHandSpr.anchor.set(0, 0);
 			this._leftHandSpr.x = 534;
 			this._leftHandSpr.y = 385;
@@ -202,6 +210,13 @@ export default class Home{
 			const eq = (shmot.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
 			if(eq && eq.imgFile){
 				spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);
+				// 18.10.2026 (баг найден по прямому указанию — "режется качество одежды"):
+				// иконки шмоток — крупные исходники (правило AGENTS.md — "не уменьшать",
+				// 58 файлов, 83 МБ RGBA), сжимаются на экране мелким manScale (~0.2) — тот же
+				// класс бага, что уже чинили для персонажа (17.10.2026), но мипмап для одежды
+				// никогда не ставился ни в одном файле.
+				spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+				spr.texture.baseTexture.update();
 				spr.visible = true;
 				spr.x = base.x + (eq.manDx || 0);
 				spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
@@ -223,20 +238,6 @@ export default class Home{
 		});
 	}
 
-	// Открыть экран поверх комнаты (банк, зона, боссы и т.д.)
-	openScreen(screen_mc){
-		if(this.current_screen)root.layer1_mc.removeChild(this.current_screen);
-		this.current_screen = screen_mc;
-		root.layer1_mc.addChild(screen_mc);
-	}
-
-	closeScreen(){
-		if(this.current_screen){
-			root.layer1_mc.removeChild(this.current_screen);
-			this.current_screen = null;
-		}
-	}
-
 	initButtons(){
 
 	}
@@ -249,6 +250,13 @@ export default class Home{
 	openScreen(screen_mc){
 		if(this.current_screen === screen_mc) return;
 		this.closeScreen();
+		// 18.10.2026 (баг найден по живому репорту — "серый прямоугольник на главном экране,
+		// редактор позиций его не видит"): Зона — единственный экран, который не регистрирует
+		// себя как this.current_screen (кладёт себя в root.layer1_mc напрямую, см. комментарий
+		// в zone_screen.js._openZoneScreen) — closeScreen() выше о ней ничего не знает и не
+		// прячет. Без этого вызова открытие ЛЮБОГО другого экрана поверх открытой Зоны
+		// оставляло её висеть под новым экраном, а после его закрытия — "всплывала" обратно.
+		if(window.iface && typeof iface._closeZoneScreen === 'function') iface._closeZoneScreen();
 		this.current_screen = screen_mc;
 		screen_mc.alpha = 0;
 		root.layer1_mc.addChild(screen_mc);

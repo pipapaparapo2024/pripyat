@@ -249,15 +249,20 @@ export default class Achievements {
 			{id:'exp_100kk', cat:'exp', name:'Первый среди первых',       pts:60, threshold:100000000, statPath:["exp"], check:s=>s.exp>=100000000},
 			{id:'exp_200kk', cat:'exp', name:'Лучший друг Седого',        pts:80, threshold:200000000, statPath:["exp"], check:s=>s.exp>=200000000},
 
-			// Сигареты (накопить, текущий баланс)
-			{id:'cig_10k',  cat:'cig_hoard', name:'Первая затяжка',      pts:1,  threshold:10000, statPath:["cig"], check:s=>s.cig>=10000},
-			{id:'cig_50k',  cat:'cig_hoard', name:'Пыхарь',              pts:2,  threshold:50000, statPath:["cig"], check:s=>s.cig>=50000},
-			{id:'cig_100k', cat:'cig_hoard', name:'Закурил конкретно',   pts:3,  threshold:100000, statPath:["cig"], check:s=>s.cig>=100000},
-			{id:'cig_300k', cat:'cig_hoard', name:'Дымовая завеса',      pts:4,  threshold:300000, statPath:["cig"], check:s=>s.cig>=300000},
-			{id:'cig_500k', cat:'cig_hoard', name:'Сигаретный магнат',   pts:5,  threshold:500000, statPath:["cig"], check:s=>s.cig>=500000},
-			{id:'cig_1kk',  cat:'cig_hoard', name:'Сигаретный барон',    pts:6,  threshold:1000000, statPath:["cig"], check:s=>s.cig>=1000000},
-			{id:'cig_5kk',  cat:'cig_hoard', name:'Босс по табаку',      pts:8,  threshold:5000000, statPath:["cig"], check:s=>s.cig>=5000000},
-			{id:'cig_10kk', cat:'cig_hoard', name:'Легенда курилки',     pts:10, threshold:10000000, statPath:["cig"], check:s=>s.cig>=10000000},
+			// Сухари (накопить, текущий баланс)
+			// 18.10.2026 (по прямому указанию — модерация VK, замена ресурса "сигареты" на
+			// "сухари": названия ещё отсылали к курению, хотя ресурс визуально уже сухари —
+			// "у нас сигарет нет, у нас теперь сухари"). statPath/id/threshold не менялись —
+			// это чисто текстовая правка, поле s.cig технически как было (см. AGENTS.md —
+			// поля БД не переименовываются, меняется только визуал/текст).
+			{id:'cig_10k',  cat:'cig_hoard', name:'Первый сухарь',       pts:1,  threshold:10000, statPath:["cig"], check:s=>s.cig>=10000},
+			{id:'cig_50k',  cat:'cig_hoard', name:'Сухарный жук',        pts:2,  threshold:50000, statPath:["cig"], check:s=>s.cig>=50000},
+			{id:'cig_100k', cat:'cig_hoard', name:'Мешок сухарей',       pts:3,  threshold:100000, statPath:["cig"], check:s=>s.cig>=100000},
+			{id:'cig_300k', cat:'cig_hoard', name:'Сухарный схрон',      pts:4,  threshold:300000, statPath:["cig"], check:s=>s.cig>=300000},
+			{id:'cig_500k', cat:'cig_hoard', name:'Сухарный магнат',     pts:5,  threshold:500000, statPath:["cig"], check:s=>s.cig>=500000},
+			{id:'cig_1kk',  cat:'cig_hoard', name:'Сухарный барон',      pts:6,  threshold:1000000, statPath:["cig"], check:s=>s.cig>=1000000},
+			{id:'cig_5kk',  cat:'cig_hoard', name:'Босс сухарного цеха', pts:8,  threshold:5000000, statPath:["cig"], check:s=>s.cig>=5000000},
+			{id:'cig_10kk', cat:'cig_hoard', name:'Легенда сухарни',     pts:10, threshold:10000000, statPath:["cig"], check:s=>s.cig>=10000000},
 
 			// Рубли (накопить, текущий баланс)
 			{id:'coin_8',    cat:'coins_hoard', name:'Мелочь',                 pts:1,  threshold:8, statPath:["coinsBalance"], check:s=>s.coinsBalance>=8},
@@ -483,7 +488,11 @@ export default class Achievements {
 			cardsCombos,
 			pokerLvl,
 			pokerCombos,
-			pokerSpichki:    parseInt(udata['poker_spichki']    || 0),
+			// 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+			// poker_spichki/roulette_spichki объединены в одну валюту, канонический столбец —
+			// roulette_spichki (см. poker.php.openBag()). pokerSpichki читает его тоже — иначе
+			// застыл бы навсегда на последнем значении poker_spichki (поле больше не пишется).
+			pokerSpichki:    parseInt(udata['roulette_spichki'] || 0),
 			rouletteLvl,
 			rouletteSpichki: parseInt(udata['roulette_spichki'] || 0),
 

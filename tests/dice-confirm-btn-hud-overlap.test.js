@@ -25,16 +25,18 @@ const src = fs.readFileSync(
 
 console.log('\nTest 1: confirmBtn (ПЕРЕБРОСИТЬ/ПОДТВЕРДИТЬ) вынесена из зоны нижнего HUD (604-720)');
 {
-    assert(/confirmBtn\.x = 604; confirmBtn\.y = 523;/.test(src),
-        'confirmBtn стоит на (604, 523) — совпадает с throwBtn, вне зоны HUD');
+    // 20.10.2026 (редактор позиций): throwBtn/confirmBtn вместе переехали на (624,541) —
+    // по-прежнему делят одну позицию (см. Test 2), по-прежнему вне зоны HUD (604-720 по Y).
+    assert(/confirmBtn\.x = 624; confirmBtn\.y = 541;/.test(src),
+        'confirmBtn стоит на (624, 541) — совпадает с throwBtn, вне зоны HUD');
     assert(!/confirmBtn\.x = 520; confirmBtn\.y = 635;/.test(src),
         'старая позиция (520, 635) внутри зоны HUD убрана');
 }
 
-console.log('\nTest 2: throwBtn (БРОСИТЬ) остаётся на той же позиции — кнопки взаимоисключающие');
+console.log('\nTest 2: throwBtn (БРОСИТЬ) остаётся на той же позиции, что и confirmBtn — кнопки взаимоисключающие');
 {
-    assert(/throwBtn\.x = 604; throwBtn\.y = 523;/.test(src),
-        'throwBtn на (604, 523) — confirmBtn теперь делит с ней ровно то же место');
+    assert(/throwBtn\.x = 624; throwBtn\.y = 541;/.test(src),
+        'throwBtn на (624, 541) — confirmBtn делит с ней ровно то же место');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

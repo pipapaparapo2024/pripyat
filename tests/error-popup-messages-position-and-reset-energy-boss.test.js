@@ -71,8 +71,10 @@ console.log('\nTest 2: каждый ранее "немой" вызов тепе�
     assert((pokerGameSrc.match(/Недостаточно тушёнки!/g) || []).length === 1,
         'dvor-poker-game.js: тушёнка названа явно в обработчике ошибки сервера (код 81)');
     assert(/Недостаточно фишек!/.test(pokerGameSrc), 'dvor-poker-game.js: фишки названы явно (обработчик кода 79)');
-    assert(/Недостаточно голубых спичек!/.test(pokerBagSrc), 'dvor-poker-bag.js: голубые спички названы явно');
-    assert(/Недостаточно голубых спичек!/.test(rouletteBuySrc), 'dvor-roulette-buy.js: голубые спички названы явно (кейс)');
+    // 20.10.2026: короткий заход "спичек покера"/"спичек рулетки" тем же днём отменён — валюты
+    // объединены (см. tests/poker-bag-currency-matches-poker-spichki.test.js), общий текст вернулся.
+    assert(/Недостаточно голубых спичек!/.test(pokerBagSrc), 'dvor-poker-bag.js: общий текст "голубых спичек"');
+    assert(/Недостаточно голубых спичек!/.test(rouletteBuySrc), 'dvor-roulette-buy.js: общий текст "голубых спичек" (кейс)');
     assert(/Недостаточно рублей!/.test(bjSrc), 'dvor-blackjack.js: рубли названы явно');
     assert(/Недостаточно рублей!/.test(bjGameSrc), 'dvor-blackjack-game.js: рубли названы явно');
     // 18.09.2026 (аудит безопасности): dvor-cards.js (СОРВИ КУШ) удалён целиком как мёртвый,

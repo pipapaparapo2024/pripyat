@@ -23,10 +23,13 @@ assert(!dice.includes('1 ИГРА = 1 КРАСНЫЙ ПОИНТ'), 'фраза �
 assert(dice.includes("this._diceTimerTxt.text = 'БЕСПЛАТНЫЙ БРОСОК'") || dice.includes('БЕСПЛАТНЫЙ БРОСОК ЧЕРЕЗ'),
     'поле подписи теперь живое (бесплатный бросок/обратный отсчёт), не пустая заглушка');
 
-console.log('\nTest 2: три награды используют общий белый стиль и шаг с gap 14px');
+console.log('\nTest 2: три награды используют общий белый стиль и единый шаг между рядами');
 const reward = zone.slice(zone.indexOf('_showCpReward(xp, cig, resp){'), zone.indexOf('_showStashPickup(){'));
 assert(reward.includes('const REWARD_FONT_SIZE = 24'), 'единый размер 24px');
-assert(reward.includes('const REWARD_ROW_GAP = 14'), 'зазор 14px');
+// 19.10.2026 (по прямому указанию, редактор позиций — новые координаты для опыта/сухарей,
+// шаг между рядами пересчитан с 38 на 62px): REWARD_ROW_GAP убран, шаг теперь задан напрямую
+// константой REWARD_ROW_STEP (см. oct19-batch-....test.js за полным покрытием этой правки).
+assert(reward.includes('const REWARD_ROW_STEP = 62;'), 'шаг между рядами — 62px');
 assert(reward.includes("fill:'#ffffff'"), 'белый цвет');
 assert((reward.match(/new PIXI\.Text\([^\n]+REWARD_STYLE\)/g) || []).length === 3,
     'XP, сигареты и уважение используют общий стиль');

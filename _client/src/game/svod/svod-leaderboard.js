@@ -82,8 +82,12 @@ export function attachSvodLeaderboard(proto){
         // Только для недельного топа урона: до ближайшего понедельника 00:00 по Москве.
         // Координаты заданы пользователем для блока на вкладке «Топ по урону».
         if(tabCfg.cat === 0){
+            // 18.10.2026 (по прямому указанию — "шрифт во вкладке Сводка как на картинке 3":
+            // Southbank LT Regular): fontWeight:'bold' убран — в проекте зарегистрирован только
+            // один (Regular) файл шрифта (fonts.css), bold браузер синтезировал сам (fake-bold),
+            // что и не совпадало с референсом.
             const resetTxt = new PIXI.Text('', {
-                fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', fontWeight:'bold', align:'center',
+                fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', align:'center',
             });
             resetTxt.anchor.set(0.5, 0);
             resetTxt.x = 462; resetTxt.y = 496;
@@ -164,7 +168,9 @@ export function attachSvodLeaderboard(proto){
             // Координаты ниже — точный снимок пользователя через редактор позиций (17.09.2026),
             // применены одинаково к каждой строке пула. X теперь = центр блока «место»
             // (см. CELL_BLOCKS выше) — anchor.x=0.5 центрирует число по горизонтали внутри блока.
-            const placeTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:19, fill:'#e8d9b8', fontWeight:'bold' });
+            // 18.10.2026 (по прямому указанию, снято пипеткой с картинки 2): место игрока —
+            // #b9a693 (отдельный цвет от остальных колонок строки).
+            const placeTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:19, fill:'#b9a693' });
             placeTxt.anchor.set(0.5, 0);
             placeTxt.x = centerX(CELL_BLOCKS.place); placeTxt.y = 6;
             row.addChild(placeTxt);
@@ -203,8 +209,10 @@ export function attachSvodLeaderboard(proto){
             // 25.09.2026 (по прямому указанию — "ники игроков уменьши на их фонт-сайз на 2
             // пикселя"): 15 → 13, общая строка-пул для всех вкладок Сводки (Общий топ/Друзья/
             // Топ по урону/Топ по авторитету/Топ по достижениям — одна и та же функция).
+            // 18.10.2026 (по прямому указанию, снято пипеткой с картинки 1): имя/уровень/значение
+            // (достижения, урон, авторитет) — #c5c5c5, отдельно от цвета места (см. placeTxt).
             const nameTxt = new PIXI.Text('', {
-                fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff',
+                fontFamily:'Southbank LT', fontSize:12, fill:'#c5c5c5',
                 align:'center',
             });
             nameTxt.anchor.set(0.5, 0);
@@ -213,14 +221,14 @@ export function attachSvodLeaderboard(proto){
 
             // «Уровень» — центр блока «уровень» (см. CELL_BLOCKS). Цвет/шрифт — редактор позиций
             // 19.09.2026 (было ОЦЕНКОЙ по заголовку «УРОВЕНЬ» в фоне панели — #c9a877/436,9).
-            const levelTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:15, fill:'#ffffff' });
+            const levelTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:15, fill:'#c5c5c5' });
             levelTxt.anchor.set(0.5, 0);
             levelTxt.x = centerX(CELL_BLOCKS.level); levelTxt.y = 11;
             row.addChild(levelTxt);
 
             // Значение (урон/авторитет/очки достижений) — раньше было право-выровнено (anchor 1,0)
             // у правого края ячейки; теперь центрируется в своём блоке «урон авторитет».
-            const valTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:16, fill:'#ffcc44', fontWeight:'bold' });
+            const valTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:16, fill:'#c5c5c5' });
             valTxt.anchor.set(0.5, 0);
             valTxt.x = centerX(CELL_BLOCKS.value); valTxt.y = 9; valTxt.scale.set(1.000);
             row.addChild(valTxt);

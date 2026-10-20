@@ -35,6 +35,17 @@ export function attachZoneScreen(proto){
 		this._closeAllPanels();
 		this._startZoneAmbient();
 
+		// 18.10.2026 (баг найден по живому репорту — "серый прямоугольник на главном экране,
+		// редактор позиций его не видит"): Зона — единственный экран, который кладёт себя в
+		// root.layer1_mc НАПРЯМУЮ (минуя home.openScreen()/home.current_screen, см. карту
+		// других экранов — dvor/bosses/vassilich/gangs/hapuga/bot/battlepass/top/zadaniya все
+		// идут через home.openScreen(this.win)). Если открыть Зону, а потом нажать на кнопку
+		// ХУДа, ведущую на ОДИН ИЗ ТЕХ экранов (не через собственную кнопку выхода Зоны) —
+		// home.openScreen() ничего не знает про _zoneWin и не прячет его: он остаётся
+		// visible=true ПОД новым экраном, а когда тот потом закрывается — вылезает обратно на
+		// главном экране как мёртвый фон. Симметричный фикс — см. home.openScreen() ниже.
+		if(window.home) home.closeScreen();
+
 		if(window.zone && typeof zone._preloadLocationAssets === 'function'){
 			zone._preloadLocationAssets();
 		}
@@ -137,12 +148,15 @@ export function attachZoneScreen(proto){
 		// (тюнингованный под другой слот) снят — карточка временно рендерится по общей
 		// формуле, как остальные 4. Если визуально «поедет» — перепроверить через редактор
 		// позиций (это ожидаемо, геометрия слота реально изменилась, не потерян старый фикс).
+		// 18.10.2026 (по прямому указанию — новые файлы локаций, переименованы с суффиксом
+		// "v2" намеренно: чтобы VK/браузер не отдавали закешированную старую картинку под тем
+		// же именем файла, см. тот же приём у "рулетка колесо v2.png"/"блекджек фон v2.png").
 		const LOCATIONS = [
-			{ file: Z + 'кордон.png',   locIdx: 0 },
-			{ file: Z + 'свалка.png',   locIdx: 1 },
-			{ file: Z + 'долина.png',   locIdx: 2 },
-			{ file: Z + 'Агропром.png', locIdx: 3 },
-			{ file: Z + 'янтарь.png',   locIdx: 4 },
+			{ file: Z + 'зона локация кордон v2.png',   locIdx: 0 },
+			{ file: Z + 'зона локация свалка v2.png',   locIdx: 1 },
+			{ file: Z + 'зона локация долина v3.png',   locIdx: 2, scaleBump: 0.004 },
+			{ file: Z + 'зона локация агропром v2.png', locIdx: 3 },
+			{ file: Z + 'зона локация янтарь v3.png',   locIdx: 4 },
 		];
 		const TOTAL_LOCS = LOCATIONS.length;
 
@@ -157,7 +171,11 @@ export function attachZoneScreen(proto){
 		// под кнопки вкладок ('зона актив.png'/'скоро зона.png'), снизу стрелки оказываются
 		// поверх списка"): верхняя граница маски опущена вниз на 12px, нижняя — поднята вверх
 		// на 12px (итоговое окно показа сузилось на 24px суммарно, не просто сдвинулось).
-		const VIEW_TOP_TRIM = 12, VIEW_BOTTOM_TRIM = 12;
+		// 17.10.2026 (по прямому указанию — "нижнюю часть блока, где прокручиваются локации,
+		// подсократи снизу ещё на 6 пикселей"): VIEW_BOTTOM_TRIM 12 → 18.
+		// 17.10.2026 (по прямому указанию, повторный репорт со скриншотом — карусель всё ещё
+		// налезает сверху на плашки "ЗОНЫ"/"СКОРО"): VIEW_TOP_TRIM 12 → 24 (ещё -12px сверху).
+		const VIEW_TOP_TRIM = 24, VIEW_BOTTOM_TRIM = 18;
 		const VIEW_Y = 120 + VIEW_TOP_TRIM;
 		const VIEW_H = PER_LOC_STEP * 2 + VIEW_BOTTOM_PADDING - VIEW_TOP_TRIM - VIEW_BOTTOM_TRIM;
 		const SLOT_H = PER_LOC_STEP;
@@ -200,7 +218,10 @@ export function attachZoneScreen(proto){
 			// сторон, из-за чего при единственном общем множителе ширина карточек плавала
 			// (кордон/свалка/долина/янтарь ~4.25-4.35, Агропром 4.0). width/height растягивают
 			// НЕЗАВИСИМО — все карточки теперь строго 936×220 × 0.98, как показал пользователь.
-			const _applyCardScale = () => { spr.width = CARD_TARGET_W; spr.height = CARD_TARGET_H; };
+			// 18.10.2026 (по прямому указанию — "у карточки долина увеличить скейл на 0.004"):
+			// точечная добавка поверх общего CARD_TARGET_W/H, только для этой одной локации.
+			const _scaleBump = 1 + (loc.scaleBump || 0);
+			const _applyCardScale = () => { spr.width = CARD_TARGET_W * _scaleBump; spr.height = CARD_TARGET_H * _scaleBump; };
 			if(tex.baseTexture.valid) _applyCardScale();
 			else tex.baseTexture.once('loaded', _applyCardScale);
 			group.addChild(spr);
@@ -326,13 +347,7 @@ export function attachZoneScreen(proto){
 		exitBtn.interactive = true; exitBtn.buttonMode = true;
 		exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
 		exitBtn.on('pointerout',  ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
-		exitBtn.on('pointerdown', ()=>{
-			clearInterval(this._zoneTimerInterval);
-			this._zoneTimerInterval = null;
-			win.visible = false;
-			this.popHud('zone');
-			this._stopZoneAmbient();
-		});
+		exitBtn.on('pointerdown', ()=>this._closeZoneScreen());
 		win.addChild(exitBtn);
 
 		this._zoneWin = win;
@@ -374,6 +389,20 @@ export function attachZoneScreen(proto){
 
 		// Скрываем компас когда загрузится фон (18.09.2026 — единый фон для всех локаций)
 		this._compassWaitTex(ZONE_BG);
+	};
+
+	// 18.10.2026 (вынесено из инлайн-обработчика exitBtn — тот же баг-класс "серый
+	// прямоугольник на главном экране", см. комментарий в начале _openZoneScreen выше):
+	// теперь переиспользуется и как обычный выход по кнопке, и как защитный вызов из
+	// home.openScreen() на случай, если Зона была открыта, а закрыли её переходом на другой
+	// экран, а не собственной кнопкой выхода. no-op, если Зона и так не открыта/уже скрыта.
+	proto._closeZoneScreen = function(){
+		if(!this._zoneWin || !this._zoneWin.visible) return;
+		clearInterval(this._zoneTimerInterval);
+		this._zoneTimerInterval = null;
+		this._zoneWin.visible = false;
+		this.popHud('zone');
+		this._stopZoneAmbient();
 	};
 
 	// 24.09.2026 (по прямому указанию, см. большой комментарий в _openZoneScreen выше) —

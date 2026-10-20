@@ -19,11 +19,11 @@
         "four_of_a_kind":  {"lbl": "КАРЕ",                                        "type": "stew",             "amt": 60,  "sp": 0,   "id": "kare"},
         "full_house":      {"lbl": "ФУЛЛ-ХАУЗ",               "type": "auto",             "amt": 40,  "sp": 0,   "id": "fh"},
         "flush":           {"lbl": "ФЛЕШ",                                        "type": "stew",             "amt": 15,  "sp": 0,   "id": "flush"},
-        "straight":        {"lbl": "СТРИТ",                                  "type": "poker_spichki", "amt": 300, "sp": 300, "id": "straight"},
-        "three_of_a_kind": {"lbl": "ТРОЙКА",                            "type": "poker_spichki", "amt": 300, "sp": 300, "id": "trips"},
+        "straight":        {"lbl": "СТРИТ",                                  "type": "roulette_spichki", "amt": 300, "sp": 300, "id": "straight"},
+        "three_of_a_kind": {"lbl": "ТРОЙКА",                            "type": "roulette_spichki", "amt": 300, "sp": 300, "id": "trips"},
         "two_pair":        {"lbl": "ДВЕ ПАРЫ",                     "type": "gun",              "amt": 5,   "sp": 0,   "id": "2pair"},
         "pair":            {"lbl": "ПАРА",                                        "type": "coins",            "amt": 20,  "sp": 0,   "id": "pair"},
-        "high_card":       {"lbl": "Старшая карта", "type": "poker_spichki", "amt": 50,  "sp": 50,  "id": "hc"}
+        "high_card":       {"lbl": "Старшая карта", "type": "roulette_spichki", "amt": 50,  "sp": 50,  "id": "hc"}
     },
     "play_cost_stew": 5,
     "daily_stew_limit": 25,

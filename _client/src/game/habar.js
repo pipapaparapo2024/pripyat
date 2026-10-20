@@ -83,7 +83,10 @@ export default class Habar{
         win.addChild(bl);
 
         // Фон
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар страница.png'));
+        // 18.10.2026 (по прямому указанию — "для хабара я достал новый файл"): v2 → v3,
+        // переименовано против кеша VK/браузера на то же имя файла (тот же приём, что у
+        // "рулетка колесо v2.png"/"зона локация ... v3.png").
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар страница v3.png'));
         bg.y = 36;
         win.addChild(bg);
 

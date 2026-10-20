@@ -131,11 +131,12 @@ console.log('\nTest 5: zone_screen.js — индивидуальный override 
     // 22.09.2026 (повторная правка того же дня, по прямому указанию — одинаковый размер всех
     // карточек): нормализация только высоты оставляла разную ширину — теперь width И height
     // фиксированы (CARD_TARGET_W/H).
-    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H; \};/.test(body),
+    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump; \};/.test(body),
         'масштаб — фиксированные width И height (было: голая CARD_SCALE на все 5, затем только высота)');
 
-    // Агропром по-прежнему в списке локаций — только позиционный override снят, сама локация на месте.
-    assert(/file: Z \+ 'Агропром\.png', locIdx: 3/.test(zoneScreenSrc), 'запись "Агропром" по-прежнему присутствует в LOCATIONS (locIdx=3)');
+    // Агропром по-прежнему в списке локаций — только позиционный override снят, сама локация на
+    // месте (18.10.2026: файл переименован с суффиксом "v2", см. zone-locations-carousel-slide.test.js).
+    assert(/file: Z \+ 'зона локация агропром v2\.png', locIdx: 3/.test(zoneScreenSrc), 'запись "Агропром" по-прежнему присутствует в LOCATIONS (locIdx=3)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

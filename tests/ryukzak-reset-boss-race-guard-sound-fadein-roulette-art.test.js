@@ -58,7 +58,8 @@ console.log('\n1б) ryukzak.js — клиент пересчитывает пр�
     const cbEndIdx = src.indexOf('if(window.iface){ iface.updateUp(); iface.updateNick(); }', cbIdx);
     const cbChunk = src.slice(cbIdx, cbEndIdx !== -1 ? cbEndIdx : cbIdx + 4000);
     assert(/_ryukzakLevelFromPoints\(pointsAfter\)/.test(cbChunk), 'превью уровня пересчитывается по свежим очкам (0 после сброса)');
-    assert(/lvlTxt\.text = 'УРОВЕНЬ РЮКЗАКА : ' \+ resetLevel;/.test(cbChunk), 'текст уровня обновляется на пересчитанный');
+    // 17.10.2026: lvlTxt теперь содержит только число — подпись вшита в новую плашку.
+    assert(/lvlTxt\.text = String\(resetLevel\);/.test(cbChunk), 'текст уровня обновляется на пересчитанный');
     assert(/_renderProgress\(resetLevel\)/.test(cbChunk), 'прогресс-бар тоже пересчитывается');
     assert(/if\(win\.parent\) root\.layer2_mc\.addChild\(win\);/.test(cbChunk),
         'окно рюкзака поднимается обратно поверх ХУДа (restoreHud() всё ещё кладёт ХУД выше, попап тут больше ни при чём)');
@@ -99,8 +100,11 @@ console.log('\n4) dvor-roulette-minigame.js — реальная графика 
     // единственным файлом и на раскрытом состоянии (просто повёрнутым/поднятым gsap-анимацией,
     // см. tests/roulette-minigame-cup-flip-and-ball.test.js). Файл на диске не удалён (просто
     // не используется), поэтому секция 5 ниже (проверка существования файлов) не трогалась.
-    assert(/'\.\/images\/стаканчик суперигра\.png'/.test(src) && !/Texture\.from\('\.\/images\/стаканчик открытый суперигра\.png'\)/.test(src),
-        '9 кубков в мини-игре используют закрытый файл стаканчика; "открытый" больше не грузится как текстура');
+    // 17.10.2026 (замена сигарет на сухари, 3 дизайна по группам): "стаканчик суперигра.png"
+    // больше не грузится как единая строка './images/стаканчик суперигра.png' — теперь первый
+    // элемент массива CUP_FILES, склеивается с './images/' в коде (см. CUP_FILES[Math.floor(i/3)]).
+    assert(/const CUP_FILES = \[\s*'стаканчик суперигра\.png',/.test(src) && !/Texture\.from\('\.\/images\/стаканчик открытый суперигра\.png'\)/.test(src),
+        '9 кубков в мини-игре используют закрытый файл стаканчика (первый из 3 дизайнов); "открытый" больше не грузится как текстура');
     assert(/TS\.php\('roulette\.claimPrize', \{\}/.test(src), 'ЗАБРАТЬ по-прежнему зовёт roulette.claimPrize (механика не тронута)');
     assert(/TS\.php\('roulette\.openMinigame', \{\}/.test(src), 'РИСКНУТЬ по-прежнему зовёт roulette.openMinigame (механика не тронута)');
     assert(/TS\.php\('roulette\.pickCup', \{idx:i\}/.test(src), 'выбор кубка по-прежнему зовёт roulette.pickCup (механика не тронута)');

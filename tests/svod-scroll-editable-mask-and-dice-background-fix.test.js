@@ -51,29 +51,32 @@ console.log('\nTest 1: svod-scroll.js — маска списка помечен
 
 console.log('\nTest 2: svod-scroll.js — бегунок скролла (17.10.2026: сдвинут на +1px по X, было -1px — пользователь попросил сдвинуть на 2px вправо)');
 {
-    assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1;/.test(svodScrollSrc),
-        'формула позиции бегунка получила "+1" в конце (было "-1")');
+    // 17.10.2026 (тем же днём, повторный репорт только для "Мои достижения"): формула получила
+    // ещё один хвост — + (thumbXAdjust || 0), независимый override только для этой вкладки
+    // (см. svod-achievements.js: trackX+1, thumbXAdjust:-2 — чистый итог -1px у бегунка).
+    assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1 \+ \(thumbXAdjust \|\| 0\);/.test(svodScrollSrc),
+        'формула позиции бегунка получила "+1" в конце (было "-1") и опциональный +(thumbXAdjust||0)');
 }
 
-console.log('\nTest 3: dvor-dice-screen.js — задний фон зариков рендерится тем же способом (BASE+файл, y=15); 02.10.2026 (найдено при разборе полного прогона tests/, см. dice-screen-correct-themed-background.test.js): файл с тех пор переименован на "задний фон зарики новыйй.png" (новая картинка, без дата-комментария с обоснованием, но реально 1280×705 и в предзагрузке) — код рендера (BASE+имя, y=15) не менялся, меняется только проверяемое имя файла');
+console.log('\nTest 3: dvor-dice-screen.js — задний фон зариков рендерится тем же способом (BASE+файл, y=15); 17.10.2026 (замена сигарет на сухари): файл переименован на "двор зарики фон экран.png" (1280×676, высота растянута кодом до 690) — код рендера (BASE+имя, y=15) не менялся, меняется только проверяемое имя файла');
 {
     const diceScreenSrc = readSrc('_client/src/game/dvor/dvor-dice-screen.js');
-    assert(/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'задний фон зарики новыйй\.png'\)\);/.test(diceScreenSrc),
-        'код рендера фона не менялся (BASE+имя файла, Sprite/Texture.from) — указывает на актуальное имя "задний фон зарики новыйй.png"');
+    assert(/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'двор зарики фон экран\.png'\)\);/.test(diceScreenSrc),
+        'код рендера фона не менялся (BASE+имя файла, Sprite/Texture.from) — указывает на актуальное имя "двор зарики фон экран.png"');
     assert(/bg\.y = 15;/.test(diceScreenSrc), 'позиционирование (y=15) не менялось');
 }
 
-console.log('\nTest 4: файл-ассет "задний фон зарики новыйй.png" реально существует на диске и имеет 1280×705');
+console.log('\nTest 4: файл-ассет "двор зарики фон экран.png" реально существует на диске и имеет 1280×676');
 {
     const { execSync } = require('child_process');
-    const imgPath = path.join(root, '_client', 'development', 'images', 'задний фон зарики новыйй.png');
+    const imgPath = path.join(root, '_client', 'development', 'images', 'двор зарики фон экран.png');
     assert(fs.existsSync(imgPath), 'файл существует локально');
     // Проверяем натуральный размер через IHDR-заголовок PNG (offset 16-24) — тот же приём,
     // что уже использовался в этом проекте для чтения PNG-размеров без внешних библиотек.
     const buf = fs.readFileSync(imgPath);
     const w = buf.readUInt32BE(16);
     const h = buf.readUInt32BE(20);
-    assert(w === 1280 && h === 705, `натуральный размер файла остался 1280×705 (получено ${w}×${h})`);
+    assert(w === 1280 && h === 676, `натуральный размер файла остался 1280×676 (получено ${w}×${h})`);
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -343,7 +343,26 @@ let initPreloader = () => {
 				if(scene.renderer.plugins && scene.renderer.plugins.interaction){
 					scene.renderer.plugins.interaction.resolution = targetRes;
 				}
-				console.log('[index.js.resize] renderer.resolution обновлён:', targetRes.toFixed(3), '(dpr=' + dpr + ', cssW=' + Math.round(w) + ')');
+				// 19.10.2026 (повторный репорт того же симптома — "буквы разного размера" — в
+				// НОВОМ попапе покупки валюты, открытом на широком десктопном окне): статическая
+				// PIXI.settings.RESOLUTION (см. блок после initPreloader() ниже по файлу)
+				// выставлялась ОДИН раз при загрузке по формуле от одного только
+				// devicePixelRatio, clamp [2,3] — независимо от реального targetRes здесь. На
+				// широком окне с dpr=1 (обычный десктопный монитор без масштабирования ОС)
+				// targetRes = (w*1)/1280 легко превышает 3 (например, w=3840 → targetRes=3.0,
+				// w>3840 → targetRes>3) — ТОГДА статический клэмп [2,3] оказывается МЕНЬШЕ
+				// реального targetRes, и PIXI.Text/Graphics, созданные ПОЗЖЕ (любой новый попап,
+				// не только самый первый экран), снова рисуются в заниженном разрешении и потом
+				// растягиваются GPU под фактический renderer.resolution — тот же старый баг,
+				// точечно для контента, созданного после первой загрузки. Синхронизируем
+				// PIXI.settings.RESOLUTION с КАЖДЫМ resize() по той же формуле (targetRes),
+				// а не статической догадкой по одному dpr времени старта — запас +0.5, потолок 4
+				// (не раздувать память канвас-текстур на очень широких/retina экранах). Уже
+				// созданный текст не перерисовывается (PIXI.Text re-rasterize только при явном
+				// .resolution на самом объекте) — выигрывают только элементы, созданные ПОСЛЕ
+				// этой точки, что и требуется для попапов, открываемых по ходу игры.
+				PIXI.settings.RESOLUTION = Math.min(4, Math.max(2, targetRes + 0.5));
+				console.log('[index.js.resize] renderer.resolution обновлён:', targetRes.toFixed(3), '(dpr=' + dpr + ', cssW=' + Math.round(w) + ') | PIXI.settings.RESOLUTION синхронизирован:', PIXI.settings.RESOLUTION.toFixed(3));
 			}
 		}
 	}
@@ -442,10 +461,13 @@ PIXI.settings.ROUND_PIXELS = true;
 // Фикс — не трогать каждое место, а поднять БАЗОВЫЙ дефолт resolution для всего НОВОГО текста/
 // Graphics/RenderTexture разом: нижняя граница 2 (renderer.resolution почти всегда ≥1, обычно
 // ближе к 2 на типичном сегодняшнем экране), верхняя граница 3 (не раздувать память канвас-
-// текстур на телефонах с devicePixelRatio>3). Это не идеальная динамическая синхронизация с
-// renderer.resolution (он меняется на лету при каждом resize, а PIXI.Text re-rasterize только
-// при явном выставлении .resolution), а практичный компромисс с большим запасом сверху — после
-// него GPU почти всегда слегка УМЕНЬШАЕТ уже чёткую картинку текста, а не растягивает её из
-// заниженного источника.
+// текстур на телефонах с devicePixelRatio>3).
+//
+// 19.10.2026 (повторный репорт того же симптома на НОВОМ контенте — см. полный разбор в
+// resize() выше, где теперь PIXI.settings.RESOLUTION пересчитывается заново при КАЖДОМ resize
+// по формуле от реального targetRes, а не только здесь по одному dpr): эта статическая строка
+// остаётся как значение ДО самого первого resize() (на случай, если какой-то PIXI.Text/Graphics
+// создаётся раньше первого вызова resize — подстраховка), но реальным источником истины для
+// всего, что создаётся ПОСЛЕ старта игры, является блок в resize().
 PIXI.settings.RESOLUTION = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
 console.log('[index.js] итоговая PIXI.settings.RESOLUTION:', PIXI.settings.RESOLUTION, '(devicePixelRatio=' + (window.devicePixelRatio || 1) + ') — базовая плотность рендера текста/Graphics поднята, чтобы устранить неровные буквы на мелком шрифте');

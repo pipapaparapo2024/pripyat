@@ -72,10 +72,9 @@ export function attachDiceGame(proto){
 
         // Подсветка выигранной строки с прошлой партии должна висеть до этого самого момента
         // (по прямому указанию) — гасим её явно здесь, при старте НОВОЙ партии, а не по таймеру.
-        if(this._diceComboHighlight){
-            if(window.gsap) gsap.killTweensOf(this._diceComboHighlight);
-            this._diceComboHighlight.visible = false;
-        }
+        // 20.10.2026: _diceComboHighlight был заменён массивом независимых маркеров
+        // (_diceComboHighlights, см. dvor-dice-screen.js) — используем общий хелпер.
+        if(typeof this._diceHideComboHighlight === 'function') this._diceHideComboHighlight();
 
         this._diceStarting = true;
         console.log('[dvor-dice._playDiceNewScreen] КЛИК бросить | performance.now()=' + performance.now().toFixed(1) + 'ms Date.now()=' + Date.now());

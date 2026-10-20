@@ -30,8 +30,12 @@ console.log('\nTest 1: персонаж создаётся в _build() с тем
     assert(/const CHAR_DX = -224, CHAR_DY = -4;/.test(src), 'тот же сдвиг (-224,-4), что и в home.js для фона 1280×604');
     // 24.09.2026 (замена персонажа на всех 4 доп. экранах, по прямому указанию): hata.js тоже
     // переведён на новый файл персонажа — pers.png здесь больше не используется.
-    assert(/const persSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/персонаж который сидит\.png'\)\);/.test(src),
-        'создаётся спрайт "персонаж который сидит.png" (новая текстура после замены 24.09.2026)');
+    // 18.10.2026: текстура вынесена в переменную persTex (мипмап-фикс, см.
+    // character-sprite-mipmap-fix.test.js) — спрайт теперь создаётся из неё, не инлайново.
+    assert(/const persTex = PIXI\.Texture\.from\('\.\/images\/персонаж который сидит\.png'\);/.test(src),
+        'текстура "персонаж который сидит.png" создаётся (новая текстура после замены 24.09.2026)');
+    assert(/const persSpr = new PIXI\.Sprite\(persTex\);/.test(src),
+        'спрайт создаётся из этой текстуры');
     assert(/persSpr\.x = 730 \+ CHAR_DX; persSpr\.y = 208 \+ CHAR_DY;/.test(src),
         'позиция персонажа = те же базовые координаты (730,208), что в home.js/shmot_shop.js, минус сдвиг');
     assert(/this\._persSpr = persSpr;/.test(src), 'ссылка сохранена как this._persSpr');

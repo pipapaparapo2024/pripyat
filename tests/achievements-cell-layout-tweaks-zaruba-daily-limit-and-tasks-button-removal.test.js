@@ -39,7 +39,9 @@ const profileSrc = readSrc('_client/src/game/shell/overlays/player_profile.js');
 console.log('\nTest 1: svod-achievements.js — иконка сдвинута (ICON_X=54, было 60)');
 {
     assert(/const ICON_X = 54;/.test(achSrc), 'ICON_X = 54 объявлен');
-    assert(/c\._iconSpr\.x = ICON_X; c\._iconSpr\.y = ICON_CENTER_Y;/.test(achSrc), 'иконка-спрайт использует ICON_X');
+    // 17.10.2026 (повторное указание тем же днём): y вернулась на ICON_CENTER_Y (отменяет -1).
+    assert(/c\._iconSpr\.x = ICON_X - 1; c\._iconSpr\.y = ICON_CENTER_Y;/.test(achSrc),
+        'иконка-спрайт использует ICON_X/ICON_CENTER_Y (17.10.2026: -1 по X, Y вернулась на ICON_CENTER_Y)');
     assert(/iconTxt\.x = ICON_X; iconTxt\.y = ICON_CENTER_Y;/.test(achSrc), 'фолбэк-эмодзи иконка тоже использует ICON_X (единая позиция для обоих режимов)');
 }
 

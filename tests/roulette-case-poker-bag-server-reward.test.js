@@ -78,11 +78,12 @@ console.log('\nTest 3: dvor-poker-bag.js — экран результата О�
     // 25.09.2026 (регресс найден повторным прогоном тестов): следом добавился третий параметр
     // hasTatu (тату-дроп тоже переехал на сервер) — сигнатура и вызов выросли ещё на один
     // аргумент, см. casino-bag-tatu-shmot-server-authoritative.test.js.
-    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu\)\{/.test(pokerBagSrc),
-        '_openPokerBagOpenedScreen принимает (reward, clientRewards, hasTatu) от сервера');
+    // 20.10.2026: сигнатура выросла ещё раз, до (reward, clientRewards, hasTatu, shmotItemId).
+    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu, shmotItemId\)\{/.test(pokerBagSrc),
+        '_openPokerBagOpenedScreen принимает (reward, clientRewards, hasTatu, shmotItemId) от сервера');
     assert(/const exp\s*=\s*reward\.exp;/.test(pokerBagSrc), 'exp берётся из reward.exp, не катается заново');
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu\);/.test(pokerBagSrc),
-        'вызывающий код передаёт res.reward/res.clientRewards из ответа poker.openBag');
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(pokerBagSrc),
+        'вызывающий код передаёт res.reward/res.clientRewards/res.shmotItemId из ответа poker.openBag');
     assert(!/this\._give\('exp',\s*exp\);/.test(pokerBagSrc), 'кнопка "Забрать" больше не вызывает _give для exp (уже начислено сервером — иначе задвоение)');
     assert(!/this\._give\('coins',\s*coins\);/.test(pokerBagSrc), 'кнопка "Забрать" больше не вызывает _give для coins (иначе задвоение)');
     assert(/cr\.type === 'battlepass_xp'/.test(pokerBagSrc), 'battlepass_xp из clientRewards применяется по нажатию "Забрать"');
@@ -91,12 +92,13 @@ console.log('\nTest 3: dvor-poker-bag.js — экран результата О�
 console.log('\nTest 4: dvor-roulette-buy.js — тот же паттерн для экрана кейса');
 {
     assert(!/this\._rand\(1000, 2000\)/.test(roulBuySrc), 'this._rand(1000,2000) для exp убран из клиента');
-    assert(/proto\._openRouletteCaseOpenedScreen = function\(hasTatu, reward, clientRewards\)\{/.test(roulBuySrc),
-        '_openRouletteCaseOpenedScreen принимает (hasTatu, reward, clientRewards)');
+    // 20.10.2026: сигнатура выросла ещё раз, до (hasTatu, reward, clientRewards, shmotItemId).
+    assert(/proto\._openRouletteCaseOpenedScreen = function\(hasTatu, reward, clientRewards, shmotItemId\)\{/.test(roulBuySrc),
+        '_openRouletteCaseOpenedScreen принимает (hasTatu, reward, clientRewards, shmotItemId)');
     // 25.09.2026 (регресс найден повторным прогоном тестов): вызов передаёт !!res.hasTatu
     // (булево приведение), не голую переменную hasTatu — сверено с фактическим кодом.
-    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\]\);/.test(roulBuySrc),
-        'вызывающий код передаёт res.reward/res.clientRewards из ответа roulette.openCase');
+    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId\);/.test(roulBuySrc),
+        'вызывающий код передаёт res.reward/res.clientRewards/res.shmotItemId из ответа roulette.openCase');
     assert(!/this\._give\('exp',\s*exp\);/.test(roulBuySrc), 'кнопка "Забрать" больше не вызывает _give для exp (задвоение)');
     assert(/cr\.type === 'battlepass_xp'/.test(roulBuySrc), 'battlepass_xp из clientRewards применяется по нажатию "Забрать"');
 }

@@ -98,8 +98,9 @@ console.log('\nTest 4: universal_pos_editor.js — редактор теперь
 
 console.log('\nTest 5: dvor-dice-screen.js — позиция/поворот счётчика красных поинтов сняты пользователем');
 {
-    assert(/pointsTxt\.x = 183; pointsTxt\.y = 443; pointsTxt\.rotation = 3 \* Math\.PI \/ 180;/.test(diceScreenJs),
-        '_dicePointsTxt — x=183,y=443, поворот 3° (21.09.2026: скорректирован пользователем с 4° до 3°)');
+    // 20.10.2026: новые координаты со снимка редактора позиций (x:190,y:462), поворот не менялся.
+    assert(/pointsTxt\.x = 190; pointsTxt\.y = 462; pointsTxt\.rotation = 3 \* Math\.PI \/ 180;/.test(diceScreenJs),
+        '_dicePointsTxt — x=190,y=462, поворот 3° (не менялся)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

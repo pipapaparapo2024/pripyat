@@ -31,14 +31,31 @@ console.log('\nTest 1: PIXI.settings.RESOLUTION выставляется явн�
         'формула клэмпит devicePixelRatio в диапазон [2, 3]');
 }
 
-console.log('\nTest 2: строка идёт ПОСЛЕ PIXI.settings.ROUND_PIXELS (тот же блок глобальных настроек PIXI, до любого window.scene/initPreloader)');
+console.log('\nTest 2: статическая строка (подстраховка ДО первого resize()) идёт ПОСЛЕ PIXI.settings.ROUND_PIXELS');
 {
+    // 19.10.2026 (по прямому указанию, повторный репорт "буквы разного размера" — теперь на
+    // НОВОМ контенте, созданном после старта игры): добавлено ВТОРОЕ место — внутри resize()
+    // (см. Test 2b ниже), которое синхронизирует RESOLUTION с реальным targetRes при каждом
+    // resize, а не только статической догадкой по dpr при загрузке. Эта строка (старая,
+    // статическая) по-прежнему остаётся как подстраховка ДО самого первого resize() — ищем её
+    // СПЕЦИФИЧНО по формуле с devicePixelRatio, а не просто "первое вхождение" (которое теперь
+    // находится в resize(), появляющемся раньше в файле).
     const roundIdx = indexJs.indexOf('PIXI.settings.ROUND_PIXELS = true;');
-    const resIdx = indexJs.indexOf('PIXI.settings.RESOLUTION =');
-    assert(roundIdx > -1 && resIdx > roundIdx, 'RESOLUTION выставляется после ROUND_PIXELS в том же файле');
+    const staticResIdx = indexJs.indexOf('PIXI.settings.RESOLUTION = Math.min(3, Math.max(2, window.devicePixelRatio || 1));');
+    assert(roundIdx > -1 && staticResIdx > -1 && staticResIdx > roundIdx,
+        'статическая RESOLUTION (по devicePixelRatio) выставляется после ROUND_PIXELS в том же файле');
 }
 
-console.log('\nTest 3: нет случайного дубликата — PIXI.settings.RESOLUTION выставляется только один раз во всём _client/src');
+console.log('\nTest 2b: внутри resize() RESOLUTION синхронизируется с реальным targetRes (19.10.2026)');
+{
+    const resizeIdx = indexJs.indexOf('if(window.scene && scene.renderer){');
+    const resizeEnd = indexJs.indexOf('\n\t}', resizeIdx);
+    const block = indexJs.slice(resizeIdx, resizeEnd);
+    assert(/PIXI\.settings\.RESOLUTION = Math\.min\(4, Math\.max\(2, targetRes \+ 0\.5\)\);/.test(block),
+        'RESOLUTION пересчитывается от targetRes на каждом resize(), а не только статически при загрузке');
+}
+
+console.log('\nTest 3: PIXI.settings.RESOLUTION выставляется РОВНО в двух местах во всём _client/src (статика + resize-синхронизация)');
 {
     const gameDir = path.join(root, '_client', 'src');
     function walk(dir) {
@@ -56,7 +73,7 @@ console.log('\nTest 3: нет случайного дубликата — PIXI.s
         const matches = content.match(/PIXI\.settings\.RESOLUTION\s*=/g);
         if (matches) count += matches.length;
     }
-    assert(count === 1, `ровно 1 место выставляет PIXI.settings.RESOLUTION (найдено: ${count})`);
+    assert(count === 2, `ровно 2 места выставляют PIXI.settings.RESOLUTION — статика + resize() (найдено: ${count})`);
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

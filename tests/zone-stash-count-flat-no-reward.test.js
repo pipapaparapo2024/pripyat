@@ -46,7 +46,8 @@ console.log('\n1) zone.php.fillCheckpoint() — плоский stash_count, бе
     const start = zonePhp.indexOf('function fillCheckpoint(){');
     const end   = zonePhp.indexOf('function captureLocation(){');
     const body  = zonePhp.slice(start, end);
-    assert(/if\(mt_rand\(1, 100\) <= 15\)\{/.test(body), '15% шанс выпадения не изменился');
+    // 20.10.2026 (по прямому указанию — "сделай шанс не 15%, допустим 7%"): было 15%.
+    assert(/if\(mt_rand\(1, 100\) <= 7\)\{/.test(body), '7% шанс выпадения (было 15%, уменьшено 20.10.2026)');
     assert(/\$user\['stash_count'\] = \$this->ops->i\(\$user, 'stash_count'\) \+ 1;/.test(body),
         'плоский инкремент stash_count на каждую находку');
     assert(!/chosenKey|stashProgress|locCfg\['stash'\]\['keys'\]/.test(body),
@@ -111,13 +112,22 @@ console.log('\n6) game/legacy/ — папка удалена целиком (28.
     assert(!fs.existsSync(path.join(root, '_client/src/game/legacy')), 'папка _client/src/game/legacy больше не существует');
 }
 
-console.log('\n7) users.php — whitelist и default-user: stash_count (новое), stash_data остаётся ТОЛЬКО за achievements.js');
+console.log('\n7) users.php — whitelist и default-user: stash_count УБРАН (19.10.2026, та же дыра, что у exp), stash_data остаётся ТОЛЬКО за achievements.js');
 {
     // 25.09.2026 (регресс найден повторным прогоном тестов): 'roulette_winner' убран из этой же
     // строки whitelist отдельным фиксом (см. roulette-winner-nickname-server-authoritative.test.js)
-    // — теперь его пишет только сервер. stash_data/stash_count по-прежнему в whitelist.
-    assert(/'stash_data','stash_count',/.test(usersSrc), 'оба поля в whitelist — stash_data (achievements) и stash_count (zone)');
-    assert(/'stash_count'=>'0'/.test(usersSrc), 'stash_count имеет дефолт \'0\' для нового игрока');
+    // — теперь его пишет только сервер.
+    // 19.10.2026 (расследование "Антикризиса", см. большой коммент у $allowed в users.php):
+    // 'stash_count' оказался в whitelist ДВАЖДЫ (дубль) и параллельно писался сервером
+    // (zone.php/poker.php/roulette.php через Gameops::add()) — тот же класс дыры, что у exp.
+    // Убран из client-writable whitelist целиком, дев-кнопки переведены на devGrantCurrency().
+    // 'stash_data' (другое поле — JSON-объект тайника, не счётчик) остаётся не затронутым.
+    assert(/'stash_data',/.test(usersSrc), "'stash_data' остаётся в whitelist (achievements)");
+    const allowedBlock = usersSrc.match(/\$allowed = \[[\s\S]*?\n            \];/)[0].replace(/\/\/.*$/gm, '');
+    assert(!/'stash_count'/.test(allowedBlock), "'stash_count' УБРАНО из whitelist (как значение массива, не в комментарии)");
+    // Дефолт нового игрока по-прежнему '0' — это НЕ про client-writable whitelist, это начальное
+    // значение колонки в БД (тот же дефолт остаётся нужен независимо от whitelist).
+    assert(/'stash_count'=>'0'/.test(usersSrc), "stash_count имеет дефолт '0' для нового игрока (независимо от whitelist)");
 }
 
 console.log('\n8) dev_panel.js — сброс аккаунта обнуляет stash_count (было stash_data + zone_stash_progress), и не вызывает удалённый zone._loadStash()');

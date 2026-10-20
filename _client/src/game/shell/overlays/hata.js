@@ -126,7 +126,13 @@ export default class Hata {
         const CHAR_DX = -224, CHAR_DY = -4;
         // 24.09.2026 (по прямому указанию — "в пропущенных местах тоже замени на новый файл"):
         // та же замена, что и в home.js — pers.png -> "персонаж который сидит.png".
-        const persSpr = new PIXI.Sprite(PIXI.Texture.from('./images/персонаж который сидит.png'));
+        // 18.10.2026 (тот же фикс, что в home.js/player_profile.js/shmot_shop.js/base.js —
+        // пропущен здесь при правке 17.10.2026, см. докблок в home.js): без мипмапов персонаж
+        // уменьшается 1224×1737 → 273×389 без сглаживания даже на WebGL2.
+        const persTex = PIXI.Texture.from('./images/персонаж который сидит.png');
+        persTex.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        persTex.baseTexture.update();
+        const persSpr = new PIXI.Sprite(persTex);
         persSpr.anchor.set(0, 0);
         persSpr.x = 730 + CHAR_DX; persSpr.y = 208 + CHAR_DY;
         persSpr.width = 273; persSpr.height = 389;
@@ -148,6 +154,8 @@ export default class Hata {
         // сцена использует тот же фон 1280×604 и тот же сдвиг CHAR_DX/CHAR_DY. Раньше их
         // тут не было вообще — добавлены были только на home.js.
         const rightHandPhalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+        rightHandPhalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandPhalanxSpr.texture.baseTexture.update();
         rightHandPhalanxSpr.anchor.set(0, 0);
         rightHandPhalanxSpr.x = 634;
         rightHandPhalanxSpr.y = 441;
@@ -170,6 +178,8 @@ export default class Hata {
         // экранных координатах (730+CHAR_DX, 208+CHAR_DY), поэтому то же смещение даёт
         // те же 515,327.
         const leftForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левое предплечье.png'));
+        leftForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftForearmSpr.texture.baseTexture.update();
         leftForearmSpr.anchor.set(0, 0);
         leftForearmSpr.x = 730 + 8 + CHAR_DX; leftForearmSpr.y = 208 + 120 + CHAR_DY;
         leftForearmSpr.scale.set(0.197);
@@ -177,12 +187,16 @@ export default class Hata {
         this._leftForearmSpr = leftForearmSpr;
 
         const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
+        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandSpr.texture.baseTexture.update();
         rightHandSpr.anchor.set(0, 0);
         rightHandSpr.x = 862 - 8 + CHAR_DX; rightHandSpr.y = 373 + CHAR_DY;
         win.addChild(rightHandSpr);
         this._charRightHandSpr = rightHandSpr;
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
+        leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        leftHandSpr.texture.baseTexture.update();
         leftHandSpr.anchor.set(0, 0);
         leftHandSpr.x = 756 + 2 + CHAR_DX; leftHandSpr.y = 389 + CHAR_DY;
         win.addChild(leftHandSpr);
@@ -313,6 +327,10 @@ export default class Hata {
             const eq = (shmot.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
             if(eq && eq.imgFile){
                 spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);
+                // 18.10.2026 (тот же фикс, что в home.js.updateClothes()/shmot_shop.js/
+                // player_profile.js — см. докблок в character-sprite-mipmap-fix.test.js).
+                spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                spr.texture.baseTexture.update();
                 spr.visible = true;
                 spr.x = base.x + (eq.manDx || 0);
                 spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
@@ -394,9 +412,9 @@ export default class Hata {
     }
 
     _fmtCig(n){
-        if(n >= 1000000) return (n/1000000) + ' кк сигарет';
-        if(n >= 1000)    return (n/1000) + ' тыс. сигарет';
-        return n + ' сигарет';
+        if(n >= 1000000) return (n/1000000) + ' кк сухарей';
+        if(n >= 1000)    return (n/1000) + ' тыс. сухарей';
+        return n + ' сухарей';
     }
 
     _getOwned(){

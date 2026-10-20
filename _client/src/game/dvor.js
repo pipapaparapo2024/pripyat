@@ -173,12 +173,12 @@ export default class Dvor{
             const d = helper.safeParseJSON(udata['dvor_daily_sigs'], {});
             const lastMs = Array.isArray(d.lastMs) ? d.lastMs : [];
             const now = Date.now();
-            return [0,1,2,3].map(i => {
+            return [0,1,2].map(i => {
                 const last = parseInt(lastMs[i]) || 0;
                 return last > 0 && (now - last) < SIG_COLLECT_COOLDOWN_MS;
             });
         } catch(e){}
-        return [false,false,false,false];
+        return [false,false,false];
     }
 
     // 26.09.2026 (перенос на сервер — server/core/controllers/dvor.php.collectCig(), закрывает
@@ -268,7 +268,7 @@ export default class Dvor{
         const txt = new PIXI.Text('+30 ', style);
         txt.anchor.set(0, 0.5);
 
-        const icon = new PIXI.Sprite(PIXI.Texture.from('./images/боевка награда Сиги.png'));
+        const icon = new PIXI.Sprite(PIXI.Texture.from('./images/боевка награда сухари.png'));
         icon.anchor.set(0, 0.5);
         icon.width = 50;
         icon.height = 50;
@@ -308,12 +308,22 @@ export default class Dvor{
         ];
     }
 
+    // 17.10.2026 (по прямому указанию — замена сигарет на сухари, модерация VK): было 4
+    // облачка (cloud_sig_1-4.png), новых файлов под сухари прислали только 3 — четвёртая
+    // позиция убрана целиком (не дублируем одну картинку на 2 позиции). Сервер (dvor.php.
+    // collectCig()) по-прежнему принимает idx 0-3 — третий слот (idx=3) просто больше не
+    // используется клиентом, это безопасно (сервер не требует использовать все 4).
+    // Координаты продиктованы как финальное расположение на экране — рендер ниже
+    // (_buildLobby) всегда добавляет +28 к y (унаследовано от старых cloud_sig_*), поэтому
+    // здесь y уже уменьшен на 28, чтобы итоговая позиция совпала с продиктованной.
     _SIGS(){
+        // 18.10.2026 (по прямому указанию, снимок редактора позиций — x/y сняты с реального
+        // спрайта на экране): здесь хранятся координаты ДО компенсации +28 (см. spr.y = s.y + 28
+        // ниже) — та же конвенция, что уже была у предыдущих координат этого массива.
         return [
-            { file:'cloud_sig_1.png', x: 215, y: 323 },
-            { file:'cloud_sig_2.png', x: 591, y: 217 },
-            { file:'cloud_sig_3.png', x: 703, y: 220 },
-            { file:'cloud_sig_4.png', x: 788, y: 264 },
+            { file:'сбор сухарей 1.png', x: 247, y: 310 },
+            { file:'сбор сухарей 2.png', x: 583, y: 203 },
+            { file:'сбор сухарей 3.png', x: 775, y: 228 },
         ];
     }
 
@@ -351,7 +361,7 @@ export default class Dvor{
 
         this._cigSprites = [];
         const sigState   = this._getSigState();
-        for(let i=0; i<4; i++){
+        for(let i=0; i<3; i++){
             const s   = this._SIGS()[i];
             const spr = new PIXI.Sprite(PIXI.Texture.from('./images/' + s.file + '?' + (window.session_hash || '')));
             spr.anchor.set(0.5);
@@ -401,7 +411,7 @@ export default class Dvor{
     _refreshCigSprites(){
         if(!this._cigSprites) return;
         const state = this._getSigState();
-        for(let i=0;i<4;i++){
+        for(let i=0;i<3;i++){
             const spr       = this._cigSprites[i];
             spr.visible     = !state[i];
             spr.interactive = !state[i];
@@ -538,49 +548,22 @@ export default class Dvor{
         if(window.achievements && typeof achievements.onDvorLevel === 'function') achievements.onDvorLevel(game, level);
     }
 
-    // ── НАЧИСЛЕНИЕ НАГРАД ─────────────────────────────────────────────────────
-
-    _give(type, amount){
-        switch(type){
-            case 'stew':    udata['stew']=(parseInt(udata['stew']||0)+amount).toString(); break;
-            case 'cig':     udata['cigarettes']=(parseInt(udata['cigarettes']||0)+amount).toString(); break;
-            case 'exp':
-                udata['exp']=(parseInt(udata['exp']||0)+amount).toString();
-                if(window.battlepass) battlepass.addXp(Math.max(1,Math.floor(amount/100)));
-                break;
-            case 'coins':
-                udata['coins']=(parseInt(udata['coins']||0)+amount).toString();
-                udata['coins_earned']=(parseInt(udata['coins_earned']||0)+amount).toString();
-                break;
-            case 'respect': udata['respect']=(parseInt(udata['respect']||0)+amount).toString(); break;
-            case 'energy':{
-                const mx=parseInt(udata['max_energy']||50)+150;
-                udata['energy']=Math.min(mx,parseInt(udata['energy']||0)+amount).toString(); break;
-            }
-            case 'red_points':        udata['dice_points']=(parseInt(udata['dice_points']||0)+amount).toString(); break;
-            case 'blue_points':       udata['blue_points']=(parseInt(udata['blue_points']||0)+amount).toString(); break;
-            case 'chips':             udata['poker_chips']=(parseInt(udata['poker_chips']||0)+amount).toString(); break;
-            case 'auto':              if(window.weapons) weapons.grantAmmo('auto', amount); else udata['ammo_auto']=(parseInt(udata['ammo_auto']||0)+amount).toString(); break;
-            case 'gun':               if(window.weapons) weapons.grantAmmo('gun', amount); else udata['ammo_gun']=(parseInt(udata['ammo_gun']||0)+amount).toString(); break;
-            case 'machete':           if(window.weapons) weapons.grantAmmo('machete', amount); else udata['ammo_machete']=(parseInt(udata['ammo_machete']||0)+amount).toString(); break;
-            case 'roulette_spichki':
-                udata['roulette_spichki']=(parseInt(udata['roulette_spichki']||0)+amount).toString();
-                if(window.achievements) achievements.onDvorGame('roulette_spichki',{total:parseInt(udata['roulette_spichki'])});
-                break;
-            // 17.09.2026: было udata['habar_counts'] — коллизия с JSON-массивом контейнеров
-            // Хабара в habar.php, см. комментарий в yashik.js. Переименовано в stash_count.
-            case 'stash': udata['stash_count']=(parseInt(udata['stash_count']||0)+amount).toString(); break;
-        }
-        udata['dvor_games']=(parseInt(udata['dvor_games']||0)+1).toString();
-        iface.updateUp();
-        // 21.09.2026 (аудит "достижения появляются с задержкой") — единая точка наград Двора
-        // (казино-игры, включая джекпот рулетки — dvor-roulette-minigame.js._give('coins', ...))
-        // не имела общей проверки — только 2 частных onDvorGame() для спичек покера/рулетки.
-        // Одна проверка здесь разом закрывает ВСЕ типы наград, идущие через _give().
-        if(window.achievements) achievements._checkAll();
-    }
-
     // ── OPEN / CLOSE ──────────────────────────────────────────────────────────
+    //
+    // 19.10.2026 (по прямому указанию — расследование игрока "Антикризис", почему у него 256к
+    // опыта): выше раньше жил метод _give(type, amount) — единая точка оптимистичного
+    // клиентского начисления наград всех казино-игр (exp/coins/respect/stash и т.д.). Grep по
+    // всему _client/src подтвердил, что он НЕ вызывается ни одним реальным игровым путём — все
+    // казино-игры (покер/зарики/блэкджек/рулетка) давно мигрированы на server-authoritative
+    // начисление через Gameops (см. CLAUDE.md, правило №9), и единственные упоминания _give()
+    // в коде — комментарии-предупреждения в dvor-roulette.js/dvor-poker-game.js о том, что это
+    // "тот же небезопасный паттерн, что уже убрали для покера/карт". Но метод оставался
+    // публичным на window.dvor — ЛЮБОЙ игрок мог вызвать dvor._give('exp', 500000) прямо из
+    // консоли браузера: это мутировало udata['exp'] локально, и обычный дебаунс-автосейв
+    // (queuePlayerSave) отправлял это значение на users.save(), которое сервер принимал, пока
+    // 'exp' оставался в client-writable whitelist (теперь убран, см. $allowed в users.php).
+    // Метод удалён целиком — не мёртвый код "на всякий случай", а единственный оставшийся
+    // способ воспроизвести дыру из консоли даже после закрытия whitelist.
 
     open(){
         this._startDvorMusic();

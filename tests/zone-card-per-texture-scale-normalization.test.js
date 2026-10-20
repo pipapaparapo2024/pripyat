@@ -49,7 +49,7 @@ console.log('\nTest 1: CARD_TARGET_H — единая целевая высот�
 
 console.log('\nTest 2: масштаб карточки — фиксированные width И height (CARD_TARGET_W/H), не единый пропорциональный scale');
 {
-    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H; \};/.test(src),
+    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump; \};/.test(src),
         'width/height выставляются НЕЗАВИСИМО в CARD_TARGET_W/CARD_TARGET_H — игнорирует native-соотношение сторон текстуры');
     assert(!/spr\.scale\.set\(CARD_SCALE\);/.test(src),
         'старое "один scale на все карточки" (spr.scale.set(CARD_SCALE)) убрано');

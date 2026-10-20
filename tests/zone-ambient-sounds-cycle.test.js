@@ -61,9 +61,16 @@ console.log('\nTest: экран Зоны запускает атмосферу �
     const openChunk = screenSrc.slice(openIdx, openIdx + 300);
     assert(/this\._startZoneAmbient\(\);/.test(openChunk), '_openZoneScreen() запускает атмосферу');
 
+    // 18.10.2026: инлайн-логика крестика вынесена в отдельный переиспользуемый _closeZoneScreen()
+    // (баг "серый прямоугольник на главном экране" — см. zone-screen-stray-leftover-on-home.test.js) —
+    // проверяем, что крестик зовёт этот метод, а сам метод по-прежнему останавливает атмосферу.
     const exitIdx = screenSrc.indexOf("exitBtn.on('pointerdown'");
-    const exitChunk = screenSrc.slice(exitIdx, exitIdx + 250);
-    assert(/this\._stopZoneAmbient\(\);/.test(exitChunk), 'крестик экрана Зоны останавливает атмосферу');
+    const exitChunk = screenSrc.slice(exitIdx, exitIdx + 120);
+    assert(/this\._closeZoneScreen\(\)/.test(exitChunk), 'крестик экрана Зоны зовёт _closeZoneScreen()');
+
+    const closeFnIdx = screenSrc.indexOf('proto._closeZoneScreen = function');
+    const closeFnChunk = screenSrc.slice(closeFnIdx, closeFnIdx + 300);
+    assert(/this\._stopZoneAmbient\(\);/.test(closeFnChunk), '_closeZoneScreen() останавливает атмосферу');
 
     const closeAllIdx = panelsSrc.indexOf('if(this._zoneWin && this._zoneWin.visible){');
     const closeAllChunk = panelsSrc.slice(closeAllIdx, closeAllIdx + 280);

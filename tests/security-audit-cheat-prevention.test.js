@@ -133,14 +133,23 @@ console.log('\nTest 4: window.debug_mode по умолчанию false для р
         'сами dev-инструменты не удалены из сборки — включаются только явным флагом (для разработчика/теста)');
 }
 
-console.log('\nTest 5: zone.recordRespect() ограничивает amount сверху');
+console.log('\nTest 5 (обновлено 19.10.2026 — находка усилена): zone.recordRespect() больше не доверяет клиентскому amount вообще, а не просто ограничивает его сверху');
 {
+    // 17.09.2026: защита была "потолок 100 млн на клиентский $amount" — закрывала переполнение,
+    // но НЕ подделку (читер мог вызвать zone.recordRespect({loc:0, amount:99999999}) и мгновенно
+    // стать "рекордсменом" без единого реального боя — $amount всё равно напрямую шёл в SQL
+    // сравнение). 19.10.2026 (аудит "почини все подобные моменты", см. большой коммент у $allowed
+    // в users.php): сервер теперь ИГНОРИРУЕТ клиентский amount для сравнения-рекорда и читает
+    // авторитетное loc_respect_<loc> из своей же строки — потолок/неотрицательность на
+    // клиентском параметре больше не нужны, т.к. параметр вообще не участвует в SQL.
     const src = readSrc('server/core/controllers/zone.php');
     const start = src.indexOf('function recordRespect(){');
     const end   = src.indexOf('$link = $this->_rawLink();', start);
     const body  = src.slice(start, end);
-    assert(/\$amount > 100000000/.test(body), 'amount свыше 100 000 000 отклоняется');
-    assert(/\$amount < 0/.test(body), 'отрицательный amount по-прежнему отклоняется (проверка не регрессировала)');
+    assert(!/user_params'\]\['amount'\]/.test(body), 'клиентский параметр amount больше не читается в этой функции вообще');
+    assert(/\$amount = \$this->ops->i\(\$user, \$locRespKeyCheck\);/.test(body),
+        'amount теперь считается сервером из авторитетного loc_respect_<loc>, а не из клиента');
+    assert(/loadUser\(\[\$locRespKeyCheck\]\)/.test(body), 'сервер загружает свою же строку, прежде чем решать, стал ли игрок рекордсменом');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

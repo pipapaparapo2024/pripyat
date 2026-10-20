@@ -30,7 +30,9 @@ console.log('\nTest 1: pushHud(\'ryukzak\', {}) — ХУД больше не п�
 console.log('\nTest 2: nagrada_ryukzak_birka.png (и связанные иконка/число) добавлены ПОСЛЕ zabratBtn — рисуются поверх кнопки ЗАБРАТЬ');
 {
     const btnIdx  = src.indexOf('win.addChild(zabratBtn);');
-    const tagIdx  = src.indexOf("new PIXI.Sprite(PIXI.Texture.from(BASE + 'nagrada_ryukzak_birka.png'));");
+    // 17.10.2026 (замена сигарет на сухари): новые ассеты лежат в плоской BASE, старые (эта
+    // бирка в т.ч.) — в OLD_BASE (sidorovich/), см. ryukzak.js докблок у объявления OLD_BASE.
+    const tagIdx  = src.indexOf("new PIXI.Sprite(PIXI.Texture.from(OLD_BASE + 'nagrada_ryukzak_birka.png'));");
     const tagAddIdx = src.indexOf('win.addChild(tushenkaTagSpr);');
     assert(btnIdx !== -1, 'win.addChild(zabratBtn) найден');
     assert(tagIdx !== -1 && tagAddIdx !== -1, 'tushenkaTagSpr создаётся и добавляется в дерево');

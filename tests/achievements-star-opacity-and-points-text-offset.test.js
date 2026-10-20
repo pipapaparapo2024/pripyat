@@ -39,12 +39,17 @@ console.log('\nTest 1: star/starFill/starPtsTxt получают alpha=0.85 (85%
     assert(/starPtsTxt\.alpha = 0\.85;/.test(starPtsBlock), 'starPtsTxt.alpha = 0.85 (текст числа очков внутри звезды)');
 }
 
-console.log('\nTest 2: число очков внутри звезды (starPtsTxt.x) сдвинуто на +1px относительно центра звезды');
+console.log('\nTest 2: число очков внутри звезды — 17.10.2026 отменило +1px по X и добавило +1px по Y, fontSize 12→14');
 {
-    assert(/starPtsTxt\.x = star\.x \+ 1; starPtsTxt\.y = star\.y;/.test(achSrc),
-        'starPtsTxt.x = star.x + 1 (было star.x без сдвига)');
-    assert(!/starPtsTxt\.x = star\.x; starPtsTxt\.y = star\.y;/.test(achSrc),
-        'старая позиция без сдвига (starPtsTxt.x = star.x) больше не встречается');
+    // 17.10.2026 (по прямому указанию — "увеличь фонт сайз цифры на 2px, сдвинь влево и вниз
+    // на по 1px"): x вернулась на star.x (отменяет +1 от 29.09.2026), y стала star.y + 1,
+    // fontSize 12 → 14.
+    assert(/starPtsTxt\.x = star\.x; starPtsTxt\.y = star\.y \+ 1;/.test(achSrc),
+        'starPtsTxt.x = star.x (без сдвига), starPtsTxt.y = star.y + 1 (было star.x+1/star.y)');
+    assert(!/starPtsTxt\.x = star\.x \+ 1; starPtsTxt\.y = star\.y;/.test(achSrc),
+        'старая позиция (star.x+1/star.y без Y-сдвига) больше не встречается');
+    assert(/fontSize:14, fill:'#ffffff' \}\);\s*\n\s*starPtsTxt\.anchor/.test(achSrc),
+        'fontSize увеличен до 14 (было 12)');
 }
 
 console.log('\nTest 3: регресс-гвард — звезда всё ещё позиционируется/масштабируется как раньше (не задета правкой сверх задуманного)');

@@ -47,15 +47,15 @@ console.log('\nTest 2: buyActiv (hover-подсветка КУПИТЬ) выро
     const s = yashikSrc.indexOf("const buyActiv = new PIXI.Sprite");
     const e = yashikSrc.indexOf('win.addChild(buyActiv);');
     const body = yashikSrc.slice(s, e);
-    assert(/buyActiv\.x = 564; buyActiv\.y = 413; buyActiv\.scale\.set\(1\.000\);/.test(body),
-        'buyActiv выровнена относительно РЕАЛЬНОЙ позиции кнопки КУПИТЬ (564,413), не от произвольных (16,8)');
+    assert(/buyActiv\.x = 565; buyActiv\.y = 412; buyActiv\.scale\.set\(1\.000\);/.test(body),
+        'buyActiv выровнена относительно РЕАЛЬНОЙ позиции кнопки КУПИТЬ (565,412 — 17.10.2026 +1/+1 от 564,413), не от произвольных (16,8)');
     assert(!/buyActiv\.x = 16; buyActiv\.y = 8;/.test(yashikSrc), 'старые координаты (16,8) нигде не остались');
 
     const cs = yashikSrc.indexOf("const cancelActiv = new PIXI.Sprite");
     const ce = yashikSrc.indexOf('win.addChild(cancelActiv);');
     const cancelBody = yashikSrc.slice(cs, ce);
-    assert(/cancelActiv\.x = 683 - 10; cancelActiv\.y = 393 - 32 - 2;/.test(cancelBody),
-        'sanity: cancelActiv не менялась — эталон компенсации, с которым сверялся фикс buyActiv');
+    assert(/cancelActiv\.x = 683 - 10 \+ 1; cancelActiv\.y = 393 - 32 - 2;/.test(cancelBody),
+        'sanity: cancelActiv — 17.10.2026 +1px вправо, y-формула (эталон компенсации) не менялась');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

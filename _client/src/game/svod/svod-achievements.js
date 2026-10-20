@@ -213,8 +213,11 @@ export function attachSvodAchievements(proto){
             // Цвет текста #1a1c1c — снят пользователем 18.09.2026 напрямую в Photoshop из
             // достиги.psd. Карточка «кароточка достижений.png» — светлый пергамент, старый
             // светлый цвет (#e8d9b8/#b8a888) на нём был почти нечитаем.
+            // 18.10.2026 (по прямому указанию — "шрифт во вкладке Сводка как на картинке 3":
+            // Southbank LT Regular): fontWeight:'bold' убран — в проекте зарегистрирован только
+            // один (Regular) файл шрифта (fonts.css), bold браузер синтезировал сам (fake-bold).
             const nameTxt = new PIXI.Text('', {
-                fontFamily:'Southbank LT', fontSize:16, fill:'#1a1c1c', fontWeight:'bold',
+                fontFamily:'Southbank LT', fontSize:16, fill:'#1a1c1c',
                 wordWrap:true, wordWrapWidth: CARD_W - 260,
             });
             nameTxt.x = NAME_X; nameTxt.y = NAME_Y;
@@ -239,7 +242,7 @@ export function attachSvodAchievements(proto){
             // заглушкой без реального использования) — переиспользована и передвинута между
             // галочкой и бейджем «звёзды получены» (см. CHECK_X/STARS_GOT_X выше), теперь
             // реально показывает суммарные очки, полученные игроком в этой теме достижений.
-            const ptsTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:14, fill:'#1a1c1c', fontWeight:'bold' });
+            const ptsTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:14, fill:'#1a1c1c' });
             ptsTxt.anchor.set(0.5, 0.5);
             ptsTxt.x = PTS_TXT_X; ptsTxt.y = PTS_TXT_Y;
             card.addChild(ptsTxt);
@@ -327,9 +330,12 @@ export function attachSvodAchievements(proto){
             // именно этого достижения (a.pts, то же поле, что и ptsTxt в ветке showBar).
             // 29.09.2026 (по прямому указанию): x сдвинут на +1px вправо относительно центра
             // звезды (star.x) — на глаз число сидело чуть левее геометрического центра иконки.
-            const starPtsTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:12, fill:'#ffffff', fontWeight:'bold' });
+            // 17.10.2026 (по прямому указанию — "увеличь фонт сайз цифры на 2px, сдвинь влево и
+            // вниз на по 1px"): fontSize 12→14, x вернулась на star.x (отменяет +1 от 29.09), y
+            // star.y+1.
+            const starPtsTxt = new PIXI.Text('', { fontFamily:'Southbank LT', fontSize:14, fill:'#ffffff' });
             starPtsTxt.anchor.set(0.5, 0.5);
-            starPtsTxt.x = star.x + 1; starPtsTxt.y = star.y;
+            starPtsTxt.x = star.x; starPtsTxt.y = star.y + 1;
             starPtsTxt.visible = false;
             starPtsTxt.alpha = 0.85;
             card.addChild(starPtsTxt);
@@ -375,11 +381,18 @@ export function attachSvodAchievements(proto){
         // списком. trackY/arrowUpY — новые overrides (см. svod-scroll.js) — задают декоративную
         // позицию трека/стрелки ОТДЕЛЬНО от позиции контента, здесь явно выставлены на те же
         // 236/204, что получаются у svod-leaderboard.js (LIST_TOP=236, дефолт arrowUp=236-32).
+        // 17.10.2026 (по прямому указанию, повторный репорт тем же днём — "шкала скролла в Моих
+        // достижениях сдвинь вправо на 1px, а сам скролл (бегунок) влево на 1px"): trackX
+        // 1035→1036 (двигает трек ВПРАВО на 1px — и вместе с ним бегунок, т.к. формула бегунка в
+        // svod-scroll.js считается от trackX); thumbXAdjust:-2 компенсирует это +1 от trackX и
+        // добавляет свой собственный -1 — итоговый чистый сдвиг бегунка ровно -1px, независимо
+        // от трека. Только для ЭТОЙ вкладки (достижения) — svod-leaderboard.js не трогали.
         const scroll = this._buildSvodScroll({
             parent: win,
             contentContainer: cardsContainer,
             viewX: CARD_X, viewY: LIST_TOP, viewW: CARD_W, viewH: LIST_H,
-            trackX: 1035, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,
+            trackX: 1036, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,
+            thumbXAdjust: -2,
             stepPx: CARD_STEP,
             getTotalH: () => totalContentH,
         });
@@ -427,14 +440,40 @@ export function attachSvodAchievements(proto){
                 if(!c._iconSpr){
                     c._iconSpr = new PIXI.Sprite();
                     c._iconSpr.anchor.set(0.5, 0.5);
-                    c._iconSpr.x = ICON_X; c._iconSpr.y = ICON_CENTER_Y;
+                    // 17.10.2026 (по прямому указанию — "иконки достижений подними вверх и
+                    // сдвинь влево на 1px"): -1/-1 от ICON_X/ICON_CENTER_Y. Смещение только у
+                    // иконки — ICON_CENTER_Y сам по себе не трогаем, его использует и звезда
+                    // (star.y = ICON_CENTER_Y + 2, см. ниже) — общую константу менять нельзя.
+                    // 17.10.2026 (повторное указание тем же днём — "опусти иконки вниз на
+                    // 1px"): y вернулась на ICON_CENTER_Y (предыдущий -1 отменён этим +1).
+                    // x для bp_50/meta_500 пересчитывается ПОВТОРНО ниже (пул карточек,
+                    // см. комментарий у width) — здесь только дефолт для первой заливки.
+                    c._iconSpr.x = ICON_X - 1; c._iconSpr.y = ICON_CENTER_Y;
                     // 21.09.2026: было 64×64 под полноразмерную 149px карточку — на 70px видимой
                     // полосы не помещалось (вылезало в прозрачные поля соседних карточек).
                     // 17.10.2026 (по прямому указанию — "размеры иконок достижений сделай не
-                    // 56×56, а 42×42"): было 56×56.
-                    c._iconSpr.width = 42; c._iconSpr.height = 42;
+                    // 56×56, а 42×42"): было 56×56. 17.10.2026 (повторная правка тем же днём —
+                    // "увеличь размер до 43×43"): 42 → 43. 17.10.2026 (ещё раз тем же днём —
+                    // "сделай 44×44"): 43 → 44. 17.10.2026 (ещё раз тем же днём — "ширина 46,
+                    // высота 42"): не квадрат — ширина и высота теперь разные.
+                    // 17.10.2026 (повторно, новый запрос — "высоту повысить на 2 пикселя, то
+                    // есть 44, а не 42"): высота 42 → 44, ширина не менялась.
                     c.card.addChildAt(c._iconSpr, 1);
                 }
+                // 18.10.2026 (по прямому указанию — "для «вошёл в игру» и «трудяга» сделай
+                // ширину иконки 53px, высоту 44px, только для этих двух"): карточки — пул,
+                // переиспользуемый под РАЗНЫЕ достижения при скролле/фильтрации, поэтому размер
+                // иконки нельзя выставлять один раз при создании спрайта (см. блок выше) — он
+                // должен пересчитываться на каждый _fillCard, как и сама текстура ниже.
+                // 18.10.2026 (повторное указание тем же днём — "увеличить ширину ещё на 3px,
+                // пропорцию не менять, высоту не трогать"): 53 → 56.
+                // 18.10.2026 (ТРЕТЬЕ указание тем же днём — "ширину уменьши на 2px, сдвинь
+                // влево на 1px" — только для этих двух): 56 → 54, x получает доп. -1 поверх
+                // общего ICON_X-1 (который применяется ко всем иконкам).
+                const _isWideIcon = (a.id === 'bp_50' || a.id === 'meta_500');
+                c._iconSpr.width  = _isWideIcon ? 54 : 46;
+                c._iconSpr.height = 44;
+                c._iconSpr.x = ICON_X - 1 - (_isWideIcon ? 1 : 0);
                 c._iconSpr.texture = PIXI.Texture.from(iface._achievementIconFor(a));
             }
             c.nameTxt.text = a.name;

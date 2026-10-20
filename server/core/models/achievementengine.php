@@ -80,7 +80,12 @@
                 'cardsCombos' => $ops->j($user, 'cards_combos', []),
                 'pokerLvl'    => $pokerLvl,
                 'pokerCombos' => $ops->j($user, 'poker_combos', []),
-                'pokerSpichki'    => $ops->i($user, 'poker_spichki'),
+                // 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички"):
+                // poker_spichki и roulette_spichki объединены в одну валюту, канонический
+                // столбец — roulette_spichki (см. poker.php.openBag()). Достижения семейства
+                // "pokerSpichki" теперь тоже читают его — иначе застыли бы навсегда на
+                // последнем значении poker_spichki (поле больше нигде не пишется).
+                'pokerSpichki'    => $ops->i($user, 'roulette_spichki'),
                 'rouletteLvl'     => $rouletteLvl,
                 'rouletteSpichki' => $ops->i($user, 'roulette_spichki'),
                 'exp'          => $ops->i($user, 'exp'),

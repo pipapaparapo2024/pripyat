@@ -53,7 +53,37 @@
             // конкретных примерах уточнил, что имел в виду другую механику — HP личное, урон
             // друга (ВК, взаимного) засчитывается независимо от того, какого босса он бьёт,
             // если в момент его удара у МЕНЯ уже шёл бой. friendsDamage/rating вернулись.
-            $this->permits = ['friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey'];
+            $this->permits = ['friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey', 'devResetDailyLimits'];
+        }
+
+        // 17.10.2026 (по прямому указанию — dev-кнопка "сбросить дневной лимит боссов"): тот же
+        // гейт, что уже есть в users.php._isDevUser()/_requireDevUser() (не вынесен в общий
+        // Gameops — там его тоже нет, дублирование те же 2 проверки, что и в users.php).
+        private function _isDevUser(){
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+        }
+
+        private function _requireDevUser(){
+            if($this->_isDevUser()) return true;
+            $this->registry['tools']->error(403);
+            return false;
+        }
+
+        // Сбрасывает dailyKills (все 8 боссов) и dailyDate текущего dev-аккаунта — чтобы можно
+        // было многократно тестировать бой с боссом без ожидания МСК-полуночи. Не трогает
+        // bossStartMs/curCycleDmg (идущий бой) — это отдельный, самостоятельный сброс лимита,
+        // а не полный сброс аккаунта (см. dev_panel.js._resetAccount() для полного сброса).
+        function devResetDailyLimits(){
+            if(!$this->_requireDevUser()) return;
+            $user = $this->ops->loadUser();
+            if(!$user) return $this->ops->fail(99);
+            $data = $this->_decodeBossesData($user['bosses_data'] ?? null);
+            if(!is_array($data)) $data = [];
+            $data['dailyKills'] = array_fill(0, 8, 0);
+            $data['dailyDate']  = '';
+            $user['bosses_data'] = json_encode($data);
+            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            return $this->ops->ok(['patch' => $this->ops->patchCurrencies($user, ['bosses_data'])]);
         }
 
         private function _catalog(){

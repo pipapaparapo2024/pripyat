@@ -223,12 +223,24 @@ export function attachBossResultPopup(proto){
             // 17.10.2026 (по прямому указанию — "опусти вниз на 2 пикселя и сделай белым
             // шрифтом"): y 415→417, цвет был тёмным, стал белым — тот же, что уже был у
             // hpBarTxt на экране победы (см. ветку else ниже).
+            // 17.10.2026 (повторный репорт тем же днём — "разные шрифты HP на попапе победы и
+            // поражения"): раньше тут остался старый мелкий стиль (14px, обычный) от прежнего
+            // текста "остаток HP", хотя смысл уже сменился на ТУ ЖЕ самую величину (общий maxHp
+            // босса), что и на экране победы (hpBarTxt ниже) — стиль унифицирован на тот же
+            // (16px, bold, dropShadow), чтобы одна и та же цифра не выглядела по-разному в
+            // зависимости от исхода боя. Позиция (x/y) не трогалась — она снята отдельно.
+            // 19.10.2026 (по прямому указанию, снято редактором позиций — "x:437,y:414,
+            // w:114,h:16" — bbox top-left, переведено в якорь-центр 0.5/0.5: x=437+114/2=494,
+            // y=414+16/2=422; плюс "font-size количества хп уменьшить на 2px"): 16→14.
             const hpTxt = new PIXI.Text(
                 window.bosses ? bosses._fmt(opts.maxHp || 0) : String(opts.maxHp || 0),
-                { fontFamily: 'Southbank LT', fontSize: 14, fill: '#ffffff' }
+                {
+                    fontFamily: 'Southbank LT', fontSize: 14, fill: '#ffffff', fontWeight: 'bold',
+                    dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
+                }
             );
             hpTxt.anchor.set(0.5, 0.5);
-            hpTxt.x = 492; hpTxt.y = 417;
+            hpTxt.x = 494; hpTxt.y = 422;
             hpTxt.scale.set(1.000);
             win.addChild(hpTxt);
         } else {
@@ -237,16 +249,18 @@ export function attachBossResultPopup(proto){
             // вшитой в файл портрета.
             // 17.10.2026 (по прямому указанию — "опусти вниз на 2 пикселя"): +2 к Y (уже был
             // белым, см. fill выше — вторая часть указания тут уже выполнена).
+            // 19.10.2026 (та же правка, что и у hpTxt на экране поражения выше — одинаковые
+            // координаты/размер шрифта на обеих страницах результата, "неважно выиграл или
+            // проиграл"): x:494,y:422 (снято редактором позиций, bbox→якорь-центр), fontSize 16→14.
             const hpBarTxt = new PIXI.Text(
                 window.bosses ? bosses._fmt(opts.maxHp || 0) : String(opts.maxHp || 0),
                 {
-                    fontFamily: 'Southbank LT', fontSize: 16, fill: '#ffffff', fontWeight: 'bold',
+                    fontFamily: 'Southbank LT', fontSize: 14, fill: '#ffffff', fontWeight: 'bold',
                     dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
                 }
             );
             hpBarTxt.anchor.set(0.5, 0.5);
-            hpBarTxt.x = PORTRAIT_POS.x + HP_BAR_OFFSET.x;
-            hpBarTxt.y = PORTRAIT_POS.y + HP_BAR_OFFSET.y + 2;
+            hpBarTxt.x = 494; hpBarTxt.y = 422;
             win.addChild(hpBarTxt);
         }
 

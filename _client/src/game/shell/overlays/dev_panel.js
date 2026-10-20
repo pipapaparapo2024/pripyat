@@ -396,10 +396,49 @@ export function attachDevPanel(proto){
         _row('Уровни игр', [
             {label:'100 УР. ВСЕ', color:P, action:()=>this._maxDvorLevels()},
         ]);
+        // 18.10.2026 (по прямому указанию — "хочу проверить, как выводится файл баннера выпала
+        // шмотка с рулетки"): открывает экран открытого кейса рулетки МИНУЯ сервер
+        // (roulette.openCase), с hasTatu=true (синтетически) — тот же приём, что уже
+        // используется для dev-превью рюкзака (mockReward, см. выше).
+        _row('Кейс рулетки (шмотка выпала)', [
+            {label:'ОТКРЫТЬ', color:T, action:()=>{
+                this._closeDevPanel();
+                if(!window.dvor) return;
+                // 20.10.2026: сигнатура выросла до (hasTatu, reward, clientRewards, shmotItemId)
+                // — реального id нет (источник 'roulette' в shmot_items.json пока пуст, см.
+                // комментарий в roulette.php.openCase()), undefined даёт честный фолбэк-текст
+                // "Элемент шмотки" по наведению вместо выдумывания несуществующего id.
+                dvor._openRouletteCaseOpenedScreen(true, { exp: 500, cig: 1000, stash: 2, coins: 20 }, [], undefined);
+            }},
+        ]);
 
         _section('РЮКЗАК');
         _row('Уровень рюкзака', [
             {label:'МАКС. 20 УР.', color:P, action:()=>this._setDevRyukzakLevel20()},
+        ]);
+        // 17.10.2026 (по прямому указанию — "кнопка, при нажатии на которую открывается новый
+        // экран рюкзака с как будто выпавшей шмоткой, хочу проверить визуал"): открывает
+        // ryukzak-экран с синтетической наградой (mockReward, см. ryukzak.js._openRyukzakReward)
+        // — минуя сервер, баннер "шанс на шмотку" получает тестовое название для визуальной
+        // сверки с макетом. Дроп шмотки в рюкзаке сейчас не реализован (шанс 0%) — это только
+        // проверка того, что макет баннера собран верно.
+        // 18.10.2026 (по прямому указанию — "придумай какой-нибудь мок, чтобы проверить тултип
+        // при наведении на баннер"): mockReward.forceShmotBanner заставляет баннер показаться
+        // (баннер в проде всегда скрыт, см. HAS_SHMOT_DROP в ryukzak.js), mockShmot — данные для
+        // hover-тултипа (имя/бонус/сет, тот же вид, что в shmot_shop.js._showShopTip, но без
+        // "Требования").
+        _row('Шмотка (превью)', [
+            {label:'ОТКРЫТЬ', color:T, action:()=>{
+                this._closeDevPanel();
+                if(!window.iface) return;
+                iface._openRyukzakReward({
+                    cig: 5500, c: 21, exp: 7000, mach: 10, pist: 6, ak: 3,
+                    k: 1, key_boss: 3, level: 11,
+                    mockShmotkaName: 'Тестовая куртка «Сталкер»',
+                    forceShmotBanner: true,
+                    mockShmot: { name: 'Тестовая куртка «Сталкер»', bonus: '+80 к автомату', set: 'вольный' },
+                });
+            }},
         ]);
 
         // ── ШМОТ ────────────────────────────────────────────────────
@@ -439,6 +478,16 @@ export function attachDevPanel(proto){
         // для офлайн-просмотра текстов без реального провоцирования каждой ошибки вручную.
         _row('Тексты ошибок', [
             {label:'ПОКАЗАТЬ', color:T, action:()=>this._openErrorBrowser()},
+        ]);
+
+        // ── БОССЫ ───────────────────────────────────────────────────
+        // 17.10.2026 (по прямому указанию): сброс ТОЛЬКО дневного лимита боёв (dailyKills) —
+        // серверный, т.к. лимит проверяется в bosses.php.startFight() (server-authoritative,
+        // client-side bosses.dailyKills сам по себе ничего не разблокирует). Отдельно от
+        // полного сброса аккаунта (секция СБРОС ниже) — не трогает ключи/убийства/HP/оружие.
+        _section('БОССЫ');
+        _row('Дневной лимит боёв', [
+            {label:'СБРОСИТЬ', color:R, action:()=>this._resetBossDailyLimits()},
         ]);
 
         // ── КЛЮЧИ БОССОВ ────────────────────────────────────────────
@@ -660,6 +709,23 @@ export function attachDevPanel(proto){
         }, (err) => {
             console.error('[devPanel._setDevRyukzakLevel20] ошибка:', err);
             notify.showResult({text:'Не удалось выставить уровень рюкзака'}, 0);
+        });
+    };
+
+    // 17.10.2026 (по прямому указанию) — сброс ТОЛЬКО дневного лимита боёв с боссами, чтобы
+    // можно было тестировать бой многократно без ожидания МСК-полуночи. Серверный permit
+    // (bosses.devResetDailyLimits), т.к. лимит проверяется на сервере (startFight()) — после
+    // ответа перечитываем состояние боссов из udata, чтобы клиентский кэш (bosses.dailyKills
+    // и т.п.) не остался рассинхронизирован с только что сброшенным server-side значением.
+    proto._resetBossDailyLimits = function(){
+        if(!window.TS) return;
+        TS.php('bosses.devResetDailyLimits', {}, (res) => {
+            if(res && res.patch) applyPatch(res.patch);
+            if(window.bosses && typeof bosses._loadFromUdata === 'function') bosses._loadFromUdata();
+            notify.showResult({text:'Дневной лимит боёв сброшен'}, 1);
+        }, (err) => {
+            console.error('[devPanel._resetBossDailyLimits] ошибка:', err);
+            notify.showResult({text:'Не удалось сбросить лимит боёв'}, 0);
         });
     };
 
@@ -969,16 +1035,16 @@ export function attachDevPanel(proto){
         // бага, что уже чинили для coins/stew/cigarettes) — переведены на тот же дельта-путь,
         // прямое присвоение udata[key]=M для них ниже убрано (users.save() его теперь просто
         // молча проигнорирует, как и для coins/stew/cigarettes).
+        // 19.10.2026: exp/respect/stash_count тоже убраны из whitelist той же причине (см.
+        // большой коммент у $allowed в users.php, расследование "Антикризиса") — переведены на
+        // тот же дельта-путь, прямое присвоение ниже убрано.
         const currencyDeltas = {};
-        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips'].forEach(key => {
+        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips','exp','respect','stash_count'].forEach(key => {
             const delta = 1000000 - parseInt(udata[key]||0);
             if(delta !== 0) currencyDeltas[key] = delta;
         });
-        udata['exp']               = M;
-        udata['respect']           = M;
         udata['poker_spichki']     = M;
         udata['roulette_spichki']  = M;
-        udata['stash_count']       = M; // habar_counts НЕ трогаем — это JSON-массив Хабара, не счётчик заначек
         udata['ammo_auto']         = M;
         udata['ammo_gun']          = M;
         udata['ammo_machete']      = M;

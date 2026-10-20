@@ -61,10 +61,20 @@ console.log('\nTest 3: interface.js — тултип уровня/опыта а�
     assert(/bg\.drawRoundedRect\(0, 0, tipW, 50, 6\);/.test(ifaceSrc), 'фон рисуется с динамической tipW');
 }
 
-console.log('\nTest 4: interface-panels.js — облачко валюты сдвинуто на +40px');
+console.log('\nTest 4: interface-panels.js — старое облачко-тултип валюты (hover на val_stew/coins/cigarettes) убрано целиком');
 {
-    assert(/const gx = Math\.round\(\(this\.up\.x \|\| 0\) \+ bx \+ bw \/ 2 - 130 \+ 50 \+ 40\);/.test(panelsSrc),
-        'формула gx включает +40 (тушёнка/рубли/сигареты — единая формула для всех трёх)');
+    // 18.10.2026 (баг найден по прямому указанию — "в магазине всё ещё сигареты, старые
+    // ассеты на месте"): этот hover-тултип жил на старых FLA-объектах val_stew/val_coins/
+    // val_cigarettes, которые _buildTopCurrencyWidget() (interface-top-currency.js) уже
+    // прячет — но initButtons() (этот файл) заново включал им interactive=true, и клик по
+    // val_cigarettes напрямую открывал СТАРОЕ окно банка вместо нового попапа покупки сухарей.
+    // Блок (вместе с формулой gx +40, которую пиннил этот тест) удалён целиком — см.
+    // bank-currency-hud-restore.test.js для актуальной проверки.
+    assert(!/const gx = Math\.round\(\(this\.up\.x \|\| 0\) \+ bx \+ bw \/ 2 - 130 \+ 50 \+ 40\);/.test(panelsSrc),
+        'старая формула gx (+40) убрана вместе со всем легаси-блоком hover-тултипа');
+    // 18.10.2026: проверяем ОБЪЯВЛЕНИЕ, не подстроку — "CURRENCY_INFO" легитимно встречается в
+    // пояснительных комментариях об истории бага (см. bank-currency-hud-restore.test.js).
+    assert(!/const CURRENCY_INFO = \{/.test(panelsSrc), 'CURRENCY_INFO не вернулся');
 }
 
 console.log('\nTest 5: boss_result.js — суммы наград чёрным шрифтом, ТОП УРОНА с диагностикой длины top[]');

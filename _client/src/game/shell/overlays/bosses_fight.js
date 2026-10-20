@@ -356,6 +356,13 @@ export function attachBossesFight(proto){
         // ── РЕЙТИНГ УРОНА (нижний левый, встроен в арт фона) ────────
 
         this._bossFightRatingRows = [];
+        // 17.10.2026 (по прямому указанию, новая подложка "нижняя часть рейтинг урона.png"):
+        // подложка вставляется НИЖЕ по коду (после слотов оружия), значит выше по Z-порядку, чем
+        // эта секция (которая строится раньше) — иначе она перекрыла бы строки рейтинга. Эти
+        // массивы собирают frameSpr/rowHit/dmgLbl (которые НЕ сохраняются в this._bossFightRatingRows)
+        // для последующего "подъёма" всей секции рейтинга НАД новой подложкой через повторный
+        // addChild (см. блок после создания подложек ниже).
+        const _ratingFrameSprs = [], _ratingHitAreas = [], _ratingDmgLbls = [];
         // Координаты по замеру редактором позиций (14.09.2026, уточнено 26.09.2026 —
         // x:29,y:532 для строки 0, остальные две сдвинуты на ту же дельту +1) — единая
         // раскладка для всех 3 строк рейтинга (раньше строка 0 была отдельным особым случаем
@@ -444,6 +451,7 @@ export function attachBossesFight(proto){
             win.addChild(dmgTxt);
 
             const rowObj = { avSpr, nameTxt, dmgTxt, id: null, nick: null };
+            _ratingFrameSprs.push(frameSpr); _ratingHitAreas.push(rowHit); _ratingDmgLbls.push(dmgLbl);
             rowHit.on('pointerdown', ()=>{ if(rowObj.id && window.iface) iface._openPlayerProfile(rowObj.id, rowObj.nick); });
             this._bossFightRatingRows.push(rowObj);
         }
@@ -481,8 +489,10 @@ export function attachBossesFight(proto){
         wpnSlotsBg.x = 369; wpnSlotsBg.y = 610; wpnSlotsBg.scale.set(1.012);
         win.addChild(wpnSlotsBg);
         {
+            // 17.10.2026 (по прямому указанию, новый комплект фонов — "боевка слоты под
+            // оружие.png" заменяет v2): визуально по-прежнему 8 ячеек, 7 видимых — та же обрезка.
             const TOTAL_CELLS = 8, VISIBLE_CELLS = 7, EXTRA_TRIM_PX = 14, RIGHT_RADIUS = 10;
-            const fullTex = PIXI.Texture.from(B + 'боевка слоты под оружие v2.png');
+            const fullTex = PIXI.Texture.from(B + 'боевка слоты под оружие.png');
             const _applyCrop = () => {
                 const bt = fullTex.baseTexture;
                 const cropW = Math.round(bt.width * VISIBLE_CELLS / TOTAL_CELLS) - EXTRA_TRIM_PX;
@@ -635,6 +645,48 @@ export function attachBossesFight(proto){
             }
         }
 
+        // 17.10.2026 (по прямому указанию — новый комплект фонов "боевка с боссами/новые
+        // локации", три универсальные подложки, общие для всех боссов): Z-порядок — фон →
+        // (если есть) Spine-анимация босса → слоты оружия → эти 3 подложки ПОВЕРХ слотов
+        // оружия. Вставляются здесь (сразу после блока оружия, addChild ниже него по коду —
+        // значит выше по Z) — ровно то место, где это требование выполняется само собой для
+        // всего, что добавляется ПОСЛЕ (талант-блок ниже по файлу), и требует явного "подъёма"
+        // для того, что было добавлено РАНЬШЕ (левая панель имя/ХП/таймер, рейтинг урона — см.
+        // addChild-повторы сразу под подложками: в PIXI addChild на уже дочернем объекте
+        // переносит его в конец списка, то есть наверх по Z, без изменения логики/координат).
+        const timePlate = new PIXI.Sprite(PIXI.Texture.from(B + 'оставшееся время.png'));
+        timePlate.x = 0; timePlate.y = 73;
+        win.addChild(timePlate);
+
+        const ratingPlate = new PIXI.Sprite(PIXI.Texture.from(B + 'нижняя часть рейтинг урона.png'));
+        ratingPlate.x = 0; ratingPlate.y = 472;
+        win.addChild(ratingPlate);
+
+        const talentsPlate = new PIXI.Sprite(PIXI.Texture.from(B + 'таланты табличка.png'));
+        talentsPlate.x = 953; talentsPlate.y = 519;
+        win.addChild(talentsPlate);
+
+        // Левая панель (имя/ХП/таймер) целиком лежит в области timePlate (0,73,274×178) —
+        // поднимаем НАД ней, не трогая ни координаты, ни логику.
+        win.addChild(bossNameTxt);
+        win.addChild(hpBarBg);
+        win.addChild(hpBar);
+        win.addChild(hpTxt);
+        win.addChild(hpTooltip);
+        win.addChild(timerTxt);
+        // Три строки рейтинга урона целиком лежат в области ratingPlate (0,472,379×248) —
+        // поднимаем НАД ней, порядок внутри строки как при первом addChild (строка 356+).
+        for(let r = 0; r < this._bossFightRatingRows.length; r++){
+            win.addChild(_ratingHitAreas[r]);
+            win.addChild(this._bossFightRatingRows[r].avSpr);
+            win.addChild(_ratingFrameSprs[r]);
+            win.addChild(this._bossFightRatingRows[r].nameTxt);
+            win.addChild(_ratingDmgLbls[r]);
+            win.addChild(this._bossFightRatingRows[r].dmgTxt);
+        }
+        // talentsPlate (953,519,326×201) НЕ требует подъёма для талант-блока (скиллы/корона/
+        // прогресс-бар/очки) — он весь добавляется НИЖЕ по файлу, уже естественно поверх.
+
         // Кнопка "Седой" (портрет Сидоровича) — виден только если хабар куплен.
         // Наведение показывает остаток урона Седого (n/m), клик тратит весь остаток на текущего босса.
         const sidBtn = new PIXI.Sprite(PIXI.Texture.from(B + 'боевка кнопка сидорович.png'));
@@ -727,8 +779,10 @@ export function attachBossesFight(proto){
 
         // 03.10.2026 (по прямому указанию — "кол-во новых очков и прокачанных опусти вниз на
         // 1px, сдвинь вправо на 1px, уменьши жирность"): fontWeight bold → normal.
+        // 17.10.2026 (по прямому указанию — репорт "перепутано, должно быть наоборот": ОЧКИ
+        // чёрным, НОВЫЕ белым): fill '#ffffff' → '#000000' (было наоборот с прошлой правки).
         const ptsTxt = new PIXI.Text('—', {
-            fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',
+            fontFamily:'Southbank LT', fontSize:27, fill:'#000000', fontWeight:'normal',
         });
         ptsTxt.anchor.set(0.5, 0.5);
         // 04.10.2026 (редактор позиций — "кол-во прокачанных очков"): x:1080 y:639 scale:1.521.
@@ -740,6 +794,10 @@ export function attachBossesFight(proto){
         newBg.x = NEW_BG.x; newBg.y = NEW_BG.y; win.addChild(newBg);
 
         // 03.10.2026 (см. коммент у ptsTxt выше — тот же батч правок): fontWeight bold → normal.
+        // 17.10.2026 (по прямому указанию — "количество новых очков делает чёрным шрифтом"):
+        // fill '#ffffff' → '#000000'.
+        // 17.10.2026 (повторное указание тем же днём — репорт "перепутано, должно быть
+        // наоборот"): откат на '#ffffff' — НОВЫЕ остаётся белым, чёрным стал ptsTxt (ОЧКИ).
         const newTxt = new PIXI.Text('—', {
             fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',
         });
@@ -915,12 +973,29 @@ export function attachBossesFight(proto){
         if(this._bossFightModeSprs)
             this._bossFightModeSprs.forEach((s, i)=>{ s.alpha = i === this._bossFightDiffIdx ? 1 : (i === 3 ? 0.6 : 0.45); });
 
+        // 17.10.2026 (по прямому указанию, новый комплект фонов "боевка с боссами/новые
+        // локации"): заменены на новые per-boss локации. У Крыса/Баркута/Бороды/Жгута пока нет
+        // Spine-анимации (см. BOSS_SPINE в spine-boss.js — у них null) — для них используются
+        // отдельные "...локация пока что без анимации.png" файлы (временная мера, по словам
+        // пользователя, пока художник не прислал анимацию и для них). Порядок индексов не менялся
+        // (0=Охотник,1=Счастливчик,2=Ястреб,3=Меченный,4=Крыс,5=Баркут,6=Борода,7=Жгут).
+        // 18.10.2026 (по прямому указанию — "появилась новая анимация для босса Крыс, использую
+        // новый фон для неё"): у Крыса теперь есть Spine-анимация (см. BOSS_SPINE[4] в
+        // spine-boss.js) — временный "...локация пока что без анимации.png" заменён на реальный
+        // фон боя, тот же паттерн, что уже применён к Охотнику/Счастливчику/Ястребу/Меченному.
+        // 19.10.2026 (по прямому указанию, Spine-анимации присланы и для Баркута/Бороды/Жгута,
+        // плюс обновлённый экспорт Крыса — см. BOSS_SPINE[4-7] в spine-boss.js): все 4 оставшихся
+        // "...локация пока что без анимации.png" заменены на реальные "локация под N.png" —
+        // ни один босс больше не находится в режиме "без анимации". Крыс переведён с
+        // "боевка с боссом крыс.png" на "локация под крыс.png" тем же комплектом фонов, что и
+        // остальные 7 боссов (файл существовал на диске с 17.10.2026, но не был подключён — для
+        // Крыса тогда временно использовали отдельное имя).
         const BOSS_BGS = [
-            'боевка с боссом охотник v2.png',
-            'боевка с боссом счастливчик v2.png',
-            'боевка с боссом ястреб v2.png',    'боевка с боссом меченный v2.png',
-            'боевка с боссом крыс.png',      'боевка с боссом баркут.png',
-            'боевка с боссом борода.png',    'боевка с боссом жгут.png',
+            'локация под охотника.png',
+            'локация под счастливчика.png',
+            'локация под ястреба.png',    'локация под меченного.png',
+            'локация под крыс.png',       'локация под баркута.png',
+            'локация под бороду.png',     'локация под жгута.png',
         ];
         if(this._bossFightBg)
             this._bossFightBg.texture = PIXI.Texture.from('./images/' + (BOSS_BGS[bossIdx] || BOSS_BGS[0]));

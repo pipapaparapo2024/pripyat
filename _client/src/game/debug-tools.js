@@ -9,16 +9,16 @@ export function setupDebugTools(){
         // users.devGrantCurrency(), обычный users.save() ниже эти три поля больше не примет.
         // 11.10.2026: dice_points/blue_points/poker_chips тоже убраны из whitelist (тот же
         // класс бага) — переведены на тот же дельта-путь, прямое присвоение ниже убрано.
+        // 19.10.2026: exp/respect/stash_count тоже убраны из whitelist той же причине (см.
+        // большой коммент у $allowed в users.php, расследование "Антикризиса") — переведены на
+        // тот же дельта-путь, прямое присвоение ниже убрано.
         const currencyDeltas = {};
-        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips'].forEach(key => {
+        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips','exp','respect','stash_count'].forEach(key => {
             const delta = 1000000 - parseInt(udata[key]||0);
             if(delta !== 0) currencyDeltas[key] = delta;
         });
-        udata['exp']               = M;
-        udata['respect']           = M;
         udata['poker_spichki']     = M;
         udata['roulette_spichki']  = M;
-        udata['stash_count']       = M; // habar_counts НЕ трогаем здесь — это JSON-массив Хабара, не счётчик заначек
         udata['ammo_auto']         = M;
         udata['ammo_gun']          = M;
         udata['ammo_machete']      = M;

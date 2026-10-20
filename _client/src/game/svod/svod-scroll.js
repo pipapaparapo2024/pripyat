@@ -21,7 +21,7 @@ export function attachSvodScroll(proto){
     // высоты контента (смена страницы/фильтра), scrollToTop() — когда список заменён другими
     // данными и позицию прокрутки сохранять не нужно.
     proto._buildSvodScroll = function(cfg){
-        const { parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY } = cfg;
+        const { parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY, thumbXAdjust } = cfg;
         // 17.10.2026 (по прямому указанию — "скролл в 'Мои достижения' не совпадает с
         // 'Общий топ'"): trackY — новый необязательный override, по той же схеме, что уже есть
         // у arrowUpY/arrowDownY (см. коммент 23.09.2026 ниже). Раньше track.y был ЖЁСТКО равен
@@ -85,8 +85,14 @@ export function attachSvodScroll(proto){
         // 17.10.2026 (по прямому указанию, новый снимок редактора позиций — "скрол.png x:1034
         // y:236 scale:1.000", "подвинул вправо на 2 пикселя"): -1 заменён на +1 (чистый сдвиг
         // +2px) — общая функция, применяется сразу к обеим вкладкам (урон/достижения).
+        // 17.10.2026 (повторное указание тем же днём, только для "Мои достижения" — "шкала
+        // скролла вправо на 1px, скролл влево на 1px"): thumbXAdjust — новый необязательный
+        // override (по той же схеме, что trackY/arrowUpY выше), сдвигает ТОЛЬКО бегунок
+        // независимо от trackX (trackX и так двигает и трек, и бегунок вместе, т.к. формула
+        // ниже считает бегунок ОТ trackX — чтобы развести их в разные стороны, нужен отдельный
+        // параметр). Дефолт 0 — для caller'ов без override поведение не меняется.
         const thumb = new PIXI.Sprite(PIXI.Texture.from(IMG + 'скрол.png'));
-        thumb.x = trackX - Math.round((thumb.width - track.width) / 2) + 1;
+        thumb.x = trackX - Math.round((thumb.width - track.width) / 2) + 1 + (thumbXAdjust || 0);
         thumb.interactive = true; thumb.buttonMode = true;
         parent.addChild(thumb);
 

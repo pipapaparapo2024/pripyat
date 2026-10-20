@@ -47,7 +47,13 @@ console.log('\nTest: initButtons() по-прежнему вешает обраб
     const body  = panelsSrc.slice(start, end);
 
     assert(!!body && start !== -1, 'proto.initButtons найден в interface-panels.js');
-    for (const btn of ['butt_bank', 'butt_settings']) {
+    // 18.10.2026 (по прямому указанию — "FLA → обычные изображения" для всех точек покупки):
+    // обработчик на butt_bank убран целиком — он вёл на старое FLA-окно банка (bank.init()) и
+    // был мёртвым кодом (тот же баг-класс, что CURRENCY_INFO, см. bank-currency-hud-restore.
+    // test.js) — кнопка "магазин" нового верхнего HUD (interface-top-currency.js) уже его
+    // заменяет. butt_settings по-прежнему здесь — его не трогали.
+    assert(!body.includes('this.up.butt_bank'), 'initButtons() больше НЕ ссылается на старый butt_bank');
+    for (const btn of ['butt_settings']) {
         assert(body.includes('this.up.' + btn), `initButtons() ссылается на верхнюю кнопку ${btn}`);
     }
     for (const btn of ['butt_bosses', 'butt_zone', 'butt_vassilich']) {

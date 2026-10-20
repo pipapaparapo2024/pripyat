@@ -88,8 +88,12 @@ console.log('\nTest 5: клиент — открытие экрана запра
     const end = ryuk.indexOf('\n\t\t}', start);
     const body = ryuk.slice(start, end);
     assert(/_renderRewardIcons\(res\);/.test(body), 'иконки перерисовываются по честному ответу сервера (res.mach/pist/ak), не по локальной оценке');
-    assert(/_setKeyPreview\(res\.k \|\| 0, res\.key_boss\);/.test(body), 'ключ босса тоже обновляется из честного превью');
-    assert(/lvlTxt\.text = 'УРОВЕНЬ РЮКЗАКА : ' \+ res\.level;/.test(body), 'уровень в тексте берётся из ответа сервера');
+    // 17.10.2026 (замена сигарет на сухари, редизайн грида наград рюкзака): отдельного
+    // _setKeyPreview() больше нет — ключ обновляется вместе с остальными карточками внутри
+    // _renderRewardIcons(res) (res уже содержит k/key_boss полями). lvlTxt теперь показывает
+    // только число — подпись "УРОВЕНЬ РЮКЗАКА :" вшита в новую плашку, не дублируется в тексте.
+    assert(/_renderRewardIcons\(res\);/.test(body), 'ключ босса обновляется вместе с остальными карточками из честного превью (res содержит k/key_boss)');
+    assert(/lvlTxt\.text = String\(res\.level\);/.test(body), 'уровень в тексте берётся из ответа сервера');
     assert(/_renderProgress\(res\.level\);/.test(body), 'прогресс-бар тоже обновляется из честного превью');
 }
 

@@ -42,7 +42,9 @@ test('client preloader requests the exact PNG paths', () => {
     // хотя сервер честно отдавал верный файл с no-cache — кэш живёт между сервером и игрой, вне
     // нашего контроля, и игнорирует смену query. Единственный надёжный способ — сменить сам путь
     // файла: оба переименованы в "... v2.png", без query-маркера.
-    assert(boot.includes("'рулетка колесо v2.png'"), 'renamed wheel URL is absent from the preloader');
+    // 17.10.2026 (замена сигарет на сухари): колесо переименовано ЕЩЁ раз, v2 → v3 — тот же
+    // приём обхода прокси-кэша VK (см. dvor-roulette-screen.js, комментарий у wheelUrl).
+    assert(boot.includes("'двор рулетка колесо v3.png'"), 'renamed wheel URL is absent from the preloader');
     assert(boot.includes("'shmot/связка ключей v2.png'"), 'renamed keyring URL is absent from the preloader');
 });
 

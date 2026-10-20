@@ -45,20 +45,29 @@ console.log('\nTest 2: hata.js по-прежнему безопасен без _
     assert(openGuard && closeGuard, 'hata.js всё ещё оборачивает обращения к _pngLeftPanel в if() — не упадёт, когда его нет');
 }
 
-console.log('\nTest 3: кнопка "Банда" получила плашку "СКОРО" на явно заданной позиции (X:465 Y:620)');
+console.log('\nTest 3: старая плашка "СКОРО" (interface-panels.js) УБРАНА — задваивалась с новой');
 {
+    // 18.10.2026 (баг найден по прямому указанию, снимок редактора позиций — "скоро банда.png
+    // задвоился, один убери"): нижний HUD пересобран 17.10.2026 (батч замены сигарет на сухари,
+    // interface-bottom-nav.js) и получил СВОЮ плашку "СКОРО" поверх новой кнопки "Банда"
+    // (_bottomNavSoonBadge) — старая копия здесь, в interface-panels.js, больше не нужна и
+    // убрана, иначе на экране было два значка одновременно. Кнопка по-прежнему некликабельна.
     const start = panelsSrc.indexOf('if(this.down.butt_gangs){');
     const end   = panelsSrc.indexOf('\n        }', start);
     const block = panelsSrc.slice(start, end);
-    assert(/this\.down\.butt_gangs\.interactive = false;/.test(block), 'кнопка банды по-прежнему некликабельна (уже было)');
-    assert(/PIXI\.Texture\.from\('\.\/images\/скоро банда\.png'\)/.test(block), 'плашка "скоро банда.png" создаётся именно в блоке butt_gangs');
-    // 22.09.2026 (баг найден — "файл СКОРО не отображается"): Y=620 был абсолютной координатой
-    // канваса, но gangSoonBadge — ребёнок this.down (this.down.y=596), итоговый рендер уезжал
-    // на 596+620=1216 — за пределы холста (720px). Переведено в локальные координаты (620-596=24).
-    assert(/gangSoonBadge\.x = 465; gangSoonBadge\.y = 620 - 596;/.test(block),
-        'позиция плашки — X:465 (без изменений), Y переведён в локальные координаты this.down (620-596=24)');
-    assert(!/gangSoonBadge\.width|gangSoonBadge\.height|gangSoonBadge\.scale/.test(block), 'плашка вставлена в нативном размере, без растяжения (правило проекта)');
-    assert(/this\.down\.addChild\(gangSoonBadge\);/.test(block), 'плашка добавляется в тот же контейнер (this.down), где лежит сама кнопка');
+    assert(/this\.down\.butt_gangs\.interactive = false;/.test(block), 'кнопка банды по-прежнему некликабельна (не тронуто)');
+    assert(!/new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/скоро банда\.png'\)\)/.test(block),
+        'старая плашка "скоро банда.png" больше НЕ создаётся в этом блоке (interface-panels.js)');
+    assert(!/gangSoonBadge/.test(panelsSrc), 'переменная gangSoonBadge нигде в файле не осталась (мёртвый код не оставлен)');
+}
+
+console.log('\nTest 3b: новая (единственная) плашка "СКОРО" — в interface-bottom-nav.js, центрирована над кнопкой "Банда"');
+{
+    const navSrc = readSrc('_client/src/game/interface/interface-bottom-nav.js');
+    assert(/const soonBadge = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'скоро банда\.png'\)\);/.test(navSrc),
+        'плашка создаётся в interface-bottom-nav.js');
+    assert(/soonBadge\.x = sprites\.banda\.x;\s*soonBadge\.y = sprites\.banda\.y;/.test(navSrc),
+        'позиция плашки берётся динамически от кнопки "Банда" (не захардкожена отдельно — не разъедется при следующей правке координат банды)');
 }
 
 console.log('\nTest 4: файл-ассет "скоро банда.png" на месте и совпадает с присланным пользователем скоро.png (MD5)');

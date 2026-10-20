@@ -53,30 +53,47 @@ console.log('\nTest 1: заначка из ящика начисляется с�
     assert(!/'habar_counts'/.test(yashikPhp), 'yashik.php вообще не трогает habar_counts (нет той же коллизии на новом месте)');
 }
 
-console.log('\nTest 2: dvor.js — приз "stash" пишет stash_count, не habar_counts');
+console.log('\nTest 2 (обновлено 19.10.2026 — находка закрыта): dvor.js больше не содержит клиентского начисления stash_count вообще');
 {
+    // 19.10.2026 (расследование "Антикризиса", см. tests/exp-respect-whitelist-console-
+    // exploit-fix.test.js): _give() (единственное место, которое писало case 'stash') удалён
+    // целиком — grep по всему _client/src подтвердил, что он не вызывался ни одним реальным
+    // игровым путём, а был единственным живым способом эксплуатации stash_count/exp/respect/
+    // coins_earned/dvor_games из консоли браузера. stash_count теперь пишет ТОЛЬКО сервер
+    // (zone.php/poker.php/roulette.php через Gameops), 'stash_count' убран из client-writable
+    // whitelist users.php (см. Test 4 ниже).
     const src = readSrc('_client/src/game/dvor.js');
-    assert(/case 'stash': udata\['stash_count'\]=\(parseInt\(udata\['stash_count'\]\|\|0\)\+amount\)\.toString\(\); break;/.test(src),
-        "case 'stash' пишет stash_count");
+    assert(!/_give\(type, amount\)\{/.test(src), '_give(type, amount) больше не определён в dvor.js (удалён как мёртвый код/консольный эксплойт)');
+    assert(!/udata\['stash_count'\]\s*=/.test(src), 'прямого присваивания udata[\'stash_count\'] в этом файле больше нет вообще');
     assert(!/case 'stash': udata\['habar_counts'\]/.test(src),
         'старая запись в habar_counts убрана из dvor.js');
 }
 
-console.log('\nTest 3: debug-tools.js (GIVE_MILLION) больше не пишет в habar_counts');
+console.log('\nTest 3 (обновлено 19.10.2026 — находка закрыта): debug-tools.js (GIVE_MILLION) больше не пишет stash_count напрямую — только дельтой через devGrantCurrency');
 {
     const src = readSrc('_client/src/game/debug-tools.js');
-    assert(/udata\['stash_count'\]\s*=\s*M;/.test(src), 'GIVE_MILLION выставляет stash_count');
+    assert(!/udata\['stash_count'\]\s*=\s*M;/.test(src), 'нет прямого udata[\'stash_count\']=M; — stash_count теперь идёт дельтой через devGrantCurrency');
+    assert(/'stash_count'/.test(src.slice(src.indexOf('currencyDeltas'), src.indexOf('currencyDeltas') + 300)),
+        "'stash_count' добавлен в список currencyDeltas");
     assert(!/udata\['habar_counts'\]\s*=\s*M;/.test(src),
-        'GIVE_MILLION больше не выставляет habar_counts (не ломает JSON-массив контейнеров Хабара)');
+        'GIVE_MILLION по-прежнему не выставляет habar_counts (не ломает JSON-массив контейнеров Хабара)');
 }
 
-console.log('\nTest 4: users.php — stash_count в белом списке и под строгой числовой проверкой');
+console.log('\nTest 4 (обновлено 19.10.2026 — находка закрыта): users.php — stash_count УБРАН из whitelist (та же дыра, что у exp)');
 {
+    // 19.10.2026: stash_count оказался в $allowed ДВАЖДЫ (дубль), писался сервером
+    // (zone.php/poker.php/roulette.php) И при этом оставался client-writable — тот же класс
+    // бага, что у exp/respect/total_damage/bosses_killed и др. (см. большой коммент у $allowed
+    // в users.php). Дев-кнопки переведены на devGrantCurrency(), обычная игровая запись и не
+    // требовалась (единственный клиентский писатель был внутри ныне удалённого dvor.js._give()).
     const src = readSrc('server/core/controllers/users.php');
-    assert(/'stash_count',/.test(src.match(/\$allowed = \[[\s\S]*?\];/)[0]),
-        "'stash_count' добавлено в whitelist \$allowed");
-    assert(/'stash_count',/.test(src.match(/\$strictNumericFields = \[[\s\S]*?\];/)[0]),
-        "'stash_count' входит в список строгой числовой проверки (потолок/неотрицательность)");
+    const allowedBlock = src.match(/\$allowed = \[[\s\S]*?\n            \];/)[0].replace(/\/\/.*$/gm, '');
+    const tokens = allowedBlock.split(/[\[\],\s]+/).map(s => s.replace(/^'|'$/g, ''));
+    assert(!tokens.includes('stash_count'), "'stash_count' убран из whitelist \$allowed (как значение массива, не в комментарии)");
+    const strictBlock = src.match(/\$strictNumericFields = \[[\s\S]*?\];/)[0].replace(/\/\/.*$/gm, '');
+    assert(!/'stash_count'/.test(strictBlock), "'stash_count' убран из \$strictNumericFields (числовой потолок больше не нужен)");
+    const devGrantBody = src.slice(src.indexOf('function devGrantCurrency()'), src.indexOf('function devSetRyukzakLevel'));
+    assert(/\$allowedTypes = \[[^\]]*'stash_count'/.test(devGrantBody), "devGrantCurrency.allowedTypes содержит 'stash_count' (обходной путь для дев-кнопок)");
 }
 
 console.log('\nTest 5: migrate15.php добавляет колонку stash_count');

@@ -71,7 +71,10 @@ export function attachRouletteScreen(proto){
         // Единственный гарантированный способ обойти такой кэш — сменить сам ПУТЬ файла, не
         // только query: переименовано в "рулетка колесо v2.png" (реальный файл на диске тоже
         // переименован, см. upload.sh при деплое).
-        const wheelUrl = BASE + 'рулетка колесо v2.png';
+        // 17.10.2026 (по прямому указанию — замена сигарет на сухари): новый файл v3, та же
+        // причина смены ИМЕНИ файла (не просто содержимого) — см. комментарий выше про
+        // прокси-кэш VK, который не реагирует на query-параметры.
+        const wheelUrl = BASE + 'двор рулетка колесо v3.png';
         const wheelTex = PIXI.Texture.from(wheelUrl);
         const wheelSpr = new PIXI.Sprite(wheelTex);
         wheelSpr.anchor.set(0.5, 0.5);
@@ -352,7 +355,7 @@ export function attachRouletteScreen(proto){
             {lbl:'+10000 опыта',    type:'exp',              amt:10000, sp:0},
             {lbl:'+20 спичек',      type:'roulette_spichki', amt:20,    sp:20},
             {lbl:'+1 ствол',        type:'gun',              amt:1,     sp:0},
-            {lbl:'+1000 сигарет',   type:'cig',              amt:1000,  sp:0},
+            {lbl:'+1000 сухарей',   type:'cig',              amt:1000,  sp:0},
             {lbl:'+50 спичек',      type:'roulette_spichki', amt:50,    sp:50},
             {lbl:'+20р',            type:'coins',            amt:20,    sp:0},
             {lbl:'+10р',            type:'coins',            amt:10,    sp:0},

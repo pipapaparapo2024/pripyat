@@ -69,10 +69,12 @@ console.log('\nTest 4: оба текста (ОЧКИ / НОВЫЕ) центри�
     assert(/newTxt\.x = 1220; newTxt\.y = 639;/.test(body) && !/newTxt\.scale\.set\(/.test(body),
         'newTxt позиционируется по явным координатам редактора позиций (x:1220 y:639), без scale');
 
-    assert(/fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*ptsTxt\.anchor/.test(fightSrc),
-        'ptsTxt fontWeight normal (было bold), fontSize:27 (18×1.521)');
+    // 17.10.2026 (по прямому указанию — репорт "перепутано, должно быть наоборот"): ptsTxt
+    // (ОЧКИ) — чёрный, newTxt (НОВЫЕ) — белый (два последовательных свопа тем же днём).
+    assert(/fontFamily:'Southbank LT', fontSize:27, fill:'#000000', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*ptsTxt\.anchor/.test(fightSrc),
+        'ptsTxt fontWeight normal (было bold), fontSize:27 (18×1.521), fill чёрный (было белый)');
     assert(/fontFamily:'Southbank LT', fontSize:27, fill:'#ffffff', fontWeight:'normal',\s*\n\s*\}\);\s*\n\s*newTxt\.anchor/.test(fightSrc),
-        'newTxt fontWeight normal (было bold), fontSize:27 (18×1.521)');
+        'newTxt fontWeight normal (было bold), fontSize:27 (18×1.521), fill белый (вернули обратно)');
 }
 
 console.log('\nTest 5: старый костыль ручного сдвига X по числу цифр (NEW_PTS_X_BY_DIGITS) убран — центрирование через anchor делает его лишним');

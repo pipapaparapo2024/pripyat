@@ -79,9 +79,12 @@ console.log('\nTest 3: dev-панель — кнопка МИЛЛИОН ВСЕГ
     // 29.09.2026: coins/stew/cigarettes больше не client-writable (см.
     // tests/currency-whitelist-removed-devgrant-endpoint.test.js) — _giveMillion больше не
     // пишет их напрямую в udata, а считает дельту до 1000000 и шлёт через devGrantCurrency().
-    // Остальные поля (exp и т.п.) по-прежнему выставляются напрямую — этот путь не менялся.
-    assert(/currencyDeltas\[key\]\s*=\s*delta;/.test(body) && /udata\['exp'\]\s*=\s*M;/.test(body),
-        '_giveMillion считает дельту валют и выставляет остальные поля напрямую');
+    // 19.10.2026 (расследование "Антикризиса"): exp/respect/stash_count ТОЖЕ переведены на тот
+    // же дельта-путь (убраны из whitelist той же причине) — остальные поля (ammo_*/
+    // skill_points/energy/max_energy и т.п.) по-прежнему выставляются напрямую, этот путь не
+    // менялся.
+    assert(/currencyDeltas\[key\]\s*=\s*delta;/.test(body) && /udata\['ammo_auto'\]\s*=\s*M;/.test(body) && !/udata\['exp'\]\s*=\s*M;/.test(body),
+        '_giveMillion считает дельту валют (включая exp/respect/stash_count) и выставляет оставшиеся поля напрямую');
     assert(/_grantCurrencyServer\(currencyDeltas,/.test(body),
         '_giveMillion применяет валютные дельты через devGrantCurrency (_grantCurrencyServer)');
     assert(/TS\.php\('users\.save', \{udata_json: JSON\.stringify\(udata\)\}/.test(body), '_giveMillion сохраняет результат на сервере');

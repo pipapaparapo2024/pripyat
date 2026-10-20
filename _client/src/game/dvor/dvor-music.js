@@ -47,11 +47,30 @@ export function attachDvorMusic(proto){
         this._dvorMusicWatchdog = null;
     };
 
+    // 17.10.2026 (тот же повторный репорт и тот же остаточный путь к двоению, что чинили в
+    // background-music.js — см. подробный комментарий там, у _stopStrayTracks): страхуемся так
+    // же — при возврате из фона явно останавливаем ЛЮБОЙ алиас плейлиста Двора, который не
+    // является текущим (this._dvorMusicTrackIdx) и при этом сам считает себя играющим.
+    const _stopStrayDvorTracks = (activeIdx) => {
+        for(let i = 0; i < TRACKS.length; i++){
+            if(i === activeIdx) continue;
+            const alias = 'dvor_music_' + i;
+            const stray = PIXI.sound.exists(alias) ? PIXI.sound.find(alias) : null;
+            if(stray && stray.isPlaying){
+                console.error('[dvor-music._resumeDvorMusicWatchdog] обнаружен и остановлен дублирующийся трек Двора', i + 1, '(alias', alias + ') — играл параллельно с актуальным треком', activeIdx + 1);
+                try{ stray.stop(); } catch(e){
+                    console.error('[dvor-music._resumeDvorMusicWatchdog] ошибка при остановке дублирующегося трека:', e.message);
+                }
+            }
+        }
+    };
+
     proto._resumeDvorMusicWatchdog = function(){
         if(!this._dvorMusicPlaying || !this._dvorMusicInstance) return;
         const idx   = this._dvorMusicTrackIdx % TRACKS.length;
         const alias = 'dvor_music_' + idx;
         const myGen = this._dvorMusicGen;
+        _stopStrayDvorTracks(idx);
         const _sound = PIXI.sound.find(alias);
         const _durationMs = (_sound && _sound.duration) ? _sound.duration * 1000 : 60000;
         console.log('[dvor-music._resumeDvorMusicWatchdog] приложение развёрнуто — перевзвожаю сторож-таймер трека Двора', idx + 1, 'с полным запасом');

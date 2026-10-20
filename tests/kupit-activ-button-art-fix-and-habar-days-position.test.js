@@ -34,7 +34,7 @@ const weaponsSrc = readSrc('_client/src/game/weapons.js');
 const bossesSrc  = readSrc('_client/src/game/shell/overlays/bosses_fight.js');
 const habarSrc   = readSrc('_client/src/game/habar.js');
 
-console.log('\nTest 1: yashik.js — buyActiv anchor(0.5,0.5), позиция уточнена редактором позиций (564,413)');
+console.log('\nTest 1: yashik.js — buyActiv anchor(0.5,0.5), позиция уточнена редактором позиций (565,412 — 17.10.2026 +1/+1 от 564,413)');
 {
     const s = yashikSrc.indexOf("const buyActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'купить актив.png'));");
     const e = yashikSrc.indexOf('win.addChild(buyActiv);', s);
@@ -42,8 +42,8 @@ console.log('\nTest 1: yashik.js — buyActiv anchor(0.5,0.5), позиция у
     assert(/buyActiv\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'anchor(0.5,0.5) — центрирует спрайт вокруг заданной точки');
     // 25.09.2026 (уточнение тем же днём, редактор позиций — "купить актив.png x:564 y:413
     // scale:1.000"): формула-центр hitBuy (566,383) была близкой, но неточной оценкой.
-    assert(/buyActiv\.x = 564; buyActiv\.y = 413; buyActiv\.scale\.set\(1\.000\);/.test(body),
-        'позиция уточнена напрямую редактором позиций (564,413)');
+    assert(/buyActiv\.x = 565; buyActiv\.y = 412; buyActiv\.scale\.set\(1\.000\);/.test(body),
+        'позиция уточнена напрямую редактором позиций (565,412)');
     assert(!/buyActiv\.x = 448 - 10/.test(body), 'старая top-left компенсация "-10/-32-2" убрана');
 }
 

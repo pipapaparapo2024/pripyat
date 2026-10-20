@@ -13,8 +13,17 @@ export function formatRewardAmount(n){
 export function attachRewardPopup(proto){
     const ICON_MAP = {
         exp:              'попап награда опыт.png',
-        cig:              'попап награда сигареты.png',
-        cigarettes:       'попап награда сигареты.png',
+        // 18.10.2026 (баг найден по прямому указанию — "в попапе награды не выводится
+        // ячейка награда сухари.png"): ICON_MAP здесь рисует КАРТОЧКИ попапа награды в
+        // масштабе CARD_SCALE, рассчитанном под портретные карты вроде "попап награда
+        // опыт.png" (обрезаны под 236×411, см. комментарий у icon.scale.set(CARD_SCALE)
+        // ниже). 'боевка награда сухари.png' — отдельная МАЛЕНЬКАЯ квадратная иконка для
+        // совсем других мест (двор/блэкджек/тултип перед боем, см. их вызовы файла), с тем же
+        // CARD_SCALE она тонула почти до невидимого пятна именно в ЭТОМ попапе. Правильная
+        // карточка под размер этого попапа — 'ячейка награда сухари.png' (так и названа
+        // пользователем: "ячейка для попапа награды для получения сухарей").
+        cig:              'ячейка награда сухари.png',
+        cigarettes:       'ячейка награда сухари.png',
         auto:             'попап награда автомат.png',
         gun:              'попап награда ствол.png',
         machete:          'попап награда мачете.png',
@@ -192,6 +201,38 @@ export function attachRewardPopup(proto){
             const itemsWrap = new PIXI.Container();
             popup.addChild(itemsWrap);
 
+            // 20.10.2026 (по прямому указанию — "сделай так, чтобы при наведении писалась
+            // шмотка которая выпала, логика как в рюкзаке"): простой тултип с названием
+            // предмета, показывается при наведении на карточку, у которой есть item.name
+            // (сейчас это только type:'shmot' из roulette.openCase()/poker.openBag(), см.
+            // dvor-roulette-buy.js/dvor-poker-bag.js). Вне itemsWrap (не режется maskGfx ниже),
+            // чтобы тултип не обрезался окном видимых 5 слотов.
+            const nameTip = new PIXI.Container();
+            nameTip.visible = false;
+            popup.addChild(nameTip);
+            const _showNameTip = (x, y, name) => {
+                while(nameTip.children.length) nameTip.removeChildAt(0);
+                const PAD = 10;
+                const txt = new PIXI.Text(name, {
+                    fontFamily: 'Southbank LT', fontSize: 18, fill: '#2a2118',
+                    wordWrap: true, wordWrapWidth: 200, align: 'center',
+                });
+                txt.anchor.set(0.5, 0);
+                const bgW = Math.min(220, txt.width + PAD * 2), bgH = txt.height + PAD * 2;
+                // Ящик растёт ВВЕРХ от переданной точки (y передаётся как нижний край тултипа —
+                // "над карточкой"), поэтому координаты отрицательные.
+                const tipBg = new PIXI.Graphics();
+                tipBg.beginFill(0xfbeee0, 0.97);
+                tipBg.lineStyle(2, 0xc79a72, 1);
+                tipBg.drawRoundedRect(-bgW / 2, -bgH, bgW, bgH, 8);
+                tipBg.endFill();
+                nameTip.addChild(tipBg);
+                txt.x = 0; txt.y = -bgH + PAD;
+                nameTip.addChild(txt);
+                nameTip.x = x; nameTip.y = y;
+                nameTip.visible = true;
+            };
+
             const maskGfx = new PIXI.Graphics();
             maskGfx.beginFill(0xffffff);
             maskGfx.drawRect(-MAX_VIS * SLOT_W / 2, ITEM_Y - CARD_H / 2 - 5, MAX_VIS * SLOT_W, CARD_H + 80);
@@ -218,6 +259,14 @@ export function attachRewardPopup(proto){
                 icon.scale.set(CARD_SCALE);
                 icon.x = slotX; icon.y = ITEM_Y + 12;
                 itemsWrap.addChild(icon);
+
+                // 20.10.2026: наведение на карточку с известным item.name показывает название
+                // выпавшего предмета (тот же приём, что баннер "шанс на шмотку" в ryukzak.js).
+                if(item.name){
+                    icon.interactive = true; icon.buttonMode = true;
+                    icon.on('pointerover', () => _showNameTip(slotX, ITEM_Y - CARD_H / 2 - 10, item.name));
+                    icon.on('pointerout',  () => { nameTip.visible = false; });
+                }
 
                 const amtLabel = bossName
                     ? '+' + formatRewardAmount(item.amount) + '\n' + bossName

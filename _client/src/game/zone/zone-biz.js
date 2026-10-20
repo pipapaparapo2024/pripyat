@@ -81,7 +81,7 @@ export function attachZoneBiz(proto){
         const incomeMap = {
             income_exp:  { label:'ОПЫТ',     color:'#5599ff', progFile: BIZ+'biz_prog_weapon.png' },
             income_resp: { label:'УВАЖЕНИЕ', color:'#44cc66', progFile: BIZ+'biz_prog_loot.png'   },
-            income_cig:  { label:'СИГАРЕТЫ', color:'#ff8822', progFile: BIZ+'biz_prog_toll.png'   },
+            income_cig:  { label:'СУХАРИ', color:'#ff8822', progFile: BIZ+'biz_prog_toll.png'   },
         };
 
         const BTN_OFFSETS  = [150, 26, -96];
@@ -137,7 +137,7 @@ export function attachZoneBiz(proto){
                     const t1 = new PIXI.Text('УЛУЧШЕНИЕ', {fontFamily:'Southbank LT', fontSize:16, fill:'#aaaaaa'});
                     t1.anchor.set(0.5, 0); t1.x = 100; t1.y = 4;
                     tip.addChild(t1);
-                    const t2 = new PIXI.Text(biz.costs[lv] + ' СИГАРЕТ', {fontFamily:'Southbank LT', fontSize:22, fill:'#ff8822'});
+                    const t2 = new PIXI.Text(biz.costs[lv] + ' СУХАРЕЙ', {fontFamily:'Southbank LT', fontSize:22, fill:'#ff8822'});
                     t2.anchor.set(0.5, 0); t2.x = 100; t2.y = 22;
                     tip.addChild(t2);
                     tip.x = btnX - 100; tip.y = 554;

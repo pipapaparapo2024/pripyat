@@ -46,21 +46,40 @@ export function attachDiceScreen(proto){
         // присланного пользователем эталона (C:\Users\HONOR\Desktop\vk_game\вкладка двор\зарики
         // страница.png, было 1365×768 RGB без альфы), передискретизирован в те же 1280×705
         // RGBA, что и раньше — имя файла и код рендера не менялись, только содержимое.
-        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'задний фон зарики новыйй.png'));
-        bg.y = 15;
+        // 17.10.2026 (по прямому указанию — замена фона на сухари-версию): новый файл 1280×676
+        // (был 1280×705) — ширина совпадает нативно, высоту слегка растягиваем до 690 (область
+        // экрана 15..705), чтобы не оставлять непокрытую полосу снизу — искажение minimal (~2%).
+        const bg = new PIXI.Sprite(PIXI.Texture.from(BASE + 'двор зарики фон экран.png'));
+        // 20.10.2026 (по прямому указанию, снимок редактора позиций): x:-1 y:22 w:1280 h:690.
+        bg.x = -1; bg.y = 22; bg.width = 1280; bg.height = 690;
         win.addChild(bg);
 
         // Подсветка строки в напечатанной на фоне таблице наград (справа) — вместо
-        // отдельного текстового результата. Координаты — приблизительные (сняты по
-        // скриншоту фона, с учётом растяжения нативной картинки до 1280×690),
-        // поправить точно через редактор позиций.
-        const comboHighlight = new PIXI.Graphics();
-        comboHighlight.visible = false;
-        // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
-        // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
-        comboHighlight._uDraggable = true;
-        win.addChild(comboHighlight);
-        this._diceComboHighlight = comboHighlight;
+        // отдельного текстового результата.
+        // 20.10.2026 (по прямому указанию — "каждое выпадение комбинации имеет координаты
+        // 0,0, сделай координаты относительно всей плоскости, как у других файлов"): раньше
+        // это был ОДИН общий PIXI.Graphics на все 18 строк, с h.position жёстко зафиксированным
+        // в (0,0) (все прямоугольники рисовались ВНУТРИ одного draw-вызова по абсолютным
+        // координатам DICE_ROW[idx]) — универсальный редактор позиций, выбрав этот объект,
+        // ВСЕГДА читал x:0,y:0 (позицию контейнера, не отдельной строки), и не мог показать
+        // больше одного набора строк одновременно. Теперь — 18 НЕЗАВИСИМЫХ маркеров (по
+        // одному на строку таблицы), каждый со своей СОБСТВЕННОЙ позицией = DICE_ROW[idx]
+        // (та же абсолютная система координат, что у любого другого Sprite/Text в проекте) —
+        // редактор показывает и позволяет двигать/растягивать КАЖДУЮ строку отдельно.
+        this._diceComboHighlights = DICE_ROW.map((rowPos, idx) => {
+            const m = new PIXI.Graphics();
+            m.lineStyle(3, 0xffdd44, 1);
+            m.beginFill(0xffdd44, 0.18);
+            m.drawRoundedRect(-DICE_ROW_W / 2 + 30, -DICE_ROW_H / 2 + 14, DICE_ROW_W + 30, DICE_ROW_H, 5);
+            m.endFill();
+            m.x = rowPos.x; m.y = rowPos.y;
+            m.visible = false;
+            // Разрешаем универсальному редактору позиций хватать и двигать эту рамку —
+            // обычно он видит только Sprite/Text, для произвольной Graphics нужен явный флаг.
+            m._uDraggable = true;
+            win.addChild(m);
+            return m;
+        });
 
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from('./images/выход.png'));
         exitBtn.scale.set(0.5);
@@ -134,22 +153,28 @@ export function attachDiceScreen(proto){
         });
         pointsTxt.anchor.set(0.5, 0.5);
         // 19.09.2026: позиция/поворот сняты пользователем через редактор позиций.
-        pointsTxt.x = 183; pointsTxt.y = 443; pointsTxt.rotation = 3 * Math.PI / 180;
+        // 18.10.2026 (по прямому указанию, новый снимок редактора позиций — x:190,y:464):
+        // поворот не упоминался в новом снимке — оставлен как был.
+        // 20.10.2026: повторно снято редактором позиций — x:190,y:462.
+        pointsTxt.x = 190; pointsTxt.y = 462; pointsTxt.rotation = 3 * Math.PI / 180;
         win.addChild(pointsTxt);
         this._dicePointsTxt = pointsTxt;
 
         const buyBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'зарики купить поинты.png'));
         buyBtn.anchor.set(0.5, 0.5);
-        buyBtn.x = 195; buyBtn.y = 535;
+        buyBtn.x = 195; buyBtn.y = 556; // 20.10.2026: снято редактором позиций
         buyBtn.interactive = true; buyBtn.buttonMode = true;
         buyBtn.on('pointerover', ()=>{ _sa(buyBtn, 0.85); buyBtn.scale.set(1.08); });
         buyBtn.on('pointerout',  ()=>{ _sa(buyBtn, 1); buyBtn.scale.set(1); });
         buyBtn.on('pointerdown', ()=>this._openDiceBuyScreen());
         win.addChild(buyBtn);
 
+        // 20.10.2026 (по прямому указанию — "кости для зариков который выпали сдвинь вправо
+        // на 20px и вниз на 10px"): сдвиг применён к ОБЩЕМУ якорю (dieTxt/dieSpr/hit делят
+        // одну и ту же позицию ниже), чтобы хит-зона клика не разъехалась с картинкой.
         const DICE_POSITIONS = [
-            {x:438, y:318}, {x:544, y:318},
-            {x:650, y:318}, {x:756, y:318}
+            {x:458, y:328}, {x:564, y:328},
+            {x:670, y:328}, {x:776, y:328}
         ];
         const DICE_STYLE = {
             fontFamily:'Arial', fontSize:60, fill:'#ffffff', fontWeight:'bold',
@@ -200,13 +225,14 @@ export function attachDiceScreen(proto){
         timerTxt.anchor.set(0.5, 0.5);
         // 19.09.2026: позиция снята пользователем через редактор позиций (x не менялся,
         // y=461→468), цвет — белый в обоих состояниях (было зелёный/серый).
-        timerTxt.x = 595; timerTxt.y = 468;
+        // 20.10.2026: повторно снято редактором позиций — x:623,y:486.
+        timerTxt.x = 623; timerTxt.y = 486;
         win.addChild(timerTxt);
         this._diceTimerTxt = timerTxt;
 
         const throwBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'зарики кнопка бросить.png'));
         throwBtn.anchor.set(0.5, 0.5);
-        throwBtn.x = 604; throwBtn.y = 523;
+        throwBtn.x = 624; throwBtn.y = 541; // 20.10.2026: снято редактором позиций
         throwBtn.interactive = true; throwBtn.buttonMode = true;
         throwBtn.on('pointerover', ()=>{ _sa(throwBtn, 0.85); throwBtn.scale.set(1.08); });
         throwBtn.on('pointerout',  ()=>{ _sa(throwBtn, 1); throwBtn.scale.set(1); });
@@ -218,11 +244,12 @@ export function attachDiceScreen(proto){
         // текстовая кнопка-Graphics (текст менялся между двумя надписями смены хода, см.
         // dvor-dice-game.js) заменена на sprite с новым арт-файлом "кнопка вскрыться для
         // игр.png" — текст уже "запечён" в картинке, отдельный PIXI.Text-лейбл больше не
-        // нужен ни для одного из двух состояний. Позиция не менялась (604,523 — то же место,
-        // что и БРОСИТЬ, они никогда не показываются одновременно).
+        // нужен ни для одного из двух состояний. 20.10.2026: throwBtn переехал на (624,541)
+        // по снимку редактора позиций — confirmBtn синхронизирован на то же место (они никогда
+        // не показываются одновременно, должны делить одну и ту же позицию).
         const confirmBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'кнопка вскрыться для игр.png'));
         confirmBtn.anchor.set(0.5, 0.5);
-        confirmBtn.x = 604; confirmBtn.y = 523;
+        confirmBtn.x = 624; confirmBtn.y = 541;
         confirmBtn.interactive = true; confirmBtn.buttonMode = true;
         confirmBtn.visible = false;
         confirmBtn.on('pointerover', ()=>{ _sa(confirmBtn, 0.85); confirmBtn.scale.set(1.08); });
@@ -383,70 +410,101 @@ export function attachDiceScreen(proto){
     // был формулой/экстраполяцией, а не точным замером каждой строки — заменён на явную карту
     // {x,y} (центр) на каждую строку отдельно.
     //
-    // Присланные пользователем числа (x от -12 до 0, y от -190 до 221) НЕ абсолютные
-    // координаты канваса — та же картина, что уже описывалась 22.09.2026 (редактор отдаёт
-    // значения относительно точки создания бокса, не относительно (0,0) сцены). Подтверждено
-    // математически: раскрытые числа почти ТОЧНО (±0-2px) совпадают со СТАРЫМИ
-    // формула-базированными Y (152..563) при сложении константы +342 (true_y = raw_y + 342),
-    // и со старым X-якорем (центр ~1009, см. комментарий "редактор x:1009" в предыдущей
-    // калибровке DICE_ROW_X) при +1009 (true_x = raw_x + 1009) — 18/18 строк сошлись с
-    // точностью до 1-2px, что исключает совпадение. Ниже уже итоговые абсолютные X/Y.
+    // 20.10.2026 (по прямому указанию — "каждое выпадение комбинации имеет координаты 0,0,
+    // сделай координаты относительно всей плоскости"): корень — _diceComboHighlight был ОДНИМ
+    // общим PIXI.Graphics на весь список строк, у него h.position был жёстко зафиксирован в
+    // (0,0), а сами прямоугольники рисовались ВНУТРИ одного draw-вызова по этим координатам —
+    // редактор позиций, выбрав объект целиком, всегда читал x:0,y:0. Переделано на 18
+    // НЕЗАВИСИМЫХ маркеров (см. _buildDiceScreen выше, this._diceComboHighlights) — у каждого
+    // своя СОБСТВЕННАЯ позиция = DICE_ROW[idx], та же абсолютная система координат, что у
+    // любого другого объекта в проекте.
+    // 20.10.2026 (РЕАЛЬНЫЙ замер пользователем всех 18 строк ПО ОТДЕЛЬНОСТИ через новую
+    // архитектуру независимых маркеров — см. _diceComboHighlights выше): в отличие от
+    // предыдущего снимка того же дня (x:42 общий, scale:0.949 — оказался артефактом сужения
+    // ОДНОГО общего объекта через редактор, см. историю выше), здесь каждая строка была
+    // выбрана и замерена СВОИМ собственным маркером, scale у всех 18 ровно 1.000 — числа
+    // надёжны, применены как есть.
     const DICE_ROW = [
-        { x: 997,  y: 152 }, // 0: 4×6 — Шмотка 5шт
-        { x: 998,  y: 175 }, // 1: 3×6 — 100 рублей
-        { x: 998,  y: 197 }, // 2: 2×6 — 10.000 сигарет
-        { x: 1000, y: 225 }, // 3: 4×5 — 50 рублей
-        { x: 1000, y: 249 }, // 4: 3×5 — 5.000 сигарет
-        { x: 1000, y: 271 }, // 5: 2×5 — 2 поинта
-        { x: 1004, y: 300 }, // 6: 4×4 — 10 автоматов
-        { x: 1004, y: 322 }, // 7: 3×4 — 10 стволов
-        { x: 1004, y: 345 }, // 8: 2×4 — 2000 сигарет
-        { x: 1004, y: 375 }, // 9: 4×3 — 10 мачете
-        { x: 1004, y: 397 }, // 10: 3×3 — 1000 опыта
-        { x: 1004, y: 418 }, // 11: 2×3 — 25 рублей
-        { x: 1004, y: 446 }, // 12: 4×2 — 2 автомат
-        { x: 1009, y: 468 }, // 13: 3×2 — 1 автомат
-        { x: 1009, y: 490 }, // 14: 2×2 — 500 опыта
-        { x: 1009, y: 518 }, // 15: 4×1 — 1000 сигарет
-        { x: 1009, y: 541 }, // 16: 3×1 — 250 опыта
-        { x: 1009, y: 563 }, // 17: 2×1 — 500 сигарет
+        { x: 1000, y: 131 }, // 0: 4×6 — Шмотка 5шт
+        { x: 1000, y: 156 }, // 1: 3×6 — 100 рублей
+        { x: 1000, y: 181 }, // 2: 2×6 — 10.000 сигарет
+        { x: 1002, y: 212 }, // 3: 4×5 — 50 рублей
+        { x: 1002, y: 236 }, // 4: 3×5 — 5.000 сигарет
+        { x: 1002, y: 261 }, // 5: 2×5 — 2 поинта
+        { x: 1003, y: 292 }, // 6: 4×4 — 10 автоматов
+        { x: 1005, y: 316 }, // 7: 3×4 — 10 стволов
+        { x: 1005, y: 340 }, // 8: 2×4 — 2000 сигарет
+        { x: 1005, y: 371 }, // 9: 4×3 — 10 мачете
+        { x: 1005, y: 395 }, // 10: 3×3 — 1000 опыта
+        { x: 1005, y: 420 }, // 11: 2×3 — 25 рублей
+        { x: 1005, y: 449 }, // 12: 4×2 — 2 автомат
+        { x: 1005, y: 473 }, // 13: 3×2 — 1 автомат
+        { x: 1005, y: 497 }, // 14: 2×2 — 500 опыта
+        { x: 1005, y: 526 }, // 15: 4×1 — 1000 сигарет
+        { x: 1005, y: 551 }, // 16: 3×1 — 250 опыта
+        { x: 1005, y: 574 }, // 17: 2×1 — 500 сигарет
     ];
-    // w:261 h:26 scale:1.000 — одинаковы для всех 18 строк (реальный замер 04.10.2026).
-    const DICE_ROW_W = 261, DICE_ROW_H = 26;
+    // 20.10.2026: w:294 h:29 scale:1.000 — одинаковы для всех 18 строк (реальный замер, та же
+    // калибровка, что и DICE_ROW выше). Отрисовка маркера добавляет +30 к ширине (см. draw-вызов
+    // в _buildDiceScreen), поэтому базовая DICE_ROW_W = 294 - 30 = 264.
+    const DICE_ROW_W = 264, DICE_ROW_H = 29;
 
     // rowIndex — либо один номер строки, либо массив номеров (несколько одновременных
     // комбинаций, напр. 1,1,6,6 — пара по 1 И пара по 6 сразу, см. dvor-dice-game.js).
     proto._diceShowComboHighlight = function(rowIndex){
-        const h = this._diceComboHighlight;
-        if(!h) return;
+        const markers = this._diceComboHighlights;
+        if(!markers) return;
         const indices = (Array.isArray(rowIndex) ? rowIndex : [rowIndex]).filter(i => i >= 0 && i < DICE_ROW.length);
-        if(!indices.length){ h.visible = false; return; }
-        // Раньше h.position.set(cx,cy) двигал ОДИН прямоугольник в центр нужной строки —
-        // теперь рисуем НЕСКОЛЬКО прямоугольников прямо в координатах DICE_ROW[idx] (без
-        // сдвига через position), h.position остаётся (0,0) — эффект тот же для одной
-        // строки, но позволяет подсветить сразу несколько строк одним объектом.
-        h.position.set(0, 0);
-        h.clear();
-        h.lineStyle(3, 0xffdd44, 1);
-        h.beginFill(0xffdd44, 0.18);
-        indices.forEach(idx => {
-            const { x: cx, y: cy } = DICE_ROW[idx];
-            h.drawRoundedRect(cx - DICE_ROW_W / 2, cy - DICE_ROW_H / 2, DICE_ROW_W, DICE_ROW_H, 5);
+        // Запоминаем последний реальный результат — нужно, чтобы вернуть правильную картинку
+        // после того, как редактор позиций временно показал ВСЕ 18 вариантов (см.
+        // _diceShowAllComboVariants/_diceRestoreComboHighlight ниже).
+        this._diceLastComboIndices = indices;
+        markers.forEach((m, idx) => {
+            const active = indices.includes(idx);
+            if(window.gsap) gsap.killTweensOf(m);
+            m.visible = active;
+            m.alpha = 1;
         });
-        h.endFill();
-        h.visible = true;
-        h.alpha = 1;
+        if(!indices.length) return;
         // По прямому указанию — подсветка должна оставаться видна ДО следующего броска
         // (кнопка БРОСИТЬ, см. _playDiceNewScreen), а не гаснуть сама по таймеру через
         // ~3 секунды. Пульс при появлении оставлен (акцент на результате), но в конце
-        // возвращается к alpha:1, а не к invisible — h.visible гасится явно только из
-        // _playDiceNewScreen при старте новой партии.
+        // возвращается к alpha:1, а не к invisible — скрывается явно только из
+        // _playDiceNewScreen при старте новой партии (см. _diceHideComboHighlight).
         if(window.gsap){
-            gsap.killTweensOf(h);
-            gsap.timeline()
-                .to(h, {alpha:0.35, duration:0.35, repeat:3, yoyo:true})
-                .to(h, {alpha:1, duration:0.3});
+            indices.forEach(idx => {
+                const m = markers[idx];
+                gsap.timeline()
+                    .to(m, {alpha:0.35, duration:0.35, repeat:3, yoyo:true})
+                    .to(m, {alpha:1, duration:0.3});
+            });
         }
+    };
+
+    // Прячет подсветку целиком (все 18 маркеров) — вызывается при старте новой партии
+    // (см. dvor-dice-game.js._playDiceNewScreen), заменяет прежнее прямое обращение к
+    // this._diceComboHighlight (теперь это массив, не один объект).
+    proto._diceHideComboHighlight = function(){
+        const markers = this._diceComboHighlights;
+        if(!markers) return;
+        markers.forEach(m => { if(window.gsap) gsap.killTweensOf(m); m.visible = false; m.alpha = 1; });
+        this._diceLastComboIndices = [];
+    };
+
+    // 20.10.2026 (по прямому указанию — "при нажатии на редактор показывались все варианты
+    // выпадения комбинаций"): показывает ВСЕ 18 маркеров разом — для живой калибровки через
+    // универсальный редактор позиций, не дожидаясь, пока именно эта комбинация реально выпадет
+    // в игре. Вызывается из universal_pos_editor.js при включении режима редактора.
+    proto._diceShowAllComboVariants = function(){
+        const markers = this._diceComboHighlights;
+        if(!markers) return;
+        markers.forEach(m => { if(window.gsap) gsap.killTweensOf(m); m.visible = true; m.alpha = 1; });
+    };
+
+    // Возвращает подсветку к тому, что реально показывалось ДО включения редактора (см.
+    // _diceShowAllComboVariants выше) — вызывается при выключении режима редактора.
+    proto._diceRestoreComboHighlight = function(){
+        this._diceShowComboHighlight(this._diceLastComboIndices || []);
     };
 
 }

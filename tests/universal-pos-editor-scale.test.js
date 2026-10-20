@@ -56,11 +56,15 @@ console.log('\nTest 2: _uScaleStep конвертирует deltaPx в scale ч�
 // ── Test 3: readout и копирование включают текущий scale ─────────────────────
 console.log('\nTest 3: readout и КОПИРОВАТЬ показывают/копируют scale выбранного объекта');
 {
-    assert(/const scaleTxt = s\.scale \? '  scale: ' \+ s\.scale\.x\.toFixed\(3\) : '';/.test(src),
-        'readout формирует строку scale, если у объекта есть свойство scale');
+    // 19.10.2026 (по прямому указанию — "при наведении на текст писать font-size, не scale"):
+    // scaleTxt для readout теперь ветвится — PIXI.Text показывает fontSize вместо scale
+    // (у текста scale всегда 1, см. _uScaleStep выше), остальные объекты — как раньше.
+    assert(/const isTextObj = s instanceof PIXI\.Text;/.test(src), 'readout различает текстовые объекты');
+    assert(/const scaleTxt = isTextObj \? '  fontSize: ' \+ \(parseFloat\(s\.style\.fontSize\) \|\| 16\)\s*\n\s*: \(s\.scale \? '  scale: ' \+ s\.scale\.x\.toFixed\(3\) : ''\);/.test(src),
+        'readout формирует fontSize для текста, scale для остальных объектов');
     assert(/scaleTxt \+ sizeTxt \+ rotTxt \+ widthTxt \+ hint;/.test(src), 'scaleTxt подставляется в текст readout (вместе с sizeTxt)');
     assert(/\(s\.scale \? ', scale: ' \+ s\.scale\.x\.toFixed\(3\) : ''\)/.test(src),
-        '_uCopySelected добавляет scale в копируемый текст');
+        '_uCopySelected по-прежнему добавляет scale в копируемый текст (копирование не трогали — только readout и PageUp/PageDown)');
 }
 
 // ── Test 4: после PageUp/PageDown readout и рамка-подсветка обновляются ──────

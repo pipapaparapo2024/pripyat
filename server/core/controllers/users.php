@@ -218,7 +218,49 @@
 
             // Белый список разрешённых к сохранению полей
             $allowed = [
-                'exp','energy','energy_time','health',
+                'energy','energy_time','health',
+                // 19.10.2026 (по прямому указанию — расследование игрока "Антикризис", почему у
+                // него 256к опыта: нашли, что 'exp' оставался client-writable, хотя полностью
+                // server-authoritative через 14+ вызовов Gameops::add($user,'exp',...) в
+                // zone.php/bosses.php/dice.php/poker.php/roulette.php — тот же класс бага, что
+                // уже чинили для coins/stew/cigarettes 29.09.2026 (см. коммент ниже), просто
+                // пропущенный в той чистке. Хуже того — это был ЖИВОЙ, легко воспроизводимый
+                // консольный эксплойт: dvor.js._give() (ныне удалён, см. коммент в dvor.js)
+                // нигде не вызывался реальным игровым кодом, но был публичным методом на
+                // window.dvor — ЛЮБОЙ игрок мог набрать dvor._give('exp', 500000) в консоли
+                // браузера, это мутировало udata['exp'] локально, и обычный дебаунс-автосейв
+                // (queuePlayerSave) долетал до users.save() с этим значением, которое сервер
+                // послушно принимал (числовой потолок $strictNumericFields ниже — 100 млн —
+                // защищал только от переполнения, не от подделки). Заодно Gameops::saveUser()
+                // пересчитывает users.level ИЗ exp при каждом сохранении — подделанный exp
+                // подделывал и уровень аккаунта. По аналогии УБРАНЫ этим же аудитом и другие
+                // поля с точно той же формой дыры (client-writable + параллельно пишутся
+                // сервером через Gameops::add()/прямое присвоение в обход этого whitelist):
+                // 'respect' (5 мест начисления, zone.php), 'total_damage'/'bosses_killed' (ОБА
+                // напрямую читаются top.php как поля сортировки лидерборда — подделка значила
+                // бы "топ по урону"/другие топы без единого реального боя), 'coins_earned'
+                // (dice.php/poker.php/roulette.php), 'stash_count' (был в whitelist ДВАЖДЫ —
+                // дубль ниже тоже убран; zone.php/poker.php/roulette.php), 'zone_fights' вместе
+                // с 'zone_fights_0'..'zone_fights_4' и 'loc_respect_0'..'loc_respect_4'
+                // (динамические ключи в zone.php.fillCheckpoint(), литеральный grep их не
+                // находил), 'energy_spent'/'train_count' (base.php), 'vassilich_buys'
+                // (vassilich.php), 'dvor_games' (dice.php/roulette.php). Отдельно —
+                // 'hata_progress' (bosses.php) не просто подделывался бы, а служит ГЕЙТОМ
+                // прохождения хаты (hata.php.canUnlock(): "$this->ops->i($user,'hata_progress',
+                // -1) >= $bossReq") — находясь в этом whitelist, читер мог одним users.save
+                // открыть любой этап хаты без единого убитого босса, минуя проверку целиком.
+                // Единственные легитимные клиентские писатели среди всего списка — dev-кнопки
+                // (debug-tools.js GIVE_MILLION, dev_panel.js._giveMillion) для exp/respect/
+                // stash_count и dvor.js._give() для exp/respect/coins_earned/stash_count/
+                // dvor_games — но _give() подтверждённо НЕ вызывается ни одним реальным игровым
+                // путём (grep по всему _client/src — ни одного вызывающего места, кроме
+                // собственного определения и докблоков-предупреждений о том, что это "тот же
+                // небезопасный паттерн, что уже убрали для покера/карт"), поэтому удалён целиком;
+                // dev-кнопки переведены на devGrantCurrency() (см. там же) тем же приёмом, что
+                // уже применён к coins/stew/cigarettes. users.get()/patch по-прежнему отдают
+                // клиенту актуальное серверное значение на чтение — whitelist влияет только на
+                // save().
+                //
                 // 29.09.2026 (закрытие класса бага, см. память агента
                 // incident_checkall_flush_wipes_server_credits — уже третий репорт того же
                 // класса, "покупка/награда не начисляет валюту"): 'coins'/'stew'/'cigarettes'
@@ -270,8 +312,7 @@
                 // клиент сам считал сумму max_e-бонусов НАДЕТЫХ вещей и полностью перезаписывал
                 // это поле (shmot.js._applyMaxEnergyBonus(), теперь удалён) — при каждой смене
                 // экипировки стирались все серверные начисления от банды/скиллов/Василича/Хапуги.
-                'total_damage','zone_fights','dvor_wins','bosses_killed','habar_opened',
-                'train_count','vassilich_buys','coins_earned',
+                'dvor_wins','habar_opened',
                 // 27.09.2026 (аудит по прямому указанию, тот же класс проблемы, что уже чинили
                 // 26.09.2026 для sedoy_dmg_total/sedoy_dmg_left — см. коммент ниже про
                 // coins_spent): 'stew_spent' УБРАНО отсюда — полностью server-authoritative,
@@ -285,8 +326,7 @@
                 // тихо затереть свежий счётчик обратно — внешне выглядело как "ачивки трат
                 // (spend_stew) иногда откатываются назад". users.get()/patch по-прежнему отдают
                 // клиенту актуальное значение — whitelist влияет только на save().
-                'bosses_data','zone_income_time','respect','dvor_games','dvor_daily',
-                'zone_fights_0','zone_fights_1','zone_fights_2','zone_fights_3','zone_fights_4',
+                'bosses_data','zone_income_time','dvor_daily',
                 'natisk_event_id','natisk_free_attempts','natisk_paid_attempts','natisk_kills',
                 'natisk_seen_event_id',
                 // 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"):
@@ -350,8 +390,8 @@
                 // по-прежнему отдают клиенту актуальное серверное значение на чтение — whitelist
                 // влияет только на save(). Клиентское удвоение убрано отдельно (achievements.js).
                 'ammo_auto','ammo_gun','ammo_machete',
-                'hata_progress','base_bg_owned','base_bg_active',
-                'stash_data','stash_count',
+                'base_bg_owned','base_bg_active',
+                'stash_data',
                 // 25.09.2026 (по прямому указанию, живой репорт — "шмотки не сохраняются" +
                 // "урон без шмоток"): 'shmot' УБРАН из whitelist (было здесь раньше). Owned уже
                 // писался только сервером (shmot.php.buy()/боссовые дропы, через
@@ -367,7 +407,7 @@
                 // (roulette.php.claimPrize(), полная строка через Gameops::saveUser()), клиент
                 // раньше мог сам вписать сюда произвольное имя/сумму через users.save.
                 'boss_kills_0','boss_kills_1','boss_kills_2',
-                'bj_games','dice_games','energy_spent',
+                'bj_games','dice_games',
                 // 26.09.2026 (баг найден по прямому указанию — "после повторного сбора хабара
                 // урон седого откатывается на старый остаток вместо свежей выдачи"): 'sedoy_dmg_total'
                 // и 'sedoy_dmg_left' УБРАНЫ из whitelist — оба поля уже полностью server-authoritative
@@ -449,7 +489,7 @@
                 // «Рамка уважения» на карточках локаций (16.09.2026) — личный накопленный счётчик
                 // уважения по каждой из 5 локаций (сверяется с глобальным рекордом в отдельной
                 // таблице zone_respect_leader, см. server/core/controllers/zone.php).
-                'loc_respect_0','loc_respect_1','loc_respect_2','loc_respect_3','loc_respect_4',
+                
                 // Бесплатный ежедневный бросок в зариках (16.09.2026, возвращён по прямому
                 // указанию) — таймштамп последнего использования, см. dvor-dice-game.js.
                 'dice_free_ts',
@@ -463,7 +503,6 @@
                 // в habar_counts, которое server/core/controllers/habar.php использует как JSON-
                 // массив контейнеров Хабара — два разных смысла тихо перезаписывали друг друга
                 // через один и тот же столбец. Разведены по отдельным полям.
-                'stash_count',
                 // Аудит 17.09.2026 (перенос Зоны на сервер) — обнаружено, что zone_collect_0..4
                 // (кулдаун 8ч сбора дохода бизнеса, zone.js.collectLocIncome) вообще НЕ были в
                 // whitelist и не существовали как колонки БД — сервер молча отбрасывал ключ при
@@ -531,7 +570,7 @@
                 // 29.09.2026: 'coins'/'stew'/'cigarettes' убраны отсюда вместе с удалением из
                 // $allowed выше — раз поля больше не client-writable, числовой потолок для них
                 // здесь не нужен (тот же паттерн, что 'roulette_spichki'/'max_energy' выше).
-                'exp', 'respect', 'health',
+                'health',
                 'skill_points',
                 // 11.10.2026: 'dice_points'/'blue_points'/'poker_chips' убраны отсюда вместе с
                 // удалением из $allowed выше (см. коммент там) — раз поля больше не
@@ -542,8 +581,10 @@
                 // 28.09.2026: 'max_energy' убрано отсюда вместе с удалением из $allowed выше
                 // (та же причина, что у bp_level/bp_xp/bp_xp_next ниже) — раз поле больше не
                 // client-writable, потолок для него здесь не нужен.
+                // 19.10.2026: 'exp'/'respect'/'stash_count' убраны отсюда вместе с удалением из
+                // $allowed выше (см. большой коммент там про расследование "Антикризиса") — раз
+                // поля больше не client-writable, числовой потолок для них здесь не нужен.
                 'boss_keys', 'energy',
-                'stash_count',
             ];
             // 18.09.2026: 'bp_level'/'bp_xp'/'bp_xp_next' убраны отсюда вместе с удалением из
             // $allowed выше (bp.claim() читает их из БД для проверки права на награду — эти
@@ -924,7 +965,10 @@
             // client-writable whitelist $allowed выше (тот же класс бага, что уже чинили для
             // coins/stew/cigarettes 29.09.2026), дев-кнопкам (+50/+100/+500, МИЛЛИОН ВСЕГО)
             // нужен тот же обходной путь.
-            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips'];
+            // 19.10.2026: exp/respect/stash_count добавлены сюда же той же причине — убраны из
+            // $allowed (см. большой коммент там), GIVE_MILLION/_giveMillion писали их напрямую
+            // через обычный users.save(), который теперь их молча игнорирует.
+            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp', 'respect', 'stash_count'];
             $deltas = [];
             foreach($allowedTypes as $type){
                 if(!isset($this->registry['user_params'][$type])) continue;

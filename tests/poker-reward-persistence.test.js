@@ -3,11 +3,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const read = p => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 const config = JSON.parse(read('server/json/poker_config.json'));
+// 20.10.2026 (по прямому указанию — "это должны быть одинаковые спички, исправь"):
+// poker_spichki/roulette_spichki объединены в одну валюту, канонический столбец —
+// roulette_spichki (см. poker.php.openBag()/server/json/poker_config.json).
 const expected = {
     royal_flush: ['shmot',1], straight_flush: ['stew',100], four_of_a_kind: ['stew',60],
-    full_house: ['auto',40], flush: ['stew',15], straight: ['poker_spichki',300],
-    three_of_a_kind: ['poker_spichki',300], two_pair: ['gun',5],
-    pair: ['coins',20], high_card: ['poker_spichki',50]
+    full_house: ['auto',40], flush: ['stew',15], straight: ['roulette_spichki',300],
+    three_of_a_kind: ['roulette_spichki',300], two_pair: ['gun',5],
+    pair: ['coins',20], high_card: ['roulette_spichki',50]
 };
 for(const [key, reward] of Object.entries(expected)){
     assert.deepEqual([config.combos[key].type, config.combos[key].amt], reward, key);

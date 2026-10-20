@@ -80,7 +80,7 @@ console.log('\nTest 3: ники игроков в Сводке уменьшен�
     const body = leaderSrc.slice(s, e);
     // 08.10.2026 (фикс пикселизации текста): поверх правки 25.09 (15→13) позже добавился
     // scale.set(0.954), который потом убрали, свернув коэффициент прямо в fontSize — 13×0.954≈12.
-    assert(/fontSize:12,\s*fill:'#ffffff'/.test(body), "nameTxt fontSize:12 (15 → 13 → 12, 08.10.2026 scale свёрнут в fontSize)");
+    assert(/fontSize:12,\s*fill:'#c5c5c5'/.test(body), "nameTxt fontSize:12 (15 → 13 → 12, 08.10.2026 scale свёрнут в fontSize), цвет #c5c5c5 (18.10.2026)");
 }
 
 console.log(`\n${'─'.repeat(50)}`);

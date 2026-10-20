@@ -23,10 +23,12 @@ const src = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', '
 
 console.log('\nTest 1: новые спрайты (бирка + тушёнка) и текст "20" добавлены в win');
 {
-    assert(/const tushenkaTagSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'nagrada_ryukzak_birka\.png'\)\);/.test(src),
+    // 17.10.2026: новые ассеты лежат в плоской BASE, старые (эта бирка/тушёнка) — в OLD_BASE
+    // (sidorovich/), см. ryukzak.js докблок у объявления OLD_BASE.
+    assert(/const tushenkaTagSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\(OLD_BASE \+ 'nagrada_ryukzak_birka\.png'\)\);/.test(src),
         'спрайт бирки создаётся из nagrada_ryukzak_birka.png');
     assert(/win\.addChild\(tushenkaTagSpr\);/.test(src), 'бирка добавлена в win');
-    assert(/const tushenkaIconSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'nagrada_ryukzak_tushenka\.png'\)\);/.test(src),
+    assert(/const tushenkaIconSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\(OLD_BASE \+ 'nagrada_ryukzak_tushenka\.png'\)\);/.test(src),
         'спрайт тушёнки создаётся из nagrada_ryukzak_tushenka.png');
     assert(/win\.addChild\(tushenkaIconSpr\);/.test(src), 'тушёнка добавлена в win');
     assert(/const tushenkaQtyTxt = new PIXI\.Text\('20', \{/.test(src), 'текст "20" создан');

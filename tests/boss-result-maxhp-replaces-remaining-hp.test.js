@@ -4,6 +4,11 @@
  * остаток / максимум). Убран целиком. Вместо него — только общий (максимальный) HP босса, на
  * новых координатах x:492,y:415,scale:1 с редактора позиций.
  *
+ * 19.10.2026 (по прямому указанию, снято редактором позиций заново — bbox "x:437,y:414,
+ * w:114,h:16" → якорь-центр x:494,y:422): координаты обновлены на ОБЕИХ страницах — hpBarTxt на
+ * экране победы тоже переведён с формулы PORTRAIT_POS.x+HP_BAR_OFFSET.x на тот же хардкод
+ * x:494,y:422, т.к. координаты теперь продиктованы одинаковыми "неважно выиграл или проиграл".
+ *
  * Run: node tests/boss-result-maxhp-replaces-remaining-hp.test.js
  */
 const fs = require('fs');
@@ -23,19 +28,19 @@ console.log('\nTest 1: текста "Осталось HP" больше нет в
     assert(!/Осталось HP/.test(content), '"Осталось HP" удалён из попапа результата боя');
 }
 
-console.log('\nTest 2: вместо него — maxHp на координатах x:492,y:417 (17.10.2026: y опущен ещё на 2px, было 415)');
+console.log('\nTest 2: вместо него — maxHp на координатах x:494,y:422 (19.10.2026)');
 {
     const idx = content.indexOf("if(!isWin){");
     const endIdx = content.indexOf('} else {', idx);
     const block = content.slice(idx, endIdx !== -1 ? endIdx : idx + 900);
     assert(/bosses\._fmt\(opts\.maxHp \|\| 0\)/.test(block), 'текст строится из opts.maxHp (общий HP босса), не из hpLeft');
-    assert(/hpTxt\.x = 492; hpTxt\.y = 417;/.test(block), 'координаты нового текста x:492 y:417');
+    assert(/hpTxt\.x = 494; hpTxt\.y = 422;/.test(block), 'координаты нового текста x:494 y:422');
     assert(/hpTxt\.scale\.set\(1\.000\)/.test(block), 'scale выставлен явно 1.000 как в координатах редактора');
 }
 
-console.log('\nTest 3: экран победы (isWin:true, hpBarTxt) — показывает maxHp как и раньше, позиция/цвет см. отдельный тест');
+console.log('\nTest 3: экран победы (isWin:true, hpBarTxt) — те же координаты x:494,y:422, что на поражении (19.10.2026)');
 {
-    assert(/hpBarTxt\.x = PORTRAIT_POS\.x \+ HP_BAR_OFFSET\.x;/.test(content), 'hpBarTxt на экране победы не менялся по X');
+    assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 422;/.test(content), 'hpBarTxt на экране победы — x:494,y:422 (захардкожено, не формула PORTRAIT_POS+HP_BAR_OFFSET)');
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

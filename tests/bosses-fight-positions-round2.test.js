@@ -46,10 +46,11 @@ console.log('\nTest 2: yashik.js — "купить актив.png" (истори
     // от реальной позиции кнопки (тем же приёмом, что был у cancelActiv), затем сам файл
     // 'купить актив.png' заменён на верно обрезанный (236×105), позиционирование переведено на
     // anchor(0.5,0.5) + центр hitBuy — и наконец, тем же днём, уточнено точными координатами из
-    // редактора позиций (564,413) вместо формулы-центра. См.
-    // tests/kupit-activ-button-art-fix-and-habar-days-position.test.js для полной проверки.
-    assert(/buyActiv\.x = 564; buyActiv\.y = 413; buyActiv\.scale\.set\(1\.000\);/.test(yashikSrc),
-        'buyActiv выровнена относительно реальной позиции кнопки КУПИТЬ (564,413), не (16,8)');
+    // редактора позиций (564,413) вместо формулы-центра. 17.10.2026 — ещё +1/+1 (вправо/вверх),
+    // итог 565/412. См. tests/kupit-activ-button-art-fix-and-habar-days-position.test.js и
+    // tests/yashik-buy-patron-nudge-and-zone-bottom-trim-and-icon-resize.test.js.
+    assert(/buyActiv\.x = 565; buyActiv\.y = 412; buyActiv\.scale\.set\(1\.000\);/.test(yashikSrc),
+        'buyActiv выровнена относительно реальной позиции кнопки КУПИТЬ (565,412), не (16,8)');
 }
 
 console.log('\nTest 3: "РЕЙТИНГ УРОНА" — единая раскладка для всех 3 строк (замер редактором 14.09.2026)');

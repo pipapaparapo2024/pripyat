@@ -52,7 +52,12 @@ console.log('\nTest 1: _resetAccount покрывает ВЕСЬ server/users.ph
     const resetBody = devSrc.slice(resetIdx, payloadEnd);
 
     const allowedKeys = [...allowedNoComments.matchAll(/'([a-z0-9_]+)'/g)].map(m => m[1]);
-    assert(allowedKeys.length >= 60, 'из users.php извлечено разумное число ключей (' + allowedKeys.length + ')');
+    // 19.10.2026 (расследование "Антикризиса", см. tests/exp-respect-whitelist-console-
+    // exploit-fix.test.js): 23 поля (exp/respect/total_damage/bosses_killed/coins_earned/
+    // stash_count/zone_fights+0..4/energy_spent/train_count/vassilich_buys/hata_progress/
+    // dvor_games/loc_respect_0..4) убраны из whitelist как дыра того же класса, что у
+    // coins/stew/cigarettes — порог 60 опущен до 50, отражая новый размер (81 → 58).
+    assert(allowedKeys.length >= 50, 'из users.php извлечено разумное число ключей (' + allowedKeys.length + ')');
 
     const missing = allowedKeys.filter(k => !new RegExp('\\b' + k + ':').test(resetBody));
     assert(missing.length === 0,

@@ -79,13 +79,27 @@ console.log('\nTest 5: svod-achievements.js — arrowX унифицирован 
     const body  = achSrc.slice(start, end);
     // 17.10.2026: trackY:236, arrowUpY:204 добавлены между arrowX и arrowDownY — унификация
     // пошла дальше (теперь и трек/стрелка вверх совпадают с Общим топом, не только X).
-    assert(/trackX: 1035, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,/.test(body),
-        'КРИТИЧНО: arrowX:1034 (было 1033) — стрелки вверх/вниз теперь на той же X, что и в Общем топе; trackY/arrowUpY тоже унифицированы');
+    // 17.10.2026 (повторный репорт тем же днём — "шкала скролла вправо на 1px, скролл влево на
+    // 1px", ТОЛЬКО для этой вкладки): trackX 1035→1036, добавлен thumbXAdjust:-2 (см.
+    // svod-scroll.js — компенсирует +1 от trackX и добавляет собственный -1 бегунку).
+    assert(/trackX: 1036, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,\s*\n\s*thumbXAdjust: -2,/.test(body),
+        'КРИТИЧНО: trackX:1036 (было 1035) + thumbXAdjust:-2 — трек вправо на 1px, бегунок влево на 1px, независимо друг от друга');
 }
 
 console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на arrowX:1034 по умолчанию (эталон для respect/ach; 17.10.2026 — «урон» отдельно сдвинут на -2, см. DAMAGE_SCROLL_ARROW_X)');
 {
     assert(/const SCROLL_TRACK_X = 1035, SCROLL_ARROW_X = 1034;/.test(lbSrc), 'leaderboard остаётся эталонной точкой сверки (дефолтные константы)');
+}
+
+console.log('\nTest 7: svod-scroll.js — thumbXAdjust независимо двигает бегунок, не влияя на trackX других caller\'ов');
+{
+    assert(/thumbXAdjust\s*\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust читается из cfg вместе с остальными overrides');
+    assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1 \+ \(thumbXAdjust \|\| 0\);/.test(scrollSrc),
+        'формула бегунка добавляет (thumbXAdjust || 0) — без override (leaderboard.js, не передаёт этот параметр) поведение не меняется (0 — no-op)');
+    const lbCallStart = lbSrc.indexOf('this._buildSvodScroll({');
+    const lbCallEnd   = lbSrc.indexOf('});', lbCallStart);
+    const lbCallBody  = lbSrc.slice(lbCallStart, lbCallEnd);
+    assert(!/thumbXAdjust/.test(lbCallBody), 'svod-leaderboard.js не передаёт thumbXAdjust — его бегунок не затронут этой правкой');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

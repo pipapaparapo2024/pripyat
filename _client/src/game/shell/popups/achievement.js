@@ -107,7 +107,7 @@ export function attachAchievementPopup(proto){
             case 'skills':  return 'Прокачай суммарно ' + n + ' уровней навыков';
             case 'energy':  return 'Потрать суммарно ' + _fmt(n) + ' энергии';
             case 'exp':         return 'Накопи ' + _fmt(n) + ' опыта';
-            case 'cig_hoard':   return 'Накопи ' + _fmt(n) + ' сигарет';
+            case 'cig_hoard':   return 'Накопи ' + _fmt(n) + ' сухарей';
             case 'coins_hoard': return 'Накопи ' + _fmt(n) + ' рублей';
             case 'stew_hoard':  return 'Накопи ' + _fmt(n) + ' тушенки';
             case 'gym':         return 'Потренируйся в качалке ' + n + ' раз';

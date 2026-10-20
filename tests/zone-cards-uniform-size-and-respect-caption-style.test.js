@@ -42,7 +42,7 @@ console.log('\nTest 2: _applyCardScale выставляет width И height НЕ
     const start = src.indexOf('const tex = PIXI.Texture.from(loc.file);');
     const end   = src.indexOf('// Кнопка ЗАХВАТИТЬ');
     const body  = src.slice(start, end);
-    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W; spr\.height = CARD_TARGET_H; \};/.test(body),
+    assert(/const _applyCardScale = \(\) => \{ spr\.width = CARD_TARGET_W \* _scaleBump; spr\.height = CARD_TARGET_H \* _scaleBump; \};/.test(body),
         '_applyCardScale устанавливает spr.width/spr.height напрямую в фиксированные константы');
     assert(!/spr\.scale\.set/.test(body), 'внутри блока построения карточки больше нет spr.scale.set (растяжение теперь через width/height)');
 }

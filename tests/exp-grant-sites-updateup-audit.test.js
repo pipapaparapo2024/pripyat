@@ -45,16 +45,21 @@ const REGISTRY = {
     // из zone.js (награда/классификация нычек убраны целиком, по прямому указанию) — больше
     // нет ни одного начисления опыта в этом файле.
     'game/zone.js':                              0,
-    'game/dvor.js':                               1, // _give('exp', n) — единая точка наград Двора (казино-игры кроме Зариков ещё не перенесены)
+    // 19.10.2026 (расследование "Антикризиса", см. tests/exp-respect-whitelist-console-
+    // exploit-fix.test.js): _give('exp', n) УДАЛЁН целиком — grep по всему _client/src
+    // подтвердил, что он не вызывался ни одним реальным игровым путём, а был единственным
+    // живым способом вызвать dvor._give('exp', N) из консоли браузера любым игроком (поле
+    // 'exp' тогда ещё было в client-writable whitelist users.php, теперь убрано).
+    'game/dvor.js':                               0,
     'game/bosses/bosses-combat.js':               0, // перенесено на сервер (claimKill) — теперь applyPatch(), см. Test 3
     'game/shell/overlays/ryukzak.js':             0, // 21.09.2026: перенесено на сервер (ryukzak.open) — теперь applyPatch(), см. Test 4
     'game/shell/overlays/yashik.js':              0, // перенесено на сервер (yashik.collect) — теперь applyPatch(), см. Test 5
-    'game/debug-tools.js':                        1, // GIVE_MILLION() — дев-чит, не игровой путь
-    // 19.09.2026: window.GIVE_MILLION недоступен обычным игрокам (debug_mode гейт, Аудит
-    // безопасности 17.09.2026) — по прямому указанию та же логика продублирована как метод
-    // dev-панели (_giveMillion), чтобы кнопка "МИЛЛИОН ВСЕГО" работала без переоткрытия
-    // консольного доступа. Второе прямое присваивание exp — намеренный дубль, не баг.
-    'game/shell/overlays/dev_panel.js':           1, // _giveMillion() — дев-чит (кнопка в панели), не игровой путь
+    // 19.10.2026: GIVE_MILLION()/_giveMillion() больше не пишут udata['exp'] напрямую — 'exp'
+    // убран из client-writable whitelist users.php (та же дыра, что была у coins/stew/
+    // cigarettes), дев-читы переведены на users.devGrantCurrency() (дельта + applyPatch(e.patch),
+    // который сам безусловно зовёт iface.updateUp() — см. modules/patch.js), см. Test 6/7 ниже.
+    'game/debug-tools.js':                        0,
+    'game/shell/overlays/dev_panel.js':           0,
 };
 
 console.log('\nTest 0: реестр полный — новых мест начисления опыта вне реестра не появилось');
@@ -103,18 +108,11 @@ console.log('\nTest 1: zone.js — начисления опыта полнос�
         'применяет applyPatch — перенесённые на сервер начисления опыта проходят через него');
 }
 
-console.log('\nTest 2: dvor.js — _give(\'exp\', n) всегда завершается iface.updateUp()');
+console.log('\nTest 2 (обновлено 19.10.2026 — находка закрыта): dvor.js больше не содержит клиентского начисления опыта вообще');
 {
     const src = readSrc('game/dvor.js');
-    const start = src.indexOf('_give(type, amount){');
-    const end   = src.indexOf('\n    }', start) + 6;
-    const body  = src.slice(start, end);
-    assert(/case 'exp':/.test(body), 'случай exp присутствует в switch');
-    assert(/udata\['exp'\]=\(parseInt\(udata\['exp'\]\|\|0\)\+amount\)\.toString\(\);/.test(body),
-        'начисление опыта найдено внутри _give');
-    assert(/iface\.updateUp\(\);[\s\S]*?\n\s*\}/.test(body),
-        'updateUp() вызывается БЕЗУСЛОВНО в конце _give — покрывает случай exp и все остальные типы наград Двора ' +
-        '(21.09.2026: следом добавлен achievements._checkAll(), см. achievements-trigger-audit-and-pos-editor-textbox.test.js)');
+    assert(!/_give\(type, amount\)\{/.test(src), '_give(type, amount) больше не определён в dvor.js (удалён как мёртвый код/консольный эксплойт)');
+    assert(!/udata\['exp'\]\s*=/.test(src), 'прямого присваивания udata[\'exp\'] в этом файле больше нет вообще');
 }
 
 console.log('\nTest 3: bosses-combat.js — награда за убийство босса перенесена на сервер, применяется через applyPatch()');
@@ -141,20 +139,26 @@ console.log('\nTest 5: yashik.js — оба пути открытия ящика
     assert(!/udata\['exp'\]\s*=/.test(src), 'прямого присваивания udata[\'exp\'] в этом файле больше нет вообще');
 }
 
-console.log('\nTest 6: debug-tools.js (GIVE_MILLION, дев-чит) тоже обновляет HUD после начисления опыта');
+console.log('\nTest 6 (обновлено 19.10.2026 — находка закрыта): debug-tools.js (GIVE_MILLION, дев-чит) обновляет HUD через devGrantCurrency+applyPatch, не прямым updateUp() после сырого присвоения');
 {
     const src = readSrc('game/debug-tools.js');
-    const start = src.indexOf("udata['exp']               = M;");
-    assert(start !== -1 && /iface\.updateUp\(\);/.test(src.slice(start, start+1200)),
-        'GIVE_MILLION: updateUp() после начисления (иначе дев-панель тоже покажет устаревший уровень)');
+    assert(!/udata\['exp'\]\s*=\s*M;/.test(src), 'нет прямого udata[\'exp\']=M; — exp теперь идёт дельтой через devGrantCurrency');
+    assert(/'exp'/.test(src.slice(src.indexOf('currencyDeltas'), src.indexOf('currencyDeltas') + 300)),
+        "'exp' добавлен в список currencyDeltas");
+    assert(/if\(e && e\.patch\) applyPatch\(e\.patch\);/.test(src),
+        'applyPatch(e.patch) вызывается на ответе devGrantCurrency — applyPatch() сам безусловно зовёт iface.updateUp() (modules/patch.js)');
 }
 
-console.log('\nTest 7: dev_panel.js (_giveMillion, дев-чит) тоже обновляет HUD после начисления опыта');
+console.log('\nTest 7 (обновлено 19.10.2026 — находка закрыта): dev_panel.js (_giveMillion, дев-чит) обновляет HUD через devGrantCurrency+applyPatch, не прямым updateUp() после сырого присвоения');
 {
     const src = readSrc('game/shell/overlays/dev_panel.js');
-    const start = src.indexOf("udata['exp']               = M;");
-    assert(start !== -1 && /iface\.updateUp\(\);/.test(src.slice(start, start+1200)),
-        '_giveMillion: updateUp() после начисления (иначе дев-панель тоже покажет устаревший уровень)');
+    const start = src.indexOf('proto._giveMillion = function()');
+    const body = src.slice(start, start + 5500);
+    assert(!/udata\['exp'\]\s*=\s*M;/.test(body), 'нет прямого udata[\'exp\']=M; — exp теперь идёт дельтой через devGrantCurrency');
+    assert(/'exp'/.test(body.slice(body.indexOf('currencyDeltas'), body.indexOf('currencyDeltas') + 300)),
+        "'exp' добавлен в список currencyDeltas");
+    assert(/_grantCurrencyServer\(currencyDeltas, afterCurrency\);/.test(body),
+        '_grantCurrencyServer() (обёртка над users.devGrantCurrency) вызывается с currencyDeltas, который содержит exp');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

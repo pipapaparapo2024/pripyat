@@ -26,10 +26,10 @@ const src = fs.readFileSync(
     path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'bosses_fight.js'), 'utf-8'
 );
 
-console.log('\nTest 1: панель v2 создана с нужными координатами (второй снимок)');
+console.log('\nTest 1: панель создана с нужными координатами (второй снимок); 17.10.2026 — файл обновлён, "v2" убрано из имени');
 {
-    assert(/PIXI\.Texture\.from\(B \+ 'боевка слоты под оружие v2\.png'\)/.test(src),
-        "спрайт-источник создан из файла 'боевка слоты под оружие v2.png'");
+    assert(/PIXI\.Texture\.from\(B \+ 'боевка слоты под оружие\.png'\)/.test(src),
+        "спрайт-источник создан из файла 'боевка слоты под оружие.png' (без v2)");
     assert(/wpnSlotsBg\.x\s*=\s*369;\s*wpnSlotsBg\.y\s*=\s*610;\s*wpnSlotsBg\.scale\.set\(1\.012\)/.test(src),
         'координаты x:369, y:610, scale:1.012 — второй (актуальный) снимок редактора позиций');
     assert(!/wpnSlotsBg\.y\s*=\s*690/.test(src),
@@ -76,24 +76,16 @@ console.log('\nTest 4: правая кромка панели скруглена
 console.log('\nTest 4: новый файл добавлен в ранний преload-манифест (game-boot.js), не грузится впервые только при входе в бой');
 {
     const bootSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'game-boot.js'), 'utf-8');
-    assert(/'боевка слоты под оружие v2\.png'/.test(bootSrc),
-        "'боевка слоты под оружие v2.png' присутствует в window._allGamePngs");
+    assert(/'боевка слоты под оружие\.png'/.test(bootSrc),
+        "'боевка слоты под оружие.png' присутствует в window._allGamePngs");
 }
 
-console.log('\nTest 5: список фоновых файлов боссов не повреждён (все 8 на местах, без опечаток)');
+console.log('\nTest 5: список фоновых файлов боссов — 17.10.2026, новый комплект "боевка с боссами/новые локации" (см. boss-fight-new-locations-and-layered-plates.test.js — подробный тест на весь рефакторинг)');
 {
-    // 10.10.2026 (по прямому указанию): Крыс/Баркут/Борода/Жгут откатились на старые (без "v2")
-    // фоны боя — только эти 4, Охотник/Счастливчик/Ястреб/Меченный остались на v2.
-    const EXPECTED_V2 = ['охотник','счастливчик','ястреб','меченный'];
-    const EXPECTED_OLD = ['крыс','баркут','борода','жгут'];
-    for (const name of EXPECTED_V2) {
-        assert(new RegExp("'боевка с боссом " + name + " v2\\.png'").test(src),
-            `файл фона для "${name}" присутствует в списке без опечаток (v2)`);
-    }
-    for (const name of EXPECTED_OLD) {
-        assert(new RegExp("'боевка с боссом " + name + "\\.png'").test(src),
-            `файл фона для "${name}" присутствует в списке без опечаток (откат на старый)`);
-    }
+    assert(/'локация под охотника\.png'/.test(src), 'охотник — новая локация');
+    // 19.10.2026: Крыс переведён с временного "боевка с боссом крыс.png" на единый комплект
+    // "локация под N.png" (см. boss-fight-new-locations-and-layered-plates.test.js, Test 1).
+    assert(/'локация под крыс\.png'/.test(src), 'крыс — тот же комплект фонов, что у остальных боссов');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

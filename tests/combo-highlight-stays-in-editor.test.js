@@ -1,6 +1,6 @@
 /**
- * Test: рамка "что выиграл игрок" (покер/блэкджек/зарики) имела две проблемы при работе
- * с универсальным редактором позиций:
+ * Test: рамка "что выиграл игрок" (покер/блэкджек/зарики) в прошлом имела две проблемы при
+ * работе с универсальным редактором позиций:
  *
  * 1) Автоскрытие через ~3 секунды (gsap-таймлайн затухания / setTimeout-фолбэк) не давало
  *    спокойно выделить и подвинуть рамку. Проверка iface._uEditOn перед запуском твина
@@ -13,14 +13,16 @@
  *
  * 2) PageUp/PageDown (масштаб через редактор) не давал НАГЛЯДНО уменьшить рамку — пивот
  *    масштабирования стоял в (0,0) экрана (объект никогда не имел собственных x/y),
- *    далеко от самой нарисованной рамки, поэтому "уменьшение" на деле почти незаметно
- *    сдвигало рамку к углу экрана вместо того чтобы красиво сжаться на месте. Фикс:
- *    position ставится в центр строки, прямоугольник рисуется в локальных координатах,
- *    центрированных на (0,0) — pivot остаётся дефолтным (0,0). ВАЖНО: первая версия
- *    этого фикса ошибочно ставила ЕЩЁ и h.pivot.set(cx,cy) в ту же точку — pivot и
- *    position при scale=1 взаимно гасят друг друга (screen = (local-pivot)+position =
- *    local, если pivot===position), из-за чего рамка рисовалась у экранного (0,0)
- *    вместо стола — подсветки не было видно вообще. pivot трогать не нужно.
+ *    далеко от самой нарисованной рамки.
+ *
+ * 20.10.2026 (по прямому указанию — "каждое выпадение комбинации имеет координаты 0,0,
+ * сделай координаты относительно всей плоскости / покажи все варианты в редакторе"):
+ * архитектура сменилась с "ОДИН переиспользуемый Graphics, перерисовываемый/переставляемый
+ * под каждый вызов _xShowComboHighlight" на "N независимых маркеров, каждый с собственной
+ * ФИКСИРОВАННОЙ позицией и формой, заданными один раз при постройке экрана" — теперь
+ * _xShowComboHighlight только переключает visible/alpha, не position/draw. Этот файл
+ * переписан под новую структуру — см. tests/dice-poker-bj-combo-highlight-editor-markers.
+ * test.js для полной проверки самих маркеров и show-all/restore хуков редактора.
  *
  * Run: node tests/combo-highlight-stays-in-editor.test.js
  */
@@ -35,22 +37,13 @@ function assert(cond, msg) {
 }
 
 const dvorDir = path.join(__dirname, '..', '_client', 'src', 'game', 'dvor');
-// Зарики (15.09.2026, по прямому указанию) больше НЕ автоскрываются по таймеру вообще —
-// подсветка висит до следующего броска (см. dice-highlight-persists-until-throw.test.js),
-// поэтому проверка iface._uEditOn (нужна была только чтобы не мешать автоскрытию во время
-// работы редактора) для зариков больше не применима — она осталась только у покера/блэкджека.
-// multiRect (15.09.2026, зарики) — по прямому указанию "1,1 и 6,6 должно давать обе
-// комбинации", _diceShowComboHighlight теперь принимает МАССИВ индексов и рисует по
-// прямоугольнику на каждый (h.position остаётся (0,0), координаты — абсолютные), а не один
-// прямоугольник, центрированный локально под h.position.set(cx,cy) — тот паттерн остался
-// только у покера/блэкджека (там подсвечивается всегда ровно одна строка/линия).
 const cases = [
-    { file: 'dvor-poker-screen.js',  fn: '_pokerShowComboHighlight', label: 'Покер',   autoHide: true,  multiRect: false },
-    { file: 'dvor-blackjack.js',     fn: '_bjShowComboHighlight',    label: 'Блэкджек',autoHide: false, multiRect: false },
-    { file: 'dvor-dice-screen.js',   fn: '_diceShowComboHighlight',  label: 'Зарики',  autoHide: false, multiRect: true  },
+    { file: 'dvor-poker-screen.js',  fn: '_pokerShowComboHighlight', label: 'Покер',    autoHide: true },
+    { file: 'dvor-blackjack.js',     fn: '_bjShowComboHighlight',    label: 'Блэкджек', autoHide: false },
+    { file: 'dvor-dice-screen.js',   fn: '_diceShowComboHighlight',  label: 'Зарики',   autoHide: false },
 ];
 
-for(const {file, fn, label, autoHide, multiRect} of cases){
+for(const {file, fn, label, autoHide} of cases){
     console.log(`\nTest: ${label} (${fn})`);
     const src = fs.readFileSync(path.join(dvorDir, file), 'utf-8');
     const re = new RegExp(`proto\\.${fn} = function\\([^)]*\\)\\{([\\s\\S]*?)\\n    \\};`);
@@ -62,31 +55,18 @@ for(const {file, fn, label, autoHide, multiRect} of cases){
             assert(/if\(window\.iface && iface\._uEditOn\) return;/.test(body),
                 'проверяет iface._uEditOn и выходит раньше автоскрытия');
         } else {
-            // h.visible=false ДОПУСТИМ только в guard-ветке невалидного rowIndex (нет подсветки
-            // вовсе) — а не как часть автоскрытия по таймеру после успешного показа.
-            assert(!/onComplete:\(\)=>\{ h\.visible = false; \}/.test(body) && !/setTimeout\(\(\)=>\{ h\.visible = false; \}/.test(body),
-                'НЕ прячет себя сама по таймеру (гасится явно извне, при старте новой партии — см. _playDiceNewScreen)');
+            // Автоскрытие по таймеру после успешного показа по-прежнему не допускается —
+            // гашение теперь идёт явным общим хелпером (_bjHideComboHighlight/
+            // _diceHideComboHighlight), не внутри самой show-функции.
+            assert(!/setTimeout\(.*visible = false/.test(body),
+                'НЕ прячет себя сама по таймеру (гасится явно извне, при старте новой партии)');
         }
-        assert(!/h\.pivot\.set/.test(body),
-            'pivot НЕ трогается (иначе гасит position при scale=1 — рамка рисуется у (0,0) экрана, не видна)');
-        if(multiRect){
-            assert(/h\.position\.set\(0, 0\);/.test(body), 'position держится в (0,0) — рамки рисуются в абсолютных координатах');
-            assert(/indices\.forEach\(idx => \{/.test(body), 'рисует по прямоугольнику на КАЖДЫЙ индекс массива (несколько одновременных комбинаций)');
-        } else {
-            // 26.09.2026: покер перешёл с формулы (cx,cy) на прямую карту координат по строке
-            // (COMBO_ROW_POS[combo] → pos.x/pos.y) — имя переменных здесь не важно, важно
-            // только что позиция ставится ОДНИМ вызовом position.set (не x/y по отдельности,
-            // что сломало бы симметрию масштаба вокруг центра). Блэкджек в тот же день избавился
-            // от лишнего "+ BJ_ROW_W/2" в X (баг сдвига вправо на ~140px) — теперь тоже ставит
-            // готовый центр напрямую (BJ_ROW_X, cy), без промежуточной переменной cx.
-            assert(/h\.position\.set\((cx, cy|pos\.x, pos\.y|BJ_ROW_X, cy)\);/.test(body), 'позиция выставлена в центр строки — масштаб симметричен');
-            // Имя переменных ширины/высоты может быть как общей константой (BJ_ROW_W/H —
-            // поркер/зарики), так и локальной (w/rowH — блэкджек после nonpair-переопределения,
-            // см. bj-nonpair-highlight-and-payment-domain.test.js) — важна только симметрия
-            // относительно (0,0), не конкретное имя.
-            assert(/drawRoundedRect\(-(\w+)\s*\/\s*2, -(\w+)\s*\/\s*2, \1, \2,/.test(body),
-                'прямоугольник рисуется в локальных координатах, центрированных на (0,0) — под position-сдвиг');
-        }
+        // 20.10.2026: позиция и форма рамки теперь задаются ОДИН раз при постройке экрана
+        // (см. _buildXxxScreen/маркеры) — show-функция больше не вызывает position.set/
+        // drawRoundedRect на каждый показ, только переключает visible/alpha.
+        assert(!/\.position\.set\(/.test(body), 'show-функция не переставляет маркер (позиция фиксирована при постройке)');
+        assert(!/drawRoundedRect\(/.test(body), 'show-функция не перерисовывает маркер (форма фиксирована при постройке)');
+        assert(!/\.pivot\.set/.test(body), 'pivot не трогается');
     }
 }
 

@@ -40,8 +40,9 @@ console.log('\nTest 1: карты блэкджека — POSITIONS.y содер�
 // ── Test 2: полоска уровня блэкджека — врезка + radius ────────────────────
 console.log('\nTest 2: полоска уровня блэкджека — inset (-2 слева, -1 справа) и radius > 3');
 {
-    const m = bj.match(/drawRoundedRect\(238 \+ 2, 138, 23 - 2 - 1, fillH, (\d+)\)/);
-    assert(!!m, 'drawRoundedRect с врезкой 238+2 / 23-2-1 найден');
+    // 18.10.2026: шкала уровня блэкджека целиком сдвинута влево на 10px (по прямому указанию).
+    const m = bj.match(/drawRoundedRect\(238 - 10 \+ 2, 138, 23 - 2 - 1, fillH, (\d+)\)/);
+    assert(!!m, 'drawRoundedRect с врезкой 238-10+2 / 23-2-1 найден');
     if (m) assert(parseInt(m[1]) > 3, `radius увеличен (было 3, стало ${m[1]})`);
 }
 

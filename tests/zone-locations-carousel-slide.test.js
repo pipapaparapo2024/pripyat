@@ -35,9 +35,14 @@ console.log('\nTest 1: LOCATIONS — 5 локаций плоским списк�
     const start = src.indexOf('const LOCATIONS = [');
     const end   = src.indexOf('const TOTAL_LOCS');
     const block = src.slice(start, end);
-    const entries = [...block.matchAll(/\{ file: Z \+ '([^']+)',\s*locIdx: (\d+) \}/g)];
+    // 18.10.2026: у "долины" появилось необязательное поле scaleBump (точечная добавка
+    // масштаба) — ", scaleBump: 0.004" перед закрывающей "}"; регекс допускает любой суффикс
+    // после locIdx, не только голую "}" сразу за числом.
+    const entries = [...block.matchAll(/\{ file: Z \+ '([^']+)',\s*locIdx: (\d+)[^}]*\}/g)];
     assert(entries.length === 5, 'ровно 5 записей в LOCATIONS (найдено ' + entries.length + ')');
-    const expected = ['кордон.png', 'свалка.png', 'долина.png', 'Агропром.png', 'янтарь.png'];
+    // 18.10.2026: переименованы с суффиксом "v2" (анти-кеш новых присланных файлов).
+    const expected = ['зона локация кордон v2.png', 'зона локация свалка v2.png', 'зона локация долина v3.png',
+        'зона локация агропром v2.png', 'зона локация янтарь v3.png'];
     entries.forEach((m, i) => {
         assert(m[1] === expected[i], 'локация #' + i + ' — файл ' + expected[i] + ' (найдено ' + m[1] + ')');
         assert(parseInt(m[2]) === i, 'локация #' + i + ' — locIdx=' + i);
@@ -56,7 +61,10 @@ console.log('\nTest 2: маска + locWrap — окно показа вмеща
     // 17.10.2026 (по прямому указанию — "карусель вылезает за обе границы"): верх маски
     // опущен на 12px, низ поднят на 12px (VIEW_TOP_TRIM/VIEW_BOTTOM_TRIM) — пиннуем новую
     // формулу, 26px-запас под вторую карточку (VIEW_BOTTOM_PADDING) сам не менялся.
-    assert(/const VIEW_BOTTOM_PADDING = 26;[\s\S]*?const VIEW_TOP_TRIM = 12, VIEW_BOTTOM_TRIM = 12;[\s\S]*?const VIEW_Y = 120 \+ VIEW_TOP_TRIM;[\s\S]*?const VIEW_H = PER_LOC_STEP \* 2 \+ VIEW_BOTTOM_PADDING - VIEW_TOP_TRIM - VIEW_BOTTOM_TRIM;/.test(src), 'маска имеет 26px запас под вторую карточку, верх/низ подрезаны на 12px каждый по новому репорту');
+    // 17.10.2026 (по прямому указанию — "нижнюю часть ещё на 6px"): VIEW_BOTTOM_TRIM 12 → 18.
+    // 17.10.2026 (повторный репорт тем же днём, скриншот — верх всё ещё налезает на плашки
+    // "ЗОНЫ"/"СКОРО"): VIEW_TOP_TRIM 12 → 24 (ещё -12px сверху).
+    assert(/const VIEW_BOTTOM_PADDING = 26;[\s\S]*?const VIEW_TOP_TRIM = 24, VIEW_BOTTOM_TRIM = 18;[\s\S]*?const VIEW_Y = 120 \+ VIEW_TOP_TRIM;[\s\S]*?const VIEW_H = PER_LOC_STEP \* 2 \+ VIEW_BOTTOM_PADDING - VIEW_TOP_TRIM - VIEW_BOTTOM_TRIM;/.test(src), 'маска имеет 26px запас под вторую карточку, верх подрезан на 24px, низ — на 18px (17.10.2026: ещё -12px сверху по повторному репорту)');
     assert(/const SLOT_H = PER_LOC_STEP;/.test(src), 'шаг сдвига карусели = шагу между локациями (не высоте всего окна, как в первой версии)');
 }
 

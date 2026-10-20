@@ -359,22 +359,30 @@ test('Рулетка объясняет ошибку при отсутствии
 });
 
 const ryukzakSrc = readSrc('game/shell/overlays/ryukzak.js');
-test('Числа наград рюкзака имеют цвет #1a1a1a', () => {
-    assert(ryukzakSrc.includes("fontFamily: 'Southbank LT', fontSize: 24, fill: '#1a1a1a'"),
-        'цвет чисел наград рюкзака не изменён на #1a1a1a');
+// 17.10.2026 (по прямому указанию — замена сигарет на сухари, редизайн грида наград рюкзака
+// под новые карточки-файлы): старый цвет #1a1a1a (fontSize 24) был подобран под старые
+// отдельные иконки/плашки — новые карточки темнее, подпись суммы переведена на золотой
+// #ffcc44 (fontSize 22), см. ryukzak.js._addCard().
+test('Числа наград рюкзака имеют цвет #ffcc44 (новые карточки)', () => {
+    assert(ryukzakSrc.includes("fontFamily: 'Southbank LT', fontSize: 22, fill: '#ffcc44'"),
+        'цвет чисел наград рюкзака не #ffcc44 — новая карточная раскладка ожидает золотой текст для читаемости на тёмном фоне');
 });
 
 const zoneSrc = readSrc('game/zone.js');
-test('Награды чекпоинта имеют единый белый стиль и промежуток 14 px', () => {
+// 19.10.2026 (по прямому указанию, редактор позиций — новые координаты для опыта/сухарей,
+// "вместо XP пиши эмблему опыта", заначка встаёт 4-м рядом): REWARD_ROW_GAP убран (шаг теперь
+// фиксированная REWARD_ROW_STEP=62, не 24+14), xpY/respY больше не симметричны вокруг 0 — см.
+// tests/oct19-batch-....test.js за полным покрытием.
+test('Награды чекпоинта имеют единый белый стиль и единый шаг между рядами', () => {
     const start = zoneSrc.indexOf('_showCpReward(xp, cig, resp){');
     const end = zoneSrc.indexOf('_showStashPickup(){');
     const body = zoneSrc.slice(start, end);
     assert(body.includes('const REWARD_FONT_SIZE = 24'), 'нет единого размера текста наград');
-    assert(body.includes('const REWARD_ROW_GAP = 14'), 'между блоками наград не задан промежуток 14 px');
+    assert(body.includes('const REWARD_ROW_STEP = 62;'), 'шаг между рядами не 62px');
     assert(body.includes("fill:'#ffffff'"), 'единый цвет текста наград не белый');
     assert((body.match(/REWARD_STYLE/g) || []).length === 4,
         'XP, сигареты и уважение не используют один общий стиль');
-    assert(body.includes('const xpY = -REWARD_ROW_STEP') && body.includes('const respY = REWARD_ROW_STEP'),
+    assert(body.includes('const xpY   = -55;') && body.includes('const respY = cigY + REWARD_ROW_STEP;'),
         'три блока не выровнены по единому вертикальному шагу');
 });
 
@@ -503,8 +511,10 @@ test('Кнопка отмены и число в полной звезде до�
         'число в полной звезде не белое');
     // 29.09.2026 (по прямому указанию): starPtsTxt.x сдвинут на star.x + 1 (было ровно star.x) —
     // число внутри звезды визуально сидело чуть левее геометрического центра иконки.
-    assert(/starPtsTxt\.anchor\.set\(0\.5, 0\.5\);[\s\S]{0,100}starPtsTxt\.x = star\.x \+ 1; starPtsTxt\.y = star\.y/.test(svodAchievementsSrc),
-        'число в полной звезде сдвинуто на +1px вправо относительно центра спрайта');
+    // 17.10.2026 (по прямому указанию, тот же день — "сдвинь влево и вниз на по 1px"): x
+    // вернулась на star.x (отменяет +1 от 29.09.2026), y стала star.y + 1.
+    assert(/starPtsTxt\.anchor\.set\(0\.5, 0\.5\);[\s\S]{0,100}starPtsTxt\.x = star\.x; starPtsTxt\.y = star\.y \+ 1/.test(svodAchievementsSrc),
+        'число в полной звезде сдвинуто на -1px (назад на центр) по X и +1px вниз по Y относительно центра спрайта');
 });
 
 test('Топ по урону отдаёт и отображает до 100 игроков', () => {

@@ -49,14 +49,8 @@ export default class Vassilich{
 	_initChestHover(){
 		const ls = this.win.loot_section;
 
-		// Оверлей «ящик актив.png» при наведении
-		this._chestActiv = null;
-		if(typeof BASE !== 'undefined'){
-			this._chestActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'yashik_activ.png'));
-			this._chestActiv.visible = false;
-			this._chestActiv.interactive = false;
-			ls.addChild(this._chestActiv);
-		}
+		// 18.10.2026 (по прямому указанию — "yashik_activ.png убери из игры"): оверлей
+		// hover-подсветки ящика на этом экране убран целиком, не заменён.
 
 		// Невидимая хит-зона над сундуком (координаты подобрать по FLA)
 		const hit = new PIXI.Graphics();
@@ -65,8 +59,6 @@ export default class Vassilich{
 		hit.endFill();
 		hit.interactive = true;
 		hit.buttonMode  = true;
-		hit.on('pointerover',  ()=>{ if(this._chestActiv) this._chestActiv.visible = true; });
-		hit.on('pointerout',   ()=>{ if(this._chestActiv) this._chestActiv.visible = false; });
 		hit.on('pointerdown',  ()=>this._openLoot());
 		ls.addChild(hit);
 	}
