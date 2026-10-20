@@ -45,7 +45,9 @@ console.log('\nTest 2: universal_pay.php — photo_url товаров указы
     // заменены на donate_*_icon.png — см. отдельный tests/universal-pay-donate-icons-mismatch-fix.test.js.
     assert(/'stew'=>'https:\/\/pripyat-game\.ru\/server\/images\/donate_stew_icon\.png'/.test(pay), 'тушёнка — актуальный домен');
     assert(/'coins'=>'https:\/\/pripyat-game\.ru\/server\/images\/donate_coins_icon\.png'/.test(pay), 'монеты — актуальный домен');
-    assert(/'cigarettes'=>'https:\/\/pripyat-game\.ru\/server\/images\/donate_cigarettes_icon\.png'/.test(pay), 'сигареты — актуальный домен');
+    // 20.10.2026: donate_cigarettes_icon.png (старая пачка сигарет) заменена на
+    // donate_sukhari_icon.png — см. tests/universal-pay-donate-icons-mismatch-fix.test.js.
+    assert(/'cigarettes'=>'https:\/\/pripyat-game\.ru\/server\/images\/donate_sukhari_icon\.png'/.test(pay), 'сухари — актуальный домен и актуальная иконка');
     assert(/'photo_url' => \$registry\['links'\]\['energy'\],/.test(pay), 'энергия (item100-107) — актуальный домен');
 }
 

@@ -30,9 +30,14 @@
     // Заменены на donate_*_icon.png — те же изображения, что используются в ачивках
     // (achievements/тушенка.png, рубли.png, сиги.png), визуально совпадают с
     // interface_up_panel_*_icon.png в HUD.
+    // 20.10.2026 (по прямому указанию — "в нативном попапе ВК иконка с сигаретами, нужна
+    // сухари"): ключ массива 'cigarettes' остаётся (поле БД не переименовано, см. AGENTS.md),
+    // но сама картинка заменена — donate_cigarettes_icon.png (старая пачка сигарет) →
+    // donate_sukhari_icon.png (новый арт после ребрендинга 17.10.2026). Старый файл оставлен на
+    // диске неиспользуемым (тот же приём, что и везде в проекте при замене ассета).
     $registry['links'] = array('stew'=>'https://pripyat-game.ru/server/images/donate_stew_icon.png',
                                'coins'=>'https://pripyat-game.ru/server/images/donate_coins_icon.png',
-                               'cigarettes'=>'https://pripyat-game.ru/server/images/donate_cigarettes_icon.png',
+                               'cigarettes'=>'https://pripyat-game.ru/server/images/donate_sukhari_icon.png',
                                'energy'=>'https://pripyat-game.ru/server/images/donate_energy_icon.png');
 
     $registry['uid'] = intval($_POST['user_id'] ?? 0);

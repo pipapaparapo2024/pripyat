@@ -47,11 +47,14 @@ assert(/'stew'\s*=>\s*'https:\/\/pripyat-game\.ru\/server\/images\/donate_stew_i
     "stew → donate_stew_icon.png");
 assert(/'coins'\s*=>\s*'https:\/\/pripyat-game\.ru\/server\/images\/donate_coins_icon\.png'/.test(src),
     "coins → donate_coins_icon.png");
-assert(/'cigarettes'\s*=>\s*'https:\/\/pripyat-game\.ru\/server\/images\/donate_cigarettes_icon\.png'/.test(src),
-    "cigarettes → donate_cigarettes_icon.png");
+// 20.10.2026 (по прямому указанию — "в нативном попапе ВК иконка с сигаретами, нужна сухари"):
+// ключ массива 'cigarettes' не переименован (поле БД не переименовано, см. AGENTS.md), но
+// картинка заменена на donate_sukhari_icon.png — старая пачка сигарет больше не используется.
+assert(/'cigarettes'\s*=>\s*'https:\/\/pripyat-game\.ru\/server\/images\/donate_sukhari_icon\.png'/.test(src),
+    "cigarettes → donate_sukhari_icon.png (старая donate_cigarettes_icon.png заменена 20.10.2026)");
 
 console.log('\nTest: локальные файлы иконок существуют перед деплоем (upload.sh их читает по этим путям)');
-for (const name of ['donate_stew_icon.png', 'donate_coins_icon.png', 'donate_cigarettes_icon.png']) {
+for (const name of ['donate_stew_icon.png', 'donate_coins_icon.png', 'donate_sukhari_icon.png']) {
     const p = path.join(root, 'server', 'images', name);
     assert(fs.existsSync(p), `server/images/${name} существует локально`);
 }
