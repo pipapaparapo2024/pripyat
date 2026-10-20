@@ -184,6 +184,27 @@ export function attachUiKit(proto){
 		btn.on('pointerout',  ()=>{ btn.filters = null; });
 	};
 
+	// 20.10.2026 (по прямому указанию — "при наведении на плашку или на иконку нижней
+	// [раскрытой] валюты они должны подсвечиваться ОДНОВРЕМЕННО, не по отдельности"): иконка
+	// сидит поверх плашки — PIXI хит-тестит только САМЫЙ ВЕРХНИЙ объект под курсором, поэтому
+	// у двух независимых _addHoverBright() каждый спрайт подсвечивался только сам по себе,
+	// когда курсор именно над ним (над иконкой — только иконка, над остальной частью плашки —
+	// только плашка). Здесь один общий фильтр вешается на pointerover/pointerout КАЖДОГО
+	// объекта группы, но включает/выключает его СРАЗУ у ВСЕХ — какой бы из них ни был
+	// хит-тестирован, подсвечивается вся группа целиком.
+	proto._addHoverBrightGroup = function(objs, amount){
+		if(!objs || !objs.length) return;
+		amount = amount === undefined ? 1.35 : amount;
+		const filter = new PIXI.filters.ColorMatrixFilter();
+		filter.brightness(amount, false);
+		objs.forEach(obj => {
+			if(!obj) return;
+			setButton(obj);
+			obj.on('pointerover', ()=>{ objs.forEach(o => { if(o) o.filters = [filter]; }); });
+			obj.on('pointerout',  ()=>{ objs.forEach(o => { if(o) o.filters = null; }); });
+		});
+	};
+
 	// 18.10.2026 (по прямому указанию — "кнопки нижнего худа при наведении зеленеют, такого
 	// быть не должно, оставь только увеличение, и сделай увеличение в полтора раза меньше"):
 	// цветовой tint на hover убран целиком (раньше подсвечивал кнопку оттенком 0xFFDD88,

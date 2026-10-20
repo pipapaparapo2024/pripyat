@@ -61,12 +61,14 @@ console.log('\nTest 2: interface_elements.min.js — регресс-гвард, 
 // необcмещённой базой (1237,23) из interface_elements.min.js, двигать нечего.
 console.log('\nTest 3: interface-panels.js — компенсирующий нудж +2px убран, конечная позиция иконки = база (1237,23)');
 {
-    const start = panelsSrc.indexOf('if(this.up.butt_settings){');
-    const end   = panelsSrc.indexOf('\n        }', start);
-    const body  = panelsSrc.slice(start, end);
-
-    assert(!/butt_settings\.y \+=/.test(body), 'хитбокс (butt_settings) больше не сдвигается — y совпадает с базой из FLA');
-    assert(!/butt_settings_icon\.y \+=/.test(body), 'видимая иконка (butt_settings_icon) больше не сдвигается — y совпадает с базой из FLA');
+    // 20.10.2026: весь блок if(this.up.butt_settings){...} убран целиком (баг найден по прямому
+    // указанию — старый невидимый хитбокс оживал через _addHoverGlow()/setButton() уже ПОСЛЕ
+    // того, как _buildTopCurrencyWidget() его отключал, давая остаточный hover-эффект поверх
+    // нового settingsBtn) — см. settings-hitbox-and-super-copy-button.test.js Test 2. Оба нуджа
+    // ниже теперь вакантно верны для всего файла — блока, где они могли бы стоять, больше нет.
+    assert(!/if\(this\.up\.butt_settings\)\{/.test(panelsSrc), 'блок if(this.up.butt_settings){...} убран целиком');
+    assert(!/butt_settings\.y \+=/.test(panelsSrc), 'хитбокс (butt_settings) больше не сдвигается нигде в файле');
+    assert(!/butt_settings_icon\.y \+=/.test(panelsSrc), 'видимая иконка (butt_settings_icon) больше не сдвигается нигде в файле');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

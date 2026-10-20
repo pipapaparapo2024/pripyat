@@ -410,8 +410,9 @@ export default class Interface{
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
 		// 20.10.2026 (по прямому указанию — "кол-во энергии у игрока подними вверх на 7px"): y 17→10.
+		// 20.10.2026 (повторное указание тем же днём, редактор позиций — "x:541,y:13"): y 10→13.
 		this.energy_txt.x = 541;
-		this.energy_txt.y = 10;
+		this.energy_txt.y = 13;
 		// 18.10.2026 (по прямому указанию — "попап покупки энергии открывать по нажатию на
 		// количество энергии", заодно butt_energy_buy.png убран целиком — см. energy_buy.js):
 		// сам текст "20/130" теперь кликабелен.
@@ -449,11 +450,12 @@ export default class Interface{
 		this._lvlBarFillMaxW = this.lvl_bar_fill.texture.width;
 
 		this.nrg_bar_track = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала энергии трек.png'));
-		this.nrg_bar_track.x = 489; this.nrg_bar_track.y = 44;
+		// 20.10.2026 (по прямому указанию, редактор позиций — "x:489,y:37"): было 489,44.
+		this.nrg_bar_track.x = 489; this.nrg_bar_track.y = 37;
 
 		this.nrg_bar_fill = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ шкала энергии заливка.png'));
-		// 20.10.2026 (по прямому указанию — "опусти вниз на 5px"): y 44→49.
-		this.nrg_bar_fill.x = 495; this.nrg_bar_fill.y = 49;
+		// 20.10.2026 (по прямому указанию, редактор позиций — "x:495,y:42"): было 495,49.
+		this.nrg_bar_fill.x = 495; this.nrg_bar_fill.y = 42;
 		this._nrgBarFillMaxW = this.nrg_bar_fill.texture.width;
 
 		this.energy_timer_txt = new PIXI.Text('', {

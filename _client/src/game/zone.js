@@ -334,8 +334,13 @@ export default class Zone{
         cigTxt.x = ROW_TEXT_X; cigTxt.y = cigY;
         win.addChild(cigTxt);
 
-        const cigIcon = new PIXI.Sprite(PIXI.Texture.from('./images/верхний худ иконка сухари.png'));
+        // 20.10.2026 (по прямому указанию — "боевка награда сухари.png по качеству лучше,
+        // поставь её вместо верхний худ иконка сухари.png"): явные width/height сохраняют
+        // прежний размер на экране (38×42, как раньше в нативном размере низкокачественного
+        // файла) — см. тот же фикс в interface-top-currency.js.
+        const cigIcon = new PIXI.Sprite(PIXI.Texture.from('./images/боевка награда сухари.png'));
         cigIcon.anchor.set(0, 0.5);
+        cigIcon.width = 38; cigIcon.height = 42;
         cigIcon.x = ROW_ICON_X; cigIcon.y = cigY - 2;
         win.addChild(cigIcon);
 

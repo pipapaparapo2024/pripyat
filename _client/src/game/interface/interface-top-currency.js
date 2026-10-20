@@ -86,8 +86,15 @@ export function attachTopCurrency(proto){
         plateRub.x = 910; plateRub.y = 5;
         up.addChild(plateRub);
 
-        const iconRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка сухари.png'));
+        // 20.10.2026 (по прямому указанию — "верхний худ иконка сухари.png по качеству хуже,
+        // чем боевка награда сухари.png, замени на неё"): "верхний худ иконка сухари.png" (38×42)
+        // — заметно более низкое разрешение исходника, чем "боевка награда сухари.png" (68×77,
+        // тот же файл уже используется в bosses_prefight.js/dvor.js/boss_result.js). Явные
+        // width/height сохраняют прежний размер на экране (38×42), старый файл остаётся на диске
+        // неиспользуемым (не удалён).
+        const iconRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'боевка награда сухари.png'));
         iconRub.x = 909; iconRub.y = 9;
+        iconRub.width = 38; iconRub.height = 42;
         up.addChild(iconRub);
 
         const txtRub = new PIXI.Text('0', TXT_STYLE);
@@ -163,16 +170,20 @@ export function attachTopCurrency(proto){
         // ловила. Теперь оба спрайта вешают один и тот же обработчик.
         plateSecondary.interactive = true; plateSecondary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(plateSecondary);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(plateSecondary);
         plateSecondary.on('pointerdown', _swapToSecondary);
 
         const iconSecondary = new PIXI.Sprite(PIXI.Texture.from(BASE + CUR_META.coins.icon));
         iconSecondary.x = 691; iconSecondary.y = 59; iconSecondary.visible = false;
         iconSecondary.interactive = true; iconSecondary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(iconSecondary);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(iconSecondary);
         iconSecondary.on('pointerdown', _swapToSecondary);
         up.addChild(iconSecondary);
+
+        // 20.10.2026 (по прямому указанию — "при наведении на плашку или на иконку нижней
+        // валюты они должны подсвечиваться одновременно"): иконка сидит поверх плашки — один
+        // общий groupBright вместо двух независимых _addHoverBright (та картинка подсвечивалась
+        // сама по себе, плашка — сама по себе, в зависимости от того, что именно хит-тестилось).
+        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateSecondary, iconSecondary]);
 
         const txtSecondary = new PIXI.Text('0', TXT_STYLE);
         // 18.10.2026 (по прямому указанию, редактор позиций — "координаты кол-ва ресурсов у

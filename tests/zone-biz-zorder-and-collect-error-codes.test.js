@@ -91,6 +91,22 @@ console.log('\nTest 5: кнопка выхода в попапе "Уровень
     assert(!/exitBtn\.x = 1120;/.test(levelUpSrc), 'старая координата x=1120 удалена');
 }
 
+console.log('\nTest 6: 20.10.2026 — фон попапа бизнеса переименован в biz_bg_v2.png (сброс кэша VK Mini Apps)');
+{
+    // По прямому указанию: присланный новый файл арта побайтово ИДЕНТИЧЕН старому biz_bg.png
+    // (проверено MD5 сырых байт) — визуальное расхождение, которое видел пользователь, было
+    // кэшем VK CDN, не содержимым файла. Переименование — тот же приём, что "рулетка колесо
+    // v2.png"/"зона локация ... v3.png": новый URL гарантированно обходит чужой кэш.
+    const root = path.join(__dirname, '..');
+    assert(/BIZ\+'biz_bg_v2\.png'/.test(zoneBizSrc), 'прелоад ссылается на biz_bg_v2.png');
+    assert(!/BIZ\+'biz_bg\.png'/.test(zoneBizSrc), 'старое имя biz_bg.png убрано из прелоада');
+    assert(/PIXI\.Texture\.from\(BIZ \+ 'biz_bg_v2\.png'\)/.test(zoneBizSrc), '_openBizPopup() рисует фон из biz_bg_v2.png');
+    assert(!/PIXI\.Texture\.from\(BIZ \+ 'biz_bg\.png'\)/.test(zoneBizSrc), 'старая ссылка на biz_bg.png в _openBizPopup() убрана');
+    const newPath = path.join(root, '_client', 'development', 'images', 'layers', 'biz', 'biz_bg_v2.png');
+    assert(fs.existsSync(newPath) && fs.statSync(newPath).size > 0, 'biz_bg_v2.png существует локально и не пустой');
+    assert(fs.existsSync(newPath + '.webp'), 'biz_bg_v2.png.webp существует (lossless-твин)');
+}
+
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

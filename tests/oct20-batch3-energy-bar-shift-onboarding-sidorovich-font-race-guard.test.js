@@ -35,8 +35,9 @@ const purchaseSrc  = readSrc('_client/src/game/interface/interface-currency-purc
 
 console.log('\nTest 1: interface.js — заливка шкалы энергии опущена вниз на 5px');
 {
-    assert(/this\.nrg_bar_fill\.x = 495; this\.nrg_bar_fill\.y = 49;/.test(ifaceSrc),
-        'nrg_bar_fill.y 44→49 (+5px)');
+    // 20.10.2026 (по прямому указанию, редактор позиций — "x:495,y:42"): было 495,49.
+    assert(/this\.nrg_bar_fill\.x = 495; this\.nrg_bar_fill\.y = 42;/.test(ifaceSrc),
+        'nrg_bar_fill.y 49→42 (редактор позиций 20.10.2026)');
 }
 
 console.log('\nTest 2: onboarding-data.js — шаг "Сидорович" сдвинут влево на 80px');

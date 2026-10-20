@@ -39,14 +39,28 @@ console.log('\nTest 1: ui_kit.js — _addHoverBright определён чере
     assert(/btn\.on\('pointerout',  \(\)=>\{ btn\.filters = null; \}\);/.test(kitSrc), 'pointerout — фильтр снимается, без остаточного состояния');
 }
 
-console.log('\nTest 2: interface-top-currency.js — все 8 мест переведены с _addHoverScale на _addHoverBright');
+console.log('\nTest 2: interface-top-currency.js — все 8 мест переведены с _addHoverScale на _addHoverBright (или общий _addHoverBrightGroup)');
 {
-    const targets = ['btnRubPlus', 'iconPrimary', 'btnToggle', 'plateSecondary', 'iconSecondary', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
+    // 20.10.2026: plateSecondary/iconSecondary переведены на _addHoverBrightGroup — иконка
+    // сидит поверх плашки, хит-тестится только верхний объект, поэтому им нужен ОБЩИЙ фильтр,
+    // включающийся у обоих разом (см. Test 2b ниже), а не два независимых _addHoverBright.
+    const targets = ['btnRubPlus', 'iconPrimary', 'btnToggle', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
     for (const t of targets) {
         assert(new RegExp(`this\\._addHoverBright\\(${t}\\);`).test(topCurSrc), `${t} использует _addHoverBright`);
         assert(!new RegExp(`this\\._addHoverScale\\(${t}\\);`).test(topCurSrc), `${t} больше НЕ использует _addHoverScale`);
     }
     assert(!/_addHoverScale/.test(topCurSrc), 'в файле вообще не осталось упоминаний _addHoverScale (все guard-условия тоже переведены)');
+}
+
+console.log('\nTest 2b: plateSecondary/iconSecondary подсвечиваются ОДНОВРЕМЕННО через общий _addHoverBrightGroup');
+{
+    assert(/proto\._addHoverBrightGroup = function\(objs, amount\)\{/.test(kitSrc), '_addHoverBrightGroup определён в ui_kit.js');
+    assert(/const filter = new PIXI\.filters\.ColorMatrixFilter\(\);\s*\n\s*filter\.brightness\(amount, false\);\s*\n\s*objs\.forEach/.test(kitSrc),
+        'один ОБЩИЙ фильтр создаётся один раз и применяется ко всем объектам группы разом');
+    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[plateSecondary, iconSecondary\]\);/.test(topCurSrc),
+        'plateSecondary и iconSecondary объединены в одну hover-группу');
+    assert(!/this\._addHoverBright\(plateSecondary\);/.test(topCurSrc), 'plateSecondary больше не использует одиночный _addHoverBright');
+    assert(!/this\._addHoverBright\(iconSecondary\);/.test(topCurSrc), 'iconSecondary больше не использует одиночный _addHoverBright');
 }
 
 console.log('\nTest 3: boss_result.js — иконка сухарей поверх вшитой в фон пачки сигарет, показывается БЕЗУСЛОВНО');

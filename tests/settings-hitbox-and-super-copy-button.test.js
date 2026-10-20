@@ -33,13 +33,15 @@ console.log('\nTest 1: interface_elements.min.js — иконка и хитбо�
     assert(!ifaceLib.includes('b.drawRect(0,0,45,45)'), 'старый размер хитбокса (45×45) убран');
 }
 
-console.log('\nTest 2: interface-panels.js — компенсирующий "+= 10" убран (позиция теперь зашита напрямую)');
+console.log('\nTest 2: interface-panels.js — весь блок butt_settings убран целиком 20.10.2026 (баг: оживал через _addHoverGlow после отключения)');
 {
-    const s = panelsSrc.indexOf('if(this.up.butt_settings){');
-    const e = panelsSrc.indexOf('\n        }', s);
-    const body = panelsSrc.slice(s, e);
-    assert(!/butt_settings\.y \+= 10;/.test(body), 'компенсирующий сдвиг убран — иначе позиция снова разъехалась бы на 10px');
-    assert(/this\._addHoverGlow\(this\.up\.butt_settings\);/.test(body), 'hover-эффект не тронут');
+    // 20.10.2026 (баг найден по прямому указанию — "в верхнем худе всё ещё есть hover
+    // увеличение"): этот старый невидимый FLA-хитбокс _buildTopCurrencyWidget() делал
+    // interactive=false, но _addHoverGlow() здесь же возвращал interactive=true через
+    // setButton() — тот же баг-класс, что уже чинили для butt_bank. Кнопка "настройки" в новом
+    // виджете (interface-top-currency.js) полностью заменяет функциональность — блок убран.
+    assert(!/if\(this\.up\.butt_settings\)\{/.test(panelsSrc), 'блок if(this.up.butt_settings){...} убран целиком');
+    assert(!/this\._addHoverGlow\(this\.up\.butt_settings\);/.test(panelsSrc), 'hover-эффект на старом хитбоксе больше не навешивается');
 }
 
 console.log('\nTest 3: универсальный редактор — новая кнопка "📋 СУПЕР КОПИРОВАТЬ"');

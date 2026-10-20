@@ -11,7 +11,13 @@ export function attachZoneBiz(proto){
             LL+'кнопка выполнить можно.png', LL+'кнопка выполнить нельзя.png',
             LL+'btn_biz_activ.png',  LL+'btn_biz_passiv.png',
             LL+'exit.png', LL+'biz_popup.png',
-            BIZ+'biz_bg.png',
+            // 20.10.2026 (по прямому указанию — "файл visually другой, поставь новый"): byte-for-
+            // byte проверка показала, что присланный файл побайтово ИДЕНТИЧЕН старому biz_bg.png
+            // (тот же MD5) — переименован в biz_bg_v2.png тем же приёмом, что "рулетка колесо
+            // v2.png"/"зона локация ... v3.png", чтобы сбросить кэш VK Mini Apps (VK кэширует
+            // картинки на своём CDN независимо от Cache-Control заголовков нашего nginx — смена
+            // URL гарантированно отдаёт свежий файл).
+            BIZ+'biz_bg_v2.png',
             BIZ+'biz_btn_activ.png',
             BIZ+'biz_btn_passiv.png',
             BIZ+'biz_prog_passiv.png',
@@ -47,7 +53,7 @@ export function attachZoneBiz(proto){
         const win = new PIXI.Container();
         win.interactive = true;
 
-        const bg = new PIXI.Sprite(PIXI.Texture.from(BIZ + 'biz_bg.png'));
+        const bg = new PIXI.Sprite(PIXI.Texture.from(BIZ + 'biz_bg_v2.png'));
         bg.interactive = true;
         win.addChild(bg);
 
