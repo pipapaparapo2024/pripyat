@@ -78,8 +78,11 @@ console.log('\nTest 3: верхний HUD (рубли/верхняя строк�
     // покупка верхней строки теперь ведёт в this._topCurPinned (а не захардкожено в 'stew'),
     // нижняя строка — в otherKey(this._topCurPinned) (а не захардкожено в 'cigarettes').
     assert(!/if\(window\.bank\) bank\.init\(/.test(topCurSrc), 'interface-top-currency.js больше не вызывает bank.init() нигде (реальный код, не комментарии)');
-    assert(/btnRubPlus\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\('coins'\)/.test(topCurSrc),
-        'рубли "+"  → _openCurrencyPurchasePopup(\'coins\')');
+    // 20.10.2026 (по прямому указанию — "правая плашка, где просто плюс, пусть будет сухари"):
+    // статичная правая плашка (переменные сохранили старое имя btnRubPlus) теперь показывает
+    // сухари, не рубли — её "+" ведёт во вкладку 'cigarettes'.
+    assert(/btnRubPlus\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\('cigarettes'\)/.test(topCurSrc),
+        'правая статичная плашка "+" → _openCurrencyPurchasePopup(\'cigarettes\')');
     assert(/iconPrimary\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\(this\._topCurPinned\)/.test(topCurSrc),
         'иконка верхней строки → _openCurrencyPurchasePopup(this._topCurPinned)');
     assert(/btnSecondaryPlus\.on\('pointerdown', \(\) => \{[\s\S]{0,120}_openCurrencyPurchasePopup\(otherKey\(this\._topCurPinned\)\)/.test(topCurSrc),

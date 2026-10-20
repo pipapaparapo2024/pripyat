@@ -8,12 +8,20 @@
  *
  * Раскладка (абсолютные координаты iface.up, продиктованы пользователем через позиционный
  * обзор макета):
- *   Рубли     — плашка (910,5), иконка (909,9) → попап покупки (вкладка "рубли"), кнопка "+" (1091,12) → то же
+ *   "Рубли"-плашка (переменные сохранили старое имя, 20.10.2026 стала показывать СУХАРИ —
+ *             см. ниже) — плашка (910,5), иконка (909,9) → попап покупки (вкладка "сухари"),
+ *             кнопка "+" (1091,12) → то же
  *   Верхняя строка (всегда видна) — плашка (676,5), иконка (683,10) → покупка закреплённой валюты
- *             (this._topCurPinned), кнопка ▼ (855,10) — ЧИСТЫЙ тоггл, только раскрывает/прячет
+ *             (this._topCurPinned), кнопка ▼ (857,12) — ЧИСТЫЙ тоггл, только раскрывает/прячет
  *             нижнюю строку.
  *   Нижняя строка (скрыта по умолчанию, раскрывается кнопкой ▼) — плашка (676,53), иконка (691,59),
- *             текст (757,68), кнопка "+" (856,62) → покупка НЕ закреплённой валюты.
+ *             текст (757,68), кнопка "+" (858,60) → покупка НЕ закреплённой валюты.
+ *
+ * 20.10.2026 (по прямому указанию — "плашки, которые сменяют друг друга, пусть будут тушёнка и
+ * рубли [не тушёнка и сухари], а правая плашка, где просто плюс, пусть будет сухари"):
+ * цикл верхней/нижней строки (this._topCurPinned) теперь stew↔coins (CUR_META ниже), а
+ * статичная правая плашка (переменные plateRub/iconRub/txtRub/btnRubPlus — имена оставлены
+ * историческими, не переименовывались ради минимальной правки) показывает сухари вместо рублей.
  *
  * 18.10.2026 (по прямому указанию — "смысл стрелки не тот: нажал на выдвинувшиеся сухари —
  * шторка закрылась, сухари остались СВЕРХУ"): верхняя/нижняя строка больше не жёстко = тушёнка/
@@ -42,11 +50,14 @@ export function attachTopCurrency(proto){
     // this._topCurPinned ('stew' или 'cigarettes', тушёнка по умолчанию). Клик по самой
     // раскрытой строке (не по кнопке "+") меняет местами закреплённую и раскрытую валюту и
     // сворачивает шторку — именно так, как описано.
+    // 20.10.2026 (по прямому указанию): цикл верхней/нижней строки сменил вторую валюту с
+    // сухарей на рубли (сухари переехали на отдельную статичную плашку справа — см. iconRub
+    // ниже) — ключ 'cigarettes' заменён на 'coins'.
     const CUR_META = {
-        stew:       { icon: 'верхний худ иконка тушняк.png', field: 'stew' },
-        cigarettes: { icon: 'верхний худ иконка сухари.png', field: 'cigarettes' },
+        stew:  { icon: 'верхний худ иконка тушняк.png', field: 'stew' },
+        coins: { icon: 'верхний худ иконка рубли.png', field: 'coins' },
     };
-    const otherKey = (k) => k === 'stew' ? 'cigarettes' : 'stew';
+    const otherKey = (k) => k === 'stew' ? 'coins' : 'stew';
 
     proto._buildTopCurrencyWidget = function(){
         const up = this.up;
@@ -69,12 +80,13 @@ export function attachTopCurrency(proto){
 
         const fmt = (v) => helper.formatKK(parseInt(v || 0));
 
-        // ── Рубли (всегда видна) ─────────────────────────────────────────────
+        // ── Сухари (всегда видна; имена переменных исторические — 20.10.2026 эта плашка
+        // показывала рубли, теперь показывает сухари, см. докблок файла) ──────────────────
         const plateRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ плашка ресурса.png'));
         plateRub.x = 910; plateRub.y = 5;
         up.addChild(plateRub);
 
-        const iconRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка рубли.png'));
+        const iconRub = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка сухари.png'));
         iconRub.x = 909; iconRub.y = 9;
         up.addChild(iconRub);
 
@@ -86,12 +98,12 @@ export function attachTopCurrency(proto){
         btnRubPlus.x = 1091; btnRubPlus.y = 12;
         btnRubPlus.interactive = true; btnRubPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnRubPlus);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(btnRubPlus);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnRubPlus);
         // 18.10.2026 (по прямому указанию — "FLA → обычные изображения" для всех точек
         // покупки): раньше вело на старое FLA-окно банка (bank.init), теперь — на новый
         // 3-вкладочный попап (interface-currency-purchase.js).
         btnRubPlus.on('pointerdown', () => {
-            if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('coins');
+            if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('cigarettes');
         });
         up.addChild(btnRubPlus);
 
@@ -110,7 +122,7 @@ export function attachTopCurrency(proto){
         // клик по самой иконке верхней строки — стрелка теперь ВСЕГДА только раскрывает/прячет.
         iconPrimary.interactive = true; iconPrimary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(iconPrimary);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(iconPrimary);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(iconPrimary);
         iconPrimary.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(this._topCurPinned);
         });
@@ -121,10 +133,11 @@ export function attachTopCurrency(proto){
         up.addChild(txtPrimary);
 
         const btnToggle = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ кнопка вниз.png'));
-        btnToggle.x = 855; btnToggle.y = 10;
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:857,y:12"): было 855,10.
+        btnToggle.x = 857; btnToggle.y = 12;
         btnToggle.interactive = true; btnToggle.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnToggle);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(btnToggle);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnToggle);
         up.addChild(btnToggle);
 
         // ── Нижняя строка (скрыта по умолчанию — показывает "другую" валюту, та что
@@ -150,14 +163,14 @@ export function attachTopCurrency(proto){
         // ловила. Теперь оба спрайта вешают один и тот же обработчик.
         plateSecondary.interactive = true; plateSecondary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(plateSecondary);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(plateSecondary);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(plateSecondary);
         plateSecondary.on('pointerdown', _swapToSecondary);
 
-        const iconSecondary = new PIXI.Sprite(PIXI.Texture.from(BASE + CUR_META.cigarettes.icon));
+        const iconSecondary = new PIXI.Sprite(PIXI.Texture.from(BASE + CUR_META.coins.icon));
         iconSecondary.x = 691; iconSecondary.y = 59; iconSecondary.visible = false;
         iconSecondary.interactive = true; iconSecondary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(iconSecondary);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(iconSecondary);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(iconSecondary);
         iconSecondary.on('pointerdown', _swapToSecondary);
         up.addChild(iconSecondary);
 
@@ -168,10 +181,11 @@ export function attachTopCurrency(proto){
         up.addChild(txtSecondary);
 
         const btnSecondaryPlus = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка плюс.png'));
-        btnSecondaryPlus.x = 856; btnSecondaryPlus.y = 62; btnSecondaryPlus.visible = false;
+        // 20.10.2026 (по прямому указанию, редактор позиций — "x:858,y:60"): было 856,62.
+        btnSecondaryPlus.x = 858; btnSecondaryPlus.y = 60; btnSecondaryPlus.visible = false;
         btnSecondaryPlus.interactive = true; btnSecondaryPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnSecondaryPlus);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(btnSecondaryPlus);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnSecondaryPlus);
         btnSecondaryPlus.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(otherKey(this._topCurPinned));
         });
@@ -213,7 +227,7 @@ export function attachTopCurrency(proto){
         shopBtn.x = 1146; shopBtn.y = 3;
         shopBtn.interactive = true; shopBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(shopBtn);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(shopBtn);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(shopBtn);
         shopBtn.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('stew');
         });
@@ -223,7 +237,7 @@ export function attachTopCurrency(proto){
         settingsBtn.x = 1214; settingsBtn.y = 0;
         settingsBtn.interactive = true; settingsBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(settingsBtn);
-        if(typeof this._addHoverScale === 'function') this._addHoverScale(settingsBtn);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(settingsBtn);
         settingsBtn.on('pointerdown', () => this._openSoundPopup());
         up.addChild(settingsBtn);
 
@@ -261,7 +275,7 @@ export function attachTopCurrency(proto){
         if(!this._topCur || !window.udata) return;
         const { txtRub, txtPrimary, txtSecondary, fmt } = this._topCur;
         const secondaryKey = otherKey(this._topCurPinned);
-        txtRub.text       = fmt(udata['coins']);
+        txtRub.text       = fmt(udata['cigarettes']);
         txtPrimary.text   = fmt(udata[CUR_META[this._topCurPinned].field]);
         txtSecondary.text = fmt(udata[CUR_META[secondaryKey].field]);
     };

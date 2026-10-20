@@ -162,8 +162,10 @@ console.log('    валюту наверху и закрывает шторку,
     btnToggle.fire('pointerdown');
     assert(fakeIface._topCurrencyExpanded === true, 'раскрыли ещё раз для сценария свапа');
     iconSecondary.fire('pointerdown');
-    assert(fakeIface._topCurPinned === 'cigarettes', 'клик по раскрытой строке закрепил сухари наверху (были внизу)');
-    assert(fakeIface._topCurrencyExpanded === false, 'после свапа шторка закрыта — сухари "остались сверху", как просил пользователь');
+    // 20.10.2026 (по прямому указанию — "плашки, которые сменяют друг друга, пусть будут
+    // тушёнка и рубли"): вторая валюта цикла сменилась с сухарей на рубли (coins).
+    assert(fakeIface._topCurPinned === 'coins', 'клик по раскрытой строке закрепил рубли наверху (были внизу)');
+    assert(fakeIface._topCurrencyExpanded === false, 'после свапа шторка закрыта — рубли "остались сверху", как просил пользователь');
     assert(purchCalls.length === 1, 'клик по раскрытой строке НЕ открыл попап покупки (всё ещё только 1 вызов — предыдущий, от iconPrimary)');
 }
 

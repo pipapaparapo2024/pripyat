@@ -170,6 +170,20 @@ export function attachBossResultPopup(proto){
         const bg = _sprite('боевка попап фон.png', BG_POS);
         win.addChild(bg);
 
+        // 20.10.2026 (по прямому указанию — "иконка сигарет в попапе результата боя должна быть
+        // иконкой сухарей"): пачка сигарет вшита прямо в сам файл фона (боевка попап фон.png,
+        // как и рюкзак/XP рядом — см. комментарий у REWARD_LABEL_POS ниже), подменить её кодом
+        // нельзя — поверх накладывается спрайт актуальной иконки сухарей (тот же файл, что уже
+        // используется для награды сухарей в bosses_prefight.js/dvor.js), размер и позиция
+        // подобраны так, чтобы полностью перекрыть старую пачку сигарет. Не внутри if(isWin) —
+        // иконка в фоне декоративная и видна и на победе, и на поражении (суммы наград — вот
+        // они условны, см. ниже).
+        const cigIcon = new PIXI.Sprite(PIXI.Texture.from(BASE + 'боевка награда сухари.png'));
+        cigIcon.anchor.set(0.5, 0.5);
+        cigIcon.x = 593; cigIcon.y = 291;
+        cigIcon.width = 44; cigIcon.height = 50;
+        win.addChild(cigIcon);
+
         const portraitFile = BOSS_PORTRAITS[bossIdx] || BOSS_PORTRAITS[0];
         const portrait = _sprite(portraitFile, PORTRAIT_POS);
         win.addChild(portrait);

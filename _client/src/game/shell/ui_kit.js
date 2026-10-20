@@ -167,6 +167,23 @@ export function attachUiKit(proto){
 		btn.on('pointerout',  ()=>{ window._scHover(btn, 1); });
 	};
 
+	// 20.10.2026 (по прямому указанию, сверено по видео-референсу — "кнопки верхнего худа
+	// (магазин/настройки/плюс/вниз) и плашки валют при наведении не должны расти, должны
+	// немного подсвечиваться"): кадровый анализ видео показал, что у наведённой кнопки
+	// светлеет сам фон (без увеличения и без прозрачности) — реализовано через
+	// ColorMatrixFilter.brightness(), тот же pixi-filters, что уже используется в проекте для
+	// обесцвечивания шмоток (bosses_prefight.js/shmot_shop.js), новая зависимость не нужна.
+	// amount — множитель яркости под курсором (по умолчанию 1.35).
+	proto._addHoverBright = function(btn, amount){
+		if(!btn) return;
+		setButton(btn);
+		amount = amount === undefined ? 1.35 : amount;
+		const filter = new PIXI.filters.ColorMatrixFilter();
+		filter.brightness(amount, false);
+		btn.on('pointerover', ()=>{ btn.filters = [filter]; });
+		btn.on('pointerout',  ()=>{ btn.filters = null; });
+	};
+
 	// 18.10.2026 (по прямому указанию — "кнопки нижнего худа при наведении зеленеют, такого
 	// быть не должно, оставь только увеличение, и сделай увеличение в полтора раза меньше"):
 	// цветовой tint на hover убран целиком (раньше подсвечивал кнопку оттенком 0xFFDD88,

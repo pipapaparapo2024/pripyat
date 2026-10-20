@@ -67,7 +67,11 @@ console.log('\n2) interface.js — кольцо поверх иконки (19.10
     assert(!/const avaMask = new PIXI\.Graphics/.test(ifaceSrc), 'PIXI.Graphics для маски больше не создаётся');
     assert(!/bm\.mask = avaMask;/.test(ifaceSrc), 'bm.mask больше не выставляется');
     assert(/кольцо верхний худ\.png/.test(ifaceSrc), 'новый файл кольца подключён');
-    assert(/this\.up\.ava\.icon_mc\.addChild\(ring\);/.test(ifaceSrc), 'кольцо добавлено внутрь icon_mc (поверх иконки, та — поверх HUD)');
+    // 20.10.2026 (по прямому указанию — "кольцо в натуральном размере, поверх всего HUD, в
+    // левом верхнем углу"): кольцо переехало из icon_mc/up.ava напрямую в `this.up` (addChild
+    // добавляет последним ребёнком = топ z-order), x=0,y=0, без scale — см. ring-native-size
+    // тест ниже.
+    assert(/this\.up\.addChild\(ring\);/.test(ifaceSrc), 'кольцо добавлено напрямую в this.up (топ z-order, не внутрь icon_mc/up.ava)');
     assert(/if\(!this\._avatarRing\)/.test(ifaceSrc), 'кольцо создаётся один раз, не на каждую перезагрузку фото');
     assert(/'кольцо верхний худ\.png'/.test(bootSrc), 'кольцо есть в прелоаде game-boot.js');
 }

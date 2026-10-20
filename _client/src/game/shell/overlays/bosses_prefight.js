@@ -53,7 +53,8 @@ export function attachBossPreFight(proto){
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from('./images/layers/popups/bosses/exit.png'));
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
-        exitBtn.x = 1197; exitBtn.y = 82;
+        // 20.10.2026 (по прямому указанию, скриншот — "опусти вниз на 20 пикселей"): было y=82.
+        exitBtn.x = 1197; exitBtn.y = 102;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout', ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
