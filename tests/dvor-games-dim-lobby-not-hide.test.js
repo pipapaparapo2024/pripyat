@@ -12,9 +12,14 @@
  * оставить alpha=0 (Двор полностью невидим, не просто затемнён) — см.
  * dvor-wrap-fully-hidden-behind-casino-games.test.js для актуального покрытия.
  *
- * Файл оставлен (не удалён) как история конфликта решений в рамках одного дня — используй
- * dvor-wrap-fully-hidden-behind-casino-games.test.js как источник истины для текущего
- * поведения.
+ * ⚠️ 20.10.2026: alpha=0 ОТМЕНЕНО обратно на затемнение (alpha=0.35) — см. докблок
+ * dvor-wrap-fully-hidden-behind-casino-games.test.js и tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js
+ * (актуальный источник истины). Этот файл из названия ("dim lobby, not hide") внезапно снова
+ * оказался верным по СУТИ, даже с устаревшими строками ниже — обновлены под сегодняшнее число.
+ *
+ * Файл оставлен (не удалён) как история конфликта решений — используй
+ * tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js как источник истины для
+ * текущего поведения.
  *
  * Run: node tests/dvor-games-dim-lobby-not-hide.test.js
  */
@@ -46,12 +51,12 @@ for(const g of GAMES){
     assert(openIdx !== -1, `${g.openFn} найден`);
     const openEnd = src.indexOf('\n    };', openIdx);
     const openBody = src.slice(openIdx, openEnd);
-    assert(/this\._dvorWrap\.alpha = 0;/.test(openBody),
-        'открытие игры: _dvorWrap.alpha = 0 (полностью невидим, НЕ 0.35 затемнение)');
+    assert(/this\._dvorWrap\.alpha = 0\.35;/.test(openBody),
+        'открытие игры: _dvorWrap.alpha = 0.35 (затемнение, НЕ 0 — см. докблок про отмену 20.10.2026)');
     assert(/this\._dvorWrap\.interactiveChildren = false/.test(openBody),
         'открытие игры: _dvorWrap.interactiveChildren = false (некликабельно)');
-    assert(!/this\._dvorWrap\.alpha = 0\.35/.test(openBody),
-        'открытие игры: старое значение 0.35 (тусклое затемнение) больше не используется');
+    assert(!/this\._dvorWrap\.alpha = 0;/.test(openBody),
+        'открытие игры: старое значение 0 (полная прозрачность) больше не используется');
 
     const closeIdx = src.indexOf(g.closeFn);
     assert(closeIdx !== -1, `${g.closeFn} найден`);

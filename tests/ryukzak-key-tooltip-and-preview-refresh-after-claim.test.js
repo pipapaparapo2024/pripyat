@@ -20,11 +20,17 @@
  * рюкзака, см. sukhari-replace-cigarettes-ui-rebuild.test.js §8): отдельный floating-спрайт
  * ключа (keyIconSpr) с собственным hover-тултипом УДАЛЁН ЦЕЛИКОМ — ключ теперь просто одна из
  * карточек общего грида (KEY_BOSS_CARD), уже подписанная именем босса в самом арте карточки,
- * отдельный тултип избыточен. Тесты 1-3 (ниже) теперь проверяют, что этот код действительно
- * убран, а не оставлен мёртвым. Тесты 4-6 (двухфазный честный-превью фикс) сохранены по сути,
+ * отдельный тултип избыточен. Тесты 4-6 (двухфазный честный-превью фикс) сохранены по сути,
  * обновлены под новую сигнатуру: _setKeyPreview() больше нет (ключ идёт через
  * _renderRewardIcons(reward) вместе со всем остальным), lvlTxt теперь содержит только число
  * (подпись "УРОВЕНЬ РЮКЗАКА :" вшита в новую плашку, не дублируется текстом).
+ *
+ * ⚠️ 20.10.2026 (ЧАСТИЧНО ОТМЕНЕНО, по прямому указанию — "сделать так, чтобы при наведении
+ * на ключ показывалось ключ от кого это"): тултип вернулся — но не старый floating-спрайт
+ * keyIconSpr/keyTooltip/_setKeyPreview (они по-прежнему не создаются, Тесты 1-2 остаются
+ * в силе), а pointerover/pointerout прямо на карточке ключа внутри общего грида (keyTip/
+ * keyTipTxt в _addCard()). Тест 3 обновлён — "отдельный тултип не нужен" как причина теперь
+ * неверна, карта расширена до 4 слотов (добавлен Крыс).
  *
  * Run: node tests/ryukzak-key-tooltip-and-preview-refresh-after-claim.test.js
  */
@@ -41,13 +47,17 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const ryuk = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'ryukzak.js'), 'utf-8');
 
-console.log('\nTest 1-3: старый отдельный keyIconSpr с hover-тултипом убран целиком (заменён карточкой в общем гриде)');
+console.log('\nTest 1-3: старый отдельный keyIconSpr/_setKeyPreview убран (тултип теперь висит прямо на карточке в гриде, не на отдельном floating-спрайте)');
 {
     assert(!/const keyIconSpr = new PIXI\.Sprite/.test(ryuk), 'keyIconSpr больше не создаётся');
-    assert(!/const keyTooltip = new PIXI\.Container/.test(ryuk), 'keyTooltip больше не создаётся');
+    assert(!/const keyTooltip = new PIXI\.Container/.test(ryuk), 'keyTooltip (старый, отдельный) больше не создаётся');
     assert(!/const _setKeyPreview = \(count, bossId\) => \{/.test(ryuk), '_setKeyPreview() больше не определена');
-    assert(/KEY_BOSS_CARD = \{ 1:'рюкзак карточка счастливчик\.png', 2:'рюкзак карточка ястреб\.png', 3:'рюкзак карточка меченный\.png' \}/.test(ryuk),
-        'вместо этого — карта id→файл карточки (уже подписана именем босса в самом арте, отдельный тултип не нужен)');
+    assert(/KEY_BOSS_CARD = \{\s*\n\s*1:'рюкзак карточка счастливчик\.png', 2:'рюкзак карточка ястреб\.png',\s*\n\s*3:'рюкзак карточка меченный\.png', 4:'рюкзак карточка крыс\.png',\s*\n\s*\};/.test(ryuk),
+        'вместо этого — карта id→файл карточки, 4 слота (Крыс добавлен 20.10.2026)');
+    // 20.10.2026: тултип вернулся, но как pointerover/pointerout прямо на карточке в гриде —
+    // keyTip/keyTipTxt, не отдельный floating-объект с собственной позицией/видимостью.
+    assert(/const keyTip = new PIXI\.Container\(\);/.test(ryuk), 'новый общий keyTip-тултип создан (переиспользуется для любой карточки ключа)');
+    assert(/tip: 'Ключ от ' \+ \(KEY_BOSS_NAME_GEN\[reward\.key_boss\] \|\| 'босса'\),/.test(ryuk), 'текст тултипа передаётся в _addCard как 4-й аргумент');
 }
 
 console.log('\nTest 4: честное превью (ryukzak.preview) вынесено в переиспользуемую функцию _fetchHonestPreview()');

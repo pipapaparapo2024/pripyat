@@ -42,11 +42,13 @@ console.log('\nTest 1: "вкладка двор.png" и "зарики фон в�
 // справа просвечивают позади покера"): visible=false (фикс от 22.09) был на некоторое время
 // заменён на alpha=0.35 (тусклое, но видимое лобби — см. git-историю/dvor-games-dim-lobby-not-hide.test.js),
 // а затем, после того как ЭТО САМО оказалось источником просвечивания, пользователь явно
-// подтвердил (AskUserQuestion) окончательный вариант — alpha=0 (полностью невидим). Функционально
-// эквивалентно исходной цели этого теста (Двор не должен быть виден при открытой игре), просто
-// через alpha вместо visible — см. dvor-wrap-fully-hidden-behind-casino-games.test.js для
-// актуального, самого подробного покрытия этого поведения.
-console.log('\nTest 2: все 4 экрана игр Двора полностью скрывают _dvorWrap (alpha=0) при открытии, не только interactiveChildren');
+// подтвердил (AskUserQuestion) окончательный вариант — alpha=0 (полностью невидим).
+//
+// ⚠️ 20.10.2026 (ОТМЕНЕНО, по прямому указанию — "вкладка Двор полностью прозрачная, нужно
+// затемнение"): alpha=0 обратно заменено на alpha=0.35 — старый аргумент про просвечивающие
+// кнопки Двора сегодня не поднимался. Источник истины —
+// tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js.
+console.log('\nTest 2: все 4 экрана игр Двора затемняют _dvorWrap (alpha=0.35) при открытии, не только interactiveChildren');
 {
     const files = {
         dice:      'server/../_client/src/game/dvor/dvor-dice.js'.replace('server/../', ''),
@@ -56,8 +58,8 @@ console.log('\nTest 2: все 4 экрана игр Двора полность�
     };
     for(const [name, rel] of Object.entries(files)){
         const src = readSrc(rel);
-        assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 0; this\._dvorWrap\.interactiveChildren = false; \}/.test(src),
-            name + ': открытие экрана скрывает _dvorWrap.alpha=0 (полностью невидим)');
+        assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 0\.35; this\._dvorWrap\.interactiveChildren = false; \}/.test(src),
+            name + ': открытие экрана затемняет _dvorWrap.alpha=0.35 (не прячет полностью)');
         assert(!/if\(this\._dvorWrap\) this\._dvorWrap\.interactiveChildren = false;$/m.test(src),
             name + ': старая неполная строка (только interactiveChildren, без скрытия) больше не осталась');
     }

@@ -103,8 +103,10 @@ export function attachDiceScreen(proto){
         });
         // 20.10.2026 (по прямому указанию, редактор позиций — хитбокс x:316,y:92,w:47,h:35):
         // текст центрируется в хитбоксе, было x:342,y:113.
+        // 20.10.2026 (повторное указание тем же днём — "хитбокс левого уровня подними вверх на
+        // 2 пикселя"): было y:92.
         levelTxt.anchor.set(0.5, 0.5);
-        levelTxt.x = 316 + 47 / 2; levelTxt.y = 92 + 35 / 2;
+        levelTxt.x = 316 + 47 / 2; levelTxt.y = 90 + 35 / 2;
         win.addChild(levelTxt);
         this._diceLevelTxt = levelTxt;
 
@@ -147,7 +149,8 @@ export function attachDiceScreen(proto){
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
         availTxt.anchor.set(0.5, 0.5);
-        availTxt.x = 807; availTxt.y = 144;
+        // 20.10.2026 (по прямому указанию — "влево на 3, вверх на 4"): было x:807,y:144.
+        availTxt.x = 804; availTxt.y = 140;
         win.addChild(availTxt);
         this._diceAvailTxt = availTxt;
 

@@ -214,16 +214,56 @@ export function attachRyukzak(proto){
 		const CARD_X_SHIFT = HAS_SHMOT_DROP ? 0 : 140;
 		const TOP_ROW    = [{x:334+CARD_X_SHIFT,y:203},{x:455+CARD_X_SHIFT,y:203},{x:576+CARD_X_SHIFT,y:203}];
 		const BOTTOM_ROW  = [{x:288+CARD_X_SHIFT,y:345},{x:402+CARD_X_SHIFT,y:345},{x:516+CARD_X_SHIFT,y:345},{x:630+CARD_X_SHIFT,y:345}];
-		const KEY_BOSS_CARD = { 1:'рюкзак карточка счастливчик.png', 2:'рюкзак карточка ястреб.png', 3:'рюкзак карточка меченный.png' };
+		// 20.10.2026 (по прямому указанию — "количество ключей не отображается и не меняется,
+		// должны показываться те ключи, которые игрок выбил"): раньше карта покрывала только
+		// 1-3 (Счастливчик/Ястреб/Меченный) — ryukzak.php уже поддерживает key_boss вплоть до 4
+		// (Крыс, см. комментарий в ryukzak.php._rollWeapons()/open() — "1=Счастливчик,
+		// 2=Ястреб, 3=Меченный, 4=Крыс"), но карты для слота 4 не было — если бы когда-нибудь
+		// в ryukzak_config.json появился тир с key_boss:4, карточка ключа просто не
+		// нарисовалась бы. Добавлена недостающая карта + родительный падеж для тултипа.
+		const KEY_BOSS_CARD = {
+			1:'рюкзак карточка счастливчик.png', 2:'рюкзак карточка ястреб.png',
+			3:'рюкзак карточка меченный.png', 4:'рюкзак карточка крыс.png',
+		};
+		const KEY_BOSS_NAME_GEN = { 1:'Счастливчика', 2:'Ястреба', 3:'Меченного', 4:'Крыса' };
 
 		const rewardIconsCont = new PIXI.Container();
 		win.addChild(rewardIconsCont);
 
-		const _addCard = (file, value, pos) => {
+		// 20.10.2026 (по прямому указанию — "при наведении на ключ показывалось от кого это"):
+		// одна общая тултип-карточка (тот же стиль, что у подсказки стоимости биз-улучшения в
+		// zone-biz.js) переиспользуется для любой карточки ключа — позиционируется над ней при
+		// наведении.
+		const keyTip = new PIXI.Container();
+		keyTip.visible = false;
+		const keyTipBg = new PIXI.Graphics();
+		keyTipBg.beginFill(0x1a1a1a, 0.92);
+		keyTipBg.lineStyle(1, 0xcc7200, 1);
+		keyTipBg.drawRoundedRect(0, 0, 170, 32, 6);
+		keyTipBg.endFill();
+		keyTip.addChild(keyTipBg);
+		const keyTipTxt = new PIXI.Text('', {
+			fontFamily: 'Southbank LT', fontSize: 15, fill: '#e8d8b8',
+		});
+		keyTipTxt.anchor.set(0.5, 0.5);
+		keyTipTxt.x = 85; keyTipTxt.y = 16;
+		keyTip.addChild(keyTipTxt);
+		win.addChild(keyTip);
+
+		const _addCard = (file, value, pos, tipText) => {
 			const spr = new PIXI.Sprite(PIXI.Texture.from(BASE + file));
 			spr.x = pos.x; spr.y = pos.y;
 			rewardIconsCont.addChild(spr);
-			if(value === undefined) return; // карточка ключа — без числового лейбла (штучный предмет)
+			if(tipText){
+				spr.interactive = true; spr.buttonMode = true;
+				spr.on('pointerover', () => {
+					keyTipTxt.text = tipText;
+					keyTip.x = pos.x - 10; keyTip.y = pos.y - 36;
+					keyTip.visible = true;
+				});
+				spr.on('pointerout', () => { keyTip.visible = false; });
+			}
+			if(value === undefined) return;
 			const lbl = new PIXI.Text(fmtN(value), {
 				fontFamily: 'Southbank LT', fontSize: 22, fill: '#ffcc44',
 				dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
@@ -240,6 +280,7 @@ export function attachRyukzak(proto){
 
 		const _renderRewardIcons = (reward) => {
 			rewardIconsCont.removeChildren();
+			keyTip.visible = false;
 
 			const topItems = [
 				{f:'рюкзак карточка рублики.png',  v: reward.c},
@@ -253,9 +294,15 @@ export function attachRyukzak(proto){
 			if(reward.pist > 0) bottomItems.push({f:'рюкзак карточка макар.png',  v: reward.pist});
 			if(reward.ak   > 0) bottomItems.push({f:'рюкзак карточка калаш.png',  v: reward.ak});
 			const keyFile = reward.k > 0 ? KEY_BOSS_CARD[reward.key_boss] : null;
-			if(keyFile) bottomItems.push({f: keyFile, v: undefined});
+			// 20.10.2026 (по прямому указанию — "не отображается количество ключей, которые
+			// выиграл игрок"): раньше value был намеренно undefined ("штучный предмет, без
+			// лейбла") — теперь показывает reward.k, как и любая другая карточка награды.
+			if(keyFile) bottomItems.push({
+				f: keyFile, v: reward.k,
+				tip: 'Ключ от ' + (KEY_BOSS_NAME_GEN[reward.key_boss] || 'босса'),
+			});
 
-			bottomItems.slice(0, 4).forEach((item, i) => _addCard(item.f, item.v, BOTTOM_ROW[i]));
+			bottomItems.slice(0, 4).forEach((item, i) => _addCard(item.f, item.v, BOTTOM_ROW[i], item.tip));
 			if(bottomItems.length > 4){
 				console.warn('[ryukzak._renderRewardIcons] больше 4 позиций в нижнем ряду, лишние не показаны:', bottomItems.length);
 			}

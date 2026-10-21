@@ -36,6 +36,13 @@
  *
  * Текст суммы — свой PIXI.Text на каждую плашку, т.к. одна плашка переиспользуется 3 раза без
  * встроенного текстового поля (в отличие от старого Up_panel_val, где text был частью объекта).
+ *
+ * 20.10.2026 (по прямому указанию — "хавер-эффект всё ещё виден, пусть небольшой, но виден —
+ * убери, его не должно быть"): все hover-подсветки (_addHoverBright/_addHoverBrightGroup) на
+ * всех элементах этого виджета (иконка "+", кнопка ▼, обе плашки валют, кнопки магазин/
+ * настройки) удалены целиком — отменяет решение от того же дня чуть ранее (видео-референс
+ * "Хулиганы" про subtle brightness hover). Interactive/buttonMode/pointerdown остались
+ * нетронутыми — кнопки по-прежнему кликабельны, просто без визуальной реакции на наведение.
  */
 export function attachTopCurrency(proto){
 
@@ -103,10 +110,10 @@ export function attachTopCurrency(proto){
         up.addChild(txtRub);
 
         const btnRubPlus = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка плюс.png'));
-        btnRubPlus.x = 1091; btnRubPlus.y = 12;
+        // 20.10.2026 (редактор позиций, по прямому указанию — "x:1092,y:12"): было 1091,12.
+        btnRubPlus.x = 1092; btnRubPlus.y = 12;
         btnRubPlus.interactive = true; btnRubPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnRubPlus);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnRubPlus);
         // 18.10.2026 (по прямому указанию — "FLA → обычные изображения" для всех точек
         // покупки): раньше вело на старое FLA-окно банка (bank.init), теперь — на новый
         // 3-вкладочный попап (interface-currency-purchase.js).
@@ -134,18 +141,9 @@ export function attachTopCurrency(proto){
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(this._topCurPinned);
         };
         iconPrimary.on('pointerdown', _openPrimaryPurchase);
-        // 20.10.2026 (репорт по прямому указанию — "при наведении на плюс/кнопку вниз/плашку
-        // ресурсов как будто hover-эффект всё ещё есть"): проверено — ни одна из этих кнопок не
-        // навешивает scale (все три используют только _addHoverBright, растущего эффекта в коде
-        // нет). Но у ЭТОЙ (верхней, всегда видимой) плашки был РОВНО ТОТ ЖЕ баг-класс, что уже
-        // чинили для нижней раскрытой плашки (plateSecondary/iconSecondary, см. ниже): сама
-        // плашка не была интерактивна, подсвечивалась только иконка внутри неё — курсор,
-        // двигаясь по плашке мимо иконки, то включал, то выключал подсветку, что и читалось как
-        // "мигающий/дёргающийся эффект". Плашка сделана интерактивной и сгруппирована с иконкой.
         platePrimary.interactive = true; platePrimary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(platePrimary);
         platePrimary.on('pointerdown', _openPrimaryPurchase);
-        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([platePrimary, iconPrimary]);
         up.addChild(iconPrimary);
 
         const txtPrimary = new PIXI.Text('0', TXT_STYLE);
@@ -157,7 +155,6 @@ export function attachTopCurrency(proto){
         btnToggle.x = 857; btnToggle.y = 12;
         btnToggle.interactive = true; btnToggle.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnToggle);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnToggle);
         up.addChild(btnToggle);
 
         // ── Нижняя строка (скрыта по умолчанию — показывает "другую" валюту, та что
@@ -192,12 +189,6 @@ export function attachTopCurrency(proto){
         iconSecondary.on('pointerdown', _swapToSecondary);
         up.addChild(iconSecondary);
 
-        // 20.10.2026 (по прямому указанию — "при наведении на плашку или на иконку нижней
-        // валюты они должны подсвечиваться одновременно"): иконка сидит поверх плашки — один
-        // общий groupBright вместо двух независимых _addHoverBright (та картинка подсвечивалась
-        // сама по себе, плашка — сама по себе, в зависимости от того, что именно хит-тестилось).
-        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateSecondary, iconSecondary]);
-
         const txtSecondary = new PIXI.Text('0', TXT_STYLE);
         // 18.10.2026 (по прямому указанию, редактор позиций — "координаты кол-ва ресурсов у
         // плашки, которая выскакивает снизу: x:757,y:68"): было x:725,y:59.
@@ -209,7 +200,6 @@ export function attachTopCurrency(proto){
         btnSecondaryPlus.x = 858; btnSecondaryPlus.y = 60; btnSecondaryPlus.visible = false;
         btnSecondaryPlus.interactive = true; btnSecondaryPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnSecondaryPlus);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnSecondaryPlus);
         btnSecondaryPlus.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(otherKey(this._topCurPinned));
         });
@@ -251,7 +241,6 @@ export function attachTopCurrency(proto){
         shopBtn.x = 1146; shopBtn.y = 3;
         shopBtn.interactive = true; shopBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(shopBtn);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(shopBtn);
         shopBtn.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('stew');
         });
@@ -261,7 +250,6 @@ export function attachTopCurrency(proto){
         settingsBtn.x = 1214; settingsBtn.y = 0;
         settingsBtn.interactive = true; settingsBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(settingsBtn);
-        if(typeof this._addHoverBright === 'function') this._addHoverBright(settingsBtn);
         settingsBtn.on('pointerdown', () => this._openSoundPopup());
         up.addChild(settingsBtn);
 

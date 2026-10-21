@@ -47,7 +47,9 @@ export function attachRoulette(proto){
         // См. подробный разбор бага "фон двоится" (22.09.2026) в dvor-dice.js._openDiceScreen()
         // — затемнение попутно решает и его: тусклая нестыковка на стыке краёв куда менее
         // заметна, чем яркая.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0; this._dvorWrap.interactiveChildren = false; }
+        // 20.10.2026 (баг найден по прямому указанию — alpha=0 это прозрачность, а не
+        // затемнение): заменено на 0.35, см. тот же фикс в dvor-dice.js.
+        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
         this._updateRouletteUI();
         if(window.iface) iface.restoreHud();
 

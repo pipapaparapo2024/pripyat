@@ -39,48 +39,23 @@ console.log('\nTest 1: ui_kit.js — _addHoverBright определён чере
     assert(/btn\.on\('pointerout',  \(\)=>\{ btn\.filters = null; \}\);/.test(kitSrc), 'pointerout — фильтр снимается, без остаточного состояния');
 }
 
-console.log('\nTest 2: interface-top-currency.js — все 8 мест переведены с _addHoverScale на _addHoverBright (или общий _addHoverBrightGroup)');
+console.log('\nTest 2: interface-top-currency.js — 20.10.2026 (ПОЗЖЕ тем же днём, повторный репорт — "хавер-эффект всё ещё виден, пусть небольшой, убери, его не должно быть") — весь hover-эффект widget\'а снят целиком');
 {
-    // 20.10.2026: plateSecondary/iconSecondary переведены на _addHoverBrightGroup — иконка
-    // сидит поверх плашки, хит-тестится только верхний объект, поэтому им нужен ОБЩИЙ фильтр,
-    // включающийся у обоих разом (см. Test 2b ниже), а не два независимых _addHoverBright.
-    // iconPrimary ПОЗЖЕ (тот же день, репорт "эффект то есть, то нет" на плашке) переведён на
-    // тот же групповой паттерн вместе с platePrimary — см. Test 2c ниже, здесь больше не
-    // проверяется как одиночный _addHoverBright.
-    const targets = ['btnRubPlus', 'btnToggle', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
+    // Отменяет Test 2/2b/2c версии от более раннего момента того же дня (brightness hover по
+    // видео-референсу "Хулиганы") — пользователь явно попросил убрать эффект полностью, не
+    // просто уменьшить его. _addHoverBright/_addHoverBrightGroup как ФУНКЦИИ остаются в
+    // ui_kit.js (используются в других местах проекта) — здесь проверяем только то, что
+    // interface-top-currency.js больше НИ ОДИН раз их не вызывает.
+    assert(!/this\._addHoverBright\(/.test(topCurSrc), 'в файле не осталось вызовов this._addHoverBright(...)');
+    assert(!/this\._addHoverBrightGroup\(/.test(topCurSrc), 'в файле не осталось вызовов this._addHoverBrightGroup(...)');
+    assert(!/_addHoverScale/.test(topCurSrc), 'в файле нет и старого _addHoverScale (эффекта не должно быть вообще, не только "не растущего")');
+
+    // Кликабельность не должна была пострадать — каждая кнопка/плашка по-прежнему явно
+    // интерактивна и обрабатывает pointerdown.
+    const targets = ['btnRubPlus', 'platePrimary', 'iconPrimary', 'btnToggle', 'plateSecondary', 'iconSecondary', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
     for (const t of targets) {
-        assert(new RegExp(`this\\._addHoverBright\\(${t}\\);`).test(topCurSrc), `${t} использует _addHoverBright`);
-        assert(!new RegExp(`this\\._addHoverScale\\(${t}\\);`).test(topCurSrc), `${t} больше НЕ использует _addHoverScale`);
+        assert(new RegExp(`${t}\\.interactive = true; ${t}\\.buttonMode = true;`).test(topCurSrc), `${t} остаётся interactive/buttonMode`);
     }
-    assert(!/_addHoverScale/.test(topCurSrc), 'в файле вообще не осталось упоминаний _addHoverScale (все guard-условия тоже переведены)');
-}
-
-console.log('\nTest 2b: plateSecondary/iconSecondary подсвечиваются ОДНОВРЕМЕННО через общий _addHoverBrightGroup');
-{
-    assert(/proto\._addHoverBrightGroup = function\(objs, amount\)\{/.test(kitSrc), '_addHoverBrightGroup определён в ui_kit.js');
-    assert(/const filter = new PIXI\.filters\.ColorMatrixFilter\(\);\s*\n\s*filter\.brightness\(amount, false\);\s*\n\s*objs\.forEach/.test(kitSrc),
-        'один ОБЩИЙ фильтр создаётся один раз и применяется ко всем объектам группы разом');
-    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[plateSecondary, iconSecondary\]\);/.test(topCurSrc),
-        'plateSecondary и iconSecondary объединены в одну hover-группу');
-    assert(!/this\._addHoverBright\(plateSecondary\);/.test(topCurSrc), 'plateSecondary больше не использует одиночный _addHoverBright');
-    assert(!/this\._addHoverBright\(iconSecondary\);/.test(topCurSrc), 'iconSecondary больше не использует одиночный _addHoverBright');
-}
-
-console.log('\nTest 2c: 20.10.2026 — platePrimary/iconPrimary (верхняя, всегда видимая плашка) получили тот же групповой фикс');
-{
-    // Репорт по прямому указанию: "при наведении на иконку плюс/кнопку вниз/плашку ресурсов
-    // как будто hover-эффект всё ещё есть" — проверено, что ни одна из трёх реально не
-    // использует scale. Но у верхней плашки был РОВНО ТОТ ЖЕ баг-класс, что уже чинили для
-    // plateSecondary/iconSecondary (Test 2b выше): сама плашка не была интерактивна,
-    // подсвечивалась только иконка внутри неё — курсор, двигаясь по плашке мимо иконки,
-    // включал/выключал подсветку, что читалось как "мигающий" эффект.
-    assert(/platePrimary\.interactive = true; platePrimary\.buttonMode = true;/.test(topCurSrc),
-        'platePrimary стала интерактивной (раньше только фон без листенеров)');
-    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[platePrimary, iconPrimary\]\);/.test(topCurSrc),
-        'platePrimary и iconPrimary объединены в одну hover-группу');
-    assert(!/this\._addHoverBright\(iconPrimary\);/.test(topCurSrc), 'iconPrimary больше не использует одиночный _addHoverBright');
-    assert(/platePrimary\.on\('pointerdown', _openPrimaryPurchase\);/.test(topCurSrc),
-        'клик по самой плашке (не только по иконке) тоже открывает покупку закреплённой валюты');
 }
 
 console.log('\nTest 3: boss_result.js — иконка сухарей поверх вшитой в фон пачки сигарет, показывается БЕЗУСЛОВНО');

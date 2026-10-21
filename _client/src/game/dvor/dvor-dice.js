@@ -88,7 +88,11 @@ export function attachDice(proto){
         // теперь просто затемняем лобби (alpha) — оно остаётся видимым позади экрана игры, но
         // тусклым и некликабельным. Заодно решает и "двоение": тусклая нестыковка на стыке
         // краёв куда менее заметна, чем яркая. _closeDiceScreen() ниже возвращает alpha=1.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0; this._dvorWrap.interactiveChildren = false; }
+        // 20.10.2026 (баг найден по прямому указанию — "открыл игру во дворе, вкладка Двор стала
+        // прозрачной, не видно задний фон"): alpha=0 — это ПОЛНАЯ прозрачность (невидимо), не
+        // затемнение, несмотря на комментарий выше — расхождение между намерением и кодом с
+        // 24.09.2026. Заменено на 0.35 (видно, но тускло), как и задумывалось изначально.
+        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
         this._loadDaily();
         this._updateDiceScreenUI();
         this._startDiceTimer();

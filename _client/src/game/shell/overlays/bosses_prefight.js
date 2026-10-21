@@ -46,7 +46,8 @@ export function attachBossPreFight(proto){
             { fontFamily:'Southbank LT', fontSize:27, fill:'#cbc9c9',
               fontWeight:'bold', dropShadow:true, dropShadowColor:'#000', dropShadowDistance:2 }
         );
-        xpTxt.anchor.set(0.5, 0.5); xpTxt.x = 866; xpTxt.y = 175;
+        // 20.10.2026 (по прямому указанию — "ХП босса опусти вниз на 2 пикселя"): было y=175.
+        xpTxt.anchor.set(0.5, 0.5); xpTxt.x = 866; xpTxt.y = 177;
         win.addChild(xpTxt);
 
         // Кнопка выход

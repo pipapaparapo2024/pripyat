@@ -47,7 +47,7 @@ console.log('\nTest 2: bosses_prefight.js — иконка босса (обща�
         'иконка босса на новых координатах — один код на всех 8 боссов (BOSS_ICON[bossIdx] лишь меняет файл)');
     // 26.09.2026: уточнено ещё раз редактором позиций (892,151→866,175), цвет также переведён
     // на #cbc9c9 (см. gambling-reward-highlight.test.js / отдельный тест на палитру экрана).
-    assert(/xpTxt\.anchor\.set\(0\.5, 0\.5\); xpTxt\.x = 866; xpTxt\.y = 175;/.test(prefightSrc), 'HP-текст на новых координатах');
+    assert(/xpTxt\.anchor\.set\(0\.5, 0\.5\); xpTxt\.x = 866; xpTxt\.y = 177;/.test(prefightSrc), 'HP-текст на новых координатах');
     // 08.10.2026 (фикс пикселизации текста): fontSize:22×scale(1.240) заменены на итоговый
     // fontSize:27 без scale.
     assert(/fontSize:27,/.test(prefightSrc) && !/xpTxt\.scale\.set\(/.test(prefightSrc),
