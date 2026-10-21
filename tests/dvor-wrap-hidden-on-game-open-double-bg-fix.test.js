@@ -46,9 +46,11 @@ console.log('\nTest 1: "вкладка двор.png" и "зарики фон в�
 //
 // ⚠️ 20.10.2026 (ОТМЕНЕНО, по прямому указанию — "вкладка Двор полностью прозрачная, нужно
 // затемнение"): alpha=0 обратно заменено на alpha=0.35 — старый аргумент про просвечивающие
-// кнопки Двора сегодня не поднимался. Источник истины —
-// tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js.
-console.log('\nTest 2: все 4 экрана игр Двора затемняют _dvorWrap (alpha=0.35) при открытии, не только interactiveChildren');
+// кнопки Двора сегодня не поднимался сразу... но ПОЗЖЕ ТЕМ ЖЕ ДНЁМ пользователь уточнил, что
+// alpha всё ещё означает прозрачность, а не затемнение, и попросил именно чёрный полупрозрачный
+// слой ПОВЕРХ Двора. Финал — this._showDvorDarken()/_hideDvorDarken() (dvor.js). Источник
+// истины — tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js.
+console.log('\nTest 2: все 4 экрана игр Двора вызывают this._showDvorDarken() при открытии, не трогают _dvorWrap.alpha напрямую');
 {
     const files = {
         dice:      'server/../_client/src/game/dvor/dvor-dice.js'.replace('server/../', ''),
@@ -58,14 +60,14 @@ console.log('\nTest 2: все 4 экрана игр Двора затемняю�
     };
     for(const [name, rel] of Object.entries(files)){
         const src = readSrc(rel);
-        assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 0\.35; this\._dvorWrap\.interactiveChildren = false; \}/.test(src),
-            name + ': открытие экрана затемняет _dvorWrap.alpha=0.35 (не прячет полностью)');
+        assert(/this\._showDvorDarken\(\);/.test(src),
+            name + ': открытие экрана вызывает this._showDvorDarken() (затемнение через отдельный слой)');
         assert(!/if\(this\._dvorWrap\) this\._dvorWrap\.interactiveChildren = false;$/m.test(src),
             name + ': старая неполная строка (только interactiveChildren, без скрытия) больше не осталась');
     }
 }
 
-console.log('\nTest 3: закрывающие функции по-прежнему корректно восстанавливают ОБА флага (не трогали — уже были верны)');
+console.log('\nTest 3: закрывающие функции вызывают this._hideDvorDarken() (убирает оверлей + возвращает кликабельность)');
 {
     const files = [
         '_client/src/game/dvor/dvor-dice.js',
@@ -75,8 +77,8 @@ console.log('\nTest 3: закрывающие функции по-прежнем
     ];
     for(const rel of files){
         const src = readSrc(rel);
-        assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 1; this\._dvorWrap\.interactiveChildren = true; \}/.test(src),
-            rel + ': закрытие экрана по-прежнему восстанавливает оба флага (alpha+interactiveChildren)');
+        assert(/this\._hideDvorDarken\(\);/.test(src),
+            rel + ': закрытие экрана вызывает this._hideDvorDarken()');
     }
 }
 

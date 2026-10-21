@@ -39,23 +39,30 @@ console.log('\nTest 1: ui_kit.js — _addHoverBright определён чере
     assert(/btn\.on\('pointerout',  \(\)=>\{ btn\.filters = null; \}\);/.test(kitSrc), 'pointerout — фильтр снимается, без остаточного состояния');
 }
 
-console.log('\nTest 2: interface-top-currency.js — 20.10.2026 (ПОЗЖЕ тем же днём, повторный репорт — "хавер-эффект всё ещё виден, пусть небольшой, убери, его не должно быть") — весь hover-эффект widget\'а снят целиком');
+console.log('\nTest 2: interface-top-currency.js — hover-подсветка (_addHoverBright/_addHoverBrightGroup) висит на всех 9 местах');
 {
-    // Отменяет Test 2/2b/2c версии от более раннего момента того же дня (brightness hover по
-    // видео-референсу "Хулиганы") — пользователь явно попросил убрать эффект полностью, не
-    // просто уменьшить его. _addHoverBright/_addHoverBrightGroup как ФУНКЦИИ остаются в
-    // ui_kit.js (используются в других местах проекта) — здесь проверяем только то, что
-    // interface-top-currency.js больше НИ ОДИН раз их не вызывает.
-    assert(!/this\._addHoverBright\(/.test(topCurSrc), 'в файле не осталось вызовов this._addHoverBright(...)');
-    assert(!/this\._addHoverBrightGroup\(/.test(topCurSrc), 'в файле не осталось вызовов this._addHoverBrightGroup(...)');
-    assert(!/_addHoverScale/.test(topCurSrc), 'в файле нет и старого _addHoverScale (эффекта не должно быть вообще, не только "не растущего")');
-
-    // Кликабельность не должна была пострадать — каждая кнопка/плашка по-прежнему явно
-    // интерактивна и обрабатывает pointerdown.
-    const targets = ['btnRubPlus', 'platePrimary', 'iconPrimary', 'btnToggle', 'plateSecondary', 'iconSecondary', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
-    for (const t of targets) {
-        assert(new RegExp(`${t}\\.interactive = true; ${t}\\.buttonMode = true;`).test(topCurSrc), `${t} остаётся interactive/buttonMode`);
+    // 20.10.2026, та же дата — ТРИ решения подряд по одному вопросу: сначала подсветка
+    // добавлена (видео-референс "Хулиганы"), потом снята целиком (репорт "эффект всё ещё
+    // виден, убери"), потом возвращена обратно (репорт "ты убрал подсвечивание, почему, верни
+    // обратно"). Текущее — снова "подсветка есть". platePrimary/iconPrimary и
+    // plateSecondary/iconSecondary сгруппированы через _addHoverBrightGroup (подсвечиваются
+    // вместе — см. Test 2b), остальные 5 — одиночный _addHoverBright.
+    const singleTargets = ['btnRubPlus', 'btnToggle', 'btnSecondaryPlus', 'shopBtn', 'settingsBtn'];
+    for (const t of singleTargets) {
+        assert(new RegExp(`this\\._addHoverBright\\(${t}\\);`).test(topCurSrc), `${t} использует _addHoverBright`);
     }
+    assert(!/_addHoverScale/.test(topCurSrc), 'в файле нет старого _addHoverScale (только brightness, без роста размера)');
+}
+
+console.log('\nTest 2b: plateSecondary/iconSecondary и platePrimary/iconPrimary подсвечиваются ОДНОВРЕМЕННО через общий _addHoverBrightGroup');
+{
+    assert(/proto\._addHoverBrightGroup = function\(objs, amount\)\{/.test(kitSrc), '_addHoverBrightGroup определён в ui_kit.js');
+    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[plateSecondary, iconSecondary\]\);/.test(topCurSrc),
+        'plateSecondary и iconSecondary объединены в одну hover-группу');
+    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[platePrimary, iconPrimary\]\);/.test(topCurSrc),
+        'platePrimary и iconPrimary объединены в одну hover-группу');
+    assert(!/this\._addHoverBright\(iconPrimary\);/.test(topCurSrc), 'iconPrimary не задвоен одиночным _addHoverBright (только через группу)');
+    assert(!/this\._addHoverBright\(iconSecondary\);/.test(topCurSrc), 'iconSecondary не задвоен одиночным _addHoverBright (только через группу)');
 }
 
 console.log('\nTest 3: boss_result.js — иконка сухарей поверх вшитой в фон пачки сигарет, показывается БЕЗУСЛОВНО');

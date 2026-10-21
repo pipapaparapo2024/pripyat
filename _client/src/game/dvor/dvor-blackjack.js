@@ -64,8 +64,9 @@ export function attachBlackjack(proto){
         // бага "фон двоится" (22.09.2026) в dvor-dice.js._openDiceScreen() — затемнение
         // попутно решает и его.
         // 20.10.2026 (баг найден по прямому указанию — alpha=0 это прозрачность, а не
-        // затемнение): заменено на 0.35, см. тот же фикс в dvor-dice.js.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
+        // затемнение, ПОЗЖЕ ТЕМ ЖЕ ДНЁМ — "чёрный слой поверх Двора, а не alpha на самом Дворе"):
+        // см. _showDvorDarken() в dvor.js.
+        this._showDvorDarken();
         this._updateBlackjackUI();
         this._syncBlackjackDailyStatus();
         if(window.iface) iface.restoreHud();
@@ -904,6 +905,6 @@ export function attachBlackjack(proto){
 
     proto._closeBlackjackScreen = function(){
         if(this._blackjackWin && this._blackjackWin.parent) this._blackjackWin.parent.removeChild(this._blackjackWin);
-        if(this._dvorWrap){ this._dvorWrap.alpha = 1; this._dvorWrap.interactiveChildren = true; }
+        this._hideDvorDarken();
     };
 }

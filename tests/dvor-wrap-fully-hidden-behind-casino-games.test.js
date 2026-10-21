@@ -12,12 +12,13 @@
  * ⚠️ 20.10.2026 (ОТМЕНЕНО, по прямому указанию + скриншот — "вкладка Двор становится ПОЛНОСТЬЮ
  * ПРОЗРАЧНОЙ, не видно задний фон, нужно чтобы затемнялась"): alpha=0 оказался тем самым багом,
  * про который предупреждали старые комментарии ("фон Двора при этом затемнён" — комментарии в
- * коде так и остались написаны про затемнение все эти месяцы, хотя число было 0). Пользователь
- * явно подтвердил сегодня, что хочет видимое затемнённое лобби, а не невидимое — старый аргумент
- * "кнопки Двора просвечивают" НЕ был поднят повторно (возможно, перестал быть проблемой, либо
- * сейчас менее важен, чем прозрачность). Актуальное значение и источник истины —
- * tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js (alpha=0.35). Этот файл
- * оставлен как история развилки 24.09→20.10, ассерты ниже обновлены под текущее поведение.
+ * коде так и остались написаны про затемнение все эти месяцы, хотя число было 0). Первая правка
+ * в ответ — alpha=0.35 — тоже прожила недолго: пользователь уточнил, что alpha меняет
+ * прозрачность самого Двора (он бледнеет), а не настоящее затемнение, и попросил именно чёрный
+ * полупрозрачный слой ПОВЕРХ Двора. Финал — this._showDvorDarken()/_hideDvorDarken() в dvor.js
+ * (Двор остаётся alpha=1, темнее выглядит отдельный Graphics-слой). Источник истины —
+ * tests/oct20-batch4-dvor-darken-fix-and-ryukzak-key-card.test.js. Этот файл оставлен как
+ * история развилки 24.09→20.10, ассерты ниже обновлены под текущее поведение.
  *
  * Run: node tests/dvor-wrap-fully-hidden-behind-casino-games.test.js
  */
@@ -40,13 +41,11 @@ const FILES = [
 ];
 
 for (const [name, rel] of FILES) {
-    console.log(`\nTest: ${name} — _dvorWrap затемнён (alpha=0.35) при открытии, восстанавливается (alpha=1) при закрытии`);
+    console.log(`\nTest: ${name} — Двор затемняется через общий _showDvorDarken()/_hideDvorDarken() (dvor.js), не через свою alpha`);
     const src = fs.readFileSync(path.join(root, rel), 'utf-8');
-    assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 0\.35; this\._dvorWrap\.interactiveChildren = false; \}/.test(src),
-        `${name}: открытие ставит alpha=0.35 (не 0 — см. докблок про отмену 20.10.2026)`);
-    assert(/if\(this\._dvorWrap\)\{ this\._dvorWrap\.alpha = 1; this\._dvorWrap\.interactiveChildren = true; \}/.test(src),
-        `${name}: закрытие по-прежнему восстанавливает alpha=1`);
-    assert(!/this\._dvorWrap\.alpha = 0; this\._dvorWrap\.interactiveChildren = false;/.test(src), `${name}: регресс-гвард — старое значение 0 (полная прозрачность) не осталось нигде`);
+    assert(/this\._showDvorDarken\(\);/.test(src), `${name}: открытие вызывает this._showDvorDarken()`);
+    assert(/this\._hideDvorDarken\(\);/.test(src), `${name}: закрытие вызывает this._hideDvorDarken()`);
+    assert(!/this\._dvorWrap\.alpha\s*=/.test(src), `${name}: регресс-гвард — файл больше не трогает _dvorWrap.alpha напрямую (ни 0, ни 0.35, ни 1)`);
 }
 
 console.log(`\n${'─'.repeat(50)}`);

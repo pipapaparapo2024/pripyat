@@ -6,7 +6,13 @@
  *    ЗАТЕМНЯТЬСЯ, оставаясь видимой позади экрана игры. Корень: `this._dvorWrap.alpha = 0;` —
  *    alpha=0 это полная прозрачность (невидимо), а не затемнение; расхождение между намерением
  *    в комментарии и реальным числом в коде просуществовало с 24.09.2026 до сегодняшнего
- *    репорта. Исправлено на alpha=0.35 (видно, но тускло) во ВСЕХ 4 играх Двора одинаково.
+ *    репорта. Первая попытка фикса (alpha=0.35) ПОЗЖЕ ТЕМ ЖЕ ДНЁМ была уточнена пользователем:
+ *    alpha — это всё ещё прозрачность самого Двора (он бледнеет, не темнеет), а не настоящее
+ *    затемнение. Финальная реализация — Dvor.prototype._showDvorDarken()/_hideDvorDarken()
+ *    (см. dvor.js): Двор остаётся alpha=1 (полностью непрозрачен), поверх него добавляется
+ *    ОТДЕЛЬНЫЙ переиспользуемый чёрный Graphics-слой (0x000000, alpha=0.5) — темнее выглядит
+ *    именно этот слой, а не сам Двор. Все 4 игры вызывают общие методы вместо собственной
+ *    возни с `_dvorWrap.alpha`.
  *
  * 2) Попап результата рюкзака (_openRyukzakReward) показывал карточку ключа БЕЗ числового
  *    лейбла ("штучный предмет" — осознанное решение 17.10.2026, но пользователь теперь прямо
@@ -29,7 +35,7 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
-console.log('\nTest 1: все 4 игры Двора затемняют (alpha=0.35), а не прячут (alpha=0) лобби при открытии');
+console.log('\nTest 1: все 4 игры Двора вызывают this._showDvorDarken()/_hideDvorDarken() вместо ручной возни с _dvorWrap.alpha');
 {
     const files = {
         'зарики':    '_client/src/game/dvor/dvor-dice.js',
@@ -39,21 +45,29 @@ console.log('\nTest 1: все 4 игры Двора затемняют (alpha=0.
     };
     for (const [name, rel] of Object.entries(files)) {
         const src = readSrc(rel);
-        assert(/this\._dvorWrap\.alpha = 0\.35; this\._dvorWrap\.interactiveChildren = false;/.test(src),
-            `${name}: открытие экрана выставляет alpha=0.35 (затемнение), не 0 (прозрачность)`);
-        assert(!/this\._dvorWrap\.alpha = 0; this\._dvorWrap\.interactiveChildren = false;/.test(src),
-            `${name}: старое alpha=0 (полная прозрачность) больше не используется при открытии`);
+        assert(/this\._showDvorDarken\(\);/.test(src), `${name}: открытие экрана вызывает this._showDvorDarken()`);
+        assert(/this\._hideDvorDarken\(\);/.test(src), `${name}: закрытие экрана вызывает this._hideDvorDarken()`);
+        assert(!/this\._dvorWrap\.alpha = 0(\.35)?;/.test(src), `${name}: больше нет прямых присвоений _dvorWrap.alpha (ни 0, ни 0.35)`);
     }
 }
 
-console.log('\nTest 2: закрытие экранов по-прежнему возвращает alpha=1 (не трогали эту половину)');
+console.log('\nTest 2: dvor.js — _showDvorDarken()/_hideDvorDarken() реализованы как ОТДЕЛЬНЫЙ чёрный слой поверх Двора, а не alpha самого Двора');
 {
-    const dice = readSrc('_client/src/game/dvor/dvor-dice.js');
-    const bj   = readSrc('_client/src/game/dvor/dvor-blackjack.js');
-    assert(/this\._dvorWrap\.alpha = 1; this\._dvorWrap\.interactiveChildren = true;/.test(dice),
-        'dvor-dice.js: закрытие возвращает alpha=1');
-    assert(/this\._dvorWrap\.alpha = 1; this\._dvorWrap\.interactiveChildren = true;/.test(bj),
-        'dvor-blackjack.js: закрытие возвращает alpha=1');
+    const src = readSrc('_client/src/game/dvor.js');
+    const showIdx = src.indexOf('_showDvorDarken(){');
+    const hideIdx = src.indexOf('_hideDvorDarken(){');
+    assert(showIdx !== -1, '_showDvorDarken() определён в классе Dvor');
+    assert(hideIdx !== -1, '_hideDvorDarken() определён в классе Dvor');
+    const showBody = src.slice(showIdx, hideIdx);
+    assert(/this\._dvorWrap\.interactiveChildren = false;/.test(showBody), '_showDvorDarken() по-прежнему блокирует клики по Двору');
+    assert(!/this\._dvorWrap\.alpha\s*=/.test(showBody), '_showDvorDarken() НЕ трогает alpha самого _dvorWrap (он остаётся непрозрачным)');
+    assert(/beginFill\(0x000000, 0\.5\)/.test(showBody), 'чёрный оверлей создаётся с alpha=0.5 (не 0.35/0, настоящее затемнение поверх)');
+    assert(/parent\.addChildAt\(this\._dvorDarkOverlay, parent\.getChildIndex\(this\._dvorWrap\) \+ 1\);/.test(showBody),
+        'оверлей вставляется СРАЗУ над _dvorWrap в том же родителе — экран игры (добавляется после) оказывается ещё выше, не затемнён');
+
+    const hideBody = src.slice(hideIdx, hideIdx + 400);
+    assert(/this\._dvorWrap\.interactiveChildren = true;/.test(hideBody), '_hideDvorDarken() возвращает кликабельность Двора');
+    assert(/this\._dvorDarkOverlay\.parent\.removeChild\(this\._dvorDarkOverlay\);/.test(hideBody), '_hideDvorDarken() убирает оверлей из сцены (не просто alpha=0, сам объект уходит)');
 }
 
 console.log('\nTest 3: ryukzak.js — карточка ключа теперь показывает число (reward.k), не undefined');

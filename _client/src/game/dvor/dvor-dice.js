@@ -91,8 +91,11 @@ export function attachDice(proto){
         // 20.10.2026 (баг найден по прямому указанию — "открыл игру во дворе, вкладка Двор стала
         // прозрачной, не видно задний фон"): alpha=0 — это ПОЛНАЯ прозрачность (невидимо), не
         // затемнение, несмотря на комментарий выше — расхождение между намерением и кодом с
-        // 24.09.2026. Заменено на 0.35 (видно, но тускло), как и задумывалось изначально.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
+        // 24.09.2026. ПОЗЖЕ ТЕМ ЖЕ ДНЁМ (по прямому указанию — "затемнение, а не alpha на самом
+        // Дворе — чёрный полупрозрачный слой ПОВЕРХ него"): alpha=0.35 заменена на
+        // this._showDvorDarken() (см. dvor.js) — Двор остаётся alpha=1 (полностью непрозрачен),
+        // темнее выглядит только из-за отдельного чёрного Graphics-слоя поверх него.
+        this._showDvorDarken();
         this._loadDaily();
         this._updateDiceScreenUI();
         this._startDiceTimer();
@@ -113,7 +116,7 @@ export function attachDice(proto){
         this._stopDiceTimer();
         if(this._diceBuyWin && this._diceBuyWin.parent) this._diceBuyWin.parent.removeChild(this._diceBuyWin);
         if(this._diceWin && this._diceWin.parent) this._diceWin.parent.removeChild(this._diceWin);
-        if(this._dvorWrap){ this._dvorWrap.alpha = 1; this._dvorWrap.interactiveChildren = true; }
+        this._hideDvorDarken();
     };
 
     proto._startDiceTimer = function(){

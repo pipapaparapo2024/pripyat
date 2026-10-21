@@ -605,6 +605,7 @@ export default class Dvor{
 
         this._dvorWrap = wrap;
         root.layer2_mc.addChild(wrap);
+        this._dvorDarkOverlay = null;
 
         // 29.09.2026 (тот же класс бага, что в shmot_shop.js — см. коммент там): раньше здесь
         // стоял просто iface.restoreHud(), Двор не заявлял свою потребность в декларативный
@@ -612,6 +613,39 @@ export default class Dvor{
         // низ ХУДа (например боя с боссом), наследовал эту чужую настройку вместо своего
         // дефолта (оба ХУДа видны — Двор обычный экран нижней панели).
         if(window.iface) iface.pushHud('dvor', {});
+    }
+
+    // 20.10.2026 (по прямому указанию — "это должно быть не alpha на самом Дворе, а чёрный
+    // слой поверх него, который сам немного прозрачный"): раньше 4 экрана игр (рулетка/зарики/
+    // покер/блэкджек) сами опускали this._dvorWrap.alpha — это РАЗДЕЛЯЕТ альфу самого Двора
+    // (который реально становится ПРОЗРАЧНЕЕ/бледнее, а не темнее — отсюда и баг "фон
+    // просвечивает") от настоящего затемнения. Теперь: Двор остаётся alpha=1 (полностью
+    // непрозрачный, никакой прозрачности), а поверх него добавляется ОТДЕЛЬНЫЙ чёрный
+    // Graphics-слой с alpha=0.5 — именно он частично прозрачен, пропуская сквозь себя
+    // приглушённый (темнее, но не "сквозной") Двор. Слой создаётся один раз и переиспользуется
+    // (не плодится заново при каждом открытии игры), вставляется в layer2_mc сразу НАД
+    // _dvorWrap — поэтому экран самой игры, добавляемый после этого вызова, оказывается ещё
+    // выше (не задет затемнением).
+    _showDvorDarken(){
+        if(!this._dvorWrap || !this._dvorWrap.parent) return;
+        this._dvorWrap.interactiveChildren = false;
+        if(!this._dvorDarkOverlay){
+            const ov = new PIXI.Graphics();
+            ov.beginFill(0x000000, 0.5);
+            ov.drawRect(0, 0, 1280, 720);
+            ov.endFill();
+            ov.interactive = false;
+            this._dvorDarkOverlay = ov;
+        }
+        const parent = this._dvorWrap.parent;
+        parent.addChildAt(this._dvorDarkOverlay, parent.getChildIndex(this._dvorWrap) + 1);
+    }
+
+    _hideDvorDarken(){
+        if(this._dvorWrap) this._dvorWrap.interactiveChildren = true;
+        if(this._dvorDarkOverlay && this._dvorDarkOverlay.parent){
+            this._dvorDarkOverlay.parent.removeChild(this._dvorDarkOverlay);
+        }
     }
 
     close(){
@@ -629,6 +663,10 @@ export default class Dvor{
             this._dvorWrap.parent.removeChild(this._dvorWrap);
         }
         this._dvorWrap = null;
+        if(this._dvorDarkOverlay && this._dvorDarkOverlay.parent){
+            this._dvorDarkOverlay.parent.removeChild(this._dvorDarkOverlay);
+        }
+        this._dvorDarkOverlay = null;
         this._lobbyWin = null;
 
         // 29.09.2026: popHud вместо ручного форсированного addChild — снимает СВОЮ запись из

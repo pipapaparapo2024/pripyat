@@ -39,10 +39,14 @@
  *
  * 20.10.2026 (по прямому указанию — "хавер-эффект всё ещё виден, пусть небольшой, но виден —
  * убери, его не должно быть"): все hover-подсветки (_addHoverBright/_addHoverBrightGroup) на
- * всех элементах этого виджета (иконка "+", кнопка ▼, обе плашки валют, кнопки магазин/
- * настройки) удалены целиком — отменяет решение от того же дня чуть ранее (видео-референс
- * "Хулиганы" про subtle brightness hover). Interactive/buttonMode/pointerdown остались
- * нетронутыми — кнопки по-прежнему кликабельны, просто без визуальной реакции на наведение.
+ * всех элементах этого виджета были удалены целиком — отменяло решение от того же дня чуть
+ * раньше (видео-референс "Хулиганы" про subtle brightness hover).
+ *
+ * 20.10.2026 (ПОЗЖЕ ТЕМ ЖЕ ДНЁМ, ОТМЕНЕНО ОБРАТНО — "ты убрал подсвечивание верхнего худа у
+ * кнопок, почему, верни обратно"): подсветка вернулась — это была подряд уже вторая смена
+ * решения за один день по одному и тому же вопросу, обе стороны меняли мнение по ходу живого
+ * тестирования. Текущее состояние: _addHoverBright/_addHoverBrightGroup снова навешаны на всех
+ * элементах, как и было изначально 20.10.2026 (видео-референс "Хулиганы").
  */
 export function attachTopCurrency(proto){
 
@@ -114,6 +118,7 @@ export function attachTopCurrency(proto){
         btnRubPlus.x = 1092; btnRubPlus.y = 12;
         btnRubPlus.interactive = true; btnRubPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnRubPlus);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnRubPlus);
         // 18.10.2026 (по прямому указанию — "FLA → обычные изображения" для всех точек
         // покупки): раньше вело на старое FLA-окно банка (bank.init), теперь — на новый
         // 3-вкладочный попап (interface-currency-purchase.js).
@@ -144,6 +149,7 @@ export function attachTopCurrency(proto){
         platePrimary.interactive = true; platePrimary.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(platePrimary);
         platePrimary.on('pointerdown', _openPrimaryPurchase);
+        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([platePrimary, iconPrimary]);
         up.addChild(iconPrimary);
 
         const txtPrimary = new PIXI.Text('0', TXT_STYLE);
@@ -155,6 +161,7 @@ export function attachTopCurrency(proto){
         btnToggle.x = 857; btnToggle.y = 12;
         btnToggle.interactive = true; btnToggle.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnToggle);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnToggle);
         up.addChild(btnToggle);
 
         // ── Нижняя строка (скрыта по умолчанию — показывает "другую" валюту, та что
@@ -189,6 +196,8 @@ export function attachTopCurrency(proto){
         iconSecondary.on('pointerdown', _swapToSecondary);
         up.addChild(iconSecondary);
 
+        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateSecondary, iconSecondary]);
+
         const txtSecondary = new PIXI.Text('0', TXT_STYLE);
         // 18.10.2026 (по прямому указанию, редактор позиций — "координаты кол-ва ресурсов у
         // плашки, которая выскакивает снизу: x:757,y:68"): было x:725,y:59.
@@ -200,6 +209,7 @@ export function attachTopCurrency(proto){
         btnSecondaryPlus.x = 858; btnSecondaryPlus.y = 60; btnSecondaryPlus.visible = false;
         btnSecondaryPlus.interactive = true; btnSecondaryPlus.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(btnSecondaryPlus);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(btnSecondaryPlus);
         btnSecondaryPlus.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup(otherKey(this._topCurPinned));
         });
@@ -241,6 +251,7 @@ export function attachTopCurrency(proto){
         shopBtn.x = 1146; shopBtn.y = 3;
         shopBtn.interactive = true; shopBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(shopBtn);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(shopBtn);
         shopBtn.on('pointerdown', () => {
             if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('stew');
         });
@@ -250,6 +261,7 @@ export function attachTopCurrency(proto){
         settingsBtn.x = 1214; settingsBtn.y = 0;
         settingsBtn.interactive = true; settingsBtn.buttonMode = true;
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(settingsBtn);
+        if(typeof this._addHoverBright === 'function') this._addHoverBright(settingsBtn);
         settingsBtn.on('pointerdown', () => this._openSoundPopup());
         up.addChild(settingsBtn);
 

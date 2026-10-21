@@ -48,8 +48,9 @@ export function attachRoulette(proto){
         // — затемнение попутно решает и его: тусклая нестыковка на стыке краёв куда менее
         // заметна, чем яркая.
         // 20.10.2026 (баг найден по прямому указанию — alpha=0 это прозрачность, а не
-        // затемнение): заменено на 0.35, см. тот же фикс в dvor-dice.js.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
+        // затемнение, ПОЗЖЕ ТЕМ ЖЕ ДНЁМ — "чёрный слой поверх Двора, а не alpha на самом Дворе"):
+        // см. _showDvorDarken() в dvor.js.
+        this._showDvorDarken();
         this._updateRouletteUI();
         if(window.iface) iface.restoreHud();
 
@@ -86,7 +87,7 @@ export function attachRoulette(proto){
     proto._closeRouletteScreen = function(){
         if(this._roulBuyWin && this._roulBuyWin.parent) this._roulBuyWin.parent.removeChild(this._roulBuyWin);
         if(this._roulWin && this._roulWin.parent) this._roulWin.parent.removeChild(this._roulWin);
-        if(this._dvorWrap){ this._dvorWrap.alpha = 1; this._dvorWrap.interactiveChildren = true; }
+        this._hideDvorDarken();
     };
 
     proto._updateRouletteUI = function(){

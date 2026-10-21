@@ -65,8 +65,9 @@ export function attachPoker(proto){
         // бага "фон двоится" (22.09.2026) в dvor-dice.js._openDiceScreen() — затемнение
         // попутно решает и его.
         // 20.10.2026 (баг найден по прямому указанию — alpha=0 это прозрачность, а не
-        // затемнение): заменено на 0.35, см. тот же фикс в dvor-dice.js.
-        if(this._dvorWrap){ this._dvorWrap.alpha = 0.35; this._dvorWrap.interactiveChildren = false; }
+        // затемнение, ПОЗЖЕ ТЕМ ЖЕ ДНЁМ — "чёрный слой поверх Двора, а не alpha на самом Дворе"):
+        // см. _showDvorDarken() в dvor.js.
+        this._showDvorDarken();
         this._updatePokerUI();
         if(window.iface) iface.restoreHud();
     };
@@ -82,7 +83,7 @@ export function attachPoker(proto){
     proto._closePokerScreen = function(){
         if(this._pokerBagWin && this._pokerBagWin.parent) this._pokerBagWin.parent.removeChild(this._pokerBagWin);
         if(this._pokerWin && this._pokerWin.parent) this._pokerWin.parent.removeChild(this._pokerWin);
-        if(this._dvorWrap){ this._dvorWrap.alpha = 1; this._dvorWrap.interactiveChildren = true; }
+        this._hideDvorDarken();
     };
 
     // Подключаем sub-модули
