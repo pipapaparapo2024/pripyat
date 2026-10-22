@@ -155,7 +155,7 @@ export function attachSvodLeaderboard(proto){
             // считается протяжкой, не тапом); interactive/buttonMode выставляет он сам.
             helper.onTap(row, ()=>{ if(row._playerId && window.iface) iface._openPlayerProfile(row._playerId, row._playerNick); });
 
-            const cell = new PIXI.Sprite(PIXI.Texture.from(IMG + 'ячейка.png'));
+            const cell = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод топ ячейка.png'));
             row.addChild(cell);
 
             // Суб-блоки — ПОД содержимым (иконка/тексты добавляются ниже и рисуются поверх).

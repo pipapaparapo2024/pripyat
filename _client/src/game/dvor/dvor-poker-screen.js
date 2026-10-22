@@ -227,7 +227,7 @@ export function attachPokerScreen(proto){
             const cx = CARD_XS[i];
             const cy = CARD_YS[i];
 
-            const cardSpr = new PIXI.Sprite(PIXI.Texture.from('./images/семерка.png?v=221'));
+            const cardSpr = new PIXI.Sprite(PIXI.Texture.from('./images/карта ранг семерка.png?v=221'));
             cardSpr.scale.set(CARD_SCALE);
             cardSpr.x = cx; cardSpr.y = cy;
             cardSpr._pokerBaseY = cardSpr.y;

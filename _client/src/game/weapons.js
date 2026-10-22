@@ -202,7 +202,7 @@ export default class Weapons{
 			};
 
 			// Бирка — отдельный спрайт (3 шт.), как на макете
-			const birka = new PIXI.Sprite(PIXI.Texture.from(BASE + 'бирка.png'));
+			const birka = new PIXI.Sprite(PIXI.Texture.from(BASE + 'оружие бирка цена.png'));
 			birka.anchor.set(0.5, 0.5);
 			birka.x = card.tagX;
 			birka.y = card.tagY;
@@ -263,7 +263,7 @@ export default class Weapons{
 		exitBtn.scale.set(0.5);
 		if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
 		exitBtn.x = 1240;
-		exitBtn.y = 79;
+		exitBtn.y = 89;
 		exitBtn.interactive = true;
 		exitBtn.buttonMode  = true;
 		exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });

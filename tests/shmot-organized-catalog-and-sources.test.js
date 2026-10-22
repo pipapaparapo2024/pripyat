@@ -28,7 +28,10 @@ const sets = {
     'выживший': [59,60,61], 'Игроман': [62,63,78,79,98],
     'Игроман 2.0': [64,65,66,80,99], 'Картежник': [67,68,89],
     'сталкер': [69,81,82,83,84], 'спортик 2.0': [70,71,85,90,91],
-    'тинейджер': [72,86,87,88,92]
+    'тинейджер': [72,86,87,88,92],
+    // 21.10.2026 (по прямому указанию) — 3 новых сета, 5 предметов каждый.
+    'бродяга': [101,102,103,104,105], 'ветеран': [106,107,108,109,110],
+    'следопыт': [111,112,113,114,115]
 };
 const expectedBonuses = {
     auto_flat: {41:40,43:40,44:40,46:80,47:80,48:80,49:80,52:120,53:180,
@@ -50,7 +53,9 @@ const rows = [...shmot.matchAll(/\{id:(\d+),\s*cat:(\d+),\s*name:'([^']+)'[^\n]+
     .map(m => ({id: +m[1], name: m[3], line: m[0]}));
 // 28.09.2026: 59, не 58 — добавлена id:100 "Связка ключей" (личная награда рулетки, не часть
 // ни одного набора/сета ниже, без обычного bk/bv-бонуса — см. отдельную проверку ниже).
-assert(rows.length === 59 && new Set(rows.map(r => r.id)).size === 59, '59 unique equipment IDs');
+// 21.10.2026: 59 → 74 — добавлены 3 новых сета по 5 предметов (id101-115, "Бродяга"/"Ветеран"/
+// "Следопыт" — рюкзак Сидоровича/сумка спички покер/сумка рулетка).
+assert(rows.length === 74 && new Set(rows.map(r => r.id)).size === 74, '74 unique equipment IDs');
 assert(new Set(rows.map(r => r.name)).size === rows.length, 'equipment names are unique');
 assert(!rows.some(r => r.id === 93 || r.id < 41), 'unrequested blackjack shoes and old shop excluded');
 for(const [set, ids] of Object.entries(sets)){
@@ -78,7 +83,10 @@ for(const row of rows){
     } else {
         assert(/price:null/.test(row.line), `id${row.id}: not purchasable`);
     }
-    assert(row.line.includes(`fragments:${row.id <= 43 ? 20 : 'null'}`), `id${row.id}: fragment requirement`);
+    // 21.10.2026: id101-115 (3 новых сета) тоже несут "частей" в доке пользователя (40, не 20)
+    // — та же "данные на будущее" семантика, что у id41-44 (fragments:20), просто другое число.
+    const expectedFrag = row.id <= 43 ? 20 : (row.id >= 101 && row.id <= 115 ? 40 : 'null');
+    assert(row.line.includes(`fragments:${expectedFrag}`), `id${row.id}: fragment requirement`);
 }
 
 console.log('Catalog and assets');

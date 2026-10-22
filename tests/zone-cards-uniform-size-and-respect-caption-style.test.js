@@ -54,9 +54,19 @@ console.log('\nTest 3: реальные исходники локаций дей
         const buf = fs.readFileSync(filePath);
         return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
     }
-    const files = ['кордон.png', 'свалка.png', 'долина.png', 'Агропром.png', 'янтарь.png'];
+    // 21.10.2026 (аудит имён файлов-ассетов): "кордон.png" и т.п. — старые, уже НЕ используемые
+    // в коде дубли (реально используются "... v2/v3.png", см. zone_screen.js), см. тот же
+    // комментарий в zone-card-per-texture-scale-normalization.test.js.
+    const REAL_FILES = {
+        'кордон.png':   'зона локация кордон v2.png',
+        'свалка.png':   'зона локация свалка v2.png',
+        'долина.png':   'зона локация долина v3.png',
+        'Агропром.png': 'зона локация агропром v2.png',
+        'янтарь.png':   'зона локация янтарь v3.png',
+    };
+    const files = Object.keys(REAL_FILES);
     const aspects = files.map(f => {
-        const { w, h } = pngSize(path.join(IMG_DIR, f));
+        const { w, h } = pngSize(path.join(IMG_DIR, REAL_FILES[f]));
         return { f, w, h, aspect: w / h };
     });
     console.log('    соотношения сторон:', aspects.map(a => a.f + '=' + a.aspect.toFixed(3)).join(', '));

@@ -8,19 +8,23 @@ export default class Home{
 		this.initButtons();
 	}
 
-	_bgFiles = ['кубрик.png','шлюз.png','канализация.png','двор_фон.png','мастерская.png','железка.png','станция.png','заправка.png'];
+	// 21.10.2026 (по прямому указанию — аудит имён файлов-ассетов): имена были однословными
+	// без привязки к фиче в общей корневой images/ ("кубрик.png" и т.п.) — переименованы в
+	// "хата фон X.png" (та же замена в player_profile.js/hata.js/game-boot.js, см.
+	// ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md).
+	_bgFiles = ['хата фон кубрик.png','хата фон шлюз.png','хата фон канализация.png','двор_фон.png','хата фон мастерская.png','хата фон железка.png','хата фон станция.png','хата фон заправка.png'];
 
 	// Индивидуальная подгонка каждого фона локации (сняты через универсальный редактор
 	// позиций) — разные исходники по-разному скомпонованы по вертикали, единого y=0
 	// на все не хватало. scale — множитель поверх базового 1280×604 (не тронут = 1).
 	_bgAdjust = {
-		'шлюз.png':        { y: 32, scale: 1.000 },
-		'канализация.png': { y: 35, scale: 1.000 },
+		'хата фон шлюз.png':        { y: 32, scale: 1.000 },
+		'хата фон канализация.png': { y: 35, scale: 1.000 },
 		'двор_фон.png':    { y: 54, scale: 1.000 },
-		'мастерская.png':  { y: 74, scale: 1.000 },
-		'железка.png':     { y: 56, scale: 1.002 },
-		'заправка.png':    { y: 63, scale: 1.004 },
-		'станция.png':     { y: 73, scale: 1.000 },
+		'хата фон мастерская.png':  { y: 74, scale: 1.000 },
+		'хата фон железка.png':     { y: 56, scale: 1.002 },
+		'хата фон заправка.png':    { y: 63, scale: 1.004 },
+		'хата фон станция.png':     { y: 73, scale: 1.000 },
 	};
 
 	updateBg(){
@@ -123,21 +127,34 @@ export default class Home{
 				this._clothSlotBases[s.cat] = { x: s.x, y: s.y };
 			});
 		}
-		// Фаланги правой руки — рисуются ПЕРЕД предметом в руке (cat:6), чтобы предмет
-		// (мачете/бита/и т.д.) лёг поверх пальцев (как будто рука его держит), но САМИ
-		// пальцы — раньше (т.е. ниже по z-index), чем предплечье/кисть (_rightHandSpr,
-		// добавляется ещё позже, ниже). Координаты — сняты через редактор позиций
-		// (старые с PSD-слоя "фаланга мезинца" не совпадали с реальной рукой на экране).
-		if(!this._rightHandPhalanxSpr){
-			this._rightHandPhalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
-			this._rightHandPhalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-			this._rightHandPhalanxSpr.texture.baseTexture.update();
-			this._rightHandPhalanxSpr.anchor.set(0, 0);
-			this._rightHandPhalanxSpr.x = 634;
-			this._rightHandPhalanxSpr.y = 441;
+		// 21.10.2026 (по прямому указанию — "разделить файл руки на предплечье и кисть"):
+		// раньше тут была "фаланги правой руки.png" (мелкий оверлей костяшек поверх зажатого
+		// предмета). Теперь на этом месте — ПОЛНАЯ кисть, которая переключается между
+		// "кисть расслабленная.png" (пусто/часы Poker/цепь Teenager) и "кисть хват.png"
+		// (что-то зажато в кулаке), либо скрывается целиком, если у самого предмета УЖЕ
+		// нарисована своя кисть (handBuiltIn в каталоге shmot.js — Сайга/Пистолет/Кружка
+		// новых сетов). Текстура/видимость выставляются в updateClothes() ниже — здесь
+		// только создание и базовая позиция. Рисуется ПЕРЕД предметом в руке (cat:6), чтобы
+		// предмет (мачете/бита/и т.д.) лёг поверх кисти, но ПОСЛЕ предплечья — анатомически
+		// кисть на конце предплечья.
+		// 22.10.2026 (по прямому указанию, редактор позиций): прежний общий размер 98×97 для
+		// ОБЕИХ текстур кисти (первая прикидка) заменён на СВОЙ x/y/scale под каждую — у
+		// "расслабленная.png" (160×277) и "хват.png" (217×199) разное положение "запястья"
+		// внутри файла (anchor всегда 0,0 — левый верх), общий box их не мог совместить
+		// одинаково хорошо для обеих. Актуальные значения — в updateClothes() ниже, здесь
+		// только начальная (дефолтная) текстура/позиция.
+		if(!this._rightHandSpr){
+			this._rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/кисть расслабленная.png'));
+			this._rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._rightHandSpr.texture.baseTexture.update();
+			this._rightHandSpr.anchor.set(0, 0);
+			// 22.10.2026 (по прямому указанию, повторная калибровка редактором позиций): 647,424 → 642,427.
+			this._rightHandSpr.x = 642;
+			this._rightHandSpr.y = 427;
+			this._rightHandSpr.scale.set(0.200);
 		}
 		CLOTH_SLOTS.forEach(s => {
-			if(s.cat === 6) root.layer0_mc.addChild(this._rightHandPhalanxSpr);
+			if(s.cat === 6) root.layer0_mc.addChild(this._rightHandSpr);
 			root.layer0_mc.addChild(this._clothSlots[s.cat]);
 		});
 		this.updateClothes();
@@ -165,18 +182,24 @@ export default class Home{
 		}
 		root.layer0_mc.addChild(this._leftForearmSpr);
 
-		// Кисти рук персонажа — позиции сняты через универсальный редактор позиций
-		// напрямую на главном экране (уже не формула от смещения манекена — она давала
-		// небольшое расхождение: правая на 7px правее, левая на 2px левее нужного).
-		if(!this._rightHandSpr){
-			this._rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
-			this._rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-			this._rightHandSpr.texture.baseTexture.update();
-			this._rightHandSpr.anchor.set(0, 0);
-			this._rightHandSpr.x = 630;
-			this._rightHandSpr.y = 369;
+		// 21.10.2026 (по прямому указанию — "предплечье будет везде одинаковое, кисти будут
+		// разные"): "правая рука.png" (единый файл кисть+часть предплечья, переключался между
+		// "правая рука.png"/"правая рука пустая.png") заменён на ОТДЕЛЬНЫЙ статичный файл
+		// предплечья — больше никогда не переключается (симметрично "левое предплечье.png"
+		// выше, которое тоже всегда одно и то же). Позиция — там же, где раньше стояла
+		// "правая рука.png" (630,369), кисть теперь отдельно (см. this._rightHandSpr выше).
+		if(!this._rightForearmSpr){
+			this._rightForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/предплечье правое.png'));
+			this._rightForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._rightForearmSpr.texture.baseTexture.update();
+			this._rightForearmSpr.anchor.set(0, 0);
+			// 22.10.2026 (по прямому указанию, повторная калибровка редактором позиций):
+			// 649,377,0.197 → 642,375,0.218.
+			this._rightForearmSpr.x = 642;
+			this._rightForearmSpr.y = 375;
+			this._rightForearmSpr.scale.set(0.218);
 		}
-		root.layer0_mc.addChild(this._rightHandSpr);
+		root.layer0_mc.addChild(this._rightForearmSpr);
 
 		if(!this._leftHandSpr){
 			this._leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
@@ -187,6 +210,27 @@ export default class Home{
 			this._leftHandSpr.y = 385;
 		}
 		root.layer0_mc.addChild(this._leftHandSpr);
+
+		// 21.10.2026 (по прямому указанию — "мини-анимация с морганием персонажа"): "глаза
+		// закрыты.png" появляется раз в 15 сек и держится 0.3 сек поверх лица. persSpr здесь
+		// создаётся один раз за сеанс (см. if(!this._persSpr) выше) — интервал заводим по
+		// тому же принципу (один раз), иначе повторные init() плодили бы параллельные таймеры.
+		if(!this._eyesClosedSpr){
+			this._eyesClosedSpr = new PIXI.Sprite(PIXI.Texture.from('./images/глаза закрыты.png'));
+			this._eyesClosedSpr.anchor.set(0, 0);
+			// 21.10.2026 (уточнено пользователем через редактор позиций на экране магазина
+			// шмоток — x:853 y:234 scale:0.219 при персонаже там в 730,208, т.е. смещение
+			// +123x/+26y): персонаж здесь в (506,204), та же разница → 629,230.
+			this._eyesClosedSpr.x = 629;
+			this._eyesClosedSpr.y = 232;
+			this._eyesClosedSpr.scale.set(0.219);
+			this._eyesClosedSpr.visible = false;
+			setInterval(() => {
+				this._eyesClosedSpr.visible = true;
+				setTimeout(() => { this._eyesClosedSpr.visible = false; }, 300);
+			}, 15000);
+		}
+		root.layer0_mc.addChild(this._eyesClosedSpr);
 
 		// 25.09.2026 (уточнение по прямому указанию, "все шмотки теперь кладутся поверх файла
 		// правая рука, должно быть не так — поверх только часы Покер и цепь Тинейджер, все
@@ -220,7 +264,17 @@ export default class Home{
 				spr.visible = true;
 				spr.x = base.x + (eq.manDx || 0);
 				spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
-				spr.scale.set(eq.manScale || 1);
+				// 22.10.2026 (по прямому указанию — эксперимент: "одну шмотку не делать ей scale,
+				// а поставить значения ширины и высоты"): manWidth/manHeight — альтернатива
+				// manScale, явный пиксельный размер вместо множителя (сейчас только у id111
+				// Панама Следопыт, см. shmot.js).
+				if(eq.manWidth && eq.manHeight){
+					spr.scale.set(1);
+					spr.width = eq.manWidth;
+					spr.height = eq.manHeight;
+				} else {
+					spr.scale.set(eq.manScale || 1);
+				}
 			} else {
 				spr.texture = PIXI.Texture.EMPTY;
 				spr.visible = false;
@@ -230,12 +284,52 @@ export default class Home{
 			// → правая кисть. Исключения — часы Poker и цепь Teenager — носятся на
 			// руке и должны быть выше самой правой кисти.
 			if(parseInt(cat) === 6 && this._leftHandSpr && this._leftHandSpr.parent === root.layer0_mc){
+				// 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"):
+				// предплечье (this._rightForearmSpr) больше НЕ трогается здесь — статичный файл,
+				// никогда не переключается. "кисть расслабленная.png" — ничего не зажато (или
+				// часы Poker/цепь Teenager — id 62/92, они носятся НА руке, не в кулаке), "кисть
+				// хват.png" — что-то зажато. Исключение — у части предметов (handBuiltIn в
+				// каталоге shmot.js — Сайга/Пистолет/Кружка новых сетов) кисть уже нарисована
+				// ВНУТРИ файла самого предмета — для них кисть-спрайт скрывается целиком,
+				// остаётся только предплечье.
+				if(this._rightHandSpr){
+					const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
+					if(_handWeaponHeld && eq.handBuiltIn){
+						this._rightHandSpr.visible = false;
+					} else {
+						this._rightHandSpr.visible = true;
+						// 22.10.2026 (по прямому указанию, редактор позиций): свой x/y/scale под
+						// каждую текстуру кисти (не общий box 98×97) — см. коммент у создания спрайта.
+						this._rightHandSpr.texture = PIXI.Texture.from(
+							_handWeaponHeld ? './images/кисть хват.png' : './images/кисть расслабленная.png'
+						);
+						this._rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+						this._rightHandSpr.texture.baseTexture.update();
+						this._rightHandSpr.x = _handWeaponHeld ? 634 : 642;
+						this._rightHandSpr.y = _handWeaponHeld ? 421 : 427;
+						this._rightHandSpr.scale.set(_handWeaponHeld ? 0.189 : 0.200);
+					}
+				}
 				const weaponIdx = root.layer0_mc.getChildIndex(this._leftHandSpr) + 1;
 				root.layer0_mc.addChildAt(spr, Math.min(weaponIdx, root.layer0_mc.children.length));
 				if(eq && (eq.id === 62 || eq.id === 92)) root.layer0_mc.addChild(spr);
 				else if(this._rightHandSpr) root.layer0_mc.addChildAt(this._rightHandSpr, root.layer0_mc.getChildIndex(spr) + 1);
 			}
 		});
+		// 22.10.2026 (по прямому указанию — "три новых куртки должны быть выше по Z-индексу,
+		// чем левая рука/предплечья/кисть и часы/цепь"): обычно торс (cat:1) рисуется НИЖЕ
+		// рук (addChild'ится раньше них в init()) — для ЭТИХ трёх конкретных предметов
+		// (id102/107/112 — куртки сетов Бродяга/Ветеран/Следопыт, длинный рукав) торс
+		// поднимается на самый верх ПОСЛЕ того, как кисть/предплечья/часы-цепь уже
+		// расставлены выше в forEach'е выше — иначе рукав визуально обрезался бы рукой.
+		const _torsoEq = (shmot.items || []).find(it => it.cat === 1 && it.equipped);
+		if(_torsoEq && [102, 107, 112].includes(_torsoEq.id) && this._clothSlots[1]){
+			root.layer0_mc.addChild(this._clothSlots[1]);
+			// 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
+			// Z-индексу, чем шмотки на торс"): поднятие торса выше поднимало его и выше головы —
+			// переподнимаем голову следом, чтобы правило "голова выше торса" не нарушалось.
+			if(this._clothSlots[0]) root.layer0_mc.addChild(this._clothSlots[0]);
+		}
 	}
 
 	initButtons(){

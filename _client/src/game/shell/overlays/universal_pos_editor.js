@@ -83,7 +83,16 @@ export function attachUniversalPosEditor(proto){
     const _looksLikeActiveState = (spr) => {
         try{
             if(!spr.texture) return false;
-            const re = /актив|activ/i;
+            // 21.10.2026 (по прямому указанию — "сделай так, чтобы глаза закрыты.png
+            // показывался при нажатии на редактор"): спрайт моргания обычно invisible и
+            // появляется сам лишь на 0.3с раз в 15с (см. home.js/shmot_shop.js/
+            // player_profile.js) — без этого добавления выбрать и подвинуть его в редакторе
+            // позиций было бы почти невозможно (слишком короткое окно видимости). Та же
+            // проверка visible===false ниже + тот же периодический скан/восстановление —
+            // это не "активное состояние кнопки" по смыслу, но ровно тот же механический
+            // случай (нормально скрытый спрайт, который нужно принудительно показать на
+            // время редактирования).
+            const re = /актив|activ|глаза закрыты/i;
             const url = spr.texture.baseTexture && spr.texture.baseTexture.resource
                 ? (spr.texture.baseTexture.resource.url || '') : '';
             if(re.test(url)) return true;

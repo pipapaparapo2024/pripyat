@@ -3,23 +3,28 @@ import { applyPatch } from '../../../modules/patch.js';
 // Индивидуальная подгонка каждого фона (сняты через универсальный редактор позиций
 // прямо на этом попапе, ключ — имя файла h.img). Разные исходники по-разному
 // скомпонованы по вертикали, единого y=0 на все не хватало.
+// 21.10.2026 (по прямому указанию — аудит имён файлов-ассетов): "шлюз.png" и т.п. были
+// однословными без привязки к фиче, переименованы в "хата фон X.png" (та же замена в
+// home.js/player_profile.js/game-boot.js, см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md) — ключи
+// словаря ниже и поля img в HATAS переименованы один в один, ПОРЯДОК/СВЯЗКИ не менялись
+// (важно — см. докблок 06.10.2026 про намеренно перепутанные img у id:6/id:7).
 const BG_ADJUST = {
-    'шлюз.png':        { y: 32, scale: 1.000 },
-    'канализация.png': { y: 35, scale: 1.000 },
+    'хата фон шлюз.png':        { y: 32, scale: 1.000 },
+    'хата фон канализация.png': { y: 35, scale: 1.000 },
     'двор_фон.png':    { y: 54, scale: 1.000 },
-    'мастерская.png':  { y: 74, scale: 1.000 },
-    'железка.png':     { y: 56, scale: 1.002 },
-    'заправка.png':    { y: 63, scale: 1.004 },
-    'станция.png':     { y: 73, scale: 1.000 },
+    'хата фон мастерская.png':  { y: 74, scale: 1.000 },
+    'хата фон железка.png':     { y: 56, scale: 1.002 },
+    'хата фон заправка.png':    { y: 63, scale: 1.004 },
+    'хата фон станция.png':     { y: 73, scale: 1.000 },
 };
 
 const HATAS = [
-    { id:0, name:'Кубрик',      img:'кубрик.png',      bossReq:-1, cost:0       },
-    { id:1, name:'Шлюз',        img:'шлюз.png',        bossReq:1,  cost:10000   },
-    { id:2, name:'Канализация', img:'канализация.png', bossReq:2,  cost:25000   },
+    { id:0, name:'Кубрик',      img:'хата фон кубрик.png',      bossReq:-1, cost:0       },
+    { id:1, name:'Шлюз',        img:'хата фон шлюз.png',        bossReq:1,  cost:10000   },
+    { id:2, name:'Канализация', img:'хата фон канализация.png', bossReq:2,  cost:25000   },
     { id:3, name:'Двор',        img:'двор_фон.png',    bossReq:3,  cost:40000   },
-    { id:4, name:'Мастерская',  img:'мастерская.png',  bossReq:4,  cost:75000   },
-    { id:5, name:'Железка',     img:'железка.png',     bossReq:5,  cost:100000  },
+    { id:4, name:'Мастерская',  img:'хата фон мастерская.png',  bossReq:4,  cost:75000   },
+    { id:5, name:'Железка',     img:'хата фон железка.png',     bossReq:5,  cost:100000  },
     // 03.10.2026 (репорт игрока — "сижу в хате «станция», отображаюсь в хате «заправка», и
     // наоборот при заезде в «заправку»"): img у id:6/id:7 были перепутаны местами (станция.png
     // стоял у "Заправка", заправка.png — у "Станция"). home.js._bgFiles (тот же набор
@@ -34,8 +39,8 @@ const HATAS = [
     // вагоны). Из-за этого текст `name` (взятый по имени файла) не совпадал с тем, что реально
     // нарисовано у игрока на экране. По прямому указанию с двумя скриншотами — меняем местами
     // ТОЛЬКО `name`, img не трогаем, чтобы текст совпадал с картинкой, а не с именем файла.
-    { id:6, name:'Заправка',    img:'станция.png',     bossReq:6,  cost:150000  },
-    { id:7, name:'Станция',     img:'заправка.png',    bossReq:7,  cost:1000000 },
+    { id:6, name:'Заправка',    img:'хата фон станция.png',     bossReq:6,  cost:150000  },
+    { id:7, name:'Станция',     img:'хата фон заправка.png',    bossReq:7,  cost:1000000 },
 ];
 
 export default class Hata {
@@ -150,20 +155,26 @@ export default class Hata {
             { cat: 4, x: 882 + CHAR_DX, y: 414 + CHAR_DY },                 // Аксессуар
             { cat: 6, x: 856 + CHAR_DX, y: 418 + CHAR_DY },                 // Рука
         ];
-        // Фаланги правой руки — те же координаты, что и на главном меню (home.js), т.к. эта
-        // сцена использует тот же фон 1280×604 и тот же сдвиг CHAR_DX/CHAR_DY. Раньше их
-        // тут не было вообще — добавлены были только на home.js.
-        const rightHandPhalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
-        rightHandPhalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-        rightHandPhalanxSpr.texture.baseTexture.update();
-        rightHandPhalanxSpr.anchor.set(0, 0);
-        rightHandPhalanxSpr.x = 634;
-        rightHandPhalanxSpr.y = 441;
-        this._charRightHandPhalanxSpr = rightHandPhalanxSpr;
+        // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"): раньше
+        // тут была "фаланги правой руки.png" (мелкий оверлей костяшек), теперь — ПОЛНАЯ кисть,
+        // переключается между "кисть расслабленная.png"/"кисть хват.png" ниже (та же логика,
+        // что в home.js/shmot_shop.js/player_profile.js). Координаты — те же, что на главном
+        // меню (home.js), т.к. эта сцена использует тот же фон 1280×604 и тот же сдвиг
+        // CHAR_DX/CHAR_DY.
+        const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/кисть расслабленная.png'));
+        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightHandSpr.texture.baseTexture.update();
+        rightHandSpr.anchor.set(0, 0);
+        // 22.10.2026 (по прямому указанию, свежая калибровка редактором позиций): свой x/y/scale
+        // под каждую текстуру кисти — см. тот же коммент в home.js. Здесь — начальная поза.
+        rightHandSpr.x = 642;
+        rightHandSpr.y = 427;
+        rightHandSpr.scale.set(0.200);
+        this._charRightHandSpr = rightHandSpr;
 
         this._charSlots = {}; this._charSlotBases = {};
         CHAR_SLOTS.forEach(s => {
-            if(s.cat === 6) win.addChild(rightHandPhalanxSpr);
+            if(s.cat === 6) win.addChild(rightHandSpr);
             const spr = new PIXI.Sprite(PIXI.Texture.EMPTY);
             spr.anchor.set(s.centerX ? 0.5 : 0, s.cat === 3 ? 1 : 0);
             spr.x = s.x; spr.y = s.y;
@@ -186,13 +197,21 @@ export default class Hata {
         win.addChild(leftForearmSpr);
         this._leftForearmSpr = leftForearmSpr;
 
-        const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
-        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-        rightHandSpr.texture.baseTexture.update();
-        rightHandSpr.anchor.set(0, 0);
-        rightHandSpr.x = 862 - 8 + CHAR_DX; rightHandSpr.y = 373 + CHAR_DY;
-        win.addChild(rightHandSpr);
-        this._charRightHandSpr = rightHandSpr;
+        // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"):
+        // "правая рука.png" (единый файл кисть+часть предплечья) заменён на ОТДЕЛЬНЫЙ
+        // статичный файл предплечья — больше никогда не переключается. Позиция — там же,
+        // где раньше стояла "правая рука.png" (862-8=854,373 + CHAR_DX/DY), кисть теперь
+        // отдельно (this._charRightHandSpr выше).
+        const rightForearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/предплечье правое.png'));
+        rightForearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        rightForearmSpr.texture.baseTexture.update();
+        rightForearmSpr.anchor.set(0, 0);
+        // 22.10.2026 (по прямому указанию, повторная калибровка редактором позиций):
+        // 873,381,0.197 → 866,379,0.218.
+        rightForearmSpr.x = 866 + CHAR_DX; rightForearmSpr.y = 379 + CHAR_DY;
+        rightForearmSpr.scale.set(0.218);
+        win.addChild(rightForearmSpr);
+        this._charRightForearmSpr = rightForearmSpr;
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
         leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
@@ -218,7 +237,7 @@ export default class Hata {
         win.addChild(leftDis);
         this._leftDis = leftDis;
 
-        const leftSpr = new PIXI.Sprite(PIXI.Texture.from('./images/влево.png'));
+        const leftSpr = new PIXI.Sprite(PIXI.Texture.from('./images/хата стрелка влево.png'));
         leftSpr.x = 417; leftSpr.y = 506;
         leftSpr.interactive = true; leftSpr.buttonMode = true;
         leftSpr.on('pointerover', ()=>{ _sa(leftSpr, 0.75); leftSpr.scale.set(1.08); });
@@ -343,7 +362,15 @@ export default class Hata {
                 spr.visible = true;
                 spr.x = base.x + (eq.manDx || 0);
                 spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
-                spr.scale.set(eq.manScale || 1);
+                // 22.10.2026 (по прямому указанию, эксперимент): manWidth/manHeight —
+                // альтернатива manScale, см. тот же коммент в home.js.
+                if(eq.manWidth && eq.manHeight){
+                    spr.scale.set(1);
+                    spr.width = eq.manWidth;
+                    spr.height = eq.manHeight;
+                } else {
+                    spr.scale.set(eq.manScale || 1);
+                }
             } else {
                 spr.texture = PIXI.Texture.EMPTY;
                 spr.visible = false;
@@ -351,12 +378,46 @@ export default class Hata {
             }
             // Обычный предмет зажат справа; часы Poker и цепь Teenager поверх кисти.
             if(parseInt(cat) === 6 && this._charLeftHandSpr && this._charLeftHandSpr.parent === this._win){
+                // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"):
+                // предплечье (this._charRightForearmSpr) больше НЕ трогается — статичный файл.
+                // "кисть расслабленная.png" — пусто/часы Poker/цепь Teenager (id 62/92), "кисть
+                // хват.png" — что-то зажато. Исключение — handBuiltIn-предметы (Сайга/Пистолет/
+                // Кружка новых сетов) уже рисуют кисть внутри своего файла — кисть-спрайт
+                // скрывается целиком.
+                if(this._charRightHandSpr){
+                    const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
+                    if(_handWeaponHeld && eq.handBuiltIn){
+                        this._charRightHandSpr.visible = false;
+                    } else {
+                        this._charRightHandSpr.visible = true;
+                        // 22.10.2026 (по прямому указанию, редактор позиций): свой x/y/scale под
+                        // каждую текстуру кисти (не общий box 98×97) — см. тот же коммент в home.js.
+                        this._charRightHandSpr.texture = PIXI.Texture.from(
+                            _handWeaponHeld ? './images/кисть хват.png' : './images/кисть расслабленная.png'
+                        );
+                        this._charRightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                        this._charRightHandSpr.texture.baseTexture.update();
+                        this._charRightHandSpr.x = _handWeaponHeld ? 634 : 642;
+                        this._charRightHandSpr.y = _handWeaponHeld ? 421 : 427;
+                        this._charRightHandSpr.scale.set(_handWeaponHeld ? 0.189 : 0.200);
+                    }
+                }
                 const weaponIdx = this._win.getChildIndex(this._charLeftHandSpr) + 1;
                 this._win.addChildAt(spr, Math.min(weaponIdx, this._win.children.length));
                 if(eq && (eq.id === 62 || eq.id === 92)) this._win.addChild(spr);
                 else if(this._charRightHandSpr) this._win.addChildAt(this._charRightHandSpr, this._win.getChildIndex(spr) + 1);
             }
         });
+        // 22.10.2026 (по прямому указанию — то же правило, что в home.js, см. докблок там):
+        // куртки сетов Бродяга/Ветеран/Следопыт (id102/107/112) поднимаются на самый верх
+        // z-порядка, выше рук/предплечий/часов-цепи — длинный рукав должен закрывать руку.
+        const _torsoEq = (shmot.items || []).find(it => it.cat === 1 && it.equipped);
+        if(_torsoEq && [102, 107, 112].includes(_torsoEq.id) && this._charSlots[1]){
+            this._win.addChild(this._charSlots[1]);
+            // 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
+            // Z-индексу, чем шмотки на торс"): см. тот же коммент в home.js.
+            if(this._charSlots[0]) this._win.addChild(this._charSlots[0]);
+        }
     }
 
     _nav(dir){

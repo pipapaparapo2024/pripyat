@@ -99,7 +99,7 @@ console.log('\nTest 5: левая панель (имя/ХП/таймер) и р�
 console.log('\nTest 6: talentsPlate НЕ требует явного подъёма — весь талант-блок добавляется НИЖЕ по файлу (естественно выше по Z)');
 {
     const talentsPlateIdx = src.indexOf('const talentsPlate = new PIXI.Sprite');
-    const talentBtnIdx = src.indexOf("Texture.from(B + 'скиллы.png')");
+    const talentBtnIdx = src.indexOf("Texture.from(B + 'боевка кнопка скиллы.png')");
     assert(talentsPlateIdx > -1 && talentBtnIdx > talentsPlateIdx,
         'talentBtn (скиллы.png) создаётся ПОСЛЕ talentsPlate в коде — естественно выше по Z без доп. addChild');
 }

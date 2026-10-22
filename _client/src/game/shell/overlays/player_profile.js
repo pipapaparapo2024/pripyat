@@ -74,15 +74,18 @@ export function attachPlayerProfile(proto){
         // чужой выбор фона игнорировался. Теперь читаем profile.base_bg_active (сервер отдаёт
         // его в users.getProfile, см. users.php) — тот же каталог файлов/подгонки, что
         // Home._bgFiles/_bgAdjust (home.js), продублирован здесь намеренно (разные классы).
-        const PROFILE_BG_FILES = ['кубрик.png','шлюз.png','канализация.png','двор_фон.png','мастерская.png','железка.png','станция.png','заправка.png'];
+        // 21.10.2026 (по прямому указанию — аудит имён файлов-ассетов): та же замена, что в
+        // home.js — "кубрик.png" и т.п. были однословными без привязки к фиче, переименованы
+        // в "хата фон X.png" (см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md).
+        const PROFILE_BG_FILES = ['хата фон кубрик.png','хата фон шлюз.png','хата фон канализация.png','двор_фон.png','хата фон мастерская.png','хата фон железка.png','хата фон станция.png','хата фон заправка.png'];
         const PROFILE_BG_ADJUST = {
-            'шлюз.png':        { y: 32, scale: 1.000 },
-            'канализация.png': { y: 35, scale: 1.000 },
+            'хата фон шлюз.png':        { y: 32, scale: 1.000 },
+            'хата фон канализация.png': { y: 35, scale: 1.000 },
             'двор_фон.png':    { y: 54, scale: 1.000 },
-            'мастерская.png':  { y: 74, scale: 1.000 },
-            'железка.png':     { y: 56, scale: 1.002 },
-            'заправка.png':    { y: 63, scale: 1.004 },
-            'станция.png':     { y: 73, scale: 1.000 },
+            'хата фон мастерская.png':  { y: 74, scale: 1.000 },
+            'хата фон железка.png':     { y: 56, scale: 1.002 },
+            'хата фон заправка.png':    { y: 63, scale: 1.004 },
+            'хата фон станция.png':     { y: 73, scale: 1.000 },
         };
         const bgIdx = Math.max(0, Math.min(PROFILE_BG_FILES.length - 1, parseInt(profile.base_bg_active || 0) || 0));
         const bgFile = PROFILE_BG_FILES[bgIdx];
@@ -132,6 +135,8 @@ export function attachPlayerProfile(proto){
         // с ПОРЯДКОВЫМ номером i, а не с id===i — для чужого игрока, у которого надет любой
         // предмет с id>=20, подставлялся СОВСЕМ ДРУГОЙ предмет (или undefined → ничего не рисовалось).
         let handItemSpr = null, handItemDef = null;
+        let torsoSpr = null, torsoDef = null;
+        let headSpr = null;
         CLOTH_SLOTS.forEach(s => {
             const equippedIdx = theirShmot.findIndex((slot, i) => {
                 if(!slot || !slot.equipped) return false;
@@ -153,11 +158,27 @@ export function attachPlayerProfile(proto){
                     spr.texture.baseTexture.update();
                     spr.x = s.x + (def.manDx || 0);
                     spr.y = s.y + (def.manDy || 0) + (def.imgFile === 'штаны_1.png' ? -28 : 0);
-                    spr.scale.set(def.manScale || 1);
+                    // 22.10.2026 (по прямому указанию, эксперимент): manWidth/manHeight —
+                    // альтернатива manScale, см. тот же коммент в home.js.
+                    if(def.manWidth && def.manHeight){
+                        spr.width = def.manWidth;
+                        spr.height = def.manHeight;
+                    } else {
+                        spr.scale.set(def.manScale || 1);
+                    }
                 }
             }
             win.addChild(spr);
-            if(s.cat === 6 && def){ handItemSpr = spr; handItemDef = def; }
+            // 22.10.2026 (баг найден — "кисть должна быть выше предплечья", но оставалась
+            // НИЖЕ него на профиле ЧУЖОГО игрока без предмета в руке): handItemSpr раньше
+            // захватывался только при `def` (предмет реально надет) — без надетого предмета
+            // (самый частый случай) блок переупорядочивания ниже (`if(handItemSpr)`) вообще не
+            // выполнялся, и handSpr оставался в статичном порядке addChild (ДО forearmSpr —
+            // см. ниже), то есть под предплечьем. home.js/hata.js/shmot_shop.js этой проблемы
+            // не имеют — их аналогичный блок завязан на leftHandSpr, а не на наличии предмета.
+            if(s.cat === 6){ handItemSpr = spr; handItemDef = def; }
+            if(s.cat === 0){ headSpr = spr; }
+            if(s.cat === 1 && def){ torsoSpr = spr; torsoDef = def; }
         });
 
         // Левое предплечье (24.09.2026, уточнено пользователем через редактор позиций на
@@ -172,20 +193,40 @@ export function attachPlayerProfile(proto){
         leftForearmSpr.scale.set(0.197);
         win.addChild(leftForearmSpr);
 
-        // Кисти рук + фаланги — те же спрайты/координаты, что home.js рисует для СВОЕГО
+        // Кисть + предплечье — те же спрайты/координаты, что home.js рисует для СВОЕГО
         // персонажа (та же поза, тот же offset (506,204)) — баг найден 19.09.2026: профиль
         // ЧУЖОГО игрока их не рисовал вообще, руки "пропадали" при переходе на другой профиль.
-        const phalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
-        phalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-        phalanxSpr.texture.baseTexture.update();
-        phalanxSpr.x = 634; phalanxSpr.y = 441;
-        win.addChild(phalanxSpr);
+        //
+        // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"):
+        // предплечье (forearmSpr) — статичный файл "предплечье правое.png", никогда не
+        // переключается. Кисть — "кисть расслабленная.png" (пусто/часы Poker/цепь Teenager,
+        // id 62/92 — носятся НА руке) либо "кисть хват.png" (что-то зажато), либо скрыта
+        // целиком, если у самого предмета уже нарисована своя кисть (handBuiltIn в каталоге
+        // shmot.js — Сайга/Пистолет/Кружка новых сетов). handItemDef уже вычислен циклом
+        // CLOTH_SLOTS.forEach выше.
+        // 22.10.2026 (по прямому указанию, редактор позиций): свой x/y/scale под каждую
+        // текстуру кисти (не общий box 98×97) — см. тот же коммент в home.js.
+        const _handWeaponHeld = handItemDef && handItemDef.id !== 62 && handItemDef.id !== 92;
+        const handSpr = new PIXI.Sprite(PIXI.Texture.from(
+            _handWeaponHeld ? './images/кисть хват.png' : './images/кисть расслабленная.png'
+        ));
+        handSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        handSpr.texture.baseTexture.update();
+        // 22.10.2026 (по прямому указанию, повторная калибровка редактором позиций): 647,424 → 642,427.
+        handSpr.x = _handWeaponHeld ? 634 : 642;
+        handSpr.y = _handWeaponHeld ? 421 : 427;
+        handSpr.scale.set(_handWeaponHeld ? 0.189 : 0.200);
+        handSpr.visible = !(_handWeaponHeld && handItemDef.handBuiltIn);
+        win.addChild(handSpr);
 
-        const rightHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/правая рука.png'));
-        rightHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
-        rightHandSpr.texture.baseTexture.update();
-        rightHandSpr.x = 630; rightHandSpr.y = 369;
-        win.addChild(rightHandSpr);
+        const forearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/предплечье правое.png'));
+        forearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        forearmSpr.texture.baseTexture.update();
+        // 22.10.2026 (по прямому указанию, повторная калибровка редактором позиций):
+        // 649,377,0.197 → 642,375,0.218.
+        forearmSpr.x = 642; forearmSpr.y = 375;
+        forearmSpr.scale.set(0.218);
+        win.addChild(forearmSpr);
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
         leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
@@ -193,13 +234,47 @@ export function attachPlayerProfile(proto){
         leftHandSpr.x = 534; leftHandSpr.y = 385;
         win.addChild(leftHandSpr);
 
+        // 21.10.2026 (по прямому указанию — "мини-анимация с морганием персонажа"): "глаза
+        // закрыты.png" появляется раз в 15 сек и держится 0.3 сек. _buildPlayerProfileScreen()
+        // пересобирается заново при КАЖДОМ открытии чужого профиля (см. начало функции —
+        // removeChild + полная пересборка win) — поэтому обязательно гасим предыдущий интервал
+        // здесь же (плюс в _closePlayerProfile ниже, см. комментарий там).
+        if(this._profileBlinkTimer) clearInterval(this._profileBlinkTimer);
+        const eyesClosedSpr = new PIXI.Sprite(PIXI.Texture.from('./images/глаза закрыты.png'));
+        eyesClosedSpr.anchor.set(0, 0);
+        // 21.10.2026 (уточнено пользователем через редактор позиций на экране магазина
+        // шмоток — x:853 y:234 scale:0.219 при персонаже там в 730,208, т.е. смещение
+        // +123x/+26y): персонаж здесь в (506,204), та же разница → 629,230.
+        eyesClosedSpr.x = 629;
+        eyesClosedSpr.y = 232;
+        eyesClosedSpr.scale.set(0.219);
+        eyesClosedSpr.visible = false;
+        win.addChild(eyesClosedSpr);
+        this._profileBlinkTimer = setInterval(() => {
+            eyesClosedSpr.visible = true;
+            setTimeout(() => { eyesClosedSpr.visible = false; }, 300);
+        }, 15000);
+
         // Обычный предмет: левая кисть → предмет → правая кисть; часы Poker и
         // цепь Teenager носятся поверх правой кисти.
         if(handItemSpr){
             const weaponIdx = win.getChildIndex(leftHandSpr) + 1;
             win.addChildAt(handItemSpr, Math.min(weaponIdx, win.children.length));
             if(handItemDef && (handItemDef.id === 62 || handItemDef.id === 92)) win.addChild(handItemSpr);
-            else win.addChildAt(rightHandSpr, win.getChildIndex(handItemSpr) + 1);
+            else win.addChildAt(handSpr, win.getChildIndex(handItemSpr) + 1);
+        }
+
+        // 22.10.2026 (по прямому указанию — то же правило, что в home.js, см. докблок там):
+        // куртки сетов Бродяга/Ветеран/Следопыт (id102/107/112) поднимаются на самый верх
+        // z-порядка, выше рук/предплечий/часов-цепи — длинный рукав должен закрывать руку.
+        if(torsoDef && [102, 107, 112].includes(torsoDef.id) && torsoSpr){
+            win.addChild(torsoSpr);
+            // 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
+            // Z-индексу, чем шмотки на торс"): поднятие торса (куртки) на самый верх выше
+            // поднимало его и ВЫШЕ головы, хотя голова изначально стоит в CLOTH_SLOTS сразу
+            // ПОСЛЕ торса именно для того, чтобы быть выше — переподнимаем голову следом,
+            // чтобы это правило не нарушалось даже с длиннополыми куртками.
+            if(headSpr) win.addChild(headSpr);
         }
 
         // Заголовок — ник + уровень (та же формула, что Interface.updateNick()/svod-leaderboard.js,
@@ -698,6 +773,9 @@ export function attachPlayerProfile(proto){
     proto._closePlayerProfile = function(){
         if(this._profileWin && this._profileWin.parent) this._profileWin.parent.removeChild(this._profileWin);
         this._profileWin = null;
+        // 21.10.2026: гасим таймер моргания глаз — без этого он продолжал бы тикать вхолостую
+        // (спрайт уже вне сцены) до следующего открытия профиля, которое поставило бы ещё один.
+        if(this._profileBlinkTimer){ clearInterval(this._profileBlinkTimer); this._profileBlinkTimer = null; }
         if(window.iface) iface.popHud('playerProfile');
     };
 }

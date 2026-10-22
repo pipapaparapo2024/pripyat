@@ -33,12 +33,21 @@ const ifaceSrc    = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'i
 const panelsSrc   = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'interface', 'interface-panels.js'), 'utf-8');
 const bossResultSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8');
 
-console.log('\nTest 1: player_profile.js рисует кисти рук + фаланги (те же файлы/координаты, что home.js)');
+console.log('\nTest 1: player_profile.js рисует кисть + предплечье правой руки (те же файлы/координаты, что home.js)');
 {
-    assert(/фаланги правой руки\.png/.test(profileSrc), 'фаланги правой руки — спрайт создан');
-    assert(/phalanxSpr\.x = 634; phalanxSpr\.y = 441;/.test(profileSrc), 'фаланги — те же координаты, что home.js');
-    assert(/правая рука\.png/.test(profileSrc) && /rightHandSpr\.x = 630; rightHandSpr\.y = 369;/.test(profileSrc),
-        'правая рука — тот же файл/координаты, что home.js');
+    // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется", см.
+    // ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md и tests/oct21-new-shmot-sets-and-forearm-hand-
+    // split.test.js — источник истины для текущей логики переключения): "фаланги правой
+    // руки.png" заменены на полную кисть (handSpr, x:634/y:441 — те же координаты), "правая
+    // рука.png" — на статичное предплечье (forearmSpr, "предплечье правое.png", x:630/y:369).
+    // 22.10.2026 (повторная калибровка, та же сессия): общий box 634/441 заменён на свой
+    // x/y/scale под каждую текстуру кисти (ternary по _handWeaponHeld); предплечье
+    // 630,369 → 649,377 → 642,375; кисть-расслабленная 647,424 → 642,427.
+    assert(/кисть расслабленная\.png/.test(profileSrc), 'кисть расслабленная — спрайт создан');
+    assert(/handSpr\.x = _handWeaponHeld \? 634 : 642;/.test(profileSrc) && /handSpr\.y = _handWeaponHeld \? 421 : 427;/.test(profileSrc),
+        'кисть — свои координаты под каждую текстуру (хват/расслабленная)');
+    assert(/предплечье правое\.png/.test(profileSrc) && /forearmSpr\.x = 642; forearmSpr\.y = 375;/.test(profileSrc),
+        'предплечье — статичный файл, координаты подтверждены редактором позиций');
     assert(/левая рука\.png/.test(profileSrc) && /leftHandSpr\.x = 534; leftHandSpr\.y = 385;/.test(profileSrc),
         'левая рука — тот же файл/координаты, что home.js');
 }

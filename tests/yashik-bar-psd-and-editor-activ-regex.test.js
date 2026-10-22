@@ -33,7 +33,9 @@ console.log('\nTest 1: yashik.js — координаты полосы прог�
 
 console.log('\nTest 2: universal_pos_editor.js — regex ловит файлы "_activ" (без конечной "e")');
 {
-    assert(/const re = \/актив\|activ\/i;/.test(editorSrc), 'regex расширен до /актив|activ/i');
+    // 21.10.2026: regex ещё раз расширен (добавлена "глаза закрыты") — проверяем через
+    // includes вместо точного литерала, чтобы не дублировать актуальный список альтернатив здесь.
+    assert(/const re = \/актив\|activ\|[^/]*\/i;/.test(editorSrc), 'regex расширен минимум до /актив|activ|.../i (сохраняет обе исходные альтернативы)');
     // Симулируем реальную проверку на именах файлов Сидоровича
     const re = /актив|activ/i;
     for(const fname of ['banka_activ.png', 'konserva_activ.png', 'sig_activ.png', 'yashik_activ.png', 'sumka_activ.png']){

@@ -24,8 +24,9 @@ const shmotSrc = read('_client/src/game/shmot.js');
 const bootSrc  = read('_client/src/game/game-boot.js');
 
 const catalogFiles = [...shmotSrc.matchAll(/imgFile:'([^']+)'/g)].map(m => m[1]);
-console.log(`\nВ каталоге shmot.js найдено ${catalogFiles.length} файлов (ожидается 59 — 28.09.2026 добавлена связка ключей)`);
-assert(catalogFiles.length === 59, 'каталог содержит ровно 59 предметов с imgFile');
+// 21.10.2026: 59 → 74 — добавлены 3 новых сета по 5 предметов (id101-115).
+console.log(`\nВ каталоге shmot.js найдено ${catalogFiles.length} файлов (ожидается 74)`);
+assert(catalogFiles.length === 74, 'каталог содержит ровно 74 предмета с imgFile');
 
 console.log('\nКаждый файл каталога присутствует в window._allGamePngs с префиксом shmot/');
 {

@@ -47,7 +47,9 @@ console.log('\nTest 2: _looksLikeActiveState дублирует проверку
         // 16.09.2026: regex расширен до /актив|activ/i — реальные файлы Сидоровича используют
         // транслит без конечной "e" (banka_activ.png и т.п.), см.
         // tests/yashik-bar-psd-and-editor-activ-regex.test.js для полной проверки.
-        assert(/const re = \/актив\|activ\/i;/.test(body), 'общий regex для обеих проверок (включает "activ" без "e")');
+        // 21.10.2026: ещё раз расширен до /.../|глаза закрыты/i — см.
+        // tests/oct21-blink-eyes-and-right-hand-weapon-swap.test.js (Test 11).
+        assert(/const re = \/актив\|activ\|глаза закрыты\/i;/.test(body), 'общий regex для обеих проверок (включает "activ" без "e" и "глаза закрыты")');
         assert(/re\.test\(url\)/.test(body), 'проверка через resource.url сохранена (когда доступен)');
         assert(/spr\.texture\.textureCacheIds/.test(body), 'запасная проверка через texture.textureCacheIds');
         assert(/spr\.texture\.baseTexture\.textureCacheIds/.test(body), 'запасная проверка через baseTexture.textureCacheIds');

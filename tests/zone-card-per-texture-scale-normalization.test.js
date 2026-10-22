@@ -61,10 +61,22 @@ console.log('\nTest 2: масштаб карточки — фиксирован�
 
 console.log('\nTest 3: реальные размеры файлов подтверждают асимметрию — Агропром.png заметно выше остальных 4');
 {
+    // 21.10.2026 (аудит имён файлов-ассетов): раньше тест читал байты "кордон.png" и т.п. —
+    // эти файлы были СТАРЫМИ, уже НЕ используемыми в коде дублями (замена на "... v2/v3.png"
+    // для сброса кэша VK Mini Apps произошла ещё до этого аудита, см. zone_screen.js), тест
+    // просто совпадал по размеру с реальными файлами почти случайно. Теперь читает РЕАЛЬНО
+    // используемые в zone_screen.js имена напрямую.
     const IMG_DIR = path.join(root, '_client', 'development', 'images');
+    const REAL_FILES = {
+        'кордон.png':   'зона локация кордон v2.png',
+        'свалка.png':   'зона локация свалка v2.png',
+        'долина.png':   'зона локация долина v3.png',
+        'Агропром.png': 'зона локация агропром v2.png',
+        'янтарь.png':   'зона локация янтарь v3.png',
+    };
     const heights = {};
-    for(const f of ['кордон.png', 'свалка.png', 'долина.png', 'Агропром.png', 'янтарь.png']){
-        heights[f] = pngSize(path.join(IMG_DIR, f)).height;
+    for(const f of Object.keys(REAL_FILES)){
+        heights[f] = pngSize(path.join(IMG_DIR, REAL_FILES[f])).height;
     }
     console.log('    высоты исходников:', JSON.stringify(heights));
     const others = ['кордон.png', 'свалка.png', 'долина.png', 'янтарь.png'].map(f => heights[f]);

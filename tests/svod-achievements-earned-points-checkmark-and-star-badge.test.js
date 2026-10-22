@@ -27,7 +27,9 @@ assert(/const PTS_TXT_X = 519, PTS_TXT_Y = 50;/.test(src),
     'текст очков — явная позиция (519,50), снята отдельно от галочки/бейджа');
 
 console.log('\nАссеты — новые файлы, не переиспользуют существующие звёздочки прогресса темы');
-assert(/const checkMark = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'галочка\.png'\)\);/.test(src), 'галочка — новый файл галочка.png');
+// 21.10.2026 (по прямому указанию — аудит имён файлов-ассетов): "галочка.png" было generic
+// именем без привязки к фиче, риск коллизии — переименовано в "свод достижения галочка.png".
+assert(/const checkMark = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'свод достижения галочка\.png'\)\);/.test(src), 'галочка — файл "свод достижения галочка.png"');
 assert(/const starsGotBadge = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'звезды полученные\.png'\)\);/.test(src),
     'бейдж — новый файл звезды полученные.png (не звездочка пустая/фулл.png — это другой, уже занятый индикатор доли темы)');
 assert(/checkMark\.visible = false;/.test(src) && /starsGotBadge\.visible = false;/.test(src), 'оба элемента по умолчанию скрыты в пуле');

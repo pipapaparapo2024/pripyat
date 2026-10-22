@@ -65,6 +65,20 @@ console.log('\nTest 2b: plateSecondary/iconSecondary и platePrimary/iconPrimary
     assert(!/this\._addHoverBright\(iconSecondary\);/.test(topCurSrc), 'iconSecondary не задвоен одиночным _addHoverBright (только через группу)');
 }
 
+console.log('\nTest 2c: plateRub/iconRub (статичная плашка "сухари" справа) — 21.10.2026, по прямому указанию: раньше кликабельной/подсвечивающейся была ТОЛЬКО кнопка "+", теперь вся плашка тоже открывает покупку');
+{
+    assert(/iconRub\.interactive = true; iconRub\.buttonMode = true;/.test(topCurSrc), 'iconRub стал интерактивным');
+    assert(/plateRub\.interactive = true; plateRub\.buttonMode = true;/.test(topCurSrc), 'plateRub стал интерактивным');
+    assert(/iconRub\.on\('pointerdown', _openRubPurchase\);/.test(topCurSrc), 'iconRub открывает покупку по клику');
+    assert(/plateRub\.on\('pointerdown', _openRubPurchase\);/.test(topCurSrc), 'plateRub открывает покупку по клику');
+    const openRubIdx = topCurSrc.indexOf('const _openRubPurchase');
+    assert(openRubIdx > -1, '_openRubPurchase определена');
+    const openRubBody = topCurSrc.slice(openRubIdx, topCurSrc.indexOf(';', topCurSrc.indexOf('};', openRubIdx)));
+    assert(/_openCurrencyPurchasePopup\('cigarettes'\)/.test(openRubBody), '_openRubPurchase открывает тот же таб покупки, что и btnRubPlus (сухари)');
+    assert(/if\(typeof this\._addHoverBrightGroup === 'function'\) this\._addHoverBrightGroup\(\[plateRub, iconRub\]\);/.test(topCurSrc),
+        'plateRub и iconRub объединены в одну hover-группу (подсвечиваются вместе, как platePrimary/iconPrimary)');
+}
+
 console.log('\nTest 3: boss_result.js — иконка сухарей поверх вшитой в фон пачки сигарет, показывается БЕЗУСЛОВНО');
 {
     assert(/const cigIcon = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'боевка награда сухари\.png'\)\);/.test(bossResultSrc),

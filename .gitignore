@@ -5,6 +5,15 @@ _client/node_modules/
 node_modules/
 __pycache__/
 
+# 22.10.2026 (найдено при наведении порядка перед коммитом — 281 МБ не отслеживались и чуть
+# не попали бы в репозиторий целиком): бэкап-папки с оригиналами картинок (на случай отката
+# уменьшения/замены ассетов) и локально собранные Python-зависимости paramiko — не исходный
+# код, большие бинарники, место им только на диске, не в истории git.
+_archive_unused_images_29_09_2026/
+_originals_before_downscale_27_09_2026/
+.deploy_deps/
+coins_now.txt
+
 # Сторонний инструмент (26.09.2026, перенесён с рабочего стола, чтобы не болтался) — клон
 # официального github.com/pixijs-userland/animate-extension, плагин для Adobe Animate CC,
 # публикующий FLA-документы в формат PixiJS. Свой .git, свои node_modules — не часть кода
@@ -41,12 +50,19 @@ db_backups/
 # 26.09.2026: сужено до общих масок check_*.py/deploy_*.py/upload_*.py — раньше список вёлся
 # поимённо и регулярно отставал от новых одноразовых скриптов каждой сессии (паромиko-скрипты
 # с паролем root:... создаются под новым именем почти каждый раз).
+# 22.10.2026 (тот же баг-класс найден снова — restart_v583_phpfpm.py/verify_keyring_release.py/
+# migrate_owned_shmot_energy.py/verify_live_replaced_assets.py с паролями не попадали ни под
+# одну из трёх масок): добавлены поимённо + расширены маски verify_*/migrate_*/restart_*,
+# раз именно эти префиксы оказались следующими "новыми именами" паромиko-скриптов.
 _check_dice_bg.py
 check_*.py
 check_server_cards.py
 deploy_*.py
 download_check.py
 upload_*.py
+verify_*.py
+migrate_*.py
+restart_*.py
 fetch_remote_models.py
 delete_migrate34.py
 

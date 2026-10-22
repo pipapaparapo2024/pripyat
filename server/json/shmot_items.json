@@ -790,5 +790,110 @@
     "id": 100,
     "cat": 6,
     "source": "keyring"
+  },
+  {
+    "id": 101,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 60,
+    "source": "sidorovich_bag"
+  },
+  {
+    "id": 102,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 60,
+    "source": "sidorovich_bag"
+  },
+  {
+    "id": 103,
+    "cat": 2,
+    "bk": "machete_flat",
+    "bv": 12,
+    "source": "sidorovich_bag"
+  },
+  {
+    "id": 104,
+    "cat": 3,
+    "bk": "machete_flat",
+    "bv": 16,
+    "source": "sidorovich_bag"
+  },
+  {
+    "id": 105,
+    "cat": 6,
+    "bk": "gun_flat",
+    "bv": 20,
+    "source": "sidorovich_bag"
+  },
+  {
+    "id": 106,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 60,
+    "source": "poker_bag"
+  },
+  {
+    "id": 107,
+    "cat": 1,
+    "bk": "machete_flat",
+    "bv": 16,
+    "source": "poker_bag"
+  },
+  {
+    "id": 108,
+    "cat": 2,
+    "bk": "auto_flat",
+    "bv": 80,
+    "source": "poker_bag"
+  },
+  {
+    "id": 109,
+    "cat": 3,
+    "bk": "max_e",
+    "bv": 30,
+    "source": "poker_bag"
+  },
+  {
+    "id": 110,
+    "cat": 6,
+    "bk": "gun_flat",
+    "bv": 20,
+    "source": "poker_bag"
+  },
+  {
+    "id": 111,
+    "cat": 0,
+    "bk": "auto_flat",
+    "bv": 20,
+    "source": "roulette_bag"
+  },
+  {
+    "id": 112,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 20,
+    "source": "roulette_bag"
+  },
+  {
+    "id": 113,
+    "cat": 2,
+    "bk": "max_e",
+    "bv": 30,
+    "source": "roulette_bag"
+  },
+  {
+    "id": 114,
+    "cat": 3,
+    "bk": "gun_flat",
+    "bv": 10,
+    "source": "roulette_bag"
+  },
+  {
+    "id": 115,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 20,
+    "source": "roulette_bag"
   }
 ]

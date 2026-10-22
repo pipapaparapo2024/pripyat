@@ -91,33 +91,40 @@ console.log('\nTest 2: одежда (shmot) тоже форсирует mipmap O
 
 console.log('\nTest 3: "элементы персонажа" (кисти/предплечье/фаланги) тоже форсируют mipmap ON');
 {
+    // 21.10.2026 (по прямому указанию — "предплечье всегда одно, кисть меняется"): система
+    // правой руки разделена на предплечье (статичный "предплечье правое.png") + кисть
+    // (переключается "кисть расслабленная.png"/"кисть хват.png", выбор — тернарник, поэтому
+    // свой marker вместо дефолтного на всех 4 экранах, не только player_profile.js, как было
+    // раньше). См. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md и oct21-new-shmot-sets-and-forearm-
+    // hand-split.test.js (источник истины для самой логики переключения).
     const ELEMENT_SITES = [
         { file: path.join(root, '_client', 'src', 'game', 'base.js'), varName: 'this\\._leftForearmSpr', textureFile: 'левое предплечье.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._rightHandPhalanxSpr', textureFile: 'фаланги правой руки.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._rightHandSpr', textureFile: 'кисть расслабленная.png' },
         { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._leftForearmSpr', textureFile: 'левое предплечье.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._rightHandSpr', textureFile: 'правая рука.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._rightForearmSpr', textureFile: 'предплечье правое.png' },
         { file: path.join(root, '_client', 'src', 'game', 'home.js'), varName: 'this\\._leftHandSpr', textureFile: 'левая рука.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'rightHandPhalanxSpr', textureFile: 'фаланги правой руки.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'rightHandSpr', textureFile: 'кисть расслабленная.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'leftForearmSpr', textureFile: 'левое предплечье.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'rightHandSpr', textureFile: 'правая рука.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'rightForearmSpr', textureFile: 'предплечье правое.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), varName: 'leftHandSpr', textureFile: 'левая рука.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'rightHandPhalanxSpr', textureFile: 'фаланги правой руки.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'rightHandSpr', textureFile: 'кисть расслабленная.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'leftForearmSpr', textureFile: 'левое предплечье.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'rightHandSpr', textureFile: 'правая рука.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'rightForearmSpr', textureFile: 'предплечье правое.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), varName: 'leftHandSpr', textureFile: 'левая рука.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'leftForearmSpr', textureFile: 'левое предплечье.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'phalanxSpr', textureFile: 'фаланги правой руки.png' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'rightHandSpr', textureFile: 'правая рука.png' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'handSpr', textureFile: 'кисть хват.png',
+          marker: "const handSpr = new PIXI.Sprite(PIXI.Texture.from(" },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'forearmSpr', textureFile: 'предплечье правое.png' },
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), varName: 'leftHandSpr', textureFile: 'левая рука.png' },
     ];
-    ELEMENT_SITES.forEach(({ file, varName, textureFile }) => {
+    ELEMENT_SITES.forEach(({ file, varName, textureFile, marker: customMarker }) => {
         const content = fs.readFileSync(file, 'utf-8');
         const relName = path.relative(root, file);
-        const marker = `new PIXI.Sprite(PIXI.Texture.from('./images/${textureFile}'))`;
+        const marker = customMarker || `new PIXI.Sprite(PIXI.Texture.from('./images/${textureFile}'))`;
         const idx = content.indexOf(marker);
         assert(idx > -1, `${relName}: спрайт "${textureFile}" создаётся`);
         if (idx > -1) {
-            const window_ = content.slice(idx, idx + 300);
+            const window_ = content.slice(idx, idx + 450);
             const mipRe = new RegExp(varName + '\\.texture\\.baseTexture\\.mipmap\\s*=\\s*PIXI\\.MIPMAP_MODES\\.ON');
             const updRe = new RegExp(varName + '\\.texture\\.baseTexture\\.update\\(\\)');
             assert(mipRe.test(window_), `${relName}: ${varName.replace(/\\\\/g,'')} (${textureFile}) — mipmap ON`);

@@ -248,7 +248,7 @@ export function attachSvodAchievements(proto){
             card.addChild(ptsTxt);
 
             // Галочка — тема ПОЛНОСТЬЮ выполнена (заработаны ВСЕ тиры темы), см. _fillCard.
-            const checkMark = new PIXI.Sprite(PIXI.Texture.from(IMG + 'галочка.png'));
+            const checkMark = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод достижения галочка.png'));
             checkMark.anchor.set(0.5, 0.5);
             checkMark.x = CHECK_X; checkMark.y = CHECK_Y;
             checkMark.visible = false;

@@ -58,7 +58,8 @@ console.log('\nTest 1: blackjack.php.swap() работает чисто по р�
     assert(/const authoritativeHand = Array\.isArray\(res\.hand\) && res\.hand\.length === 2/.test(src),
         'клиент перерисовывает оба слота из полной серверной руки (res.hand), не только затронутый идентификатором idx');
     assert(/this\._bjHand\[realIdx\] = \{rank: rank, suit: null\};/.test(src), 'клиент хранит {rank, suit:null} — новая карта в руке по рангу из ответа сервера');
-    assert(/spr\.texture = PIXI\.Texture\.from\('\.\/images\/' \+ rank \+ '\.png\?v=221'\);/.test(src),
+    // 21.10.2026: карточные ранги переименованы в "карта ранг X.png" (аудит имён файлов).
+    assert(/spr\.texture = PIXI\.Texture\.from\('\.\/images\/карта ранг ' \+ rank \+ '\.png\?v=221'\);/.test(src),
         'текстура ставится по рангу из ответа сервера — визуальная смена гарантирована');
 }
 

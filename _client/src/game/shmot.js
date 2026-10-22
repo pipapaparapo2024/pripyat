@@ -156,6 +156,65 @@ export default class Shmot{
 			// Ячейка: 72×750, масштаб .239; персонаж: 843×448, масштаб .170.
 			{id:100, cat:6, name:'Связка ключей', icon:'🗝', imgFile:'связка ключей v2.png', cellDx:-10, cellDy:-26, cellScale:0.239, manDx:-13, manDy:30, manScale:0.170, bonus:'Атака любого босса без использования ключей', bk:null, bv:null, source:'Рулетка (мини-игра)', set:null, fragments:null, price:null, owned:false, equipped:false},
 
+			// ── Батч 21.10.2026 (по прямому указанию) — 3 новых сета по 5 предметов (id101-115),
+			// manDx/manDy — КОПИЯ эталонного предмета, названного пользователем (та же логика,
+			// что уже используется для других сетов): голова — id86 "Панама (Тинейджер)", торс —
+			// id48 "Футболка (Меченный)", штаны — id52 "Трико (Крыс)", обувь — id69 "Ботинки
+			// (Тайник)", рука — id91 "Электрошокер (Спортик 2.0)". ⚠️ manScale НЕ скопирован
+			// 1-в-1 — это ошибка (manScale зависит от нативного разрешения конкретного файла, а
+			// не является стилевой константой): у новых файлов разрешение другое, чем у
+			// эталонов, поэтому manScale пересчитан так, чтобы РЕЗУЛЬТИРУЮЩИЙ видимый размер на
+			// персонаже совпадал с эталоном (native_height_эталона × manScale_эталона =
+			// целевая_высота; manScale_нового = целевая_высота / native_height_нового), с учётом
+			// общего правила "огромный файл (≥1000px) — manScale ≤0.23" (см.
+			// shmot-huge-images-scaled-down-and-head-positions.test.js) и правила "торс = 140px"
+			// (см. shmot-torso-height-140-poker-open-button-weapon-modified-damage.test.js) —
+			// для cat:1 целевая высота взята строго 140px, не фактическая высота эталона id48
+			// (143.86px, сам является исторически неточным исключением). manDx/manDy при этом
+			// НЕ пересчитаны под новые пропорции — первая прикидка, как и для всех новых
+			// ассетов этого батча (требует подтверждения через редактор позиций).
+			// 22.10.2026 (по прямому указанию, редактор позиций на манекене магазина):
+			// id105/id110/id115 (Сайга/Пистолет/Кружка, cat:6) — manDx/manDy/manScale и
+			// cellScale подтверждены/пересняты через живой редактор позиций, больше не
+			// прикидка. manDx/manDy у остальных 12 новых предметов (id101-104,106-109,
+			// 111-114) по-прежнему первая прикидка — ждут той же сверки.
+			// fragments:40 — та же "данные на будущее" семантика, что у id41-44
+			// (механика сборки по кусочкам ещё не реализована, см. докблок в начале файла).
+			// handBuiltIn:true — у Сайги/Пистолета/Кружки кисть персонажа УЖЕ нарисована внутри
+			// файла предмета (проверено визуально) — на экранах персонажа (home.js/shmot_shop.js/
+			// player_profile.js/hata.js) для таких предметов кисть-спрайт скрывается целиком,
+			// остаётся только предплечье (см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md про замену
+			// системы руки на предплечье+кисть).
+			//
+			// Сет "Бродяга" — рюкзак Сидоровича.
+			{id:101, cat:0, name:'Ушанка (Бродяга)',  icon:'🧢', imgFile:'шмот ушанка бродяга.png', cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:7, manScale:0.236, bonus:'+60 к автомату',  bk:'auto_flat',    bv:60, source:'Рюкзак Сидоровича', set:'бродяга', fragments:40, price:null, owned:false, equipped:false},
+			{id:102, cat:1, name:'Куртка (Бродяга)',  icon:'🧥', imgFile:'шмот куртка бродяга.png', cellDx:-2, cellDy:-30, cellScale:0.126, manDx:-70, manDy:-27, manScale:0.223, bonus:'+60 к автомату',  bk:'auto_flat',    bv:60, source:'Рюкзак Сидоровича', set:'бродяга', fragments:40, price:null, owned:false, equipped:false},
+			{id:103, cat:2, name:'Штаны (Бродяга)',   icon:'👖', imgFile:'шмот штаны бродяга.png', cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manScale:0.120, bonus:'+12 к мачете', bk:'machete_flat', bv:12, source:'Рюкзак Сидоровича', set:'бродяга', fragments:40, price:null, owned:false, equipped:false},
+			{id:104, cat:3, name:'Обувь (Бродяга)',   icon:'👢', imgFile:'шмот обувь бродяга.png', cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:7, manScale:0.226, bonus:'+16 к мачете', bk:'machete_flat', bv:16, source:'Рюкзак Сидоровича', set:'бродяга', fragments:40, price:null, owned:false, equipped:false},
+			{id:105, cat:6, name:'Сайга (Бродяга)',   icon:'🔫', imgFile:'шмот сайга бродяга.png', cellDx:-4, cellDy:-32, cellScale:0.140, manDx:-108, manDy:3, manScale:0.228, bonus:'+20 к пистолету', bk:'gun_flat', bv:20, source:'Рюкзак Сидоровича', set:'бродяга', fragments:40, price:null, owned:false, equipped:false, handBuiltIn:true},
+
+			// Сет "Ветеран" — сумка за спички покер.
+			{id:106, cat:0, name:'Шапка (Ветеран)',   icon:'🧢', imgFile:'шмот шапка ветеран.png', cellDx:-12, cellDy:-30, cellScale:0.260, manDx:1, manDy:11, manScale:0.221, bonus:'+60 к автомату',  bk:'auto_flat',    bv:60, source:'Сумка (спички покер)', set:'ветеран', fragments:40, price:null, owned:false, equipped:false},
+			{id:107, cat:1, name:'Куртка (Ветеран)',  icon:'🧥', imgFile:'шмот куртка ветеран.png', cellDx:-2, cellDy:-30, cellScale:0.126, manDx:-70, manDy:-27, manScale:0.223, bonus:'+16 к мачете', bk:'machete_flat', bv:16, source:'Сумка (спички покер)', set:'ветеран', fragments:40, price:null, owned:false, equipped:false},
+			{id:108, cat:2, name:'Штаны (Ветеран)',   icon:'👖', imgFile:'шмот штаны ветеран.png', cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manScale:0.229, bonus:'+80 к автомату', bk:'auto_flat', bv:80, source:'Сумка (спички покер)', set:'ветеран', fragments:40, price:null, owned:false, equipped:false},
+			{id:109, cat:3, name:'Обувь (Ветеран)',   icon:'👢', imgFile:'шмот обувь ветеран.png', cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:7, manScale:0.226, bonus:'+30 к энергии', bk:'max_e', bv:30, source:'Сумка (спички покер)', set:'ветеран', fragments:40, price:null, owned:false, equipped:false},
+			{id:110, cat:6, name:'Пистолет (Ветеран)',icon:'🔫', imgFile:'шмот пистолет ветеран.png', cellDx:-4, cellDy:-32, cellScale:0.270, manDx:-36, manDy:5, manScale:0.224, bonus:'+20 к пистолету', bk:'gun_flat', bv:20, source:'Сумка (спички покер)', set:'ветеран', fragments:40, price:null, owned:false, equipped:false, handBuiltIn:true},
+
+			// Сет "Следопыт" — сумка с рулетки. ⚠️ Кружка в присланном описании — единственный
+			// предмет БЕЗ указанного "40 частей" (все остальные 14 предметов — явно 40) —
+			// предположительно опечатка/пропуск в сообщении, применено fragments:40 по аналогии
+			// с остальными 4 предметами того же сета. Если это неверно — поправить одной цифрой.
+			// 22.10.2026 (по прямому указанию — эксперимент "одну шмотку не делать ей scale, а
+			// поставить значения ширины и высоты"): id111 единственный предмет в каталоге с
+			// manWidth/manHeight вместо manScale — явный пиксельный размер вместо множителя.
+			// См. поддержку этого поля в home.js/hata.js/player_profile.js/shmot_shop.js
+			// (if(eq.manWidth && eq.manHeight) ветка рядом с spr.scale.set(eq.manScale||1)).
+			{id:111, cat:0, name:'Панама (Следопыт)', icon:'🧢', imgFile:'шмот панама следопыт.png', cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:15, manWidth:80, manHeight:66, bonus:'+20 к автомату', bk:'auto_flat', bv:20, source:'Сумка (рулетка)', set:'следопыт', fragments:40, price:null, owned:false, equipped:false},
+			{id:112, cat:1, name:'Куртка (Следопыт)', icon:'🧥', imgFile:'шмот куртка следопыт.png', cellDx:-2, cellDy:-30, cellScale:0.126, manDx:-75, manDy:-23, manScale:0.225, bonus:'+20 к автомату', bk:'auto_flat', bv:20, source:'Сумка (рулетка)', set:'следопыт', fragments:40, price:null, owned:false, equipped:false},
+			{id:113, cat:2, name:'Штаны (Следопыт)',  icon:'👖', imgFile:'шмот штаны следопыт.png', cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manScale:0.120, bonus:'+30 к энергии', bk:'max_e', bv:30, source:'Сумка (рулетка)', set:'следопыт', fragments:40, price:null, owned:false, equipped:false},
+			{id:114, cat:3, name:'Обувь (Следопыт)',  icon:'👢', imgFile:'шмот обувь следопыт.png', cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:7, manScale:0.229, bonus:'+10 к пистолету', bk:'gun_flat', bv:10, source:'Сумка (рулетка)', set:'следопыт', fragments:40, price:null, owned:false, equipped:false},
+			{id:115, cat:6, name:'Кружка (Следопыт)', icon:'☕', imgFile:'шмот кружка следопыт.png', cellDx:-4, cellDy:-32, cellScale:0.211, manDx:-33, manDy:-2, manScale:0.215, bonus:'+20 к автомату', bk:'auto_flat', bv:20, source:'Сумка (рулетка)', set:'следопыт', fragments:40, price:null, owned:false, equipped:false, handBuiltIn:true},
+
 			// Батч 22.09.2026 (по прямому указанию, финальная сверка полного присланного списка
 			// сетов) — 4 предмета (id96-99), которых не было НИ в каталоге, НИ в виде картинки
 			// нигде на диске, были добавлены как данные-заглушки с imgFile:''. По итогам батча

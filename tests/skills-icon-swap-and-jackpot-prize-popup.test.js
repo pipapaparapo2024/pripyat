@@ -29,8 +29,9 @@ console.log('\n1) bosses_fight.js — кнопка СКИЛЛЫ использу
 {
     const src = read('_client/src/game/shell/overlays/bosses_fight.js');
     assert(!/PIXI\.Texture\.from\(B \+ 'боевка таланты\.png'\)/.test(src), 'старый файл больше не используется для кнопки');
-    assert(/PIXI\.Texture\.from\(B \+ 'скиллы\.png'\)/.test(src), 'кнопка использует новый файл скиллы.png');
-    const idx = src.indexOf("PIXI.Texture.from(B + 'скиллы.png')");
+    // 21.10.2026: "скиллы.png" переименован в "боевка кнопка скиллы.png" (аудит имён файлов).
+    assert(/PIXI\.Texture\.from\(B \+ 'боевка кнопка скиллы\.png'\)/.test(src), 'кнопка использует файл "боевка кнопка скиллы.png"');
+    const idx = src.indexOf("PIXI.Texture.from(B + 'боевка кнопка скиллы.png')");
     // 29.09.2026: окно расширено 400→600 симв. — hover-scale батч (по прямому указанию,
     // "для всех кнопок небольшой hover эффект увеличения scale") добавил scale.set() в
     // pointerover/pointerout talentBtn, сдвинув pointerdown-обработчик за старую границу окна.
@@ -43,7 +44,7 @@ console.log('\n2) game-boot.js — прелоад обновлён на новы
 {
     const src = read('_client/src/game/game-boot.js');
     assert(!/'боевка таланты\.png'/.test(src), 'старое имя убрано из прелоада');
-    assert(/'скиллы\.png'/.test(src), 'новый файл добавлен в прелоад');
+    assert(/'боевка кнопка скиллы\.png'/.test(src), 'новый файл добавлен в прелоад');
     assert(/'боевка таланты кнопка прокачать\.png'/.test(src), 'соседний (другой) файл кнопки прокачки не задет');
 }
 
@@ -74,7 +75,7 @@ console.log('\n3) dvor-roulette-minigame.js — попап "Сорванный �
 console.log('\n4) Новые файлы скопированы в _client/development/images/');
 {
     const files = [
-        'скиллы.png',
+        'боевка кнопка скиллы.png',
         'стаканчики задний фон джекпот приз.png',
         'стаканчики попап джекпот приз.png',
     ];

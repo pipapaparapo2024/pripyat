@@ -40,7 +40,8 @@ console.log('\n2) client: player_profile.js больше не хардкодит
 {
     assert(!/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/кубрик\.png'\)\);/.test(profileJs),
         'жёсткая ссылка на кубрик.png без учёта base_bg_active убрана');
-    assert(/const PROFILE_BG_FILES = \['кубрик\.png','шлюз\.png','канализация\.png','двор_фон\.png','мастерская\.png','железка\.png','станция\.png','заправка\.png'\];/.test(profileJs),
+    // 21.10.2026: "кубрик.png" и т.п. переименованы в "хата фон X.png" (аудит имён файлов).
+    assert(/const PROFILE_BG_FILES = \['хата фон кубрик\.png','хата фон шлюз\.png','хата фон канализация\.png','двор_фон\.png','хата фон мастерская\.png','хата фон железка\.png','хата фон станция\.png','хата фон заправка\.png'\];/.test(profileJs),
         'тот же набор файлов фона базы (8 штук), что и в home.js');
     assert(/const bgIdx = Math\.max\(0, Math\.min\(PROFILE_BG_FILES\.length - 1, parseInt\(profile\.base_bg_active \|\| 0\) \|\| 0\)\);/.test(profileJs),
         'индекс фона вычисляется из profile.base_bg_active (сервер), с тем же клампом, что home.js');

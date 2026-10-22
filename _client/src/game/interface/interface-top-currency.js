@@ -52,7 +52,11 @@ export function attachTopCurrency(proto){
 
     const BASE = './images/';
     // 18.10.2026 (по прямому указанию — прислан реальный .ttf): шрифт верхнего худа.
-    const TXT_STYLE = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5' };
+    // 22.10.2026 (по прямому указанию — "в референсе шрифт выглядит жирнее, чем Regular"):
+    // единственный файл семейства (Bebas Neue Pro Middle, Regular) в проекте — жирность
+    // синтетическая (fontWeight:'bold' поверх него), см. тот же коммент у energy_txt в
+    // interface.js.
+    const TXT_STYLE = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fontWeight: 'bold', fill: '#d6d5d5' };
 
     // 18.10.2026 (по прямому указанию — "смысл стрелки не тот: если нажал на кнопку вниз,
     // появилась плашка снизу, и если нажал на выдвинувшиеся сухари, шторка закрылась, сухари
@@ -107,6 +111,21 @@ export function attachTopCurrency(proto){
         // 20.10.2026 (редактор позиций, по прямому указанию — "x:918,y:9"): было 909,9.
         iconRub.x = 918; iconRub.y = 9;
         iconRub.width = 38; iconRub.height = 42;
+        // 21.10.2026 (по прямому указанию — "при наведении на сухарики также плашка
+        // подсвечивалась, и при нажатии на неё открывался поп-ап покупки сухариков"): раньше
+        // кликабельной/подсвечивающейся была ТОЛЬКО кнопка "+" (btnRubPlus ниже) — сама иконка
+        // и плашка никак не реагировали. Тот же паттерн hover-группы + клика, что уже стоит на
+        // platePrimary/iconPrimary (см. ниже).
+        iconRub.interactive = true; iconRub.buttonMode = true;
+        if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(iconRub);
+        const _openRubPurchase = () => {
+            if(typeof this._openCurrencyPurchasePopup === 'function') this._openCurrencyPurchasePopup('cigarettes');
+        };
+        iconRub.on('pointerdown', _openRubPurchase);
+        plateRub.interactive = true; plateRub.buttonMode = true;
+        if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(plateRub);
+        plateRub.on('pointerdown', _openRubPurchase);
+        if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateRub, iconRub]);
         up.addChild(iconRub);
 
         const txtRub = new PIXI.Text('0', TXT_STYLE);

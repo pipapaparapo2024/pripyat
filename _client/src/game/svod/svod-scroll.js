@@ -91,7 +91,7 @@ export function attachSvodScroll(proto){
         // независимо от trackX (trackX и так двигает и трек, и бегунок вместе, т.к. формула
         // ниже считает бегунок ОТ trackX — чтобы развести их в разные стороны, нужен отдельный
         // параметр). Дефолт 0 — для caller'ов без override поведение не меняется.
-        const thumb = new PIXI.Sprite(PIXI.Texture.from(IMG + 'скрол.png'));
+        const thumb = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод скролл бегунок.png'));
         thumb.x = trackX - Math.round((thumb.width - track.width) / 2) + 1 + (thumbXAdjust || 0);
         thumb.interactive = true; thumb.buttonMode = true;
         parent.addChild(thumb);

@@ -731,7 +731,7 @@ export function attachBossesFight(proto){
         // 25.09.2026 (по прямому указанию, новый файл): "боевка таланты.png" заменён на
         // "скиллы.png" — позиция та же (1044,530), масштаб нативный (1.000, файл уже нужного
         // размера 140×42, отдельный scale.set() не нужен).
-        const talentBtn = new PIXI.Sprite(PIXI.Texture.from(B + 'скиллы.png'));
+        const talentBtn = new PIXI.Sprite(PIXI.Texture.from(B + 'боевка кнопка скиллы.png'));
         talentBtn.x = 1044; talentBtn.y = 530;
         talentBtn.interactive = true; talentBtn.buttonMode = true;
         talentBtn.on('pointerover', ()=>{ _sa(talentBtn, 0.8); talentBtn.scale.set(1.08); });

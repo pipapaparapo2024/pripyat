@@ -34,8 +34,8 @@ const shmotItemsJson = JSON.parse(fs.readFileSync(path.join(root, 'server', 'jso
 console.log('\nTest 1: shmot_items.json покрывает ВСЕ 41 предмет (id 0-40) из shmot.js, не только 0-23');
 {
     const idsInCatalog = new Set(shmotItemsJson.map(it => it.id));
-    // 28.09.2026: 100, не 99 — добавлена id:100 "Связка ключей" (58 актуальных → 59).
-    assert(idsInCatalog.size === 100, 'в каталоге 41 прежний и 59 актуальных предметов, нашлось: ' + idsInCatalog.size);
+    // 21.10.2026: 115, не 100 — добавлены 3 новых сета по 5 предметов (id101-115, 59 → 74 актуальных).
+    assert(idsInCatalog.size === 115, 'в каталоге 41 прежний и 74 актуальных предметов, нашлось: ' + idsInCatalog.size);
     for (let id = 0; id <= 40; id++) {
         assert(idsInCatalog.has(id), `id=${id} присутствует в shmot_items.json`);
     }

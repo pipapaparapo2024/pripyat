@@ -83,13 +83,19 @@ console.log('\nTest 5: player_profile.js — карточка игрока ис�
     // 28.09.2026: тот же редизайн z-order, что и в home.js (см. Test 4 выше) — обычный предмет
     // теперь между левой и правой кистью, часы/цепь по-прежнему поверх правой кисти.
     // HAND_ITEMS_ABOVE_PALM больше не нужен — заменён на прямую проверку id===62||id===92.
-    assert(/if\(s\.cat === 6 && def\)\{ handItemSpr = spr; handItemDef = def; \}/.test(profileSrc),
-        'предмет cat:6 выбран для перестановки (вместе с def — нужен для проверки id часов/цепи ниже)');
+    // 22.10.2026 (баг найден — "кисть должна быть выше предплечья", но оставалась НИЖЕ него
+    // у игрока без предмета в руке): захват handItemSpr больше НЕ требует `&& def` — иначе
+    // блок переупорядочивания ниже вообще не выполнялся без надетого предмета в руке (самый
+    // частый случай), см. oct22-hand-above-forearm-and-head-above-torso.test.js.
+    assert(/if\(s\.cat === 6\)\{ handItemSpr = spr; handItemDef = def; \}/.test(profileSrc),
+        'предмет cat:6 выбран для перестановки ВСЕГДА (вместе с def — нужен для проверки id часов/цепи ниже)');
     assert(/getChildIndex\(leftHandSpr\)/.test(profileSrc),
         'предмет вставляется сразу после левой кисти');
     assert(/if\(handItemDef && \(handItemDef\.id === 62 \|\| handItemDef\.id === 92\)\) win\.addChild\(handItemSpr\);/.test(profileSrc),
         'часы (id:62)/цепь (id:92) по-прежнему переносятся поверх правой кисти');
-    assert(/else win\.addChildAt\(rightHandSpr, win\.getChildIndex\(handItemSpr\) \+ 1\);/.test(profileSrc),
+    // 21.10.2026: rightHandSpr переименован в handSpr (кисть, "предплечье всегда одно, кисть
+    // меняется" — см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md), сама логика z-order не менялась.
+    assert(/else win\.addChildAt\(handSpr, win\.getChildIndex\(handItemSpr\) \+ 1\);/.test(profileSrc),
         'обычный предмет — правая кисть переносится СРАЗУ ПОСЛЕ него (предмет виден между кистями)');
 }
 

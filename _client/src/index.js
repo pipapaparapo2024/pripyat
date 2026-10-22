@@ -23,6 +23,21 @@ const _VER = (() => {
 installAssetVersion(_VER);
 installYoFix();
 console.log('%c ПРИПЯТЬ v' + _VER + ' ', 'background:#cc2222;color:#fff;font-size:18px;font-weight:bold;padding:4px 8px;border-radius:4px;');
+
+// 22.10.2026 (баг по живому репорту тестера — "висит загрузка", в консоли необработанный
+// "Uncaught TypeError: notify.lib.notify_result is not a constructor" внутри notify.min.js,
+// брошенный из глубины цепочки pixi-sound._onComplete → animate.min.js, т.е. ДО того, как
+// module_control.js успел вызвать window.notify.setup(PIXI.animate) для FLA-библиотеки
+// "notify"). Корень гонки — внутри стороннего скомпилированного pixi-legacy/animate.min.js,
+// её нельзя точечно поправить в своём коде (ПРАВИЛО №2 — правки только в _client/src, FLA не
+// трогаем без явного указания). Этот листенер НИЧЕГО не чинит сам — только гарантирует, что
+// подобная ошибка попадёт в консоль с понятным контекстом (а не потеряется, если у игрока
+// открыт DevTools с фильтром по уровню), и не блокирует браузер дальше.
+window.addEventListener('error', (e) => {
+    console.error('[index.js:uncaught] необработанная ошибка во время работы игры:', e.message,
+        '| файл:', e.filename + ':' + e.lineno + ':' + e.colno,
+        '| это МОГЛО сломать цепочку событий PIXI-лоадера и подвесить прелоадер — см. резервный таймер в preloader-visual.js');
+});
 (function(){
     // 27.09.2026 (баг со скриншота — плашка "v508" видна в правом верхнем углу поверх
     // прелоадера): раньше плашка появлялась СРАЗУ при старте скрипта (z-index:99999 — выше

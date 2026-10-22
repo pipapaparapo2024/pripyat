@@ -240,7 +240,7 @@ export function attachBlackjack(proto){
         for(let i = 0; i < 4; i++){
             const pos = POSITIONS[i];
 
-            const cardSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'туз.png?v=221'));
+            const cardSpr = new PIXI.Sprite(PIXI.Texture.from(BASE + 'карта ранг туз.png?v=221'));
             cardSpr.width = CW; cardSpr.height = CH;
             cardSpr.x = pos.x; cardSpr.y = pos.y;
             cardSpr.visible = false;
@@ -537,7 +537,7 @@ export function attachBlackjack(proto){
             const spr = this._bjCardSprites[i];
             const card = this._bjHand[i];
             if(spr){
-                spr.texture = PIXI.Texture.from('./images/' + card.rank + '.png?v=221');
+                spr.texture = PIXI.Texture.from('./images/карта ранг ' + card.rank + '.png?v=221');
                 spr.width = 101; spr.height = 152; spr.visible = true;
                 spr.interactive = false; spr.buttonMode = false; spr.alpha = 1;
             }
@@ -675,14 +675,14 @@ export function attachBlackjack(proto){
                 // прокси VK (window_proxy.js, видно в консоли рядом с этой же ошибкой).
                 console.log('[dvor-blackjack._revealBlackjackCards] карта', i, '| rank=', JSON.stringify(card.rank),
                     '| charCodes=', card.rank ? Array.from(card.rank).map(c => c.charCodeAt(0)) : null,
-                    '| url=', './images/' + card.rank + '.png?v=221');
+                    '| url=', './images/карта ранг ' + card.rank + '.png?v=221');
                 // Защитная проверка — если rank не входит в известный список (порченая строка
                 // из сети/ответа сервера), URL заведомо будет 404. Не чиним, но хотя бы громко
                 // сигналим и не рисуем заведомо битую текстуру поверх карты.
                 if(!RANKS.includes(card.rank)){
                     console.error('[dvor-blackjack._revealBlackjackCards] !!! card.rank НЕ входит в известный RANKS — вероятно порченая строка !!!', JSON.stringify(card.rank), RANKS);
                 }
-                spr.texture = PIXI.Texture.from('./images/' + card.rank + '.png?v=221');
+                spr.texture = PIXI.Texture.from('./images/карта ранг ' + card.rank + '.png?v=221');
                 spr.width = 101; spr.height = 152;
                 spr.visible = true;
             }
@@ -772,11 +772,11 @@ export function attachBlackjack(proto){
                     // сервера здесь тоже.
                     console.log('[dvor-blackjack._swapBlackjackCard] слот', realIdx, '| rank=', JSON.stringify(rank),
                         '| charCodes=', rank ? Array.from(rank).map(c => c.charCodeAt(0)) : null,
-                        '| url=', './images/' + rank + '.png?v=221');
+                        '| url=', './images/карта ранг ' + rank + '.png?v=221');
                     if(!RANKS.includes(rank)){
                         console.error('[dvor-blackjack._swapBlackjackCard] !!! rank НЕ входит в известный RANKS — вероятно порченая строка !!!', JSON.stringify(rank), RANKS);
                     }
-                    spr.texture = PIXI.Texture.from('./images/' + rank + '.png?v=221');
+                    spr.texture = PIXI.Texture.from('./images/карта ранг ' + rank + '.png?v=221');
                     spr.width = 101; spr.height = 152; spr.visible = true;
                 }
                 if(txt) txt.visible = false;

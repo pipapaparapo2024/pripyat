@@ -405,8 +405,13 @@ export default class Interface{
 		this._expHit = expHit;
 
 		// 18.10.2026: размер/цвет — те же, что у текстов валют (см. коммент у nick_txt выше).
+		// 22.10.2026 (по прямому указанию — "в референсе шрифт выглядит жирнее, чем Regular"):
+		// в проекте есть только один файл семейства Bebas Neue Pro Middle (Regular начертание,
+		// см. fonts.css) — отдельного Bold-файла нет, поэтому жирность — синтетическая
+		// (fontWeight:'bold' поверх Regular-файла, браузер/canvas утолщает буквы программно).
+		// Та же правка — у текстов валют верхнего худа, см. interface-top-currency.js.
 		this.energy_txt = new PIXI.Text('150/150', {
-			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fill: '#d6d5d5',
+			fontFamily: 'Bebas Neue Pro Middle', fontSize: 28, fontWeight: 'bold', fill: '#d6d5d5',
 			dropShadow: true, dropShadowDistance: 1, dropShadowColor: '#000000'
 		});
 		// 20.10.2026 (по прямому указанию — "кол-во энергии у игрока подними вверх на 7px"): y 17→10.

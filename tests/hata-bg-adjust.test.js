@@ -36,14 +36,16 @@ console.log('\nTest 1: hata.js BG_ADJUST задаёт индивидуальны
     assert(!!m, 'BG_ADJUST найден в hata.js');
     if (m) {
         const body = m[1];
+        // 21.10.2026 (по прямому указанию — аудит имён файлов-ассетов): "шлюз.png" и т.п.
+        // переименованы в "хата фон X.png" (см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md).
         const cases = [
-            ["'шлюз.png':",        'y: 32, scale: 1.000'],
-            ["'канализация.png':", 'y: 35, scale: 1.000'],
+            ["'хата фон шлюз.png':",        'y: 32, scale: 1.000'],
+            ["'хата фон канализация.png':", 'y: 35, scale: 1.000'],
             ["'двор_фон.png':",    'y: 54, scale: 1.000'],
-            ["'мастерская.png':",  'y: 74, scale: 1.000'],
-            ["'железка.png':",     'y: 56, scale: 1.002'],
-            ["'заправка.png':",    'y: 63, scale: 1.004'],
-            ["'станция.png':",     'y: 73, scale: 1.000'],
+            ["'хата фон мастерская.png':",  'y: 74, scale: 1.000'],
+            ["'хата фон железка.png':",     'y: 56, scale: 1.002'],
+            ["'хата фон заправка.png':",    'y: 63, scale: 1.004'],
+            ["'хата фон станция.png':",     'y: 73, scale: 1.000'],
         ];
         for (const [key, frag] of cases) {
             assert(body.includes(key) && body.includes(frag), `${key} → { ${frag} }`);
@@ -69,7 +71,7 @@ console.log('\nTest 2: _render() читает BG_ADJUST[h.img] и применя
 // ── Test 3: значения совпадают с home.js (фон не "прыгает" после закрытия попапа) ──
 console.log('\nTest 3: значения BG_ADJUST в hata.js совпадают с _bgAdjust в home.js (тот же файл → тот же y/scale)');
 {
-    const files = ['шлюз.png','канализация.png','двор_фон.png','мастерская.png','железка.png','заправка.png','станция.png'];
+    const files = ['хата фон шлюз.png','хата фон канализация.png','двор_фон.png','хата фон мастерская.png','хата фон железка.png','хата фон заправка.png','хата фон станция.png'];
     const extractMap = (src, varName) => {
         const re = new RegExp(varName + '\\s*=\\s*\\{([\\s\\S]*?)\\n\\s*\\};');
         const m = src.match(re);

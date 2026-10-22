@@ -23,11 +23,15 @@ const src = fs.readFileSync(
 // ── Test 1: правая/левая рука — точные координаты, снятые редактором ─────────
 console.log('\nTest 1: координаты правой/левой руки заданы напрямую (не формулой от 224/-4)');
 {
-    const mRight = src.match(/this\._rightHandSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/правая рука\.png'\)\);([\s\S]*?)\n\t\t\}/);
-    assert(!!mRight, 'блок создания правой руки найден');
+    // 21.10.2026: "правая рука.png" расщеплена на предплечье (статично, this._rightForearmSpr)
+    // + кисть (переключается, this._rightHandSpr) — координаты 630,369 унаследованы предплечьем
+    // (см. ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md).
+    // 22.10.2026 (повторная калибровка, та же сессия): 630,369 → 649,377 → 642,375.
+    const mRight = src.match(/this\._rightForearmSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/предплечье правое\.png'\)\);([\s\S]*?)\n\t\t\}/);
+    assert(!!mRight, 'блок создания предплечья правой руки найден');
     if (mRight) {
-        assert(/this\._rightHandSpr\.x = 630;/.test(mRight[1]), 'правая рука x = 630 (было 631, сдвинута на 1px для согласованности с hata.js)');
-        assert(/this\._rightHandSpr\.y = 369;/.test(mRight[1]), 'правая рука y = 369');
+        assert(/this\._rightForearmSpr\.x = 642;/.test(mRight[1]), 'предплечье правое x = 642');
+        assert(/this\._rightForearmSpr\.y = 375;/.test(mRight[1]), 'предплечье правое y = 375');
     }
     const mLeft = src.match(/this\._leftHandSpr = new PIXI\.Sprite\(PIXI\.Texture\.from\('\.\/images\/левая рука\.png'\)\);([\s\S]*?)\n\t\t\}/);
     assert(!!mLeft, 'блок создания левой руки найден');
@@ -44,14 +48,16 @@ console.log('\nTest 2: _bgAdjust задаёт y/scale индивидуально
     assert(!!m, '_bgAdjust найден');
     if (m) {
         const body = m[1];
+        // 21.10.2026: "шлюз.png" и т.п. переименованы в "хата фон X.png" (см.
+        // ПЕРЕИМЕНОВАНИЕ_АССЕТОВ_21_10_2026.md).
         const cases = [
-            ["'шлюз.png':",        'y: 32, scale: 1.000'],
-            ["'канализация.png':", 'y: 35, scale: 1.000'],
+            ["'хата фон шлюз.png':",        'y: 32, scale: 1.000'],
+            ["'хата фон канализация.png':", 'y: 35, scale: 1.000'],
             ["'двор_фон.png':",    'y: 54, scale: 1.000'],
-            ["'мастерская.png':",  'y: 74, scale: 1.000'],
-            ["'железка.png':",     'y: 56, scale: 1.002'],
-            ["'заправка.png':",    'y: 63, scale: 1.004'],
-            ["'станция.png':",     'y: 73, scale: 1.000'],
+            ["'хата фон мастерская.png':",  'y: 74, scale: 1.000'],
+            ["'хата фон железка.png':",     'y: 56, scale: 1.002'],
+            ["'хата фон заправка.png':",    'y: 63, scale: 1.004'],
+            ["'хата фон станция.png':",     'y: 73, scale: 1.000'],
         ];
         for (const [key, frag] of cases) {
             assert(body.includes(key) && body.includes(frag), `${key} → { ${frag} }`);

@@ -75,7 +75,8 @@ console.log('\nTest 1: yashik_config.json 1:1 совпадает с исходн
     // Восстановлены все 14 предметов, для которых появились исходники в _organized.
     // Диапазон id0-40 по-прежнему не возвращён: в каталоге только дропы.
     // 28.09.2026: +1 псевдо-предмет id:100 "Связка ключей" (см. tests/shmot-keyring-shown-as-item.test.js). 58 → 59.
-    assert(idMatches.length === 59, 'в shmot.js всего 59 предметов (58 дропов id≥41 + псевдо-предмет id:100), получили ' + idMatches.length);
+    // 21.10.2026: 59 → 74 — добавлены 3 новых сета по 5 предметов (id101-115).
+    assert(idMatches.length === 74, 'в shmot.js всего 74 предмета (59 было + 15 новых id101-115), получили ' + idMatches.length);
     assert(legacyPurchasableIds.length === 0, 'ни одного id из диапазона 0-40 в shmot.js больше не осталось');
 }
 

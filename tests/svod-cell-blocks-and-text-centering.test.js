@@ -43,7 +43,8 @@ console.log('\nTest 1: все 5 файлов новых блоков лежат 
     for (const b of BLOCKS) {
         assert(fs.existsSync(path.join(IMAGES_DIR, b.file)), `файл существует: ${b.file}`);
     }
-    assert(fs.existsSync(path.join(IMAGES_DIR, 'ячейка.png')), 'основная ячейка (ячейка.png) на месте');
+    // 21.10.2026: "ячейка.png" переименован в "свод топ ячейка.png" (аудит имён файлов).
+    assert(fs.existsSync(path.join(IMAGES_DIR, 'свод топ ячейка.png')), 'основная ячейка ("свод топ ячейка.png") на месте');
 }
 
 console.log('\nTest 2: CELL_BLOCKS в коде — координаты = абсолютные из редактора минус ROW_X/LIST_TOP');
@@ -68,7 +69,7 @@ console.log('\nTest 3: centerX() определён и вычисляет цен
 
 console.log('\nTest 4: в цикле построения строки создаётся спрайт для КАЖДОГО блока из CELL_BLOCKS, до текстовых полей (под ними по z-order)');
 {
-    const cellIdx  = lbSrc.indexOf("const cell = new PIXI.Sprite(PIXI.Texture.from(IMG + 'ячейка.png'));");
+    const cellIdx  = lbSrc.indexOf("const cell = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод топ ячейка.png'));");
     const loopIdx  = lbSrc.indexOf('Object.values(CELL_BLOCKS).forEach(b => {');
     const placeIdx = lbSrc.indexOf('const placeTxt = new PIXI.Text');
     assert(cellIdx !== -1 && loopIdx !== -1 && placeIdx !== -1, 'все три якоря найдены в исходнике');

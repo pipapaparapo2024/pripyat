@@ -95,6 +95,9 @@ export function startPreloaderVisual(){
         if(_removed) return;
         _removed = true;
         clearTimeout(_failsafeTid);
+        clearTimeout(_hardFailTid);
+        const stuckOverlay = document.getElementById('_preloader_stuck_overlay');
+        if(stuckOverlay) stuckOverlay.remove();
         if(_animId) cancelAnimationFrame(_animId);
         cv.style.transition = 'opacity 0.5s';
         cv.style.opacity = '0';
@@ -108,6 +111,40 @@ export function startPreloaderVisual(){
     const _failsafeTid = setTimeout(() => {
         console.warn('[preloader-spine] загрузка идёт дольше 30с — анимация продолжает крутиться в цикле, ждём реальной готовности игры (не убираем прелоадер по таймеру)');
     }, 30000);
+
+    // 22.10.2026 (баг по живому репорту тестера — "висит загрузка", без какого-либо способа
+    // восстановиться кроме как самому догадаться закрыть вкладку): в консоли был необработанный
+    // "Uncaught TypeError: notify.lib.notify_result is not a constructor", брошенный из глубины
+    // pixi-sound/animate.min.js — похоже на ту же гонку/класс бага, что чинили чуть раньше
+    // (22.10.2026, мёртвая BaseTexture в game-boot.js): необработанное исключение где-то внутри
+    // цепочки событий общего PIXI-лоадера способно оборвать её так, что наш собственный счётчик
+    // прогресса никогда не досчитается до готовности — тогда 30-секундный таймер выше (чисто
+    // информационный, по дизайну НЕ прерывает показ) продолжает крутиться вечно без всякого
+    // выхода для игрока. Этот ВТОРОЙ таймер — крайний резерв: если игра так и не стала готова
+    // за 50с (заметно дольше обычной медленной загрузки VK-вебвью, см. комментарий выше), прямо
+    // поверх анимации показываем явное сообщение с кнопкой перезагрузки. Собрано на чистом DOM
+    // (без PIXI/notify/любой другой части игры) намеренно — именно та часть игры может быть
+    // сломана в этот момент, поэтому опираться на неё нельзя.
+    const _hardFailTid = setTimeout(() => {
+        if(_removed) return;
+        console.error('[preloader-spine] загрузка не завершилась за 50с — показываем игроку сообщение с перезагрузкой');
+        const overlay = document.createElement('div');
+        overlay.id = '_preloader_stuck_overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;'
+            + 'background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;'
+            + 'justify-content:center;color:#fff;font-family:sans-serif;text-align:center;padding:20px;box-sizing:border-box;';
+        const msg = document.createElement('div');
+        msg.style.cssText = 'font-size:18px;margin-bottom:16px;max-width:400px;';
+        msg.textContent = 'Не удалось загрузить игру. Попробуйте перезагрузить страницу.';
+        const btn = document.createElement('button');
+        btn.textContent = 'Перезагрузить';
+        btn.style.cssText = 'font-size:16px;padding:10px 24px;border-radius:6px;border:none;'
+            + 'background:#ffcc44;color:#1a1208;cursor:pointer;';
+        btn.onclick = () => location.reload();
+        overlay.appendChild(msg);
+        overlay.appendChild(btn);
+        document.body.appendChild(overlay);
+    }, 50000);
 
     function _load(){
         const sp = window.spine;
