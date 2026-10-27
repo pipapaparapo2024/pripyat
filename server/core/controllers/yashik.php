@@ -249,7 +249,7 @@
             // открытый ящик (двойная трата одной и той же сессии). Ведём всю бизнес-логику на
             // копии $lockedUser с АКТУАЛЬНЫМИ значениями под SELECT...FOR UPDATE — та же
             // техника, что в openBox()/buyPatron() выше.
-            $lockCols = ['stash_count', 'cigarettes', 'coins', 'exp', 'shmot', 'yashik_session', 'max_energy'];
+            $lockCols = ['stash_count', 'stash_data', 'cigarettes', 'coins', 'exp', 'shmot', 'yashik_session', 'max_energy'];
             $link = $this->_rawLink();
             $lockedUser = $user;
             if($link){
@@ -268,6 +268,10 @@
             }
 
             $this->ops->add($lockedUser, 'stash_count', intval($session['stash']));
+            // 26.10.2026 (по прямому указанию — фича "Заначки"): вместо слепого +N выдаём N
+            // конкретных случайных карточек (коллекция+позиция), см. zanachkimodel.php.
+            // stash_data уже добавлен в $lockCols выше — попадёт в ту же защищённую запись.
+            ZanachkiModel::grantRandomCards($this->ops, $lockedUser, intval($session['stash']));
             $this->ops->add($lockedUser, 'cigarettes', intval($session['cig']));
             $this->ops->add($lockedUser, 'coins', intval($session['coins']));
             $this->ops->add($lockedUser, 'exp', intval($session['exp']));
@@ -305,7 +309,11 @@
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
-            $patch = $this->ops->patchCurrencies($user, ['stash_count', 'cigarettes', 'coins', 'exp', 'shmot', 'max_energy']);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): сигареты из награды ящика тоже засчитываются.
+            if(intval($session['cig']) > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', intval($session['cig']));
+
+            $patch = $this->ops->patchCurrencies($user, ['stash_count', 'stash_data', 'cigarettes', 'coins', 'exp', 'shmot', 'max_energy']);
             $this->ops->ok(['patch' => $patch, 'reward' => $session, 'shmotGranted' => $shmotGranted]);
         }
     }

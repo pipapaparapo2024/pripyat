@@ -103,7 +103,9 @@ console.log('\nTest 2: poker.php::openBag() — stash_count/shmot/max_energy т�
 {
     checkLockedFieldBlock(pokerSrc, 'poker.openBag()', {
         functionMarker: 'function openBag(){',
-        lockFieldsDecl: "$lockFields = ['stash_count', 'shmot', 'max_energy'];",
+        // 26.10.2026: 'stash_data' добавлен рядом со stash_count (фича "Заначки" — та же
+        // гонка данных, теперь защищает ещё и конкретные карточки, не только плоский счётчик).
+        lockFieldsDecl: "$lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];",
         grantMarkers: ["$this->ops->add($user, 'stash_count', $reward['stash']);", "grantShmotFromSource($user, 'poker')"],
         saveUserCallIdx: 'if(!$this->ops->saveUser($user))',
     });
@@ -113,8 +115,11 @@ console.log('\nTest 3: roulette.php::openCase() — зеркальный коп�
 {
     checkLockedFieldBlock(rouletteSrc, 'roulette.openCase()', {
         functionMarker: 'function openCase(){',
-        lockFieldsDecl: "$lockFields = ['stash_count', 'shmot', 'max_energy'];",
-        grantMarkers: ["$this->ops->add($user, 'stash_count', $reward['stash']);", "grantShmotFromSource($user, 'roulette')"],
+        // 26.10.2026: 'stash_data' добавлен рядом со stash_count (фича "Заначки"), см. тот же
+        // коммент у poker.openBag() выше — зеркальный копипаст-близнец.
+        lockFieldsDecl: "$lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];",
+        // 26.10.2026: источник переименован 'roulette' → 'roulette_bag' (единственный реально непустой пул).
+        grantMarkers: ["$this->ops->add($user, 'stash_count', $reward['stash']);", "grantShmotFromSource($user, 'roulette_bag')"],
         saveUserCallIdx: 'if(!$this->ops->saveUser($user))',
     });
 }

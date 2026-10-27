@@ -332,7 +332,13 @@ export default class Interface{
 		this.level_txt = new PIXI.Text('1', {
 			fontFamily: 'Southbank LT', fontSize: 28, fill: '#cec1b8'
 		});
-		this.level_txt.x = 396;
+		// 24.10.2026 (по прямому указанию — "хитбокс для подписи уровня игрока x:367,y:32,
+		// w:80,h:34, центрируй его горизонтально относительно этого блока"): та же логика
+		// центрирования, что уже применена к nick_txt выше (anchor.x=0.5 + x=хитбокс.x+w/2) —
+		// раньше level_txt стоял без anchor на фиксированном x=396, то есть одно- и двузначные
+		// уровни визуально сдвигали левый край подписи, а не центр.
+		this.level_txt.anchor.x = 0.5;
+		this.level_txt.x = 367 + 80 / 2;
 		// 20.10.2026 (по прямому указанию — "никнейм и уровень подними вверх на 3px"): 38→35.
 		this.level_txt.y = 35;
 
@@ -392,7 +398,9 @@ export default class Interface{
 			tip.addChild(t1);
 			t2.anchor.set(0.5, 0); t2.x = tipW / 2; t2.y = 28;
 			tip.addChild(t2);
-			const _tipRawX = expHit.x + (this.up.x || 0) - 35;
+			// 27.10.2026 (по прямому указанию — "для показателя опыта тултип сдвинь вправо на
+			// 50 пикселей"): было -35, стало +15 (сдвиг +50).
+			const _tipRawX = expHit.x + (this.up.x || 0) + 15;
 			tip.x = Math.max(4, Math.min(_tipRawX, 1280 - tipW - 4));
 			tip.y = Math.max(78, expHit.y + (this.up.y || 0) + 28);
 			this._xpTooltip = tip;

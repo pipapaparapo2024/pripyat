@@ -104,7 +104,9 @@ console.log('\nTest 6: roulette.php.spin() — spin_counter/spin_threshold в о
     // debug в консоль браузера): 'debug' => $debug убран из ответа клиенту (остался только в
     // error_log) — spin_counter/spin_threshold сами по себе не трогались, регекс просто больше
     // не ищет хвост ", 'debug' => $debug" после них.
-    assert(/'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0\] \+ \$slotResult\)/.test(rouletteSrc),
+    // 26.10.2026 (по прямому указанию — "джекпот должен начинаться с нуля, не с 3000"):
+    // фолбэк jackpot_pool переведён с хардкоженной стартовой суммы 3000 на 0.
+    assert(/'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0\] \+ \$slotResult\)/.test(rouletteSrc),
         'fallback-ветка (нет _rawLink()) тоже отдаёт spin_counter/spin_threshold');
 
     const outIdx = rouletteSrc.indexOf('$spinCounterOut   = $realJackpot ? 0 : $counter;');

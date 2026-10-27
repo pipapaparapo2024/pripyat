@@ -778,6 +778,18 @@
                 // tasks.php) — тот же класс server-only поля: сброс аккаунта не должен оставлять
                 // "чужой" набор уже выбранных/частично выполненных заданий на свежем аккаунте.
                 'zadaniya_session'    => null,
+                // 23.10.2026: raznaryadka_data (месячный календарь "Разнарядки" — прогресс дня,
+                // оплаченные дни, забранные пороги наград, см. raznaryadka.php/
+                // raznaryadkaprogress.php) — тот же класс server-only поля: сброс аккаунта не
+                // должен оставлять "чужой" прогресс месяца на свежем тестовом аккаунте.
+                'raznaryadka_data'    => null,
+                // 26.10.2026: stash_claims/stash_wishlist (фича "Заначки" — какие коллекции
+                // уже забраны, список активных запросов у друзей, см. zanachkimodel.php) — тот
+                // же класс server-only полей: сброс аккаунта не должен оставлять "чужой" список
+                // запросов или забранные награды на свежем тестовом аккаунте. stash_data НЕ
+                // здесь — оно в whitelist users.php, обычный сброс по дефолтам уже его чистит.
+                'stash_claims'        => null,
+                'stash_wishlist'      => null,
                 // 23.09.2026: achievements/achievement_stars/ach_score/bullets (перенос
                 // достижений и патронов ящика на сервер, см. achievements.php) — тот же класс
                 // server-only полей, убраны из $allowed в save() выше, поэтому обычный сброс их
@@ -865,6 +877,20 @@
                 'poker_spichki'          => '0',
                 'roulette_winner'        => '{}',
                 'keyring_owner'          => '0',
+                // 26.10.2026: game2048_session/game2048_daily (server-only, см. game2048.php) —
+                // тот же класс поля, что dice_session/zadaniya_session выше: сброс аккаунта не
+                // должен оставлять "чужую" активную партию/дневной счётчик попыток на свежем
+                // тестовом аккаунте.
+                'game2048_session'            => null,
+                'game2048_daily'              => null,
+                // Накопленные счётчики 2048 (текущий баланс фрагментов, вечный ТОП, lifetime-
+                // награды) не в whitelist $allowed — та же логика, что coins/stew/cigarettes
+                // выше: обычный users.save их не коснётся, полный сброс аккаунта обязан обнулить
+                // явно, иначе "сброшенный" аккаунт сохраняет прогресс мини-игры.
+                'game2048_fragments'          => '0',
+                'game2048_games_completed'    => '0',
+                'game2048_games_completed_at' => '0',
+                'game2048_lifetime'           => '{}',
             ];
             $result = $this->registry['udb']->saveData($this->registry['utb'], $update);
             if(isset($result['error']) && $result['error']){
@@ -972,7 +998,19 @@
             // 19.10.2026: exp/respect/stash_count добавлены сюда же той же причине — убраны из
             // $allowed (см. большой коммент там), GIVE_MILLION/_giveMillion писали их напрямую
             // через обычный users.save(), который теперь их молча игнорирует.
-            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp', 'respect', 'stash_count'];
+            // 24.10.2026 (баг найден по прямому указанию — "сброс аккаунта → сразу уровень 120"):
+            // та же 19.10.2026 чистка $allowed ЗАОДНО убрала ещё 15 полей (total_damage/
+            // bosses_killed/coins_earned/zone_fights(+0..4)/energy_spent/train_count/
+            // vassilich_buys/hata_progress/dvor_games/loc_respect_0..4), но dev_panel.js.
+            // _resetAccount() никто не переводил на дельта-путь — обычный users.save() их молча
+            // игнорировал, "сброшенный" аккаунт реально сохранял старые значения на сервере
+            // (ярче всего это проявилось через exp → попап нового уровня с реальным, НЕ
+            // сброшенным уровнем). Добавлены сюда же тем же приёмом.
+            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp', 'respect', 'stash_count',
+                'total_damage', 'bosses_killed', 'coins_earned', 'zone_fights',
+                'zone_fights_0', 'zone_fights_1', 'zone_fights_2', 'zone_fights_3', 'zone_fights_4',
+                'energy_spent', 'train_count', 'vassilich_buys', 'hata_progress', 'dvor_games',
+                'loc_respect_0', 'loc_respect_1', 'loc_respect_2', 'loc_respect_3', 'loc_respect_4'];
             $deltas = [];
             foreach($allowedTypes as $type){
                 if(!isset($this->registry['user_params'][$type])) continue;

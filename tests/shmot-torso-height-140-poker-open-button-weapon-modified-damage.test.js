@@ -55,11 +55,25 @@ console.log('\n1) Все торс-предметы (cat:1) — высота на
     // НЕ "около точности" как остальные исключения выше — это намеренный выбор пользователя
     // (куртка крупнее стандартной футболки/майки), подтверждено живым тестированием на
     // манекене, не регресс и не прикидка.
-    const EXCEPTIONS_26_09 = new Set(['42', '48', '51', '87', '98', '99', '102', '107', '112']);
-    const re = /\{id:(\d+), cat:1,[\s\S]*?imgFile:'([^']+)'[\s\S]*?manScale:([\d.]+)/g;
+    // 25.10.2026 (по прямому указанию, редактор позиций на манекене магазина — присланы живые
+    // x/y/scale): id119 (Худи коричневая, сет "Исполнитель") — ≈235px, тот же случай, что
+    // куртки id102/107/112 чуть выше — намеренно крупнее стандартной футболки, подтверждено
+    // присланными координатами (naturalH×scale совпадает с присланным h с точностью округления),
+    // не регресс и не прикидка.
+    // 26.10.2026: manScale теперь ВСЕГДА 1.000 (заранее уменьшенный manImgFile вместо scale на
+    // большом файле, см. shmot-man-prescaled-images.test.js) — "natural_height * manScale"
+    // больше не имеет смысла считать по ОРИГИНАЛЬНОМУ imgFile. Эквивалент: manImgFile (уже
+    // уменьшенный под старый расчётный manScale) должен сам иметь высоту ≈140px — он и ЕСТЬ
+    // old_h*old_manScale по построению (округление до целого пикселя при генерации).
+    // id55 (Майка Баркут) добавлен в исключения тем же батчем: старый manScale=1.0145 слегка
+    // УВЕЛИЧИВАЛ нативные 138px до ровно 140px — генерировать файл БОЛЬШЕ оригинала (апскейл)
+    // не стали (интерполяция только добавила бы размытие без всякой пользы), manImgFile===
+    // imgFile, рендерится на нативных 138px (см. shmot-man-prescaled-images.test.js, NO_SHRINK_IDS).
+    const EXCEPTIONS_26_09 = new Set(['42', '48', '51', '55', '87', '98', '99', '102', '107', '112', '118', '119']);
+    const re = /\{id:(\d+), cat:1,[\s\S]*?imgFile:'([^']+)'[\s\S]*?manScale:([\d.]+), manImgFile:'([^']+)'/g;
     let m, count = 0;
     while((m = re.exec(shmotSrc))){
-        const [, id, imgFile, manScale] = m;
+        const [, id, imgFile, manScale, manImgFile] = m;
         count++;
         const filePath = path.join(SHMOT_DIR, imgFile);
         if(!fs.existsSync(filePath)){
@@ -70,13 +84,16 @@ console.log('\n1) Все торс-предметы (cat:1) — высота на
             console.log(`  ⏭  id=${id} (${imgFile}): исключён из строгой проверки 140px (правка 26.09.2026, см. комментарий выше)`);
             continue;
         }
-        const { h } = pngSize(filePath);
-        const renderedH = h * parseFloat(manScale);
+        const manPath = path.join(SHMOT_DIR, manImgFile);
+        assert(fs.existsSync(manPath), `id=${id}: manImgFile ${manImgFile} существует на диске`);
+        if(!fs.existsSync(manPath)) continue;
+        const { h: renderedH } = pngSize(manPath);
         assert(Math.abs(renderedH - 140) <= 1,
-            `id=${id} (${imgFile}): naturalH=${h} * manScale=${manScale} = ${renderedH.toFixed(2)} ≈ 140px`);
+            `id=${id} (${manImgFile}): высота manImgFile=${renderedH} ≈ 140px`);
     }
     // 21.10.2026: 12 → 15 — добавлены 3 новых торс-предмета (id102/107/112, сеты Бродяга/Ветеран/Следопыт).
-    assert(count === 15, `найдено 15 торс-предметов с manScale (нашлось ${count})`);
+    // 25.10.2026: 15 → 17 — добавлены 2 худи сета "Исполнитель" (id118/119), откалиброваны на 140px как обычно.
+    assert(count === 17, `найдено 17 торс-предметов с manScale (нашлось ${count})`);
 }
 
 console.log('\n2) Покер — кнопка "СЫГРАТЬ" (Graphics+Text) заменена на sprite "кнопка вскрыться для игр.png"');

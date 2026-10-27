@@ -470,11 +470,14 @@ export function attachPokerScreen(proto){
         if(!this._data) return;
         const lvl = this._getLevelInfo('poker');
         if(this._pokerLevelTxt)    this._pokerLevelTxt.text    = String(lvl.level);
-        if(this._pokerExpLabelTxt) this._pokerExpLabelTxt.text = lvl.maxed ? 'Опыт: МАКС' : 'Опыт: ' + lvl.cur + '/' + lvl.next;
+        // 27.10.2026 (по прямому указанию — "ограничения по уровню в азартных играх Двора быть
+        // не должно"): уровень больше никогда не "замирает" (dvor.js._pokerLevelInfo), ветка
+        // "Опыт: МАКС" убрана — всегда реальные cur/next.
+        if(this._pokerExpLabelTxt) this._pokerExpLabelTxt.text = 'Опыт: ' + lvl.cur + '/' + lvl.next;
 
         if(this._pokerExpBarFill){
             this._pokerExpBarFill.clear();
-            const ratio = lvl.maxed ? 1 : (lvl.next > 0 ? Math.min(1, lvl.cur / lvl.next) : 0);
+            const ratio = lvl.next > 0 ? Math.min(1, lvl.cur / lvl.next) : 0;
             // 163 — нативная ширина "заливка желтыя уровень покера.png" (см. build выше),
             // маска растёт от x:511 (позиция самой заливки), той же логики, что dice/blackjack.
             const fw = Math.max(0, Math.floor(163 * ratio));

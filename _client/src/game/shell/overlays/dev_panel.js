@@ -36,9 +36,21 @@ const DEV_ERROR_CATALOG = [
     {code:84,  text:'Недостаточно рублей для партии'},
     {code:85,  text:'Нет активной партии'},
     {code:86,  text:'Доступные смены карт закончились'},
+    // 27.10.2026 (плановая чистка тестов — тот же класс расхождения, что 27.09.2026 с code:7):
+    // коды 87-89/93-98 добавлены в errors.json фичей "Заначки" (26.10.2026), но это зеркало
+    // не обновили тогда же — забытая запись, не осознанное изменение.
+    {code:87,  text:'Такой заначки не существует'},
+    {code:88,  text:'Коллекция ещё не собрана полностью'},
+    {code:89,  text:'Награда за эту коллекцию уже получена'},
     {code:90,  text:'Нельзя зарубиться с самим собой'},
     {code:91,  text:'Игрок не найден'},
     {code:92,  text:'Рано ещё — этого игрока можно качать раз в 24 часа'},
+    {code:93,  text:'Нельзя запросить заначку у самого себя'},
+    {code:94,  text:'Нельзя запросить больше 7 заначек одновременно'},
+    {code:95,  text:'Эта заначка уже в списке запроса'},
+    {code:96,  text:'Такого запроса нет в списке'},
+    {code:97,  text:'У тебя нет ни одной такой заначки, чтобы отдать'},
+    {code:98,  text:'Этот игрок не просил такую заначку'},
     {code:99,  text:'Ошибка базы данных'},
     {code:403, text:'Доступ запрещён'},
 ];
@@ -281,7 +293,15 @@ export function attachDevPanel(proto){
         // 11.10.2026 (см. коммент у $allowed/devGrantCurrency в users.php — dice_points/
         // blue_points/poker_chips тоже убраны из client-writable whitelist, тот же класс бага,
         // что уже чинили для coins/stew/cigarettes): добавлены в этот же серверный путь.
-        const _SERVER_ONLY_CURRENCIES = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips'];
+        // 26.10.2026 (репорт "не могу выдать все ресурсы" на тесте — найдено по прямому
+        // указанию): 'exp' убран из whitelist users.php ещё 19.10.2026 (см. devGrantCurrency()
+        // в users.php и комментарий у _giveMillion()/_resetAccount() ниже в этом же файле — ОБА
+        // уже были переведены на дельта-путь тогда же), но этот массив для кнопок "Опыт"
+        // (+1К/+10К/+100К/+1М, единственный _addU-вызов не из той правки) забыли обновить —
+        // с 19.10.2026 они тихо падали в обычный users.save(), который просто игнорирует
+        // неразрешённое поле (ни ошибки, ни эффекта). Сервер (devGrantCurrency) 'exp' уже
+        // поддерживает — не трогали, чинить нужно было только здесь.
+        const _SERVER_ONLY_CURRENCIES = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp'];
         const _addU = (key, amt) => {
             if(!window.udata) return;
             if(_SERVER_ONLY_CURRENCIES.includes(key)){
@@ -327,12 +347,26 @@ export function attachDevPanel(proto){
             this._pushWeaponsGrant();
             console.log('[devPanel] куплено оружие idx='+idx);
         };
+        // 26.10.2026 (репорт — "на тесте выдал ключи в dev-панели, после перезагрузки их нет,
+        // и сразу напасть на босса не получается, ошибка 'проверьте ключи и зачистку
+        // локации'"): раньше писало bosses.keys[i] локально и звало общий saveDevChanges()
+        // → обычный users.save() — server._sanitizeBossesData() (users.php) отклоняет ВЕСЬ
+        // bosses_data целиком при любом расхождении keys[]/dailyKills[]/killsTotal[]/
+        // medalKills[] с текущей БД (тот же анти-чит, что и для обычных игроков, см. комментарий
+        // там же) — выданные ключи никогда реально не сохранялись, а startFight() сразу
+        // отклонял атаку (fail 64, "не хватает ключей"), т.к. на сервере ключей и не было.
+        // Фикс — отдельный dev-only серверный permit bosses.devGrantKeys() (bosses.php, тот же
+        // приём, что devResetDailyLimits()), пишет напрямую в обход санитайзера.
         const _addKey = (i, amt) => {
-            if(!window.bosses) return;
-            bosses.keys[i] = (parseInt(bosses.keys[i]||0) + amt);
-            bosses._saveToUdata();
-            saveDevChanges();
-            console.log('[devPanel] ключ['+i+']='+bosses.keys[i]);
+            if(!window.TS || !window.bosses) return;
+            TS.php('bosses.devGrantKeys', {idx: i, amt: amt}, (res) => {
+                if(res && res.patch) applyPatch(res.patch);
+                bosses._loadFromUdata();
+                console.log('[devPanel] ключ['+i+']='+bosses.keys[i]);
+            }, (err) => {
+                console.error('[devPanel._addKey] ошибка:', err);
+                notify.showResult({text:'Не удалось выдать ключ'}, 0);
+            });
         };
 
         // Цвета кнопок
@@ -411,6 +445,18 @@ export function attachDevPanel(proto){
                 dvor._openRouletteCaseOpenedScreen(true, { exp: 500, cig: 1000, stash: 2, coins: 20 }, [], undefined);
             }},
         ]);
+        // 23.10.2026 (по прямому указанию — "новые шмотки выпадают из спичек за покер, из
+        // рюкзака Сидоровича и из сумки с рулетки, хочу эти три вкладки в Dev"): рюкзак
+        // Сидоровича (см. "Шмотка (превью)" ниже) и кейс рулетки (выше) уже были — не хватало
+        // именно сумки покера (dvor-poker-bag.js._openPokerBagOpenedScreen), та же сигнатура,
+        // что у _openRouletteCaseOpenedScreen минус hasTatu первым параметром.
+        _row('Сумка покера (шмотка выпала)', [
+            {label:'ОТКРЫТЬ', color:T, action:()=>{
+                this._closeDevPanel();
+                if(!window.dvor) return;
+                dvor._openPokerBagOpenedScreen({ exp: 500, cig: 1000, stash: 2, coins: 20 }, [], true, undefined);
+            }},
+        ]);
 
         _section('РЮКЗАК');
         _row('Уровень рюкзака', [
@@ -438,6 +484,107 @@ export function attachDevPanel(proto){
                     forceShmotBanner: true,
                     mockShmot: { name: 'Тестовая куртка «Сталкер»', bonus: '+80 к автомату', set: 'вольный' },
                 });
+            }},
+        ]);
+
+        // ── РАЗНАРЯДКА ──────────────────────────────────────────────
+        // 23.10.2026 (по прямому указанию — "хочу проверить, что награда собрана, что можно
+        // собрать, что можно откатить тушёнкой, не ждать реального провала/выполнения"):
+        // проверка всего цикла без фарма реальных действий или ожидания 00:00 МСК.
+        _section('РАЗНАРЯДКА');
+        _row('Экран', [
+            {label:'ОТКРЫТЬ', color:P, action:()=>{
+                this._closeDevPanel();
+                if(window.raznaryadka) raznaryadka.open();
+            }},
+        ]);
+        _row('Сегодняшнее задание', [
+            {label:'ВЫПОЛНИТЬ', color:G, action:()=>{
+                TS.php('raznaryadka.devCompleteToday', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    if(window.raznaryadka && raznaryadka._win && raznaryadka._win.parent) raznaryadka._fetchState();
+                    if(window.notify) notify.showResult({text:'Сегодняшнее задание засчитано'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+        _row('Вчерашний день', [
+            {label:'ПРОВАЛИТЬ (тест отката)', color:O, action:()=>{
+                TS.php('raznaryadka.devFailDay', {day: Math.max(1, (window.raznaryadka && raznaryadka._state ? raznaryadka._state.day_today : 2) - 1)}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    if(window.raznaryadka && raznaryadka._win && raznaryadka._win.parent) raznaryadka._fetchState();
+                    if(window.notify) notify.showResult({text:'Вчерашний день провален (для теста отката тушёнкой)'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+        // 24.10.2026 (по прямому указанию — "сделай как будто там какие-то задания выполнены,
+        // какие-то нет, нужно проверить попытку откупа заданий, всю логику"): одна кнопка вместо
+        // ручного devFailDay/devCompleteToday по одному дню — сразу "рваная" картина месяца.
+        _row('Прошедшие дни месяца', [
+            {label:'ЗАСЕЯТЬ СЛУЧАЙНО', color:P, action:()=>{
+                TS.php('raznaryadka.devSeedMonth', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    if(window.raznaryadka && raznaryadka._win && raznaryadka._win.parent) raznaryadka._fetchState();
+                    if(window.notify) notify.showResult({text:'Прошедшие дни засеяны случайно (done/pending)'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+        // 24.10.2026 (по прямому указанию — "кнопка, при нажатии на которую следующий день
+        // становится автоматически"): настоящего перевода системных часов сервера нет (задело бы
+        // все остальные фичи) — сдвигает только "сегодня" ВНУТРИ Разнарядки через dev_day_offset
+        // (RaznaryadkaProgress::effectiveDay(), см. raznaryadkaprogress.php). СБРОС возвращает на
+        // реальный день без ожидания настоящего 00:00 МСК.
+        // 26.10.2026 (репорт — "нажимаю на кнопку НА НОЯБРЬ, ничего не происходит"): сервер
+        // реально переключал месяц корректно (подтверждено логом raznaryadka.devForceLaunchMonth
+        // "месяц переключён на 2026-11") — но _fetchState() вызывался ТОЛЬКО если экран уже был
+        // открыт, а ничто не открывало его САМО. Если игрок жал кнопку при закрытом экране
+        // Разнарядки — визуально не происходило вообще ничего (кроме тоста, который легко
+        // пропустить), хотя состояние на сервере менялось. Теперь — открываем экран, если он
+        // закрыт, вместо молчаливого no-op (тот же фикс для всех 3 кнопок этого класса).
+        const _openOrRefreshRazn = () => {
+            if(!window.raznaryadka) return;
+            if(raznaryadka._win && raznaryadka._win.parent) raznaryadka._fetchState();
+            else raznaryadka.open();
+        };
+        _row('Текущий день (тест)', [
+            {label:'ПРОПУСТИТЬ ДЕНЬ', color:P, action:()=>{
+                TS.php('raznaryadka.devSkipDay', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    _openOrRefreshRazn();
+                    if(window.notify) notify.showResult({text:'День пропущен (dev_day_offset=' + (e && e.day_offset) + ')'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+            {label:'СБРОСИТЬ', color:O, action:()=>{
+                TS.php('raznaryadka.devResetDaySkip', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    _openOrRefreshRazn();
+                    if(window.notify) notify.showResult({text:'Разнарядка вернулась на реальный сегодняшний день'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+        // 25.10.2026 (по прямому указанию — "кнопка, при нажатии на которую ежедневные задания
+        // станут такими, как будто на 1 ноября"): переключает месяц Разнарядки на launch_month
+        // целиком (закрывает текущий месяц, автосбор невыбранных наград — та же логика, что
+        // обычная граница календарного месяца), не трогая реальные системные часы сервера
+        // (см. RaznaryadkaProgress::devForceLaunchMonth()).
+        // 27.10.2026 (по прямому указанию — "добавь кнопку вернуть как должно быть, мне нужно
+        // чтобы было два таких состояния, я мог их проверять": pre-launch (до ноября) и live
+        // (с 1 ноября)): вторая кнопка — обратная операция, раньше откатить форс месяца можно
+        // было только ждать реального перехода календаря (см. RaznaryadkaProgress::
+        // devRevertToRealMonth()).
+        _row('Месяц (тест старта фичи)', [
+            {label:'НА НОЯБРЬ (live)', color:R, action:()=>{
+                TS.php('raznaryadka.devForceLaunchMonth', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    _openOrRefreshRazn();
+                    if(window.notify) notify.showResult({text:'Разнарядка переключена на месяц старта фичи'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+            {label:'НАЗАД (pre-launch)', color:O, action:()=>{
+                TS.php('raznaryadka.devRevertToRealMonth', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    _openOrRefreshRazn();
+                    if(window.notify) notify.showResult({text:'Разнарядка возвращена на реальный текущий месяц'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
             }},
         ]);
 
@@ -610,6 +757,79 @@ export function attachDevPanel(proto){
             }},
         ]);
 
+        // ── ЗАНАЧКИ ─────────────────────────────────────────────────
+        // 27.10.2026 (по прямому указанию — "кнопка, при нажатии на которую получаю по 100
+        // элементов каждой заначки"): без этого пришлось бы фармить дроп по всей игре (зона/
+        // ящик/покер/рулетка), чтобы проверить экран со всеми заполненными коллекциями.
+        _section('ЗАНАЧКИ');
+        _row('Все карточки', [
+            {label:'+100 КАЖДОЙ', color:P, action:()=>{
+                TS.php('zanachki.devGrantAll', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    if(window.svod && svod._svodPanels && svod._svodPanels['zanachki'] && svod._svodPanels['zanachki'].visible){
+                        svod._zanachkiFetchState();
+                    }
+                    if(window.notify) notify.showResult({text:'+100 к каждой из 105 карточек'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+
+        // ── 2048 ────────────────────────────────────────────────────
+        // 27.10.2026 (по прямому указанию — "хочу просто проверить, как это визуально
+        // выглядит"): оба мока — ЧИСТО клиентские (без похода на сервер), тот же приём, что
+        // "Попап награды (мок)" выше (iface._showBossResultPopup с synthetic top).
+        _section('2048');
+        _row('Топ (мок)', [
+            {label:'ОТКРЫТЬ', color:T, action:()=>{
+                this._closeDevPanel();
+                if(!window.game2048) return;
+                if(!game2048._topWin) game2048._buildGame2048TopPopup();
+                root.layer2_mc.addChild(game2048._topWin);
+                const myUid = parseInt((window.vk_params && vk_params['vk_user_id']) || 0, 10) || 1;
+                game2048._renderGame2048Top({
+                    top1: {
+                        id: myUid, nick: 'Тестер 1', gamesCompleted: 42,
+                        lifetime: { coins: 100, guns: 50, autos: 20, cig: 300, exp: 900, fragments: 12 },
+                    },
+                    rest: Array.from({length: 9}, (_, i) => ({
+                        id: 900000000 + i, nick: 'Тестер ' + (i + 2), gamesCompleted: 30 - i * 2,
+                    })),
+                });
+            }},
+        ]);
+        _row('Прогресс крафта (мок 45/90)', [
+            {label:'ОТКРЫТЬ', color:T, action:()=>{
+                this._closeDevPanel();
+                if(!window.game2048) return;
+                game2048.open();
+                game2048._state = game2048._state || {};
+                game2048._state.fragments = 45;
+                game2048._state.fragmentsNeeded = 90;
+                if(game2048._state.session){
+                    game2048._state.session.score = 99999;
+                    game2048._state.session.maxTile = 16384;
+                    game2048._state.session.rewardsThisSession = [
+                        {type:'coins', amt:100}, {type:'gun', amt:50}, {type:'auto', amt:20},
+                        {type:'cig', amt:300}, {type:'exp', amt:900}, {type:'fragment', amt:45},
+                    ];
+                }
+                game2048._render();
+            }},
+        ]);
+        // 27.10.2026 (по прямому указанию — "кнопка, при нажатии на которую обнуляется
+        // количество попыток на игру 2048"): реальный серверный сброс (game2048.devResetDaily),
+        // не клиентский мок — та же причина, что у "Дневной лимит боёв" в секции БОССЫ (без
+        // захода на сервер daily просто перезатёрся бы обратно при следующем getState).
+        _row('Дневной лимит попыток', [
+            {label:'СБРОСИТЬ', color:R, action:()=>{
+                TS.php('game2048.devResetDaily', {}, (e)=>{
+                    if(e && e.patch) applyPatch(e.patch);
+                    if(window.game2048 && game2048._win && game2048._win.parent) game2048._fetchState();
+                    if(window.notify) notify.showResult({text:'Попытки 2048 сброшены'}, 1);
+                }, (err)=>{ if(window.notify) notify.showResult({text:'Ошибка: ' + JSON.stringify(err)}, 0); });
+            }},
+        ]);
+
         // ── Скролл контента (колесо мыши + бегунок) ────────────────────
         // totalH — фактическая высота всего построенного контента (curY дошёл до конца
         // последней секции); maxScroll = 0, если контент помещается целиком — тогда
@@ -751,6 +971,46 @@ export function attachDevPanel(proto){
     proto._resetAccount = function(){
         if(!window.udata) return;
         this._showConfirmPopup('Полный сброс аккаунта — все данные будут стёрты. Точно?', ()=>{
+            // 24.10.2026 (баг найден по прямому указанию — "сбросил всё на аккаунте, зашёл в
+            // ежедневное задание, мне сразу дался 120 уровень"): 19.10.2026 'exp'/'respect'/
+            // 'total_damage'/'bosses_killed'/'coins_earned'/'stash_count'/'zone_fights'(+0..4)/
+            // 'energy_spent'/'train_count'/'vassilich_buys'/'hata_progress'/'dvor_games'/
+            // 'loc_respect_0..4' были убраны из client-writable $allowed в users.php (закрытие
+            // дыры "256к опыта через консоль") — но этот обработчик продолжал слать их
+            // АБСОЛЮТНЫМИ значениями через обычный users.save() ниже, который их теперь молча
+            // игнорирует. Итог: "сброшенный" аккаунт реально сохранял СТАРЫЙ exp на сервере —
+            // optimistic-локальный сброс exp (через wrapPlayerData ниже) временно показывал уровень 0/1, но первый
+            // же server-authoritative ответ с 'patch' (например raznaryadka.getState()) подтягивал
+            // обратно реальный (НЕ сброшенный) exp с сервера, interface.js.updateNick() сравнивал
+            // его с локально обнулённым prevLevel и открывал попап "новый уровень" с реальным
+            // (старым) значением — у этого игрока оно оказалось 120. Чиним тем же приёмом, что
+            // уже применён в _giveMillion() ниже — devGrantCurrency() с ДЕЛЬТОЙ от текущего
+            // значения до целевого дефолта (см. _defaultResetUdata() в users.php — тот же набор
+            // дефолтов, 1:1). hata_progress — единственное исключение с целевым значением -1
+            // (не 0, "хата не куплена"), остальные поля — 0.
+            const RESET_DELTA_TARGETS = {
+                exp: 0, respect: 0, total_damage: 0, bosses_killed: 0, coins_earned: 0,
+                stash_count: 0, zone_fights: 0,
+                zone_fights_0: 0, zone_fights_1: 0, zone_fights_2: 0, zone_fights_3: 0, zone_fights_4: 0,
+                energy_spent: 0, train_count: 0, vassilich_buys: 0, dvor_games: 0,
+                loc_respect_0: 0, loc_respect_1: 0, loc_respect_2: 0, loc_respect_3: 0, loc_respect_4: 0,
+                hata_progress: -1,
+            };
+            // Дельты считаются ОТ ТЕКУЩЕГО udata — обязательно ДО переопределения window.udata
+            // ниже (иначе udata[key] читал бы уже сброшенные значения, и дельта всегда была 0).
+            // Сам TS.php-вызов намеренно вынесен НИЖЕ, к остальным server-only сбросам (resetSession/
+            // devGrantShmot и т.д.) — держит все сетевые вызовы сброса в одном месте функции.
+            // for..in, не .forEach(key => {...end}) — та форма записи заканчивается закрывающей
+            // фигурной скобкой + круглой + точкой с запятой подряд, которую reset-account-full-
+            // wipe-and-dev-popup.test.js ищет как "конец payload'а wrapPlayerData" (devSrc.
+            // indexOf находит САМОЕ ПЕРВОЕ такое сочетание после начала функции) — любое более
+            // раннее совпадение обрезает извлекаемый блок и даёт ложные "поле отсутствует").
+            const resetDeltas = {};
+            for(const key in RESET_DELTA_TARGETS){
+                const delta = RESET_DELTA_TARGETS[key] - parseInt(udata[key] || 0);
+                if(delta !== 0) resetDeltas[key] = delta;
+            }
+
             window.udata = window.wrapPlayerData({
                 // Валюта / ресурсы
                 coins:'10', cigarettes:'1000', stew:'0', exp:'0', energy:'50', max_energy:'50',
@@ -820,6 +1080,27 @@ export function attachDevPanel(proto){
                 onboarding_step:'',
             });
             console.log('[devPanel._resetAccount] udata заменён дефолтом нового игрока (полный whitelist):', udata);
+            // 24.10.2026 (баг найден по прямому указанию — "сбросил всё на аккаунте, зашёл в
+            // ежедневное задание, мне сразу дался 120 уровень"): 19.10.2026 'exp' и ещё 14 полей
+            // (respect/total_damage/bosses_killed/coins_earned/stash_count/zone_fights(+0..4)/
+            // energy_spent/train_count/vassilich_buys/hata_progress/dvor_games/loc_respect_0..4)
+            // убраны из client-writable $allowed в users.php (закрытие дыры "256к опыта через
+            // консоль") — но обычный users.save() ниже их теперь молча игнорирует, "сброшенный"
+            // аккаунт реально сохранял СТАРЫЕ значения на сервере. Ярче всего это проявилось
+            // через exp: первый же server-authoritative ответ с 'patch' (например
+            // raznaryadka.getState()) подтягивал обратно РЕАЛЬНЫЙ (не сброшенный) exp,
+            // interface.js.updateNick() сравнивал его с локально обнулённым prevLevel и открывал
+            // попап нового уровня с реальным (старым) значением — у этого игрока оно оказалось
+            // 120. resetDeltas посчитаны ВЫШЕ (до переопределения window.udata) — тем же приёмом,
+            // что уже применён в _giveMillion() ниже (devGrantCurrency() с ДЕЛЬТОЙ до целевого
+            // дефолта, см. _defaultResetUdata() в users.php — тот же набор, 1:1).
+            if(Object.keys(resetDeltas).length){
+                TS.php('users.devGrantCurrency', resetDeltas, (r)=>{
+                    console.log('[devPanel._resetAccount] поля вне whitelist (exp/respect/счётчики статистики) сброшены дельтой через devGrantCurrency:', JSON.stringify(r));
+                }, (err)=>{
+                    console.error('[devPanel._resetAccount] не удалось сбросить exp/respect/счётчики статистики:', JSON.stringify(err));
+                });
+            }
             // 18.09.2026 (найдено при аудите после переноса экономики на сервер): skills_levels/
             // dice_session/poker_session/blackjack_session/yashik_session/roulette_cups — server-only
             // игровые сессии, сознательно НЕ входящие в whitelist users.php (иначе клиент мог бы
@@ -856,7 +1137,11 @@ export function attachDevPanel(proto){
                 // которого после сброса просто нет в новом udata, поэтому сама не перезапишет).
                 skills.levels = new Array(20).fill(0);
                 skills.skillsDmgSpent = 0;
-                if(skills._win && typeof skills._refresh === 'function') skills._refresh();
+                // 27.10.2026: старый фейковый экран (skills._win/_refresh) удалён — если сейчас
+                // открыт РЕАЛЬНЫЙ экран прокачки (bosses_skills.js), обновляем его.
+                if(window.iface && typeof iface._updateBossesSkillsScreen === 'function' && iface._skillsWin){
+                    iface._updateBossesSkillsScreen();
+                }
                 console.log('[devPanel._resetAccount] skills.levels обнулены в памяти');
             }
             TS.php('users.save', {udata_json: JSON.stringify(udata)}, (result)=>{
@@ -1061,7 +1346,16 @@ export function attachDevPanel(proto){
             [3,4,5].forEach(i => { weapons.data[i].qty = 1000000; weapons.data[i].owned = true; });
             weapons._saveToUdata();
         }
-        if(window.bosses){ bosses.keys = new Array(8).fill(1000000); bosses._saveToUdata(); }
+        // 26.10.2026 (тот же баг-класс, что _addKey() выше — см. комментарий там же): раньше
+        // писало bosses.keys локально и полагалось на общий users.save() ниже, который
+        // _sanitizeBossesData() молча отклонял целиком. Теперь — тот же dev-only permit,
+        // all_amt-ветка (разом для всех 8 боссов).
+        if(window.TS && window.bosses){
+            TS.php('bosses.devGrantKeys', {all_amt: 1000000}, (res) => {
+                if(res && res.patch) applyPatch(res.patch);
+                bosses._loadFromUdata();
+            }, (err) => console.error('[devPanel._giveMillion] ошибка выдачи ключей:', err));
+        }
         if(window.iface) iface.updateUp();
         // 19.09.2026 (репорт "оружие/патроны не сохраняются"): ammo_auto/ammo_gun/ammo_machete
         // и weapons — единственные поля из списка выше, которые обычный users.save() ниже молча

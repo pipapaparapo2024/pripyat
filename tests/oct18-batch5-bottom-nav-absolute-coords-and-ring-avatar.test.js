@@ -137,7 +137,9 @@ console.log('\n8) svod — fontWeight:bold убран из реальных ст
 
 console.log('\n9) ryukzak.js / dev_panel.js — hover-тултип баннера шмотки + dev-превью с mockShmot');
 {
-    assert(/const HAS_SHMOT_DROP = !!\(mockReward && mockReward\.forceShmotBanner\);/.test(ryukSrc), 'HAS_SHMOT_DROP учитывает forceShmotBanner');
+    // 26.10.2026: HAS_SHMOT_DROP (жёсткий false/мок) заменён на mutable hasShmotNow — см.
+    // tests/oct26-sidorovich-bag-shmot-drop-and-jackpot-pool-reset.test.js для полной проверки.
+    assert(/let hasShmotNow\s*=\s*!!\(mockReward && mockReward\.forceShmotBanner\);/.test(ryukSrc), 'hasShmotNow учитывает forceShmotBanner на старте');
     assert(/shmotBanner\.on\('pointerover', _showShmotBannerTip\);/.test(ryukSrc), 'hover на баннере вызывает тултип');
     assert(!/Требования/.test(ryukSrc.slice(ryukSrc.indexOf('_showShmotBannerTip'), ryukSrc.indexOf('_showShmotBannerTip') + 3000)),
         'в тултипе баннера НЕТ строки "Требования" (по прямому указанию, в отличие от shmot_shop)');

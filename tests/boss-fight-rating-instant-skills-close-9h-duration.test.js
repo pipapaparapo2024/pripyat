@@ -8,8 +8,8 @@
  *  2) Синхронизация урона друзей (та же логика, что кнопка ПЕРЕЗАГРУЗКА) теперь вызывается на
  *     КАЖДЫЙ удар БЕЗ дебаунса — раньше была задержка 800мс, из-за которой рейтинг обновлялся
  *     заметно позже самого удара.
- *  3) Экран «Скиллы» (открывается напрямую через skills.open(), в обход общего
- *     openModule()/_closeAllPanels() — у Skills нет публичного close()) теперь принудительно
+ *  3) Экран «Скиллы» (открывается через iface._openBossesSkillsScreen() — см. bosses_skills.js;
+ *     27.10.2026: старый фейковый skills.js.open() удалён целиком) теперь принудительно
  *     закрывается при любом из 3 путей завершения боя: таймаут, победа, форфейт (крестик
  *     закрытия самого экрана боя НЕ считается завершением — бой продолжается в фоне).
  *  4) FIGHT_DURATION_MS возвращён на боевые 9 часов (было временно 60 сек. для теста) — только
@@ -84,8 +84,11 @@ console.log('\nTest 3: синхронизация урона друзей — б
 console.log('\nTest 4: экран Скиллы закрывается при любом завершении боя (таймаут/победа/форфейт)');
 {
     assert(/proto\._closeSkillsIfOpen = function\(\)\{/.test(combatSrc), 'общий хелпер закрытия скиллов определён');
-    assert(/if\(window\.skills && skills\._win\) skills\._win\.visible = false;/.test(combatSrc),
-        'хелпер напрямую скрывает skills._win (у Skills нет публичного close())');
+    // 27.10.2026 (по прямому указанию — старый фейковый экран skills.js.open()/_win удалён
+    // целиком, см. tests/skills-icon-swap-and-jackpot-prize-popup.test.js): хелпер теперь
+    // закрывает РЕАЛЬНЫЙ экран прокачки bosses_skills.js через iface._closeBossesSkillsScreen().
+    assert(/if\(window\.iface && iface\._skillsWin && iface\._skillsWin\.parent\) iface\._closeBossesSkillsScreen\(\);/.test(combatSrc),
+        'хелпер закрывает реальный экран скиллов (bosses_skills.js), если он сейчас открыт');
 
     const timeoutStart = combatSrc.indexOf('proto._onFightTimeout = function(idx){');
     const timeoutEnd   = combatSrc.indexOf('};', combatSrc.indexOf('notify.showResult', timeoutStart)) + 2;

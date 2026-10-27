@@ -64,8 +64,10 @@ console.log('\nTest 4: клиент — больше не хардкодит "30
 {
     assert(!/_roulJackTxt\.text = \(3000\)\.toLocaleString/.test(rouletteSrc),
         'старая захардкоженная строка (3000) убрана из _updateRouletteUI');
-    assert(/_roulJackTxt\.text = \(this\._roulJackpotPool \|\| 3000\)\.toLocaleString/.test(rouletteSrc),
-        '_updateRouletteUI показывает живую сумму this._roulJackpotPool');
+    // 26.10.2026 (по прямому указанию — "джекпот должен начинаться с нуля, не с 3000"):
+    // фолбэк переведён с 3000 на 0 — растёт честно с нуля, а не с хардкоженной стартовой суммы.
+    assert(/_roulJackTxt\.text = \(this\._roulJackpotPool \|\| 0\)\.toLocaleString/.test(rouletteSrc),
+        '_updateRouletteUI показывает живую сумму this._roulJackpotPool (фолбэк на 0, не на 3000)');
 }
 
 console.log('\nTest 5: клиент — spin() тоже обновляет this._roulJackpotPool из ответа сервера');

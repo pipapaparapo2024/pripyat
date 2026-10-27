@@ -91,7 +91,9 @@ console.log('\nTest 5: _onWear синхронизирует персонажа �
 
 console.log('\nTest 6: home.js и shmot_shop.js согласованы по пути к картинкам предметов (images/shmot/, не корень images/)');
 {
-    assert(/'\.\/images\/shmot\/' \+ eq\.imgFile/.test(homeSrc), "home.js грузит './images/shmot/' + imgFile");
+    // 26.10.2026: home.js теперь грузит (eq.manImgFile || eq.imgFile) — заранее уменьшенный
+    // файл, если он есть у предмета (см. shmot-man-prescaled-images.test.js).
+    assert(/'\.\/images\/shmot\/' \+ \(eq\.manImgFile \|\| eq\.imgFile\)/.test(homeSrc), "home.js грузит './images/shmot/' + (manImgFile || imgFile)");
     assert(/'\.\/images\/shmot\/' \+ item\.imgFile/.test(shopSrc), "shmot_shop.js грузит './images/shmot/' + imgFile — тот же путь");
 }
 

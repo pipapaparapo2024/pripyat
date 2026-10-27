@@ -39,8 +39,11 @@ console.log('\nTest 1: svod-scroll.js больше не делит имена ф
     const svodSrc = readSrc('_client/src/game/svod/svod-scroll.js');
     const zoneSrc = readSrc('_client/src/game/shell/overlays/zone_screen.js');
 
-    assert(svodSrc.includes("IMG + 'свод стрелка вверх.png'"), 'svod-scroll использует свод стрелка вверх.png');
-    assert(svodSrc.includes("IMG + 'свод стрелка вниз.png'"), 'svod-scroll использует свод стрелка вниз.png');
+    // 27.10.2026: обёрнуто в override-фолбэк (arrowUpImg || 'свод стрелка вверх.png') для
+    // вкладки Заначки — литеральная подстрока без "IMG + " больше не достаточна сама по себе,
+    // но дефолтное имя файла всё ещё там же.
+    assert(svodSrc.includes("(arrowUpImg || 'свод стрелка вверх.png')"), 'svod-scroll использует свод стрелка вверх.png (как дефолт override)');
+    assert(svodSrc.includes("(arrowDownImg || 'свод стрелка вниз.png')"), 'svod-scroll использует свод стрелка вниз.png (как дефолт override)');
     assert(!svodSrc.includes("IMG + 'стрелка вверх.png'"), 'svod-scroll больше НЕ ссылается на общее имя стрелка вверх.png');
     assert(!svodSrc.includes("IMG + 'стрелка вниз.png'"), 'svod-scroll больше НЕ ссылается на общее имя стрелка вниз.png');
 

@@ -20,7 +20,9 @@ import Battlepass  from '../game/battlepass.js';
 import Hapuga      from '../game/hapuga.js';
 import Bot         from '../game/bot.js';
 import Hata        from '../game/shell/overlays/hata.js';
+import Raznaryadka from '../game/shell/overlays/raznaryadka.js';
 import Onboarding  from '../game/onboarding.js';
+import Game2048    from '../game/game2048.js';
 
 export default class ModuleControl{
 
@@ -120,6 +122,12 @@ export default class ModuleControl{
 		window.bank = new Bank(this.names['interface'].bank_mov);
 		window.hata = new Hata();
 		window.base = window.hata;
+		// 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): PIXI-based, без FLA —
+		// тот же паттерн, что Hata/Habar выше (конструируется сразу, не через load()/checkFlags()).
+		window.raznaryadka = new Raznaryadka();
+		// 26.10.2026 (по прямому указанию — новая мини-игра "2048", отдельная вкладка, не часть
+		// Двора): тот же паттерн, что Raznaryadka выше — PIXI-based, без FLA.
+		window.game2048 = new Game2048();
 		window.habar = new Habar(null); // Pre-construct: PIXI-based, no FLA needed
     }
 

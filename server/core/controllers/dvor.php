@@ -84,6 +84,10 @@
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
 
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Собрать N сухарей" — звать ПОСЛЕ собственного saveUser() выше.
+            RaznaryadkaProgress::report($this->ops, 'sukhari', 30);
+
             error_log('[dvor.collectCig] uid=' . abs(intval($this->registry['uid'])) . ' idx=' . $idx
                 . ' начислено +30 сигарет | nowMs=' . $nowMs . ' rawSigsFromDb=' . json_encode($rawSigsFromDb)
                 . ' savedState=' . $user['dvor_daily_sigs']);

@@ -87,6 +87,14 @@ console.log('\n=== Реальное исполнение background-music.js ч�
             exists: (alias) => !!sounds[alias]._loaded,
             find: (alias) => sounds[alias],
             add: (alias, opts) => { sounds[alias]._loaded = true; opts.loaded(null); },
+            // 26.10.2026 (стало недостающим звеном мока — см. background-music.js._startPlayback():
+            // "if(PIXI.sound.exists(alias)) PIXI.sound.stop(alias);" перед play(), добавлено
+            // фиксом дублирования музыки 26.10.2026): без этого метода реальное исполнение падало
+            // в синхронную бесконечную рекурсию _startPlayback→catch→_advance→_playNextTrack
+            // (stack overflow), т.к. мок бросал "PIXI.sound.stop is not a function" на каждой
+            // попытке запустить трек. В реальном pixi-sound.js (развёрнутый .stop на
+            // SoundLibrary) метод есть — это пробел именно в моке, не баг модуля.
+            stop: (alias) => {},
             play: (alias, opts) => {
                 playCalls.push(alias);
                 const inst = { _opts: opts, stop(){}, on(){} };
@@ -124,6 +132,7 @@ console.log('\n=== Реальное исполнение background-music.js ч�
                 exists: (a) => !!sounds2[a]._loaded,
                 find: (a) => sounds2[a],
                 add: (a, o) => { sounds2[a]._loaded = true; o.loaded(null); },
+                stop: (a) => {}, // см. комментарий у ctx.PIXI.sound.stop выше
                 play: (a) => { playCalls2.push(a); return { stop(){}, on(){} }; },
             },
         };

@@ -1,0 +1,20 @@
+{
+  "board_size": 4,
+  "spawn_weights": {"2": 90, "4": 10},
+  "daily_free_attempts": 3,
+  "daily_paid_attempts": 3,
+  "paid_attempt_cost": [4, 6, 10],
+  "fragments_per_craft": 90,
+  "thresholds": [
+    {"v": 32,    "free": {"type": "exp",      "amt": 50},  "paid": {"type": "exp",      "amt": 50}},
+    {"v": 64,    "free": {"type": "cig",      "amt": 100}, "paid": {"type": "cig",      "amt": 100}},
+    {"v": 128,   "free": {"type": "exp",      "amt": 150}, "paid": {"type": "exp",      "amt": 150}},
+    {"v": 256,   "free": {"type": "coins",    "amt": 2},   "paid": {"type": "coins",    "amt": 2}},
+    {"v": 512,   "free": {"type": "gun",      "amt": 1},   "paid": {"type": "gun",      "amt": 2}},
+    {"v": 1024,  "free": {"type": "auto",     "amt": 1},   "paid": {"type": "auto",     "amt": 2}},
+    {"v": 2048,  "free": {"type": "fragment", "amt": 1},   "paid": {"type": "fragment", "amt": 1}},
+    {"v": 4096,  "free": {"type": "coins",    "amt": 5},   "paid": {"type": "coins",    "amt": 5}},
+    {"v": 8192,  "free": {"type": "coins",    "amt": 10},  "paid": {"type": "coins",    "amt": 10}},
+    {"v": 16384, "free": {"type": "coins",    "amt": 20},  "paid": {"type": "coins",    "amt": 20}}
+  ]
+}

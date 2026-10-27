@@ -90,6 +90,27 @@ function _stopStrayTracks(activeIdx){
             }
         }
     }
+
+    // 26.10.2026 (повторный репорт после фикса 06.10/17.10 — "зашёл, сменил вкладку, вернулся —
+    // музыка двоится", тот же симптом третий раз): проверка выше ловит ДРУГОЙ alias, играющий
+    // параллельно активному, но НЕ ловит ДВА экземпляра ОДНОГО И ТОГО ЖЕ активного alias —
+    // возможно именно так резолвится эта гонка (например: трек ещё грузился/был в процессе
+    // Sound.play(), когда вкладка скрылась — pauseAll() не мог поставить на паузу то, что ещё не
+    // начало звучать; к моменту возврата из фона он всё-таки стартовал и разошёлся с тем
+    // экземпляром, который resumeAll() поднял из паузы). pixi-sound хранит ВСЕ одновременно
+    // звучащие IMediaInstance активного Sound в .instances — если их больше одного, глушим все,
+    // кроме самого раннего (им управляет _instance выше по модулю), не трогая сам Sound/позицию
+    // воспроизведения второго — слушатель не должен услышать рестарт трека с нуля.
+    const activeAlias = 'bg_music_' + activeIdx;
+    const activeSound = PIXI.sound.exists(activeAlias) ? PIXI.sound.find(activeAlias) : null;
+    if(activeSound && Array.isArray(activeSound.instances) && activeSound.instances.length > 1){
+        console.error('[background-music._stopStrayTracks] у активного трека', activeIdx + 1, 'обнаружено', activeSound.instances.length, 'одновременных экземпляров — глушу лишние, оставляю один');
+        activeSound.instances.slice(1).forEach((inst) => {
+            try{ inst.stop(); } catch(e){
+                console.error('[background-music._stopStrayTracks] ошибка при остановке лишнего экземпляра активного трека:', e.message);
+            }
+        });
+    }
 }
 
 export function resumeBackgroundMusicWatchdog(){
@@ -164,6 +185,15 @@ function _playNextTrack(){
         }
         try{
             applyAudioVolumes();
+            // 26.10.2026 (по прямому указанию — музыка всё ещё двоится после фиксов 06.10/17.10):
+            // этот трек мог успеть доиграть сетевую ЗАГРУЗКУ (PIXI.sound.add({loaded: ...})) уже
+            // ПОКА вкладка была скрыта — pauseAll() в _pauseApp() не может поставить на паузу то,
+            // чего ещё не существовало в момент сворачивания, поэтому playback стартует "вживую"
+            // в фоне и расходится с тем, что потом поднимает resumeAll(). Explicit stop() перед
+            // play() — дешёвый no-op, если играть нечему, и гарантия, что у ЭТОГО alias не может
+            // остаться более одного живого экземпляра, независимо от того, каким именно путём
+            // сложилась гонка (ту же гарантию для ДРУГИХ alias даёт _stopStrayTracks() на resume).
+            if(PIXI.sound.exists(alias)) PIXI.sound.stop(alias);
             _instance = PIXI.sound.play(alias, {
                 volume: 1,
                 complete: () => {

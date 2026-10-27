@@ -45,8 +45,11 @@ console.log('\nTest 2: hata.js ("База") — кисть добавлена с
     const m = hataSrc.match(/CHAR_SLOTS\.forEach\(s => \{([\s\S]*?)\n        \}\);/);
     assert(!!m, 'CHAR_SLOTS.forEach блок найден');
     if (m) {
-        assert(/if\(s\.cat === 6\) win\.addChild\(rightHandSpr\);/.test(m[1]),
-            'кисть добавляется перед слотом cat:6 (предмет в руке ляжет поверх пальцев)');
+        // 23.10.2026 (по прямому указанию — "файл фаланги кистей должен быть... под оружием и
+        // под кистью"): "фаланги правой руки.png" вернулись отдельным слоем — добавляются в ТОМ
+        // ЖЕ условии cat===6, сразу после кисти (phalanxSpr всё ещё ДО слота cat:6 по z-order).
+        assert(/if\(s\.cat === 6\)\{ win\.addChild\(rightHandSpr\); win\.addChild\(phalanxSpr\); \}/.test(m[1]),
+            'кисть и фаланги добавляются перед слотом cat:6 (предмет в руке ляжет поверх обоих)');
     }
 }
 
@@ -58,8 +61,9 @@ console.log('\nTest 3: shmot_shop.js (манекен "Шмотки") — кис�
     const m = shopSrc.match(/MAN_SLOTS\.forEach\(s => \{([\s\S]*?)\n        \}\);/);
     assert(!!m, 'MAN_SLOTS.forEach блок найден');
     if (m) {
-        assert(/if\(s\.cat === 6\) win\.addChild\(rightHandSpr\);/.test(m[1]),
-            'кисть добавляется перед слотом cat:6 (предмет в руке ляжет поверх пальцев)');
+        // 23.10.2026 (по прямому указанию — то же возвращение фаланг, что в hata.js выше).
+        assert(/if\(s\.cat === 6\)\{ win\.addChild\(rightHandSpr\); win\.addChild\(phalanxSpr\); \}/.test(m[1]),
+            'кисть и фаланги добавляются перед слотом cat:6 (предмет в руке ляжет поверх обоих)');
     }
 }
 

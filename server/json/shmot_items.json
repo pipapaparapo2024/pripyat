@@ -895,5 +895,33 @@
     "bk": "auto_flat",
     "bv": 20,
     "source": "roulette_bag"
+  },
+  {
+    "id": 116,
+    "cat": 0,
+    "bk": "machete_flat",
+    "bv": 8,
+    "source": "game2048"
+  },
+  {
+    "id": 117,
+    "cat": 6,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "raznaryadka"
+  },
+  {
+    "id": 118,
+    "cat": 1,
+    "bk": "gun_flat",
+    "bv": 10,
+    "source": "raznaryadka"
+  },
+  {
+    "id": 119,
+    "cat": 1,
+    "bk": "auto_flat",
+    "bv": 40,
+    "source": "raznaryadka"
   }
 ]

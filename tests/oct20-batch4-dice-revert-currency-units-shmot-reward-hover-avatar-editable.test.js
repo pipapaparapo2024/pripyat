@@ -56,8 +56,11 @@ console.log('\nTest 2: клиент передаёт shmotItemId дальше и
 {
     assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId\);/.test(roulBuySrc),
         'dvor-roulette-buy.js прокидывает res.shmotItemId');
-    assert(/rewards\.push\(\{type:'shmot', amount:1, name: shmotItem \? shmotItem\.name : 'Элемент шмотки'\}\);/.test(roulBuySrc),
-        'dvor-roulette-buy.js отправляет в попап награды type:"shmot" с именем (не "tatu")');
+    // 24.10.2026: добавлен 4-й параметр shmotItem (полный предмет каталога) — нужен
+    // buildShmotTooltipCard() для богатой карточки (имя/бонус/сет/требования), см.
+    // tests/oct24-raznaryadka-buyout-popup-and-tooltip.test.js.
+    assert(/rewards\.push\(\{type:'shmot', amount:1, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(roulBuySrc),
+        'dvor-roulette-buy.js отправляет в попап награды type:"shmot" с именем и полным предметом (не "tatu")');
     assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(pokerBagSrc),
         'dvor-poker-bag.js прокидывает res.shmotItemId');
     // 20.10.2026 (по прямому указанию, тот же день — "после ЗАБРАТЬ не вылезал попап награды"):

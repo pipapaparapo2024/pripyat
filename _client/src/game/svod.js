@@ -1,14 +1,16 @@
-import { attachSvodScroll }       from './svod/svod-scroll.js';
-import { attachSvodLeaderboard }  from './svod/svod-leaderboard.js';
-import { attachSvodAchievements } from './svod/svod-achievements.js';
-import { attachSvodNews }         from './svod/svod-news.js';
+import { attachSvodScroll }           from './svod/svod-scroll.js';
+import { attachSvodLeaderboard }      from './svod/svod-leaderboard.js';
+import { attachSvodAchievements }     from './svod/svod-achievements.js';
+import { attachSvodZanachki }         from './svod/svod-zanachki.js';
+import { attachSvodZanachkiWishlist } from './svod/svod-zanachki-wishlist.js';
 
 /** Сводка (17.09.2026) — ПОЛНОСТЬЮ заменяет старое содержимое (Статистика/Достижения/Звания
- * из FLA-экрана mc.svod_win) на 4 новых вкладки: Новости, Топ по авторитету, Топ по урону,
- * Топ по достижениям — по прямому указанию пользователя. Экран строится с нуля на чистом
- * PIXI, без зависимости от FLA-заготовки (тот же паттерн, что habar.js — "Pre-construct:
- * PIXI-based, no FLA needed"), поэтому конструктор принимает mc для совместимости с
- * module_control.js, но не использует его.
+ * из FLA-экрана mc.svod_win) на вкладки: Заначки, Топ по авторитету, Топ по урону, Топ по
+ * достижениям, Скиллы — по прямому указанию пользователя (26.10.2026: "Новости" заменена на
+ * "Заначки"+"Скиллы", см. докблок у MAIN_TABS). Экран строится с нуля на чистом PIXI, без
+ * зависимости от FLA-заготовки (тот же паттерн, что habar.js — "Pre-construct: PIXI-based, no
+ * FLA needed"), поэтому конструктор принимает mc для совместимости с module_control.js, но не
+ * использует его.
  *
  * Координаты — из PSD-макета «достяги.psd», снятого пользователем 17.09.2026 (см. комментарии
  * в svod/svod-leaderboard.js и svod/svod-achievements.js). Фон и кнопки — точные, внутренняя
@@ -61,11 +63,18 @@ export default class Svod{
         // высоте почти вдвое (154×66 vs 154×153), поэтому даже после anchor-центрирования
         // (см. комментарий выше) потребовалась независимая докрутка каждого состояния — у
         // "respect"/"damage" пользователь снял поправку только для активного состояния.
+        // 26.10.2026 (по прямому указанию): вкладка "Новости" (не было реального источника
+        // новостей вообще, см. старый svod-news.js — честная заглушка) заменена на "Заначки" и
+        // "Скиллы". "Заначки" занимает освободившееся первое место; "Скиллы" — пятая вкладка
+        // снизу (не отдельная панель Сводки — клик открывает iface._openBossesSkillsScreen(),
+        // см. особый случай в _selectMainTab() ниже). Точные x/y — рабочее приближение по тому же
+        // шагу, что у существующих табов (~64-77px) — подогнать через редактор позиций.
         const MAIN_TABS = [
-            { key:'news',   activeImg:'новости актив.png',                passiveImg:'новости пассив.png',                x:200,   y:206   },
+            { key:'zanachki',activeImg:'заначки актив.png',               passiveImg:'заначки пассив.png',                x:200,   y:206   },
             { key:'respect',activeImg:'кнопка топ по авторитету актив.png',passiveImg:'кнопка топ по авторитету пассив.png',x:199.5, y:273.5, activeDy:-2 },
             { key:'damage', activeImg:'кнопка топ по урону актив.png',     passiveImg:'кнопка топ по урону пассив.png',     x:197.5, y:337,   activeDy:-4 },
             { key:'ach',    activeImg:'кнопка топ по достижениям актив.png',passiveImg:'кнопка топ по достижения пассив.png',x:201,   y:414,   activeDy:-10, passiveDy:-9 },
+            { key:'skills', activeImg:'скиллы актив.png',                 passiveImg:'скиллы пассив.png',                 x:201,   y:478   },
         ];
 
         const tabSprites = {};
@@ -91,8 +100,8 @@ export default class Svod{
         if(this._svodPanels[key]) return this._svodPanels[key];
 
         let panel;
-        if(key === 'news'){
-            panel = this._buildNewsPanel();
+        if(key === 'zanachki'){
+            panel = this._buildZanachkiPanel();
         } else if(key === 'respect'){
             panel = this._buildLeaderboardPanel({
                 cat: 4, bg: 'задний фон топы по авторитету.png', valueLabel: 'АВТОРИТЕТ',
@@ -152,7 +161,25 @@ export default class Svod{
         return panel;
     }
 
+    // 26.10.2026 (по прямому указанию): "Скиллы" — НЕ панель внутри Сводки, а прямой вызов
+    // отдельного полноэкранного оверлея — просто чтобы игрокам было удобнее посмотреть прокачку
+    // не заходя в бой. Поэтому обрабатывается ДО обычной логики вкладок: не меняет currentTab и
+    // не трогает подсветку табов Сводки — поверх неё просто открывается другой полноэкранный
+    // оверлей, Сводка остаётся "на месте" под ним с прежней активной вкладкой.
+    // 27.10.2026 (по прямому указанию — "зачем тут левая боевка с АТАКОВАТЬ/ПРОКАЧАТЬ, у нас
+    // только бой с боссами"): раньше звала window.skills.open() — отдельный старый FLA-эпохи
+    // экран с фейковой кнопкой "АТАКОВАТЬ" (просто инкрементировала skillsDmgSpent напрямую, не
+    // связана с реальным боем) и ручным "ПРОКАЧАТЬ". Переведено на iface._openBossesSkillsScreen()
+    // (bosses_skills.js) — уже существующий экран с новым артом ("новые скилы") и реальной
+    // прокачкой через skills.upgrade(), раньше открывался только изнутри боя с боссом (кнопки
+    // ТАЛАНТЫ/ПРОКАЧАТЬ в bosses_fight.js). Старый skills.js.open()/_buildWin() с фейковой
+    // атакой удалён целиком (см. skills.js) — все 3 места, что на него ссылались (эта вкладка,
+    // bosses-combat.js._ensureExtraButtons, _closeSkillsIfOpen), переведены на bosses_skills.js.
     _selectMainTab(key){
+        if(key === 'skills'){
+            if(window.iface) iface._openBossesSkillsScreen();
+            return;
+        }
         if(this.currentTab === key) return;
         this.currentTab = key;
 
@@ -193,7 +220,14 @@ export default class Svod{
         if(!this._pixiWin) this._buildPixiWin();
         root.layer2_mc.addChild(this._pixiWin);
         if(this.currentTab === null){
-            this._selectMainTab('news');
+            // 27.10.2026 (баг найден по прямому указанию — "нажимаю на Сводку, сразу
+            // открываются заначки, а должна открываться сводка"): дефолтной вкладкой при первом
+            // открытии экрана была назначена 'zanachki' (просто заняла освободившееся место
+            // первой кнопки после удаления 'news', см. MAIN_TABS выше) — визуально это выглядело
+            // так, будто Заначки это и есть Сводка. Дефолт возвращён на 'respect' (тот же таб,
+            // что открывался по умолчанию до 26.10.2026, когда первым табом был 'news'), Заначки
+            // остаётся обычной кликабельной вкладкой, просто больше не открывается сама.
+            this._selectMainTab('respect');
         } else {
             // 24.09.2026 (по прямому указанию — "поменял ник, зашёл в Сводку, топ по урону
             // показывает старый ник"): _selectMainTab() рано выходит, если currentTab не
@@ -221,10 +255,19 @@ export default class Svod{
     close(){
         if(this._pixiWin && this._pixiWin.parent) this._pixiWin.parent.removeChild(this._pixiWin);
         if(window.iface) iface.popHud('svod');
+        // 27.10.2026 (баг найден, по прямому указанию — "открыл Значки, закрыл Значки, закрыл
+        // Сводку целиком, открыл заново — вместо дефолтной вкладки показывает Значки"): currentTab
+        // раньше переживал полное закрытие Свода — open() сбрасывает его на дефолт ТОЛЬКО если
+        // currentTab===null (первое открытие за сессию, см. коммент там), иначе просто обновляет
+        // данные ТЕКУЩЕЙ вкладки, даже если Свод был закрыт целиком и открыт заново. Сброс здесь
+        // гарантирует, что ЛЮБОЕ открытие после полного закрытия снова проходит через ветку выбора
+        // дефолтной вкладки в open().
+        this.currentTab = null;
     }
 }
 
 attachSvodScroll(Svod.prototype);
 attachSvodLeaderboard(Svod.prototype);
 attachSvodAchievements(Svod.prototype);
-attachSvodNews(Svod.prototype);
+attachSvodZanachki(Svod.prototype);
+attachSvodZanachkiWishlist(Svod.prototype);

@@ -43,7 +43,8 @@ console.log('\nTest 1: сервер (poker.php.openBag) списывает roule
 
 console.log('\nTest 2: patch ответа openBag() возвращает актуальный баланс roulette_spichki');
 {
-    assert(/patchCurrencies\(\$user, \['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot'/.test(pokerPhp),
+    // 26.10.2026: 'stash_data' добавлен в список рядом со stash_count (фича "Заначки").
+    assert(/patchCurrencies\(\$user, \['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot'/.test(pokerPhp),
         'patchCurrencies включает roulette_spichki (клиент должен увидеть остаток именно этой общей валюты после списания)');
 }
 

@@ -5,7 +5,7 @@
 
 Class Registry Implements ArrayAccess {
     private $vars = array(
-        'classes' => array('users','security','event','vassilich','habar','hapuga','shmot','base','gangs','bp','tasks','top','bosses','roulette','zone','dice','yashik','weapons','skills','poker','blackjack','zaruba','ryukzak','hata','achievements','rewardlinks','dvor'),
+        'classes' => array('users','security','event','vassilich','habar','hapuga','shmot','base','gangs','bp','tasks','top','bosses','roulette','zone','dice','yashik','weapons','skills','poker','blackjack','zaruba','ryukzak','hata','achievements','rewardlinks','dvor','raznaryadka','game2048','zanachki'),
         'balabols' => array(),
         'names' => array(),
         'api_service' => 'SET_ON_SERVER',

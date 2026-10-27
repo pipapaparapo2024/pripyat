@@ -53,10 +53,13 @@ console.log('\nTest 2: z-order — кисть добавляется ПЕРЕД 
     assert(!!m, 'CLOTH_SLOTS.forEach блок найден');
     if (m) {
         const body = m[1];
-        assert(/if\(s\.cat === 6\) root\.layer0_mc\.addChild\(this\._rightHandSpr\);/.test(body),
-            'кисть добавляется именно перед addChild слота cat:6 (предмет в руке рендерится поверх неё)');
-        assert(/if\(s\.cat === 6\) root\.layer0_mc\.addChild\(this\._rightHandSpr\);\s*\n\s*root\.layer0_mc\.addChild\(this\._clothSlots\[s\.cat\]\);/.test(body),
-            'условие с кистью стоит НЕПОСРЕДСТВЕННО перед addChild слота — гарантирует нужный z-order именно для cat:6');
+        // 23.10.2026 (по прямому указанию — "файл фаланги кистей должен быть... под оружием и
+        // под кистью"): "фаланги правой руки.png" вернулись отдельным слоем в ТОМ ЖЕ условии
+        // cat===6, сразу после кисти (phalanxSpr всё ещё ДО слота cat:6 по z-order).
+        assert(/if\(s\.cat === 6\)\{ root\.layer0_mc\.addChild\(this\._rightHandSpr\); root\.layer0_mc\.addChild\(this\._phalanxSpr\); \}/.test(body),
+            'кисть и фаланги добавляются именно перед addChild слота cat:6 (предмет в руке рендерится поверх обоих)');
+        assert(/if\(s\.cat === 6\)\{ root\.layer0_mc\.addChild\(this\._rightHandSpr\); root\.layer0_mc\.addChild\(this\._phalanxSpr\); \}\s*\n\s*root\.layer0_mc\.addChild\(this\._clothSlots\[s\.cat\]\);/.test(body),
+            'условие с кистью/фалангами стоит НЕПОСРЕДСТВЕННО перед addChild слота — гарантирует нужный z-order именно для cat:6');
     }
 }
 

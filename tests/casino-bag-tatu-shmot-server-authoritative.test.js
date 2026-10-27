@@ -18,9 +18,14 @@
  *
  * Фикс: решение (роллится ли тату) и сама выдача переехали на сервер (poker.php.openBag(),
  * roulette.php.openCase()) — тот же паттерн Gameops::grantShmotFromSource(), что уже
- * применяется у боссов (bosses.php.claimKill()). Шанс дропа оставлен 0 (по прямому указанию —
- * фича по-прежнему выключена в бете, менять только архитектуру выдачи, не включать дроп) —
- * это безопасная no-op константа, поднять шанс потом можно одной строкой.
+ * применяется у боссов (bosses.php.claimKill()). Шанс дропа изначально оставлен 0 (по прямому
+ * указанию — фича выключена в бете, менять только архитектуру выдачи, не включать дроп) —
+ * безопасная no-op константа, поднять шанс потом можно одной строкой.
+ *
+ * 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них будут шмотки,
+ * включи шанс 10%"): именно эта строка и поднята — poker.php 0→10 (источник 'poker' уже был
+ * непустым пулом), roulette.php 0→10 + источник переименован 'roulette' → 'roulette_bag' (в
+ * каталоге всегда существовал только пул с суффиксом _bag — старое имя было тихо пустым).
  *
  * Run: node tests/casino-bag-tatu-shmot-server-authoritative.test.js
  */
@@ -53,7 +58,7 @@ console.log('\nTest 1: poker.php.openBag() — тату решает и выда
     assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'poker'\) : null;/.test(body),
         'ролл и выдача тату целиком на сервере через Gameops::grantShmotFromSource(\'poker\')');
     assert(/\$hasTatu = \$tatuItemId !== null;/.test(body), 'hasTatu вычисляется из реального результата выдачи, а не просто из ролла (пустой пул источника не считается выигрышем)');
-    assert(/\$tatuChancePct = 0;/.test(body), 'шанс дропа тату оставлен 0 — фича по-прежнему выключена в бете, поменялась только архитектура выдачи');
+    assert(/\$tatuChancePct = 10;/.test(body), 'шанс дропа шмотки поднят до 10% (26.10.2026, по прямому указанию)');
     assert(/grantShmotFromSource\(\$user, 'poker'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantShmotFromSource'),
         'выдача тату происходит ДО saveUser() — попадает в ту же атомарную запись, что и остальная награда сумки');
     assert(/patchCurrencies\(\$user, \[[^)]*'shmot'/.test(body), 'patch включает поле shmot — клиент увидит новую вещь через applyPatch(), не только валюту');
@@ -67,11 +72,11 @@ console.log('\nTest 2: roulette.php.openCase() — тату решает и вы
     assert(start !== -1, 'метод openCase() существует');
     const body = roulettePhp.slice(start, end);
 
-    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'roulette'\) : null;/.test(body),
-        'ролл и выдача тату целиком на сервере через Gameops::grantShmotFromSource(\'roulette\')');
+    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'roulette_bag'\) : null;/.test(body),
+        'ролл и выдача тату целиком на сервере через Gameops::grantShmotFromSource(\'roulette_bag\') — переименовано с несостыкованного \'roulette\' (пустой пул)');
     assert(/\$hasTatu = \$tatuItemId !== null;/.test(body), 'hasTatu вычисляется из реального результата выдачи');
-    assert(/\$tatuChancePct = 0;/.test(body), 'шанс дропа тату оставлен 0 — фича по-прежнему выключена в бете');
-    assert(/grantShmotFromSource\(\$user, 'roulette'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantShmotFromSource'),
+    assert(/\$tatuChancePct = 10;/.test(body), 'шанс дропа шмотки поднят до 10% (26.10.2026, по прямому указанию)');
+    assert(/grantShmotFromSource\(\$user, 'roulette_bag'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantShmotFromSource'),
         'выдача тату происходит ДО saveUser()');
     assert(/patchCurrencies\(\$user, \[[^)]*'shmot'/.test(body), 'patch включает поле shmot');
     assert(/\$this->ops->ok\(\['patch' => \$patch, 'reward' => \$reward, 'hasTatu' => \$hasTatu,/.test(body), 'ответ содержит hasTatu');

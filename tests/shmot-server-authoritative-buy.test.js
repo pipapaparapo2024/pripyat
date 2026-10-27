@@ -35,7 +35,8 @@ console.log('\nTest 1: shmot_items.json покрывает ВСЕ 41 предм�
 {
     const idsInCatalog = new Set(shmotItemsJson.map(it => it.id));
     // 21.10.2026: 115, не 100 — добавлены 3 новых сета по 5 предметов (id101-115, 59 → 74 актуальных).
-    assert(idsInCatalog.size === 115, 'в каталоге 41 прежний и 74 актуальных предметов, нашлось: ' + idsInCatalog.size);
+    // 25.10.2026: 119, не 115 — добавлен сет "Исполнитель" (id116-119, 74 → 78 актуальных).
+    assert(idsInCatalog.size === 119, 'в каталоге 41 прежний и 78 актуальных предметов, нашлось: ' + idsInCatalog.size);
     for (let id = 0; id <= 40; id++) {
         assert(idsInCatalog.has(id), `id=${id} присутствует в shmot_items.json`);
     }

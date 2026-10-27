@@ -52,7 +52,8 @@ console.log('\nTest 2: bosses_prefight.js — иконка босса (обща�
     // fontSize:27 без scale.
     assert(/fontSize:27,/.test(prefightSrc) && !/xpTxt\.scale\.set\(/.test(prefightSrc),
         'HP-текст увеличен напрямую (fontSize:27 = 22×1.24), без scale');
-    assert(/napBtn\.x = 880; napBtn\.y = 663;/.test(prefightSrc), 'кнопка НАПАСТЬ на новых координатах');
+    // 26.10.2026 (уточнено редактором позиций повторно): x880 → x873, y не менялся.
+    assert(/napBtn\.x = 873; napBtn\.y = 663;/.test(prefightSrc), 'кнопка НАПАСТЬ на новых координатах');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

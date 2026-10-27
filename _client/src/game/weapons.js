@@ -263,7 +263,7 @@ export default class Weapons{
 		exitBtn.scale.set(0.5);
 		if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
 		exitBtn.x = 1240;
-		exitBtn.y = 89;
+		exitBtn.y = 90;
 		exitBtn.interactive = true;
 		exitBtn.buttonMode  = true;
 		exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });

@@ -509,7 +509,13 @@ export function attachYashik(proto){
 						{type:'coins', amount:coinsGain},
 						{type:'exp', amount:expGain},
 					];
-					if(shmotItem) _items.push({type:'shmot', amount:1});
+					// 24.10.2026 (по прямому указанию — "при наведении на шмотку в попапе
+					// награды должно выводиться окно как во вкладке шмоток"): shmotItem (строка
+					// 385) уже полный предмет каталога — раньше в попап уходило только
+					// {type:'shmot',amount:1} без имени/самого предмета, наведение не
+					// показывало ничего (popups/reward.js вешает pointerover только при
+					// наличии item.name).
+					if(shmotItem) _items.push({type:'shmot', amount:1, name: shmotItem.name, shmotItem});
 					if(!suppressPopup) iface._showRewardPopup(_items);
 					iface.updateUp();
 				}

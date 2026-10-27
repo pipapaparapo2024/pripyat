@@ -119,7 +119,9 @@ export function attachRouletteScreen(proto){
         // 23.09.2026 (уточнено редактором позиций, по прямому указанию): было {x:794,y:285,
         // w:152,h:42}, стало {x:794,y:288,w:152,h:31}.
         // 03.10.2026 (по прямому указанию — "имя игрока что выбил куш поднять на 10px вверх").
-        window._centerTextIn(winnerNameTxt, {x:794, y:278, w:152, h:31});
+        // 26.10.2026 (по прямому указанию — "никнейм игрока, который выбил джекпот, поднять
+        // на 2 пикселя вверх"): y 278→276.
+        window._centerTextIn(winnerNameTxt, {x:794, y:276, w:152, h:31});
         win.addChild(winnerNameTxt);
         this._roulWinnerNameTxt = winnerNameTxt;
 
@@ -131,7 +133,8 @@ export function attachRouletteScreen(proto){
         // внутри него, независимо от количества цифр.
         // 03.10.2026 (по прямому указанию — "текст кол-во куша справа от «сорвал куш» поднять
         // вверх на 12px").
-        window._centerTextIn(winnerAmtTxt, {x:848, y:320, w:104, h:23});
+        // 26.10.2026 (по прямому указанию — "сорванный куш поднять на 3 пикселя вверх"): y 320→317.
+        window._centerTextIn(winnerAmtTxt, {x:848, y:317, w:104, h:23});
         win.addChild(winnerAmtTxt);
         this._roulWinnerAmtTxt = winnerAmtTxt;
 

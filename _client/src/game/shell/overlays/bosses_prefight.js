@@ -380,7 +380,7 @@ export function attachBossPreFight(proto){
         // Кнопка НАПАСТЬ
         const napBtn = new PIXI.Sprite(PIXI.Texture.from(B + 'боевка кнопка напасть.png'));
         napBtn.anchor.set(0.5, 0.5);
-        napBtn.x = 880; napBtn.y = 663;
+        napBtn.x = 873; napBtn.y = 663;
         napBtn.interactive = true; napBtn.buttonMode = true;
         napBtn.on('pointerover', ()=>{ _sa(napBtn, 0.8); napBtn.scale.set(1.08); });
         napBtn.on('pointerout', ()=>{ _sa(napBtn, 1); napBtn.scale.set(1); });

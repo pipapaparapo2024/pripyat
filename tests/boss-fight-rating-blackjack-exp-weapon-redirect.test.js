@@ -46,7 +46,11 @@ console.log('\nTest 1: blackjack_config.json — семерка/девятка �
 console.log('\nTest 2: blackjack.php — сервер умеет начислять exp из payouts, добавляет в patch/ответ');
 {
     const start = bjSrc.indexOf('function resolve(){');
-    const body = bjSrc.slice(start, start + 6000);
+    // 24.10.2026: фиксированный размер окна уже дважды ломался от роста кода ВНУТРИ функции
+    // (6000->6300 23.10.2026 из-за хука 'blackjack', затем снова из-за хука 'sukhari' тем же
+    // классом правки) — resolve() физически последняя функция в файле (проверено), берём срез
+    // до конца файла вместо хрупкого числа символов.
+    const body = bjSrc.slice(start);
     assert(/\$cigAmt = 0; \$respAmt = 0; \$expAmt = 0; \$shmotGiven = false; \$shmotGranted = null;/.test(body),
         'expAmt инициализирован рядом с cigAmt/respAmt');
     assert(/if\(!empty\(\$p\['exp'\]\)\)\{  \$expAmt  = intval\(\$p\['exp'\]\);  \$this->ops->add\(\$user, 'exp', \$expAmt\); \}/.test(body),

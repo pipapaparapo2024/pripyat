@@ -136,7 +136,7 @@ export function attachPlayerProfile(proto){
         // предмет с id>=20, подставлялся СОВСЕМ ДРУГОЙ предмет (или undefined → ничего не рисовалось).
         let handItemSpr = null, handItemDef = null;
         let torsoSpr = null, torsoDef = null;
-        let headSpr = null;
+        let headSpr = null, headDef = null;
         CLOTH_SLOTS.forEach(s => {
             const equippedIdx = theirShmot.findIndex((slot, i) => {
                 if(!slot || !slot.equipped) return false;
@@ -150,22 +150,15 @@ export function attachPlayerProfile(proto){
             if(equippedIdx !== -1){
                 def = catalog.find(it => it.id === equippedIdx);
                 if(def && def.imgFile){
-                    spr.texture = PIXI.Texture.from('./images/shmot/' + def.imgFile);
-                    // 18.10.2026 (тот же фикс, что в home.js.updateClothes()/shmot_shop.js —
-                    // см. докблок в character-sprite-mipmap-fix.test.js): без мипмапа крупные
-                    // исходники шмоток дают алиасинг при сжатии мелким manScale.
+                    // 26.10.2026 (тот же фикс, что в home.js.updateClothes() — см. докблок там
+                    // же): manWidth/manHeight не решал резкость — используем manImgFile (заранее
+                    // уменьшенный PNG), manScale всегда 1.000.
+                    spr.texture = PIXI.Texture.from('./images/shmot/' + (def.manImgFile || def.imgFile));
                     spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
                     spr.texture.baseTexture.update();
                     spr.x = s.x + (def.manDx || 0);
                     spr.y = s.y + (def.manDy || 0) + (def.imgFile === 'штаны_1.png' ? -28 : 0);
-                    // 22.10.2026 (по прямому указанию, эксперимент): manWidth/manHeight —
-                    // альтернатива manScale, см. тот же коммент в home.js.
-                    if(def.manWidth && def.manHeight){
-                        spr.width = def.manWidth;
-                        spr.height = def.manHeight;
-                    } else {
-                        spr.scale.set(def.manScale || 1);
-                    }
+                    spr.scale.set(def.manScale || 1);
                 }
             }
             win.addChild(spr);
@@ -177,7 +170,7 @@ export function attachPlayerProfile(proto){
             // см. ниже), то есть под предплечьем. home.js/hata.js/shmot_shop.js этой проблемы
             // не имеют — их аналогичный блок завязан на leftHandSpr, а не на наличии предмета.
             if(s.cat === 6){ handItemSpr = spr; handItemDef = def; }
-            if(s.cat === 0){ headSpr = spr; }
+            if(s.cat === 0){ headSpr = spr; headDef = def; }
             if(s.cat === 1 && def){ torsoSpr = spr; torsoDef = def; }
         });
 
@@ -219,6 +212,20 @@ export function attachPlayerProfile(proto){
         handSpr.visible = !(_handWeaponHeld && handItemDef.handBuiltIn);
         win.addChild(handSpr);
 
+        // 23.10.2026 (по прямому указанию — "почему-то ты не выводишь файл фаланги кистей, когда
+        // игрок берёт что-то в руку"): см. тот же докблок в shmot_shop.js/home.js — "фаланги
+        // правой руки.png" вернулся отдельным слоем, видимым только когда что-то реально зажато
+        // (не у handBuiltIn-предметов — у них кисть уже нарисована внутри файла самого предмета).
+        // ⚠️ x/y/scale — приблизительная прикидка (поза "кисть хват.png"), точных исторических
+        // чисел не сохранилось — требует уточнения через редактор позиций.
+        const phalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+        phalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        phalanxSpr.texture.baseTexture.update();
+        phalanxSpr.x = 634; phalanxSpr.y = 421;
+        phalanxSpr.scale.set(0.189);
+        phalanxSpr.visible = !!(_handWeaponHeld && !(handItemDef && handItemDef.handBuiltIn));
+        win.addChild(phalanxSpr);
+
         const forearmSpr = new PIXI.Sprite(PIXI.Texture.from('./images/предплечье правое.png'));
         forearmSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
         forearmSpr.texture.baseTexture.update();
@@ -227,6 +234,11 @@ export function attachPlayerProfile(proto){
         forearmSpr.x = 642; forearmSpr.y = 375;
         forearmSpr.scale.set(0.218);
         win.addChild(forearmSpr);
+        // 24.10.2026 (по прямому указанию — "кисть находится под предплечьем, так быть не
+        // должно"): явная гарантия сразу здесь, не полагаемся только на пересортировку ниже
+        // (блок `if(handItemSpr)` завязан на leftHandSpr и мог не успеть выполниться).
+        win.addChild(handSpr);
+        win.addChild(phalanxSpr);
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
         leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
@@ -250,16 +262,27 @@ export function attachPlayerProfile(proto){
         eyesClosedSpr.scale.set(0.219);
         eyesClosedSpr.visible = false;
         win.addChild(eyesClosedSpr);
+        // 26.10.2026 (по прямому указанию — "для шмотки маска исполнитель моргания не должно
+        // быть"): id116 "Маска (Исполнитель)" — headDef снят ЗДЕСЬ (до закрытия замыкания), а
+        // не перечитывается на каждый тик, т.к. чужой профиль неизменен на время показа экрана
+        // (в отличие от home.js/shmot_shop.js, где свою экипировку можно сменить не закрывая
+        // экран — там проверка идёт прямо внутри интервала).
+        const profileHeadIsMaskIspolnitel = headDef && headDef.id === 116;
         this._profileBlinkTimer = setInterval(() => {
+            if(profileHeadIsMaskIspolnitel) return;
             eyesClosedSpr.visible = true;
             setTimeout(() => { eyesClosedSpr.visible = false; }, 300);
         }, 15000);
 
-        // Обычный предмет: левая кисть → предмет → правая кисть; часы Poker и
+        // Обычный предмет: левая кисть → фаланги → предмет → правая кисть; часы Poker и
         // цепь Teenager носятся поверх правой кисти.
         if(handItemSpr){
-            const weaponIdx = win.getChildIndex(leftHandSpr) + 1;
-            win.addChildAt(handItemSpr, Math.min(weaponIdx, win.children.length));
+            let topIdx = win.getChildIndex(leftHandSpr) + 1;
+            if(phalanxSpr.visible){
+                win.addChildAt(phalanxSpr, Math.min(topIdx, win.children.length));
+                topIdx = win.getChildIndex(phalanxSpr) + 1;
+            }
+            win.addChildAt(handItemSpr, Math.min(topIdx, win.children.length));
             if(handItemDef && (handItemDef.id === 62 || handItemDef.id === 92)) win.addChild(handItemSpr);
             else win.addChildAt(handSpr, win.getChildIndex(handItemSpr) + 1);
         }
@@ -267,7 +290,7 @@ export function attachPlayerProfile(proto){
         // 22.10.2026 (по прямому указанию — то же правило, что в home.js, см. докблок там):
         // куртки сетов Бродяга/Ветеран/Следопыт (id102/107/112) поднимаются на самый верх
         // z-порядка, выше рук/предплечий/часов-цепи — длинный рукав должен закрывать руку.
-        if(torsoDef && [102, 107, 112].includes(torsoDef.id) && torsoSpr){
+        if(torsoDef && [102, 107, 112, 118, 119].includes(torsoDef.id) && torsoSpr){
             win.addChild(torsoSpr);
             // 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
             // Z-индексу, чем шмотки на торс"): поднятие торса (куртки) на самый верх выше
@@ -275,6 +298,21 @@ export function attachPlayerProfile(proto){
             // ПОСЛЕ торса именно для того, чтобы быть выше — переподнимаем голову следом,
             // чтобы это правило не нарушалось даже с длиннополыми куртками.
             if(headSpr) win.addChild(headSpr);
+            // 23.10.2026 (по прямому указанию, скрин — "бита прячется под куртку"): подъём
+            // куртки хоронил уже переставленные выше оружие/кисть/фаланги (cat:6) —
+            // переподнимаем их поверх куртки, НО только для предмета, реально зажатого в
+            // кулаке. 23.10.2026 (повторный скрин — "Сайга/Пистолет/Кружка должны быть МЕНЬШЕ
+            // по Z-индексу, чем куртка; часы на руке тоже под курткой"): handBuiltIn-предметы
+            // и часы/цепь (id62/92) исключены из переподъёма целиком — остаются под курткой.
+            // 26.10.2026 (по прямому указанию — та же правка, что в shmot_shop.js/home.js/
+            // hata.js, для консистентности рендера персонажа во всех местах): id117 (Бита,
+            // Исполнитель) — исключение из исключения, держится поднятой в кулаке.
+            const _handWeaponHeld2 = _handWeaponHeld && (!(handItemDef && handItemDef.handBuiltIn) || (handItemDef && handItemDef.id === 117));
+            if(_handWeaponHeld2){
+                if(phalanxSpr.parent === win) win.addChild(phalanxSpr);
+                if(handItemSpr) win.addChild(handItemSpr);
+                if(handSpr.parent === win) win.addChild(handSpr);
+            }
         }
 
         // Заголовок — ник + уровень (та же формула, что Interface.updateNick()/svod-leaderboard.js,
@@ -551,9 +589,13 @@ export function attachPlayerProfile(proto){
         bg.x = 997; bg.y = 45;
         win.addChild(bg);
 
+        // 26.10.2026 (по прямому указанию — фича "Заначки"): новая кнопка "Попросить заначки"
+        // встаёт НАД двумя существующими, обе опущены вниз, чтобы освободить ей место (качалка
+        // была y:176 → +80 = 256, зарубиться была y:357 → +60 = 417).
         const buttons = [
-            { file: 'кнопка у друга позвать в качалку.png', x: 1039, y: 176, action: 'gym_invite' },
-            { file: 'кнопка у друга зарубиться .png',       x: 1040, y: 357, action: 'fight_challenge' },
+            { file: 'кнопка у друга просьба заначек.png',  x: 1039, y: 100, action: 'stash_request' },
+            { file: 'кнопка у друга позвать в качалку.png', x: 1039, y: 256, action: 'gym_invite' },
+            { file: 'кнопка у друга зарубиться .png',       x: 1040, y: 417, action: 'fight_challenge' },
         ];
         buttons.forEach(b => {
             const btn = new PIXI.Sprite(PIXI.Texture.from('./images/' + b.file));
@@ -564,8 +606,27 @@ export function attachPlayerProfile(proto){
             btn.on('pointerdown', ()=>{
                 if(b.action === 'fight_challenge'){ this._startZaruba(win, profile); return; }
                 if(b.action === 'gym_invite'){ this._startGymPump(profile); return; }
+                if(b.action === 'stash_request'){ this._openFriendStashWishlist(profile); return; }
             });
             win.addChild(btn);
+        });
+    };
+
+    // 26.10.2026 (по прямому указанию — фича "Заначки"): показывает ЧУЖОЙ список запросов
+    // заначек (см. zanachki.php.getFriendWishlist()) в попапе, общем с моим собственным списком
+    // запросов на вкладке Заначки Сводки (см. svod-zanachki-wishlist.js — ОДНА функция-билдер на
+    // оба контекста, чтобы не дублировать разметку). window.svod уже существует к моменту, когда
+    // эта кнопка вообще может быть нажата (создаётся в module_control.js вместе со всеми
+    // остальными window.*-модулями при старте игры).
+    proto._openFriendStashWishlist = function(profile){
+        TS.php('zanachki.getFriendWishlist', {target_id: profile.id}, (e) => {
+            if(!e){
+                if(window.notify) notify.showResult({text: 'Не удалось загрузить список запросов'}, 0);
+                return;
+            }
+            if(window.svod) svod._buildZanachkiWishlistPopup(e.wishlist || [], 'friend', {
+                targetId: e.targetId, myOwnedCounts: e.myOwnedCounts || {},
+            });
         });
     };
 

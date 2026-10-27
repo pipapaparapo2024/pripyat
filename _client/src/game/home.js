@@ -1,3 +1,5 @@
+import attachFlaGallery from './shell/overlays/fla_gallery.js';
+
 export default class Home{
 	constructor(my_home){
 		this.home = my_home;
@@ -153,8 +155,24 @@ export default class Home{
 			this._rightHandSpr.y = 427;
 			this._rightHandSpr.scale.set(0.200);
 		}
+		// 23.10.2026 (по прямому указанию — "почему-то ты не выводишь файл фаланги кистей, когда
+		// игрок берёт что-то в руку... он должен находиться под оружием и под кистью"): см. тот
+		// же докблок у this._manPhalanxSpr в shmot_shop.js — "фаланги правой руки.png" вернулся
+		// отдельным слоем, видимым только когда в руке реально что-то зажато. ⚠️ x/y/scale —
+		// приблизительная прикидка (поза "кисть хват.png"), точных исторических чисел не
+		// сохранилось — требует уточнения через редактор позиций.
+		if(!this._phalanxSpr){
+			this._phalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+			this._phalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+			this._phalanxSpr.texture.baseTexture.update();
+			this._phalanxSpr.anchor.set(0, 0);
+			this._phalanxSpr.x = 634;
+			this._phalanxSpr.y = 421;
+			this._phalanxSpr.scale.set(0.189);
+			this._phalanxSpr.visible = false;
+		}
 		CLOTH_SLOTS.forEach(s => {
-			if(s.cat === 6) root.layer0_mc.addChild(this._rightHandSpr);
+			if(s.cat === 6){ root.layer0_mc.addChild(this._rightHandSpr); root.layer0_mc.addChild(this._phalanxSpr); }
 			root.layer0_mc.addChild(this._clothSlots[s.cat]);
 		});
 		this.updateClothes();
@@ -200,6 +218,11 @@ export default class Home{
 			this._rightForearmSpr.scale.set(0.218);
 		}
 		root.layer0_mc.addChild(this._rightForearmSpr);
+		// 24.10.2026 (по прямому указанию — "кисть находится под предплечьем, так быть не
+		// должно"): явная гарантия сразу здесь, не полагаемся только на пересортировку в
+		// updateClothes() ниже (она завязана на leftHandSpr и могла не успеть выполниться).
+		root.layer0_mc.addChild(this._rightHandSpr);
+		root.layer0_mc.addChild(this._phalanxSpr);
 
 		if(!this._leftHandSpr){
 			this._leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
@@ -225,7 +248,14 @@ export default class Home{
 			this._eyesClosedSpr.y = 232;
 			this._eyesClosedSpr.scale.set(0.219);
 			this._eyesClosedSpr.visible = false;
+			// 26.10.2026 (по прямому указанию — "для шмотки маска исполнитель моргания не
+			// должно быть"): id116 "Маска (Исполнитель)", cat:0 (голова) — лицо под маской,
+			// моргание глаз поверх неё визуально бессмысленно/лишнее. Проверяется на каждом
+			// тике интервала (не один раз при старте) — шмотку можно снять/надеть в любой
+			// момент сессии, статическая проверка при создании спрайта не отследила бы смену.
 			setInterval(() => {
+				const headEq = window.shmot && (shmot.items || []).find(it => it.cat === 0 && it.equipped);
+				if(headEq && headEq.id === 116) return; // "Маска (Исполнитель)" — не моргать
 				this._eyesClosedSpr.visible = true;
 				setTimeout(() => { this._eyesClosedSpr.visible = false; }, 300);
 			}, 15000);
@@ -241,6 +271,19 @@ export default class Home{
 		// здесь убран — позиционирование слота cat:6 теперь решается внутри updateClothes()
 		// (по id актуально надетого предмета), которая и так вызывается сразу ниже.
 		this.updateClothes();
+
+		// 26.10.2026 (по прямому указанию — "эта кнопка не нужна"): дев-кнопка "FLA" (галерея
+		// скомпилированных FLA-файлов, see shell/overlays/fla_gallery.js) окончательно убрана с
+		// главного экрана — третий раз за неделю меняли видимость (добавлена 22.10, скрыта
+		// 24.10, возвращена 25.10), на этот раз удалена из init() целиком, не просто скрыта.
+		// Сам модуль fla_gallery.js/_openFlaGallery() не удалён — мёртвый код, если понадобится
+		// вернуть снова, при нём уже есть флаг this._flaGalleryBtn, который просто больше нигде
+		// не создаётся.
+
+		// 26.10.2026 (по прямому указанию — "убери иконку 2048 с главного экрана"): кнопка
+		// "2048 иконка игры.png" (добавлена тем же днём чуть раньше, x14/y140) убрана отсюда
+		// целиком — открытие игры "2048" переехало во вкладку «Двор» (см. dvor.js, кнопка
+		// "нажать на игру.png"/"ящик.png"). game2048.open() вызывается оттуда.
 	}
 
 	// Отрисовывает надетые шмотки на персонаже главного меню — зеркалит
@@ -253,28 +296,21 @@ export default class Home{
 			const base = this._clothSlotBases[cat];
 			const eq = (shmot.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
 			if(eq && eq.imgFile){
-				spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);
-				// 18.10.2026 (баг найден по прямому указанию — "режется качество одежды"):
-				// иконки шмоток — крупные исходники (правило AGENTS.md — "не уменьшать",
-				// 58 файлов, 83 МБ RGBA), сжимаются на экране мелким manScale (~0.2) — тот же
-				// класс бага, что уже чинили для персонажа (17.10.2026), но мипмап для одежды
-				// никогда не ставился ни в одном файле.
+				// 26.10.2026 (по прямому указанию, по итогам A/B-теста на маске "Комбинатор" —
+				// "справа качество получше было"): манёвр с manWidth/manHeight (22.10.2026,
+				// эксперимент у id111) НЕ решал задачу — sprite.width/height в PixiJS растягивают
+				// ТУ ЖЕ текстуру тем же GPU-семплингом, что и sprite.scale, резкость идентична.
+				// Настоящий фикс — заранее уменьшенный PNG (LANCZOS) под точный размер показа на
+				// персонаже, без доп. масштабирования в коде. manImgFile — такой файл для КАЖДОГО
+				// предмета каталога (shmot.js), manScale теперь всегда 1.000 (ветка
+				// manWidth/manHeight убрана как мёртвый код — больше не нужна).
+				spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));
 				spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
 				spr.texture.baseTexture.update();
 				spr.visible = true;
 				spr.x = base.x + (eq.manDx || 0);
 				spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
-				// 22.10.2026 (по прямому указанию — эксперимент: "одну шмотку не делать ей scale,
-				// а поставить значения ширины и высоты"): manWidth/manHeight — альтернатива
-				// manScale, явный пиксельный размер вместо множителя (сейчас только у id111
-				// Панама Следопыт, см. shmot.js).
-				if(eq.manWidth && eq.manHeight){
-					spr.scale.set(1);
-					spr.width = eq.manWidth;
-					spr.height = eq.manHeight;
-				} else {
-					spr.scale.set(eq.manScale || 1);
-				}
+				spr.scale.set(eq.manScale || 1);
 			} else {
 				spr.texture = PIXI.Texture.EMPTY;
 				spr.visible = false;
@@ -292,8 +328,8 @@ export default class Home{
 				// каталоге shmot.js — Сайга/Пистолет/Кружка новых сетов) кисть уже нарисована
 				// ВНУТРИ файла самого предмета — для них кисть-спрайт скрывается целиком,
 				// остаётся только предплечье.
+				const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
 				if(this._rightHandSpr){
-					const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
 					if(_handWeaponHeld && eq.handBuiltIn){
 						this._rightHandSpr.visible = false;
 					} else {
@@ -310,8 +346,15 @@ export default class Home{
 						this._rightHandSpr.scale.set(_handWeaponHeld ? 0.189 : 0.200);
 					}
 				}
-				const weaponIdx = root.layer0_mc.getChildIndex(this._leftHandSpr) + 1;
-				root.layer0_mc.addChildAt(spr, Math.min(weaponIdx, root.layer0_mc.children.length));
+				// 23.10.2026 (по прямому указанию — "фаланги должны быть под оружием и под
+				// кистью"): видна только когда что-то реально зажато (не у handBuiltIn-предметов).
+				if(this._phalanxSpr) this._phalanxSpr.visible = !!(_handWeaponHeld && !eq.handBuiltIn);
+				let topIdx = root.layer0_mc.getChildIndex(this._leftHandSpr) + 1;
+				if(this._phalanxSpr && this._phalanxSpr.visible){
+					root.layer0_mc.addChildAt(this._phalanxSpr, Math.min(topIdx, root.layer0_mc.children.length));
+					topIdx = root.layer0_mc.getChildIndex(this._phalanxSpr) + 1;
+				}
+				root.layer0_mc.addChildAt(spr, Math.min(topIdx, root.layer0_mc.children.length));
 				if(eq && (eq.id === 62 || eq.id === 92)) root.layer0_mc.addChild(spr);
 				else if(this._rightHandSpr) root.layer0_mc.addChildAt(this._rightHandSpr, root.layer0_mc.getChildIndex(spr) + 1);
 			}
@@ -322,13 +365,33 @@ export default class Home{
 		// (id102/107/112 — куртки сетов Бродяга/Ветеран/Следопыт, длинный рукав) торс
 		// поднимается на самый верх ПОСЛЕ того, как кисть/предплечья/часы-цепь уже
 		// расставлены выше в forEach'е выше — иначе рукав визуально обрезался бы рукой.
+		// 25.10.2026 (по прямому указанию — "шмотки на торс по Z-индексу меньше, чем левое/
+		// правое предплечье, сделай так, чтобы одежда была поверх"): худи сета "Исполнитель"
+		// (id118/119) — тот же класс длиннорукавной одежды, добавлены в тот же список.
 		const _torsoEq = (shmot.items || []).find(it => it.cat === 1 && it.equipped);
-		if(_torsoEq && [102, 107, 112].includes(_torsoEq.id) && this._clothSlots[1]){
+		if(_torsoEq && [102, 107, 112, 118, 119].includes(_torsoEq.id) && this._clothSlots[1]){
 			root.layer0_mc.addChild(this._clothSlots[1]);
 			// 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
 			// Z-индексу, чем шмотки на торс"): поднятие торса выше поднимало его и выше головы —
 			// переподнимаем голову следом, чтобы правило "голова выше торса" не нарушалось.
 			if(this._clothSlots[0]) root.layer0_mc.addChild(this._clothSlots[0]);
+			// 23.10.2026 (по прямому указанию, скрин — "бита прячется под куртку"): подъём
+			// куртки хоронил уже переставленные выше в forEach оружие/кисть/фаланги (cat:6) —
+			// переподнимаем их поверх куртки, НО только для предмета, реально зажатого в
+			// кулаке. 23.10.2026 (повторный скрин — "Сайга/Пистолет/Кружка должны быть МЕНЬШЕ
+			// по Z-индексу, чем куртка; часы на руке тоже под курткой"): handBuiltIn-предметы
+			// (своя кисть нарисована внутри файла) и часы/цепь (id62/92) исключены из
+			// переподъёма целиком — остаются под курткой, как было до появления переподъёма.
+			// 26.10.2026 (по прямому указанию — "бита исполнителя должна быть поверх шмоток на
+			// торс"): id117 — исключение из исключения, см. тот же коммент в shmot_shop.js
+			// (держится поднятой в кулаке, а не у бедра, как Сайга/Пистолет/Кружка).
+			const _handEq = (shmot.items || []).find(it => it.cat === 6 && it.equipped);
+			const _handWeaponHeld2 = _handEq && _handEq.id !== 62 && _handEq.id !== 92 && (!_handEq.handBuiltIn || _handEq.id === 117);
+			if(_handWeaponHeld2){
+				if(this._phalanxSpr && this._phalanxSpr.parent === root.layer0_mc) root.layer0_mc.addChild(this._phalanxSpr);
+				if(this._clothSlots[6]) root.layer0_mc.addChild(this._clothSlots[6]);
+				if(this._rightHandSpr && this._rightHandSpr.parent === root.layer0_mc) root.layer0_mc.addChild(this._rightHandSpr);
+			}
 		}
 	}
 
@@ -367,3 +430,5 @@ export default class Home{
 		});
 	}
 }
+
+attachFlaGallery(Home.prototype);

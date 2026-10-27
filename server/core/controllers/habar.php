@@ -195,11 +195,16 @@ Class Habar {
         }
 
         $patchKeys = [];
+        $cigEarnedHabar = 0;
         foreach($con['rewards'] as $r){
             $type = $r['type']; $amount = intval($r['amount']);
             if(in_array($type, ['coins','cigarettes','dice_points','blue_points','poker_chips'], true)){
                 $this->ops->add($lockedUser, $type, $amount);
                 $patchKeys[] = $type;
+                // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+                // источников"): копим сигаретную часть награды хабара для report() ниже, ПОСЛЕ
+                // собственного saveUser() этой функции.
+                if($type === 'cigarettes') $cigEarnedHabar += $amount;
             } else if($type === 'damage'){
                 // Пул "урон Седого" — та же семантика, что была в клиенте: не накапливается
                 // между сборами хабара (полностью перезаполняется до максимума из уже
@@ -234,6 +239,8 @@ Class Habar {
 
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+
+        if($cigEarnedHabar > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigEarnedHabar);
 
         $patch = $this->ops->patchCurrencies($user, array_unique(array_merge($patchKeys, ['habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts'])));
         $this->ops->ok(['patch' => $patch, 'rewards' => $con['rewards'], 'daysCollected' => $this->ops->i($user, 'habar_days_collected')]);

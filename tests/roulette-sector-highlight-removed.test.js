@@ -49,10 +49,10 @@ console.log('\nTest 3: _animRouletteWheel не сбрасывает больше
     assert(!/_roulSectorHighlight/.test(body), '_animRouletteWheel не ссылается на несуществующий this._roulSectorHighlight');
 }
 
-console.log('\nTest 4: бокс ника победителя джекпота уточнён редактором позиций (03.10.2026: y:288→278, поднято на 10px)');
+console.log('\nTest 4: бокс ника победителя джекпота уточнён редактором позиций (26.10.2026: y:278→276, поднято ещё на 2px)');
 {
-    assert(/window\._centerTextIn\(winnerNameTxt, \{x:794, y:278, w:152, h:31\}\);/.test(roulSrc),
-        'winnerNameTxt теперь в боксе {x:794,y:278,w:152,h:31}');
+    assert(/window\._centerTextIn\(winnerNameTxt, \{x:794, y:276, w:152, h:31\}\);/.test(roulSrc),
+        'winnerNameTxt теперь в боксе {x:794,y:276,w:152,h:31}');
     // Регресс-гвард — сам механизм показа ника победителя (dvor-roulette.js читает
     // udata['roulette_winner'] и пишет w.name в _roulWinnerNameTxt.text) не тронут этой правкой.
     const orchSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'dvor-roulette.js'), 'utf-8');

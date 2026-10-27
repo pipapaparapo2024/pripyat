@@ -102,6 +102,11 @@
                 ' myStrength=' . $myStrength . ' targetStrength=' . $targetStrength . ' won=' . ($won ? '1' : '0') .
                 ' pvpWins=' . $this->ops->i($user, 'pvp_wins'));
 
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Зарубиться N раз" — засчитываем сам факт боя, не только победу (doc не делает
+            // различия победа/поражение для этого задания).
+            RaznaryadkaProgress::report($this->ops, 'zaruba', 1);
+
             $patch = $won ? $this->ops->patchCurrencies($user, ['pvp_wins']) : [];
             $this->ops->ok([
                 'won'              => $won,
@@ -156,6 +161,10 @@
             // цели считается отдельно, см. $newStrength выше).
             $user['gym_invites_sent'] = $this->ops->i($user, 'gym_invites_sent') + 1;
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Позвать в качалку N раз" — звать ПОСЛЕ собственного saveUser() выше.
+            RaznaryadkaProgress::report($this->ops, 'kachalka', 1);
 
             $patch = $this->ops->patchCurrencies($user, ['gym_pump_cooldowns', 'gym_invites_sent']);
             $this->ops->ok([

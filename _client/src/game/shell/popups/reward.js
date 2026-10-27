@@ -1,4 +1,5 @@
 /** Reward popup — icon cards (objects) or text lines (strings). */
+import { buildShmotTooltipCard } from '../shmot-tooltip.js';
 
 // 19.09.2026 (по прямому указанию) — числа от 1000 и выше сокращаются буквой "К" (тысячи),
 // последние 3 цифры отбрасываются целиком (без округления до сотен) — так задумано:
@@ -202,16 +203,30 @@ export function attachRewardPopup(proto){
             popup.addChild(itemsWrap);
 
             // 20.10.2026 (по прямому указанию — "сделай так, чтобы при наведении писалась
-            // шмотка которая выпала, логика как в рюкзаке"): простой тултип с названием
-            // предмета, показывается при наведении на карточку, у которой есть item.name
-            // (сейчас это только type:'shmot' из roulette.openCase()/poker.openBag(), см.
-            // dvor-roulette-buy.js/dvor-poker-bag.js). Вне itemsWrap (не режется maskGfx ниже),
-            // чтобы тултип не обрезался окном видимых 5 слотов.
+            // шмотка которая выпала, логика как в рюкзаке"), ДОПОЛНЕНО 24.10.2026 (по прямому
+            // указанию, скрин — "должно показываться меню, как в магазине шмоток, не просто
+            // название"): если у предмета есть item.shmotItem (полная запись каталога — см.
+            // dvor-roulette-buy.js), показываем ту же богатую карточку (имя/бонус/сет/
+            // требования), что и shmot_shop.js._showShopTip() — buildShmotTooltipCard().
+            // Иначе (старые вызовы, где передано только item.name) — прежний простой тултип,
+            // чтобы не ломать места, которые ещё не обновлены на полные данные предмета.
+            // Вне itemsWrap (не режется maskGfx ниже), чтобы тултип не обрезался окном видимых
+            // 5 слотов.
             const nameTip = new PIXI.Container();
             nameTip.visible = false;
             popup.addChild(nameTip);
-            const _showNameTip = (x, y, name) => {
+            const _showNameTip = (x, y, name, shmotItem) => {
                 while(nameTip.children.length) nameTip.removeChildAt(0);
+                if(shmotItem){
+                    const { card, width, height } = buildShmotTooltipCard(shmotItem);
+                    nameTip.addChild(card);
+                    // Карточка растёт ВНИЗ от (0,0) — сдвигаем её так же "над карточкой наград"
+                    // (нижний край тултипа = переданная точка y), как и простой вариант ниже.
+                    card.x = -width / 2; card.y = -height;
+                    nameTip.x = x; nameTip.y = y;
+                    nameTip.visible = true;
+                    return;
+                }
                 const PAD = 10;
                 const txt = new PIXI.Text(name, {
                     fontFamily: 'Southbank LT', fontSize: 18, fill: '#2a2118',
@@ -264,7 +279,7 @@ export function attachRewardPopup(proto){
                 // выпавшего предмета (тот же приём, что баннер "шанс на шмотку" в ryukzak.js).
                 if(item.name){
                     icon.interactive = true; icon.buttonMode = true;
-                    icon.on('pointerover', () => _showNameTip(slotX, ITEM_Y - CARD_H / 2 - 10, item.name));
+                    icon.on('pointerover', () => _showNameTip(slotX, ITEM_Y - CARD_H / 2 - 10, item.name, item.shmotItem));
                     icon.on('pointerout',  () => { nameTip.visible = false; });
                 }
 

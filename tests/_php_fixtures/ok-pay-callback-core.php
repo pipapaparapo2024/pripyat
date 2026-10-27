@@ -63,3 +63,32 @@ echo "=== Test 4: transKey() — префикс ok_ отличает transaction
     assertEq(OkPayCallback::transKey('abc123'), 'ok_abc123', 'transaction_id оборачивается префиксом ok_');
     assertTrue(OkPayCallback::transKey('555') !== '555', 'префиксованный ключ НЕ совпадает с голым числом — не столкнётся с VK order_id=555 в той же колонке tid');
 }
+
+echo "=== Test 5: priceCatalog() — та же индексация productCode, что у itemCatalog(), но отдаёт ожидаемую цену (price/7) ===\n";
+{
+    $prices = [
+        'stew'       => ['default' => [4, 12, 24, 80, 200, 400, 2000, 4000],
+                          'price'   => [28, 84, 168, 560, 1400, 2800, 14000, 28000]],
+        'coins'      => ['default' => [16, 36, 56, 100, 600, 2000, 10000, 20000],
+                          'price'   => [35, 70, 105, 175, 700, 1750, 7000, 14000]],
+        'cigarettes' => ['default' => [1600, 3600, 6000, 8000, 11000, 22000, 125000, 300000],
+                          'price'   => [21, 35, 56, 70, 98, 196, 980, 2100]],
+    ];
+    $priceCatalog = OkPayCallback::priceCatalog($prices);
+
+    assertEq($priceCatalog[0], 4, 'item0 — 28/7 = 4 ОК (та же пачка тушёнки, что item0 в itemCatalog())');
+    assertEq($priceCatalog[8], 5, 'item8 — первая пачка монет (35/7), offset согласован с itemCatalog()');
+    assertEq($priceCatalog[16], 3, 'item16 — первая пачка сигарет (21/7), offset согласован с itemCatalog()');
+    assertEq($priceCatalog[100], 3, 'item100 — энергия 50, цена 3 ОК (тот же голос-прайс, что у universal_pay.php)');
+    assertEq($priceCatalog[107], 120, 'item107 — энергия 3500, цена 120 ОК');
+}
+
+echo "=== Test 6: amountMatches() — допуск на округление, но не произвольное занижение суммы ===\n";
+{
+    assertTrue(OkPayCallback::amountMatches(4.0, '4'), 'точное совпадение проходит');
+    assertTrue(OkPayCallback::amountMatches(4.0, 4), 'совпадение с числовым (не строковым) amount тоже проходит');
+    assertTrue(OkPayCallback::amountMatches(4.0, '4.9'), 'допуск округления в большую сторону (≤1) проходит');
+    assertTrue(!OkPayCallback::amountMatches(120.0, '1'), 'подделанная заниженная сумма (1 вместо 120) ОТКЛОНЯЕТСЯ');
+    assertTrue(!OkPayCallback::amountMatches(4.0, 'abc'), 'нечисловой amount отклоняется, не падает с ошибкой');
+    assertTrue(!OkPayCallback::amountMatches(4.0, null), 'отсутствующий amount отклоняется');
+}

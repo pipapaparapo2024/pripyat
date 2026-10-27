@@ -341,7 +341,11 @@ export function attachRouletteBuy(proto){
             if(hasTatu){
                 const shmotItem = (shmotItemId !== null && shmotItemId !== undefined && window.shmot)
                     ? shmot.items.find(it => it.id === shmotItemId) : null;
-                rewards.push({type:'shmot', amount:1, name: shmotItem ? shmotItem.name : 'Элемент шмотки'});
+                // 24.10.2026 (по прямому указанию, скрин — "должно показываться меню, как в
+                // магазине шмоток"): передаём полный предмет каталога, не только имя — popups/
+                // reward.js строит по нему богатую карточку (buildShmotTooltipCard), если она
+                // есть, иначе падает назад на простой тултип по name.
+                rewards.push({type:'shmot', amount:1, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem});
             }
             if(window.iface) iface._showRewardPopup(rewards);
             if(win.parent) win.parent.removeChild(win);

@@ -159,7 +159,7 @@ Class Roulette {
         // общим сохранением ниже мог затереть начисленную здесь награду устаревшим снимком (тот
         // же класс гонки, что чинили в rewardlinks.php/poker.php — см. комментарий там же, это
         // зеркальная пара poker.php::openBag(), один и тот же баг в обоих копипастах).
-        $lockFields = ['stash_count', 'shmot', 'max_energy'];
+        $lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];
         $link = $this->_rawLink();
         if($link){
             $link->begin_transaction();
@@ -182,22 +182,31 @@ Class Roulette {
         $this->ops->add($user, 'exp', $reward['exp']);
         $this->ops->add($user, 'cigarettes', $reward['cig']);
         $this->ops->add($user, 'stash_count', $reward['stash']);
+        // 26.10.2026 (по прямому указанию — фича "Заначки"): вместо слепого +N выдаём N
+        // конкретных случайных карточек (коллекция+позиция), см. zanachkimodel.php. stash_data
+        // уже в $lockFields выше.
+        ZanachkiModel::grantRandomCards($this->ops, $user, $reward['stash']);
         $this->ops->add($user, 'coins', $reward['coins']);
         $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $reward['coins'];
 
-        // Тату (шмотка) из кейса — раньше решалось и СОХРАНЯЛОСЬ на клиенте
+        // Шмотка из кейса — раньше решалось и СОХРАНЯЛОСЬ на клиенте
         // (dvor._give('shmot',1) → shmot.giveRandom() → users.save), которое
         // users.php._sanitizeShmot() молча отклоняет (users.save не может сам выставить
         // owned=true) — приз никогда реально не доходил до игрока. Теперь решение и запись —
         // на сервере, тем же grantShmotFromSource(), что и у боссов (bosses.php.claimKill()).
-        // Шанс = 0 — дроп тату по-прежнему выключен в бете (см. dvor-roulette-buy.js, "Бета:
-        // выпадение тату отключено") — поднять шанс достаточно поменять эту константу,
-        // выдача уже безопасна. Источник 'roulette' в shmot_items.json пока не заполнен ни
-        // одним предметом (см. poker/dice/blackjack для сравнения) — добавить записи в
-        // каталог перед реальным включением шанса, иначе grantShmotFromSource будет находить
-        // пустой пул и возвращать null даже при выигрышном ролле.
-        $tatuChancePct = 0;
-        $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'roulette') : null;
+        // 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них будут
+        // шмотки, включи шанс 10%"): шанс был 0 (дроп тату отключён в бете) — поднят до 10%.
+        // ⚠️ Источник ТАКЖЕ переименован 'roulette' → 'roulette_bag' — в shmot_items.json
+        // ВСЕГДА существовал только пул 'roulette_bag' (5 предметов, id 111-115), а 'roulette'
+        // (без _bag) не содержал НИ ОДНОГО предмета — даже при ненулевом шансе grantShmotFromSource
+        // нашёл бы пустой пул и тихо вернул null. Это было безвредно, пока шанс был 0; при
+        // переходе на 10% стало бы реальной несостыковкой (игрок выигрывает ролл, но ничего не
+        // получает) — исправлено в той же правке, где шанс включается.
+        // Имена переменных ($tatuChancePct/$tatuItemId/$hasTatu) и ключи ответа ('hasTatu')
+        // оставлены как есть — переименование потребовало бы править и клиент (dvor-roulette-
+        // buy.js), а смысл поля не изменился (выпала шмотка — да/нет), только источник награды.
+        $tatuChancePct = 10;
+        $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'roulette_bag') : null;
         $hasTatu = $tatuItemId !== null;
 
         $lockedUpdates = [];
@@ -218,12 +227,16 @@ Class Roulette {
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         foreach($lockedUpdates as $col => $val) $user[$col] = $val;
 
+        // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+        // источников"): сигареты из кейса рулетки тоже засчитываются в "Собрать N сухарей".
+        if($reward['cig'] > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $reward['cig']);
+
         $debug = ['fn' => 'openCase', 'uid' => abs(intval($this->registry['uid'])),
             'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true), 'cost' => $cost, 'reward' => $reward,
             'hasTatu' => $hasTatu, 'tatuItemId' => $tatuItemId];
         error_log('[roulette.openCase] ' . json_encode($debug));
 
-        $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot', 'max_energy']);
+        $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'max_energy']);
         $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
         // 20.10.2026 (по прямому указанию — "сделай так, чтобы при наведении писалась шмотка
         // которая выпала"): tatuItemId раньше уходил только в $debug (error_log) — клиент не мог
@@ -333,14 +346,19 @@ Class Roulette {
     // спинов осталось до срабатывания, а не саму накопленную денежную сумму.
     function status(){
         $link = $this->_rawLink();
-        if(!$link) return $this->registry['tools']->output(['keyring_available' => false, 'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0]);
+        // 26.10.2026 (по прямому указанию — "сумма джекпота должна рассчитываться не от 3000,
+        // а начинаться с нуля и накапливаться постепенно"): все фолбэки/дефолты jackpot_pool
+        // в этом файле переведены с 3000 на 0 — 3000 было захардкоженной стартовой суммой из
+        // ТЗ-плейсхолдера ДО того, как появился реально растущий пул (см. комментарий у spin()
+        // ниже), и осталось висеть во всех аварийных фолбэках (нет соединения к БД и т.п.).
+        if(!$link) return $this->registry['tools']->output(['keyring_available' => false, 'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0]);
         $res = $link->query("SELECT `keyring_cycle_ends_at`, `jackpot_pool`, `spin_counter`, `spin_threshold` FROM `roulette_state` WHERE `id`=1");
         $row = $res ? $res->fetch_assoc() : null;
         $link->close();
         // Связка — личный редкий приз: её могут получить несколько игроков, а не только
         // один владелец на весь сервер. Глобальный 30-дневный цикл больше не блокирует выдачу.
         $available = true;
-        $jackpotPool = $row ? intval($row['jackpot_pool']) : 3000;
+        $jackpotPool = $row ? intval($row['jackpot_pool']) : 0;
         // 25.09.2026 (по прямому указанию — "показывай сбоку количество игр до комбинации"):
         // spin_counter/spin_threshold — ЕДИНЫЙ ГЛОБАЛЬНЫЙ счётчик до джекпота, общий на ВСЕХ
         // игроков (не персональный, в отличие от pity зариков/блэкджека) — та же таблица
@@ -434,7 +452,7 @@ Class Roulette {
             // стаканчиком он находится" + репорт "debug сливается в консоль браузера"): $debug
             // (slotTrace/slotResult — честность розыгрыша) больше НЕ уходит в ответ клиенту,
             // остаётся ТОЛЬКО в error_log() строкой выше (серверная диагностика, игроку не видна).
-            return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 3000, 'spin_counter' => 0, 'spin_threshold' => 0] + $slotResult);
+            return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0] + $slotResult);
         }
 
         $link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = `jackpot_pool` + 10 WHERE `id`=1");
@@ -442,7 +460,7 @@ Class Roulette {
         $counter = $res ? intval($res->fetch_assoc()['c']) : 0;
 
         $res2 = $link->query("SELECT `spin_threshold`, `keyring_cycle_ends_at`, `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
-        $row = $res2 ? $res2->fetch_assoc() : ['spin_threshold' => 999999999, 'keyring_cycle_ends_at' => 0, 'jackpot_pool' => 3000];
+        $row = $res2 ? $res2->fetch_assoc() : ['spin_threshold' => 999999999, 'keyring_cycle_ends_at' => 0, 'jackpot_pool' => 0];
         $threshold = intval($row['spin_threshold']);
         // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
         // выше): было жёстко захардкожено true — теперь честно читает 30-дневное окно ожидания
@@ -494,6 +512,19 @@ Class Roulette {
         $link->close();
 
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+        // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+        // "Сыграть N раз в рулетку" — звать ПОСЛЕ собственного saveUser() выше.
+        // 24.10.2026 (докблок устарел, поймано при проверке "все ли 9 типов заданий реально
+        // проходятся"): комментарий утверждал, что type:'roulette' нигде не используется в
+        // raznaryadka_config.json — неверно, он встречается многократно (октябрь/ноябрь).
+        RaznaryadkaProgress::report($this->ops, 'roulette', 1);
+        // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+        // источников"): если этот спин выпал на сигареты — тоже засчитывается.
+        if(($slotResult['reward']['type'] ?? null) === 'cig'){
+            RaznaryadkaProgress::report($this->ops, 'sukhari', intval($slotResult['reward']['amt'] ?? 0));
+        }
+
         $patchKeysSpin = ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games', 'keyring_owner'];
         // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
         // в $user, нужно включить их в patch, иначе клиент узнает о них только при следующей
@@ -747,33 +778,81 @@ Class Roulette {
             // выигрыш Куша обязан платить ИМЕННО накопленный jackpot_pool на этот момент, а не
             // старый плейсхолдер $this->KUSH_AMOUNT (введён ДО того, как jackpot_pool вообще
             // появился в игре, см. комментарий у объявления поля). Читаем пул ПРЯМО ЗДЕСЬ (не
-            // из устаревшего параметра/кэша) и сбрасываем его на стартовую сумму (3000₽) В ТОЙ
-            // ЖЕ операции, что и kush_counter/kush_threshold — единственное место во всём
-            // контроллере, где пул реально обнуляется, т.к. деньги реально выданы игроку (см.
-            // также spin() выше — там пул больше НЕ трогается).
-            $jackpotPool = $this->KUSH_AMOUNT; // фолбэк, если общая таблица вдруг недоступна
+            // из устаревшего параметра/кэша) и сбрасываем его В ТОЙ ЖЕ операции, что и
+            // kush_counter/kush_threshold — единственное место во всём контроллере, где пул
+            // реально обнуляется, т.к. деньги реально выданы игроку (см. также spin() выше —
+            // там пул больше НЕ трогается).
+            // 26.10.2026 (по прямому указанию — "сумма джекпота должна начинаться с нуля и
+            // накапливаться постепенно, а не от 3000"): сброс после реальной выплаты — на 0, не
+            // на 3000 (тот старый плейсхолдер стартовой суммы из ТЗ, до появления растущего пула).
+            //
+            // 27.10.2026 (баг найден по прямому указанию — живой репорт "Николай Седенко сорвал
+            // джекпот, но сам джекпот не упал и сумма не обнулилась"): подтверждено в
+            // /var/log/php_errors.log — реальный куш этого игрока залогирован 26.10.2026 15:44:12
+            // (jackpotPoolPaid=12380), то есть сервер ДОШЁЛ до этой ветки. Корень — читал/сбрасывал
+            // `roulette_state` БЕЗ лока (обычный SELECT + UPDATE, без транзакции), И результат
+            // UPDATE нигде не проверялся — если запрос по любой причине не применился (таймаут,
+            // конфликт блокировок), код всё равно продолжал как при успехе: пул оставался
+            // НЕобнулённым, а награда игроку шла по кэшу с СЕКУНДНОГО, независимого
+            // loadUser()->saveUser() цикла поверх этого же $user — тот же класс гонки "затёртого
+            // начисления", что уже чинили в других местах проекта (см. AGENTS.md про
+            // _checkAll→flush), только здесь это касается реальных денег Куша. Теперь — ОДНА
+            // транзакция с FOR UPDATE сразу на ОБЕ строки (общий roulette_state + строка игрока,
+            // тот же lockFields-приём, что уже используется в openCase() этого файла) — выплата
+            // и сброс пула либо применяются ОБА, либо не применяется НИ ОДИН (и клиент получает
+            // честную ошибку вместо "ты выиграл" без реальной выдачи).
+            $jackpotPool = $this->KUSH_AMOUNT; // фолбэк-значение для error_log, если транзакция не дойдёт до чтения пула
+            $kushLockFields = ['coins', 'coins_earned', 'roulette_winner'];
+            $kushPaid = false;
             $link = $this->_rawLink();
             if($link){
-                $res = $link->query("SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
-                $row = $res ? $res->fetch_assoc() : null;
-                if($row) $jackpotPool = intval($row['jackpot_pool']);
-                $newT = rand(6, 8);
-                $link->query("UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=$newT, `jackpot_pool`=3000 WHERE `id`=1");
+                $link->begin_transaction();
+                $poolRes = $link->query("SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1 FOR UPDATE");
+                $poolRow = $poolRes ? $poolRes->fetch_assoc() : null;
+                if($poolRow !== null){
+                    $jackpotPool = intval($poolRow['jackpot_pool']);
+
+                    $colList = implode(',', array_map(function($col){ return "`$col`"; }, $kushLockFields));
+                    $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
+                    $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
+                    if($lockRow !== null) foreach($kushLockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+
+                    $this->ops->add($user, 'coins', $jackpotPool);
+                    $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $jackpotPool;
+                    // 12.10.2026 (по прямому указанию, репорт — "забрал гарантированные 500р, а
+                    // показало, что сорвал джекпот"): запись публичного победителя перенесена
+                    // СЮДА из claimPrize() (см. большой коммент там) — это и есть единственное
+                    // место реального выигрыша Куша, именно его стоит объявлять всем игрокам, а
+                    // не гарантированное утешение. Нормализованный ник, JSON_UNESCAPED_UNICODE
+                    // (кириллица), 'roulette_winner' исключён из автопарсинга JSON в database.php.
+                    $nick = trim(strval($user['nick'] ?? ''));
+                    $winner = ['name' => ($nick !== '' ? $nick : 'Сталкер'), 'amount' => $jackpotPool, 'id' => abs(intval($this->registry['uid']))];
+                    $user['roulette_winner'] = json_encode($winner, JSON_UNESCAPED_UNICODE);
+
+                    $newT = rand(6, 8);
+                    $okPool = $link->query("UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=$newT, `jackpot_pool`=0 WHERE `id`=1");
+                    $setParts = [];
+                    foreach($kushLockFields as $col) $setParts[] = "`$col`='" . $link->real_escape_string(strval($user[$col])) . "'";
+                    $okUser = $link->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $setParts) . " WHERE `id`=" . intval($this->registry['uid']));
+
+                    if($okPool && $okUser){
+                        $link->commit();
+                        $kushPaid = true;
+                        foreach($kushLockFields as $col) unset($user[$col]); // saveUser() ниже не должен перезаписать уже закоммиченные поля
+                    } else {
+                        $link->rollback();
+                    }
+                } else {
+                    $link->rollback();
+                }
                 $link->close();
             }
 
-            $this->ops->add($user, 'coins', $jackpotPool);
-            $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $jackpotPool;
-            // 12.10.2026 (по прямому указанию, репорт — "забрал гарантированные 500р, а
-            // показало, что сорвал джекпот"): запись публичного победителя перенесена СЮДА из
-            // claimPrize() (см. большой коммент там) — это и есть единственное место реального
-            // выигрыша Куша, именно его стоит объявлять всем игрокам, а не гарантированное
-            // утешение. Тот же приём, что раньше был в claimPrize() — нормализованный ник,
-            // JSON_UNESCAPED_UNICODE (кириллица), 'roulette_winner' исключён из автопарсинга
-            // JSON в database.php.
-            $nick = trim(strval($user['nick'] ?? ''));
-            $winner = ['name' => ($nick !== '' ? $nick : 'Сталкер'), 'amount' => $jackpotPool, 'id' => abs(intval($this->registry['uid']))];
-            $user['roulette_winner'] = json_encode($winner, JSON_UNESCAPED_UNICODE);
+            if(!$kushPaid){
+                error_log('[roulette.pickCup] !!! КУШ НЕ ВЫПЛАЧЕН — транзакция roulette_state/пользователя не удалась (откатили, деньги НЕ списаны с пула) !!! uid=' . abs(intval($this->registry['uid'])));
+                return $this->ops->fail(99);
+            }
+
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'kush', 'jackpotPoolPaid' => $jackpotPool]));
             // 10.10.2026 (по прямому указанию — ТЗ "не должны видеть под каким стаканчиком" +
@@ -843,6 +922,9 @@ Class Roulette {
         }
         else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; }
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+        // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+        // источников"): утешительный приз мини-игры стаканчиков тоже может быть сигаретами.
+        if($type === 'cig' && $amt > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $amt);
         error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'consolation', 'type' => $type, 'amt' => $amt]));
         $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true, 'otherKushIdx' => $otherKushIdx,
             'patch' => $this->ops->patchCurrencies($user, $patchKeys),

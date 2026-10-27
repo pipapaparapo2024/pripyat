@@ -232,6 +232,21 @@
                 $user['weapons'] = $finalWeaponsJson;
             }
 
+            // 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них
+            // будут шмотки, перенеси шанс и логику тату на шмотки с рюкзака"): старая клиентская
+            // (отключённая в бете) логика тату была — только на максимальном уровне рюкзака (20
+            // из 20), шанс 15% (см. ryukzak.js, исторический комментарий "level >= 20 &&
+            // Math.random() < 0.15"). 1-в-1 переносим эти же условие и процент на дроп шмотки,
+            // тем же grantShmotFromSource(), что уже использует tatu-дроп покера/рулетки
+            // (poker.php.openBag()/roulette.php.openCase()) — источник 'sidorovich_bag' в
+            // shmot_items.json (5 предметов, id 101-105), до этой правки был полностью
+            // недостижим никаким кодом.
+            $hasShmot = false; $shmotItemId = null;
+            if($level >= 20 && mt_rand(1, 100) <= 15){
+                $shmotItemId = $this->ops->grantShmotFromSource($user, 'sidorovich_bag');
+                $hasShmot = $shmotItemId !== null;
+            }
+
             // 25.09.2026 (по прямому указанию — см. большой коммент у класса): обнуляем очки
             // СРАЗУ после розыгрыша награды текущего уровня, в той же записи в БД.
             // 04.10.2026 (аудит гонок состояний): bosses.php.claimKill() начисляет ТЕ ЖЕ очки
@@ -263,9 +278,18 @@
             if($wpLink) $user['weapons'] = $finalWeaponsJson;
             $user['ryukzak_points'] = 0;
 
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): сигареты из награды рюкзака тоже засчитываются.
+            if(intval($tier['cig']) > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', intval($tier['cig']));
+
+            // 26.10.2026: 'shmot'/'max_energy' добавлены в patch — grantShmotFromSource() выше
+            // пишет owned=true прямо в $user['shmot'] и может начислить бонус max_energy
+            // (applyShmotOwnBonus(), см. gameops.php) при реальном дропе; без этих двух ключей
+            // клиент узнал бы о новой шмотке только при следующей полной перезагрузке udata.
             $patch = $this->ops->patchCurrencies($user, [
                 'stew', 'stew_spent', 'cigarettes', 'coins', 'exp', 'bosses_data',
                 'ammo_machete', 'ammo_gun', 'ammo_auto', 'ryukzak_points', 'weapons',
+                'shmot', 'max_energy',
             ]);
             $reward = [
                 'level' => $level, 'cig' => intval($tier['cig']), 'c' => intval($tier['c']),
@@ -273,8 +297,9 @@
                 'mach' => $mach, 'pist' => $pist, 'ak' => $ak,
             ];
             error_log('[Ryukzak.open] выдана награда уровня ' . $level . ' | uid=' . $uid .
-                ' pointsBefore=' . $points . ' pointsAfter=0 | reward=' . json_encode($reward, JSON_UNESCAPED_UNICODE));
-            $this->ops->ok(['patch' => $patch, 'reward' => $reward]);
+                ' pointsBefore=' . $points . ' pointsAfter=0 | reward=' . json_encode($reward, JSON_UNESCAPED_UNICODE) .
+                ' | hasShmot=' . ($hasShmot ? 'true' : 'false') . ' shmotItemId=' . json_encode($shmotItemId));
+            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasShmot' => $hasShmot, 'shmotItemId' => $shmotItemId]);
         }
     }
 ?>

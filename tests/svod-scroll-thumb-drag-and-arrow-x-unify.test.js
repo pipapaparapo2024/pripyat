@@ -93,7 +93,9 @@ console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на
 
 console.log('\nTest 7: svod-scroll.js — thumbXAdjust независимо двигает бегунок, не влияя на trackX других caller\'ов');
 {
-    assert(/thumbXAdjust\s*\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust читается из cfg вместе с остальными overrides');
+    // 27.10.2026: за thumbXAdjust в деструктуризации добавлены ещё 4 текстурных override —
+    // thumbXAdjust больше не последний в списке, проверяем просто его наличие где-то в cfg.
+    assert(/thumbXAdjust,?\s*(trackImg, thumbImg, arrowUpImg, arrowDownImg\s*)?\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust читается из cfg вместе с остальными overrides');
     assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1 \+ \(thumbXAdjust \|\| 0\);/.test(scrollSrc),
         'формула бегунка добавляет (thumbXAdjust || 0) — без override (leaderboard.js, не передаёт этот параметр) поведение не меняется (0 — no-op)');
     const lbCallStart = lbSrc.indexOf('this._buildSvodScroll({');

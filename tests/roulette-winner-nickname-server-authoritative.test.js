@@ -85,8 +85,14 @@ console.log('\nTest 5: 12.10.2026 (ВТОРАЯ правка, живой реп�
     // Живое чтение пула — не захардкоженная сумма и не параметр, пришедший из более ранней части
     // функции (там он мог устареть на несколько спинов других игроков).
     assert(/\$jackpotPool = \$this->KUSH_AMOUNT;/.test(body), '$this->KUSH_AMOUNT используется ТОЛЬКО как фолбэк по умолчанию (на случай недоступности БД)');
-    assert(/SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1/.test(body), 'читает АКТУАЛЬНОЕ значение пула прямо в момент выигрыша');
-    assert(/if\(\$row\) \$jackpotPool = intval\(\$row\['jackpot_pool'\]\);/.test(body), 'перезаписывает фолбэк реальным значением, если чтение удалось');
+    assert(/SELECT `jackpot_pool` FROM `roulette_state` WHERE `id`=1 FOR UPDATE/.test(body), 'читает АКТУАЛЬНОЕ значение пула прямо в момент выигрыша');
+    // 27.10.2026 (баг найден по прямому указанию — "Николай Седенко сорвал джекпот, но сам
+    // джекпот не упал и сумма не обнулилась"): переменная переименована $row→$poolRow (рядом
+    // появился второй лок — $lockRow на строку игрока, см. Test 5a ниже) и обёрнута в FOR UPDATE
+    // + транзакцию — старое "if($row) $jackpotPool = ..." в одну строку стало блоком, внутри
+    // которого же теперь читается/начисляется/сбрасывается ВСЁ атомарно.
+    assert(/if\(\$poolRow !== null\)\{/.test(body), 'строка roulette_state реально лочится (FOR UPDATE) перед чтением — поэтому $poolRow, не голый $row');
+    assert(/\$jackpotPool = intval\(\$poolRow\['jackpot_pool'\]\);/.test(body), 'перезаписывает фолбэк реальным значением, если чтение удалось');
 
     assert(/\$this->ops->add\(\$user, 'coins', \$jackpotPool\);/.test(body), 'начисляет игроку именно $jackpotPool (живой пул), не фиксированную сумму');
     assert(/\$user\['coins_earned'\] = \$this->ops->i\(\$user, 'coins_earned'\) \+ \$jackpotPool;/.test(body), 'coins_earned тоже растёт на реальный $jackpotPool');
@@ -100,16 +106,50 @@ console.log('\nTest 5: 12.10.2026 (ВТОРАЯ правка, живой реп�
         "'roulette_winner' добавлен в patch kush-ответа — клиент узнаёт обновлённое значение через applyPatch()");
     assert(/'amt' => \$jackpotPool, 'kush' => true,/.test(body), "ответ клиенту ('amt') — тоже живой $jackpotPool, не захардкоженная сумма");
 
-    // Сброс пула на 3000 — в ТОЙ ЖЕ UPDATE-операции, что и kush_counter/kush_threshold, и ТОЛЬКО
-    // здесь (не в spin(), см. roulette-real-jackpot-pool.test.js Test 1).
-    assert(/UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=\$newT, `jackpot_pool`=3000 WHERE `id`=1/.test(body),
-        'сброс kush_counter/kush_threshold/jackpot_pool — одной атомарной операцией');
+    // Сброс пула — в ТОЙ ЖЕ UPDATE-операции, что и kush_counter/kush_threshold, и ТОЛЬКО здесь
+    // (не в spin(), см. roulette-real-jackpot-pool.test.js Test 1). 26.10.2026 (по прямому
+    // указанию — "джекпот должен начинаться с нуля и копиться постепенно, не от 3000"):
+    // сброс на 0, не на старую хардкоженную стартовую сумму 3000.
+    assert(/UPDATE `roulette_state` SET `kush_counter`=0, `kush_threshold`=\$newT, `jackpot_pool`=0 WHERE `id`=1/.test(body),
+        'сброс kush_counter/kush_threshold/jackpot_pool(=0) — одной атомарной операцией');
 
     // Запись победителя должна произойти ДО saveUser() этой ветки (одна атомарная запись вместе
     // с начислением Куша), не отдельным запросом.
     const winnerIdx = body.indexOf("\$user['roulette_winner']");
     const saveIdx   = body.indexOf('saveUser($user)');
     assert(winnerIdx !== -1 && saveIdx !== -1 && winnerIdx < saveIdx, 'roulette_winner выставляется ДО saveUser() — одна атомарная запись вместе с начислением Куша');
+}
+
+console.log('\nTest 5a (27.10.2026, баг найден по прямому указанию — живой репорт "Николай Седенко сорвал джекпот, но сам джекпот не упал и сумма не обнулилась", подтверждено записью в /var/log/php_errors.log с jackpotPoolPaid=12380): выплата Куша и сброс общего пула — в ОДНОЙ транзакции с FOR UPDATE на обе строки, без молчаливого продолжения при сбое');
+{
+    const kushStart = rouletteSrc.indexOf("if(\$reward === 'kush'){");
+    const kushEnd = rouletteSrc.indexOf('\n        }', rouletteSrc.indexOf("'kush' => true,", kushStart));
+    const body = rouletteSrc.slice(kushStart, kushEnd);
+
+    // Корень бага: раньше SELECT+UPDATE на roulette_state шли БЕЗ лока и без проверки результата
+    // — если UPDATE по любой причине не применялся (конфликт блокировок, таймаут), код всё равно
+    // продолжал как при успехе: пул не обнулялся, а награда игроку начислялась отдельным,
+    // независимым saveUser()-циклом поверх того же $user (тот же класс гонки "затёртого
+    // начисления", что уже чинили в других местах проекта, см. AGENTS.md про _checkAll→flush).
+    assert(/\$link->begin_transaction\(\);/.test(body), 'транзакция реально открывается перед чтением roulette_state');
+    assert(/FOR UPDATE/.test(body), 'строка roulette_state (id=1) лочится FOR UPDATE — конкурентный выигрыш другого игрока не может прочитать устаревший пул между чтением и сбросом');
+    assert(/SELECT \$colList FROM `\{\$this->registry\['utb'\]\}` WHERE `id`=" \. intval\(\$this->registry\['uid'\]\) \. " FOR UPDATE/.test(body),
+        'строка САМОГО игрока (coins/coins_earned/roulette_winner) тоже лочится FOR UPDATE в ТОЙ ЖЕ транзакции — защита от параллельного автосейва, затирающего начисление');
+
+    assert(/\$okPool = \$link->query\("UPDATE `roulette_state`/.test(body), 'результат UPDATE пула сохраняется в переменную (раньше не проверялся вообще)');
+    assert(/\$okUser = \$link->query\("UPDATE `\{\$this->registry\['utb'\]\}`/.test(body), 'результат UPDATE строки игрока тоже проверяется');
+    assert(/if\(\$okPool && \$okUser\)\{/.test(body), 'commit() только если ОБА запроса реально применились — не "один из двух"');
+    assert(/\$link->commit\(\);/.test(body) && /\$link->rollback\(\);/.test(body), 'есть явный commit() на успех И rollback() на любой сбой (раньше не было ни того, ни другого)');
+
+    assert(/if\(!\$kushPaid\)\{/.test(body), 'если транзакция не прошла — отдельная явная проверка перед тем, как хоть что-то сказать клиенту');
+    assert(/return \$this->ops->fail\(99\);/.test(body), 'при неудаче — честная ошибка клиенту (НЕ "ты выиграл" без реальной выдачи, как было в баге)');
+    assert(/error_log\('\[roulette\.pickCup\] !!! КУШ НЕ ВЫПЛАЧЕН/.test(body), 'сбой атомарной выплаты громко логируется отдельной строкой (не теряется молча)');
+
+    // Поля, уже записанные внутри транзакции напрямую (raw SQL), не должны переписываться
+    // повторно обычным saveUser() ниже — иначе второй UPDATE мог бы затереть их устаревшим
+    // в-памяти значением (та же защита, что уже есть в openCase() этого же файла).
+    assert(/foreach\(\$kushLockFields as \$col\) unset\(\$user\[\$col\]\);/.test(body),
+        'закоммиченные в транзакции поля удаляются из $user — финальный saveUser() их не перезаписывает');
 }
 
 console.log('\nTest 3: users.php — roulette_winner убран из client-writable whitelist');

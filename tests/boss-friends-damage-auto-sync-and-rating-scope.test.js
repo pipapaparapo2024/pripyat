@@ -52,7 +52,10 @@ console.log('\nTest 1: bosses.php.rating() ограничен друзьями (
     // 22.09.2026: friendIds теперь дополнительно гейтится diffIdx!==3 прямо в этом же
     // выражении (раньше проверка была отдельным блоком ниже) — суть (общий хелпер _friendIds())
     // не изменилась.
-    assert(/\$friendIds = \(!isset\(\$me\['error'\]\) && \$diffIdx !== 3\) \? \$this->_friendIds\(\$me\) : \[\];/.test(body),
+    // 26.10.2026 (прод-репорт uid=63547944, task_b36c3fe6): добавлена защита !empty($me['friends'])
+    // перед вызовом _friendIds() — без неё голый explode() внутри хелпера падал TypeError'ом на
+    // массиве, когда Database::trueJSON() превращал NULL/''/"0" в пустой МАССИВ (не строку).
+    assert(/\$friendIds = \(!isset\(\$me\['error'\]\) && \$diffIdx !== 3 && !empty\(\$me\['friends'\]\)\) \? \$this->_friendIds\(\$me\) : \[\];/.test(body),
         'парсит id друзей через общий хелпер _friendIds() (тот же, что использует friendsDamage())');
     assert(/private function _friendIds\(\$user\)\{/.test(bossesPhp), '_friendIds() определён как общий приватный хелпер');
     // 24.09.2026: маркер конца сдвинут на следующую функцию по факту ('private function
@@ -60,7 +63,10 @@ console.log('\nTest 1: bosses.php.rating() ограничен друзьями (
     // более раннее вхождение, из-за чего срез получался пустым (known cosmetic false-negative,
     // не реальный баг) — теперь берём то, что реально следует за _friendIds() по тексту файла.
     const friendIdsBody = bossesPhp.slice(bossesPhp.indexOf('private function _friendIds($user){'), bossesPhp.indexOf('// ── КЭШ HP'));
-    assert(/foreach\(explode\(',', \$user\['friends'\]\) as \$fid\)/.test(friendIdsBody), '_friendIds() парсит id из explode по полю friends');
+    // 26.10.2026 (task_b36c3fe6): explode() инлайн заменён на is_array()-проверку — Database::
+    // trueJSON() иногда отдаёт $user['friends'] уже МАССИВОМ (пустым), не строкой, и голый
+    // explode() на массиве кидал TypeError. Суть (парсинг id по запятой) не изменилась.
+    assert(/\$friendIdList = is_array\(\$rawFriends\) \? \$rawFriends : explode\(',', strval\(\$rawFriends\)\);/.test(friendIdsBody), '_friendIds() парсит id из explode по полю friends (с защитой от массива вместо строки)');
 
     // 04.10.2026 (по прямому указанию — "может быть такое что я не попаду в топ"): своя строка
     // больше не идёт в общий $entries наравне с друзьями (где её мог вытеснить array_slice) —

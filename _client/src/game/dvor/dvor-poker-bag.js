@@ -1,4 +1,5 @@
 import { applyPatch } from '../../modules/patch.js';
+import { buildShmotTooltipCard } from '../shell/shmot-tooltip.js';
 
 /** Покер — экран сумки (покупка и открытие). */
 export function attachPokerBag(proto){
@@ -202,7 +203,35 @@ export function attachPokerBag(proto){
             tatu.anchor.set(0.5, 0.5);
             tatu.x = 899; tatu.y = 411 + 2;
             tatu.rotation = -10 * Math.PI / 180;
-            win.addChild(tatu); }
+            win.addChild(tatu);
+
+            // 24.10.2026 (по прямому указанию, скрин — "для сумки из покера... должно
+            // показываться меню, как в магазине шмоток"): наведение на число/надпись шмотки
+            // показывает ту же богатую карточку (имя/бонус/сет/требования), что и в магазине —
+            // раньше этот экран вообще не показывал, ЧТО именно выпало.
+            if(hasTatu){
+                const shmotItem = (shmotItemId !== null && shmotItemId !== undefined && window.shmot)
+                    ? shmot.items.find(it => it.id === shmotItemId) : null;
+                if(shmotItem){
+                    const tatuTip = new PIXI.Container();
+                    tatuTip.visible = false;
+                    const { card, width, height } = buildShmotTooltipCard(shmotItem);
+                    card.x = -width; card.y = -height;
+                    tatuTip.addChild(card);
+                    tatuTip.x = tatu.x; tatuTip.y = tatu.y - 20;
+                    win.addChild(tatuTip);
+
+                    const tatuHit = new PIXI.Graphics();
+                    tatuHit.beginFill(0xffffff, 0.001);
+                    tatuHit.drawRect(-40, -24, 80, 48);
+                    tatuHit.endFill();
+                    tatuHit.x = tatu.x; tatuHit.y = tatu.y;
+                    tatuHit.interactive = true;
+                    tatuHit.on('pointerover', () => { tatuTip.visible = true; });
+                    tatuHit.on('pointerout',  () => { tatuTip.visible = false; });
+                    win.addChild(tatuHit);
+                }
+            } }
 
         const takeBtn = new PIXI.Sprite(PIXI.Texture.from('./images/покер сумка открытая кнопка забрать.png'));
         takeBtn.anchor.set(0.5, 0.5);

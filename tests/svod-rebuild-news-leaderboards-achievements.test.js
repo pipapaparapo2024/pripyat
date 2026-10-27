@@ -59,10 +59,14 @@ console.log('\nTest 2: module_control.js — конструктор Svod по-п
         'constructSvod не менялся — Svod сам игнорирует mc (как Habar)');
 }
 
-console.log('\nTest 3: svod.js — 4 новые вкладки, старое содержимое полностью убрано');
+console.log('\nTest 3: svod.js — вкладки объявлены, старое содержимое полностью убрано');
 {
-    assert(/key:'news'/.test(svodSrc) && /key:'respect'/.test(svodSrc) && /key:'damage'/.test(svodSrc) && /key:'ach'/.test(svodSrc),
-        'все 4 новые вкладки объявлены (news/respect/damage/ach)');
+    // 26.10.2026 (по прямому указанию): "Новости" (честная заглушка без реального источника
+    // новостей, см. старый svod-news.js) заменена на "Заначки" + "Скиллы" — см.
+    // tests/zanachki-drop-sources-regression.test.js/tests/svod-zanachki-panel.test.js для
+    // самой новой фичи, здесь только проверяем, что вкладки объявлены в svod.js.
+    assert(/key:'zanachki'/.test(svodSrc) && /key:'respect'/.test(svodSrc) && /key:'damage'/.test(svodSrc) && /key:'ach'/.test(svodSrc) && /key:'skills'/.test(svodSrc),
+        'все новые вкладки объявлены (zanachki/respect/damage/ach/skills)');
     assert(!/stat_section|ach_section|rank_section|this\.ranks\s*=|this\.stats\s*=/.test(svodSrc),
         'старые вкладки Статистика/Достижения(дубликат)/Звания полностью убраны из svod.js');
     // Строка встречается только в поясняющем комментарии (что заменили) — реального кода

@@ -42,9 +42,6 @@ export default class Skills {
 		// Распределенные уровни скиллов [20 значений]
 		this.levels = new Array(20).fill(0);
 
-		this._win  = null;
-		this._page = 0;
-
 		this._loadFromUdata();
 	}
 
@@ -150,7 +147,6 @@ export default class Skills {
 			'| skillsDmgSpent до:', this.skillsDmgSpent);
 		this.skillsDmgSpent = this._totalDmgForPoints(this.earnedPoints);
 		this._sessionDmgSpent = 0;
-		if(this._win) this._refresh();
 		this._saveToUdata();
 		this._flushSaveToUdata();
 	}
@@ -163,26 +159,6 @@ export default class Skills {
 	// Форфейт («ВЫЙТИ ИЗ БОЯ», поражение) — та же логика обнуления без левелапа.
 	forfeitSession(){
 		this._endSession();
-	}
-
-
-	// --- Удар (кнопка АТАКОВАТЬ) ---
-	_attack(){
-		const dmg = this._getAttackDamage();
-		this.skillsDmgSpent += dmg;
-		this._saveToUdata();
-		if(this._win) this._refresh();
-		return dmg;
-	}
-
-	// Урон одного удара: базовый урон экипированного оружия + скилл-бонус flat
-	_getAttackDamage(){
-		if(!window.weapons) return 5;
-		const wp = window.weapons.data.find(w => w.equipped);
-		if(!wp) return 5;
-		const key = this._wpnKey[wp.id] || 'knife';
-		const flat = this.getFlatBonus(key);
-		return wp.damage + flat;
 	}
 
 	// --- Апгрейд скилла ---
@@ -246,7 +222,8 @@ export default class Skills {
 			// выше сам обновит TIMERS.ENERGY_MAX. Раньше клиент пересчитывал TIMERS.ENERGY_MAX
 			// НАПРЯМУЮ здесь — тот же класс дыры (и тот же риск затирания бонусов из других
 			// источников), что уже был у shmot.js (см. gameops.php.applyShmotOwnBonus()).
-			if(this._win) this._refresh();
+			// 27.10.2026: UI-рефреш убран отсюда — вызывающий экран (bosses_skills.js) сам
+			// обновляется через свой onDone-колбэк (см. _upgradeSelectedSkill() там).
 			if(window.achievements) achievements.onSkillUnlock();
 			notify.showResult({ text: 'Скилл «' + sk.name + '» ур.' + res.newLevel + '!' }, 1);
 			if(onDone) onDone(true);
@@ -294,275 +271,13 @@ export default class Skills {
 		return this.levels[10] > 0 ? Math.floor(60 * this.levels[10] / 30) : 0;
 	}
 
-	// --- Открыть экран ---
-	open(){
-		if(!this._win) this._buildWin();
-		this._refresh();
-		root.layer2_mc.addChild(this._win);
-		this._win.visible = true;
-		if(window.iface && iface.up && iface.up.parent) iface.up.parent.addChild(iface.up);
-	}
-
-	// --- Построить окно ---
-	_buildWin(){
-		const W = 880, H = 620;
-		const win = new PIXI.Container();
-		win.x = Math.round((1280 - W) / 2);
-		win.y = Math.round((720 - H) / 2);
-
-		// Затемнение
-		const overlay = new PIXI.Graphics();
-		overlay.beginFill(0x000000, 0.6);
-		overlay.drawRect(-win.x, -win.y, 1280, 720);
-		overlay.endFill();
-		overlay.interactive = true;
-		win.addChild(overlay);
-
-		// Рамка окна
-		const bg = new PIXI.Graphics();
-		bg.beginFill(0x080808, 0.97);
-		bg.lineStyle(2, 0x5a3a1a);
-		bg.drawRoundedRect(0, 0, W, H, 6);
-		bg.endFill();
-		win.addChild(bg);
-
-		// Заголовок
-		const title = new PIXI.Text('СКИЛЛЫ', {
-			fontFamily: 'Southbank LT', fontSize: 22, fill: '#d4a843', fontWeight: 'bold'
-		});
-		title.x = Math.round((W - title.width) / 2);
-		title.y = 12;
-		win.addChild(title);
-
-		// Кнопка ✕
-		const xBtn = new PIXI.Text('✕', { fontFamily: 'Arial', fontSize: 20, fill: '#888' });
-		xBtn.x = W - 30; xBtn.y = 12;
-		xBtn.interactive = true; xBtn.buttonMode = true;
-		xBtn.on('pointerdown', () => { win.visible = false; });
-		win.addChild(xBtn);
-
-		// --- Панель статуса (очки / урон) ---
-		const ptsTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 12, fill: '#90b890' });
-		ptsTxt.x = 16; ptsTxt.y = 44;
-		win.addChild(ptsTxt);
-		win._ptsTxt = ptsTxt;
-
-		// --- Кнопка АТАКОВАТЬ ---
-		const atkBg = new PIXI.Graphics();
-		atkBg.beginFill(0x1a3a1a);
-		atkBg.lineStyle(1, 0x50a050);
-		atkBg.drawRoundedRect(0, 0, 150, 34, 5);
-		atkBg.endFill();
-		atkBg.x = W - 168; atkBg.y = 38;
-		atkBg.interactive = true; atkBg.buttonMode = true;
-		win.addChild(atkBg);
-
-		const atkTxt = new PIXI.Text('⚔  АТАКОВАТЬ', {
-			fontFamily: 'Southbank LT', fontSize: 14, fill: '#80e080'
-		});
-		atkTxt.x = 12; atkTxt.y = 8;
-		atkBg.addChild(atkTxt);
-
-		// ПРОКАЧАТЬ — автоапгрейд первого доступного скилла
-		const prokBg = new PIXI.Graphics();
-		prokBg.beginFill(0x1a1a3a);
-		prokBg.lineStyle(1, 0x5050a0);
-		prokBg.drawRoundedRect(0, 0, 150, 34, 5);
-		prokBg.endFill();
-		prokBg.x = W - 168 - 158; prokBg.y = 38;
-		prokBg.interactive = true; prokBg.buttonMode = true;
-		win.addChild(prokBg);
-		const prokTxt = new PIXI.Text('▶  ПРОКАЧАТЬ', { fontFamily: 'Southbank LT', fontSize: 14, fill: '#8080e0' });
-		prokTxt.x = 8; prokTxt.y = 8;
-		prokBg.addChild(prokTxt);
-		prokBg.on('pointerdown', () => {
-			const i = this.list.findIndex((_sk, idx) => {
-				if(this.levels[idx] >= this.list[idx].maxLvl) return false;
-				return this.availablePoints >= 1;
-			});
-			if(i === -1){
-				notify.showResult({ text: 'Нет доступных скиллов для прокачки!' }, 0);
-				return;
-			}
-			// upgrade() теперь асинхронный (запрос к серверу) и сам показывает попап
-			// успеха/ошибки — вызывающему коду ничего дополнительно делать не нужно.
-			this.upgrade(i);
-		});
-		win._prokBtn = prokBg;
-
-		// Тултип (показывается при наведении на карточку)
-		const tooltip = new PIXI.Container();
-		tooltip.visible = false;
-		const ttBg = new PIXI.Graphics();
-		ttBg.beginFill(0x111111, 0.94); ttBg.lineStyle(1, 0x5a4a2a);
-		ttBg.drawRoundedRect(0, 0, 188, 48, 4); ttBg.endFill();
-		tooltip.addChild(ttBg);
-		const ttTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 11, fill: '#e8d8a0', wordWrap: true, wordWrapWidth: 176 });
-		ttTxt.x = 6; ttTxt.y = 6;
-		tooltip.addChild(ttTxt);
-		tooltip._txt = ttTxt;
-		win.addChild(tooltip);
-		win._tooltip = tooltip;
-
-		// Текст результата удара (мигает)
-		const atkResult = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 12, fill: '#ffdd44' });
-		atkResult.x = W - 168; atkResult.y = 76;
-		win.addChild(atkResult);
-		win._atkResult = atkResult;
-
-		let atkTimeout = null;
-		atkBg.on('pointerdown', () => {
-			if(this.earnedPoints >= 460){
-				atkResult.text = 'Все очки получены!';
-			} else {
-				const dmg = this._attack();
-				atkResult.text = '−' + dmg + ' урона  (+' + (this.earnedPoints - this._calcPoints(this.skillsDmgSpent - dmg)) + ' оч)';
-			}
-			clearTimeout(atkTimeout);
-			atkTimeout = setTimeout(() => { atkResult.text = ''; }, 2500);
-		});
-
-		// --- Прогресс-бар общий ---
-		const barBgTotal = new PIXI.Graphics();
-		barBgTotal.beginFill(0x222222);
-		barBgTotal.drawRect(0, 0, W - 32, 10);
-		barBgTotal.endFill();
-		barBgTotal.x = 16; barBgTotal.y = 90;
-		win.addChild(barBgTotal);
-
-		const barFillTotal = new PIXI.Graphics();
-		barFillTotal.x = 16; barFillTotal.y = 90;
-		win.addChild(barFillTotal);
-		win._barFillTotal = barFillTotal;
-
-		// Подпись прогресс-бара
-		const barLbl = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 10, fill: '#888' });
-		barLbl.x = 16; barLbl.y = 104;
-		win.addChild(barLbl);
-		win._barLbl = barLbl;
-
-		// --- Переключатель страниц ---
-		const prevBtn = new PIXI.Text('◀  Пред', { fontFamily: 'Arial', fontSize: 13, fill: '#c0a060' });
-		prevBtn.x = 20; prevBtn.y = H - 30;
-		prevBtn.interactive = true; prevBtn.buttonMode = true;
-		prevBtn.on('pointerdown', () => { if(this._page > 0){ this._page--; this._refresh(); } });
-		win.addChild(prevBtn);
-
-		win._pageTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 13, fill: '#aaa' });
-		win._pageTxt.x = Math.round(W / 2 - 20); win._pageTxt.y = H - 30;
-		win.addChild(win._pageTxt);
-
-		const nextBtn = new PIXI.Text('След  ▶', { fontFamily: 'Arial', fontSize: 13, fill: '#c0a060' });
-		nextBtn.x = W - 90; nextBtn.y = H - 30;
-		nextBtn.interactive = true; nextBtn.buttonMode = true;
-		nextBtn.on('pointerdown', () => { if(this._page < 1){ this._page++; this._refresh(); } });
-		win.addChild(nextBtn);
-
-		// --- Контейнер карточек скиллов ---
-		const listCont = new PIXI.Container();
-		listCont.x = 14; listCont.y = 120;
-		win.addChild(listCont);
-		win._listCont = listCont;
-
-		win._cards = [];
-		for(let i = 0; i < 10; i++){
-			const col = i % 2;
-			const row = Math.floor(i / 2);
-			const card = this._buildCard(col * 428, row * 90);
-			listCont.addChild(card);
-			win._cards.push(card);
-		}
-
-		this._win = win;
-	}
-
-	_buildCard(cx, cy){
-		const cw = 422, ch = 84;
-		const card = new PIXI.Container();
-		card.x = cx; card.y = cy;
-
-		const bg = new PIXI.Graphics();
-		card._bg = bg;
-		card.addChild(bg);
-
-		const nameTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 13, fill: '#e8d8a0', fontWeight: 'bold' });
-		nameTxt.x = 10; nameTxt.y = 7;
-		card._nameTxt = nameTxt;
-		card.addChild(nameTxt);
-
-		const lvlTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 11, fill: '#aaaaaa' });
-		lvlTxt.x = 10; lvlTxt.y = 26;
-		card._lvlTxt = lvlTxt;
-		card.addChild(lvlTxt);
-
-		const barBg = new PIXI.Graphics();
-		barBg.beginFill(0x333333); barBg.drawRect(0, 0, 180, 6); barBg.endFill();
-		barBg.x = 10; barBg.y = 46;
-		card.addChild(barBg);
-
-		const barFill = new PIXI.Graphics();
-		barFill.x = 10; barFill.y = 46;
-		card._barFill = barFill;
-		card.addChild(barFill);
-
-		const bonusTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 11, fill: '#80c880' });
-		bonusTxt.x = 10; bonusTxt.y = 57;
-		card._bonusTxt = bonusTxt;
-		card.addChild(bonusTxt);
-
-		// Кнопка +1
-		const btn = new PIXI.Graphics();
-		btn.x = cw - 112; btn.y = ch - 60;
-		card._btn = btn;
-		card.addChild(btn);
-
-		const btnTxt = new PIXI.Text('+1 уровень', { fontFamily: 'Arial', fontSize: 11, fill: '#80e080' });
-		btnTxt.x = 8; btnTxt.y = 6;
-		card._btnTxt = btnTxt;
-		btn.addChild(btnTxt);
-
-		// Стоимость прокачки
-		const costTxt = new PIXI.Text('', { fontFamily: 'Arial', fontSize: 10, fill: '#9898bb' });
-		costTxt.x = cw - 112; costTxt.y = 8;
-		card._costTxt = costTxt;
-		card.addChild(costTxt);
-
-		// Hover: scale + tooltip
-		card.interactive = true;
-		card.on('pointerover', () => {
-			if(!this._win || !this._win._tooltip) return;
-			const ri = this._cardSkillIdx(card);
-			if(ri === -1) return;
-			const sk = this.list[ri];
-			this._win._tooltip._txt.text = sk.name + '\n' + sk.desc;
-			const lc = this._win._listCont;
-			const tipX = Math.min(880 - 195, Math.max(0, lc.x + card.x + 116));
-			const tipY = Math.min(620 - 52, lc.y + card.y + 88);
-			this._win._tooltip.x = tipX;
-			this._win._tooltip.y = tipY;
-			this._win._tooltip.visible = true;
-		});
-		card.on('pointerout', () => {
-			if(this._win && this._win._tooltip) this._win._tooltip.visible = false;
-		});
-
-		btn.interactive = true; btn.buttonMode = true;
-		btn.on('pointerdown', () => {
-			const realIdx = this._cardSkillIdx(card);
-			if(realIdx === -1) return;
-			// upgrade() теперь асинхронный (запрос к серверу) и сам показывает попап
-			// успеха/ошибки (максимум/недостаточно очков) — см. её реализацию выше.
-			this.upgrade(realIdx);
-		});
-
-		return card;
-	}
-
-	_cardSkillIdx(card){
-		const idx = this._win._cards.indexOf(card);
-		return idx === -1 ? -1 : this._page * 10 + idx;
-	}
-
+	// 27.10.2026 (по прямому указанию — "зачем тут левая боевка с АТАКОВАТЬ/ПРОКАЧАТЬ, у нас
+	// только бой с боссами"): старый самодельный экран скиллов (open()/_buildWin()/_buildCard()/
+	// _cardSkillIdx(), включая фейковую кнопку "АТАКОВАТЬ" — см. удалённый ранее _attack()/
+	// _getAttackDamage()) удалён целиком. Реальный экран прокачки — bosses_skills.js
+	// (iface._openBossesSkillsScreen()), уже использующий новый арт и настоящий upgrade() ниже;
+	// все вызывающие места (вкладка "Скиллы" в Сводке, кнопка в bosses-combat.js, кнопки ТАЛАНТЫ/
+	// ПРОКАЧАТЬ в bosses_fight.js) переведены на него.
 	_showNoPointsPopup(){
 		const dmgNeeded = this.dmgToNextPoint;
 		const popup = new PIXI.Container();
@@ -615,81 +330,6 @@ export default class Skills {
 		root.layer2_mc.addChild(popup);
 	}
 
-	_refresh(){
-		if(!this._win) return;
-
-		const earned = this.earnedPoints;
-		const avail  = this.availablePoints;
-		const spent  = this.spentPoints;
-
-		// Статус
-		this._win._ptsTxt.text =
-			'Доступно: ' + avail + ' оч   |   Прокачано: ' + spent + '/460   |   Заработано: ' + earned + '/460' +
-			(earned < 460 ? '   |   До след.очка: ' + this.dmgToNextPoint + ' ур.' : '   |   ВСЕ ОЧКИ ПОЛУЧЕНЫ!');
-
-		// Прогресс-бар
-		const pct = earned / 460;
-		const bw  = Math.round((this._win._barFillTotal.parent ? this._win._barFillTotal.x > 0 : 832) * pct);
-		this._win._barFillTotal.clear();
-		this._win._barFillTotal.beginFill(0x40a040);
-		this._win._barFillTotal.drawRect(0, 0, Math.round((880 - 32) * pct), 10);
-		this._win._barFillTotal.endFill();
-
-		const dmgFmt = n => n >= 1000000 ? (n/1000000).toFixed(1)+'М' : n >= 1000 ? Math.floor(n/1000)+'К' : n;
-		this._win._barLbl.text =
-			'Урон на скиллах: ' + dmgFmt(this.skillsDmgSpent) + ' / 19 990 450';
-
-		this._win._pageTxt.text = (this._page + 1) + ' / 2';
-
-		const pageStart = this._page * 10;
-		this._win._cards.forEach((card, i) => {
-			const si = pageStart + i;
-			if(si >= this.list.length){ card.visible = false; return; }
-			card.visible = true;
-			this._updateCard(card, si, avail);
-		});
-	}
-
-	_updateCard(card, si, availPts){
-		const sk    = this.list[si];
-		const lvl   = this.levels[si];
-		const maxed = lvl >= sk.maxLvl;
-		const canUp = !maxed && availPts >= 1;
-		const cw = 422, ch = 84;
-
-		card._bg.clear();
-		card._bg.lineStyle(1, maxed ? 0x2a6a2a : 0x3a2a1a);
-		card._bg.beginFill(maxed ? 0x0a2a0a : 0x100e08, 0.92);
-		card._bg.drawRoundedRect(0, 0, cw, ch, 4);
-		card._bg.endFill();
-
-		card._nameTxt.text = sk.name;
-
-		card._lvlTxt.text = 'Ур. ' + lvl + ' / ' + sk.maxLvl + '   ' + sk.desc;
-
-		const pct = sk.maxLvl > 0 ? lvl / sk.maxLvl : 0;
-		card._barFill.clear();
-		card._barFill.beginFill(maxed ? 0x40a040 : 0x8a6020);
-		card._barFill.drawRect(0, 0, Math.round(180 * pct), 6);
-		card._barFill.endFill();
-
-		const unit = sk.type === 'crit' ? '%' : sk.type === 'time' ? ' мин' : ' ед.';
-		const curBonus = lvl > 0 ? Math.floor(sk.totalBonus * lvl / sk.maxLvl) : 0;
-		card._bonusTxt.text = maxed
-			? '✔ МАКС  +' + curBonus + unit
-			: (lvl > 0 ? 'Сейчас: +' + curBonus + unit + '   Макс: +' + sk.totalBonus + unit
-			           : 'Макс: +' + sk.totalBonus + unit);
-
-		if(card._costTxt) card._costTxt.text = '';
-
-		card._btn.clear();
-		card._btn.beginFill(canUp ? 0x1a3a1a : 0x222222);
-		card._btn.drawRoundedRect(0, 0, 100, 26, 4);
-		card._btn.endFill();
-		card._btn.visible     = !maxed;
-		card._btn.interactive = canUp;
-		card._btnTxt.style.fill = canUp ? '#80e080' : '#555';
-	}
 
 	// Прогресс скиллов (skillsDmgSpent, levels) раньше писался только в память (udata) —
 	// на сервер это реально уходит либо раз в 60 секунд (автосейв), либо через

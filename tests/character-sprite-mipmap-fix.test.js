@@ -66,11 +66,13 @@ console.log('\nTest 1: ВСЕ пять экранов с "персонаж ко�
 
 console.log('\nTest 2: одежда (shmot) тоже форсирует mipmap ON — манекен на 4 экранах + каталог магазина шмоток');
 {
+    // 26.10.2026: заранее уменьшенный manImgFile (резкость, см. shmot-man-prescaled-images.test.js)
+    // заменил прямое imgFile в текстуре "на персонаже" на всех 4 экранах — маркеры обновлены.
     const CLOTH_SITES = [
-        { file: path.join(root, '_client', 'src', 'game', 'home.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);", varExpr: 'spr\\.texture' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);", varExpr: 'spr\\.texture' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);", varExpr: 'spr\\.texture' },
-        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + def.imgFile);", varExpr: 'spr\\.texture' },
+        { file: path.join(root, '_client', 'src', 'game', 'home.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));", varExpr: 'spr\\.texture' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));", varExpr: 'spr\\.texture' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'hata.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));", varExpr: 'spr\\.texture' },
+        { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), marker: "spr.texture = PIXI.Texture.from('./images/shmot/' + (def.manImgFile || def.imgFile));", varExpr: 'spr\\.texture' },
         // Каталог магазина (сетка карточек) — отдельная переменная imgTex, не манекен.
         { file: path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), marker: "const imgTex = PIXI.Texture.from(imgUrl);", varExpr: 'imgTex' },
     ];

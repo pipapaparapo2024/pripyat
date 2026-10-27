@@ -164,17 +164,18 @@ export function attachSidorovich(proto){
 		// ящика убран целиком, не заменён.
 
 // Рюкзак/сумка: поверх банки (см. bankaIdle выше) — новые файлы, новые координаты.
-		// 18.10.2026: "v2" — обрезано по альфа (верх файла был на 151px прозрачным) — y
-		// компенсирован на +151, видимая картинка остаётся на прежнем месте.
+		// 27.10.2026 (по прямому указанию, редактор позиций — "x:0,y:305,w:339,h:374" для обоих
+		// файлов v2): абсолютные x/y заменили прежнюю формулу от PANEL_Y_SID; w/h выставлены
+		// явно на спрайт (новая конвенция — см. AGENTS.md "Конвенция позиционных правок").
 		const sumkaFront = new PIXI.Sprite(PIXI.Texture.from(BASE + 'сидорович сумка v2.png'));
-		sumkaFront.x = 10;
-		sumkaFront.y = PANEL_Y_SID + 111 + 151;
+		sumkaFront.x = 0; sumkaFront.y = 305;
+		sumkaFront.width = 339; sumkaFront.height = 374;
 		sumkaFront.visible = true;
 		win.addChild(sumkaFront);
 
 		const sumkaActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'сидорович сумка актив v2.png'));
-		sumkaActiv.x = 10;
-		sumkaActiv.y = PANEL_Y_SID + 111 + 151;
+		sumkaActiv.x = 0; sumkaActiv.y = 305;
+		sumkaActiv.width = 339; sumkaActiv.height = 374;
 		sumkaActiv.visible = false;
 		sumkaActiv.interactive = false;
 		win.addChild(sumkaActiv);

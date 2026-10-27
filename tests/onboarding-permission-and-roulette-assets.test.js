@@ -83,7 +83,7 @@ test('VK-подтверждение вызывается только через
     (popup.match(/dispatchEvent\(new Event\('pripyat:friends-permission-request'\)\)/g) || []).length === 1 &&
     popup.includes("this._finish();\n            if(needsFriendsPermission) window.dispatchEvent(new Event('pripyat:friends-permission-request'));"));
 test('Новый фон зариков и все изображения рулетки есть в сборочных ассетах',
-    ['двор зарики фон экран.png', 'рулетка новая страница.png', 'рулетка описание.png',
+    ['двор зарики фон экран 2.png', 'рулетка новая страница.png', 'рулетка описание.png',
      'рулетка описание клик.png', 'опыт и уровни описание.png', 'опыт и уровни описание клик.png']
         .every(name => fs.existsSync(asset(name))));
 test('Рулетка использует новый лист, карточки описаний и общий затемнитель',
@@ -98,7 +98,7 @@ test('На первом шаге обучения Двора все игровы
 test('Отладочные надписи колеса и связки ключей не выводятся игроку',
     !roulette.includes("dbgTxt.text = 'колесо | url:") && !shop.includes("dbgTxt.text = 'связка ключей | url:"));
 test('Зарики используют новый фон, который ранне предзагружается',
-    dice.includes("'двор зарики фон экран.png'") && boot.includes("'двор зарики фон экран.png'"));
+    dice.includes("'двор зарики фон экран 2.png'") && boot.includes("'двор зарики фон экран 2.png'"));
 test('Счётчик перебросов зариков стоит в заданной точке',
     dice.includes('availTxt.x = 804; availTxt.y = 140;'));
 test('Аватары рейтинга урона имеют заданный масштаб, а ник окрашен как урон',
@@ -109,11 +109,13 @@ test('Аватары рейтинга урона имеют заданный м�
 // реально резолвится настоящее фото победителя по VK id (см. dvor-roulette.js). Координаты
 // центровки текстов подняты по прямому указанию 03.10.2026: jackTxt y:216→203 (-13px),
 // winnerNameTxt y:288→278 (-10px), winnerAmtTxt y:332→320 (-12px).
+// 26.10.2026 (по прямому указанию, ещё одна правка): winnerNameTxt y:278→276 (-2px),
+// winnerAmtTxt y:320→317 (-3px).
 test('Рулетка больше не показывает заглушку-иконку сталкера, панель поинтов/спичек на месте',
     roulette.includes('const winnerPhotoSpr = new PIXI.Sprite(PIXI.Texture.EMPTY);') &&
     roulette.includes('winnerPhotoSpr.visible = false;') &&
     !roulette.includes("рулетка иконка сталкера.png") &&
-    roulette.includes('y:203') && roulette.includes('y:278') && roulette.includes('y:320') &&
+    roulette.includes('y:203') && roulette.includes('y:276') && roulette.includes('y:317') &&
     roulette.includes('ptsTxt.x = 822; ptsTxt.y = 386') && roulette.includes('spichTxt.x = 775; spichTxt.y = 444'));
 // 02.10.2026: -3° и отступ +5px — подтверждённый пользователем напрямую выбор (см. комментарий
 // у RESPECT_AMOUNT_ROTATION_DEG в zone_screen.js), не трогать без прямого указания.

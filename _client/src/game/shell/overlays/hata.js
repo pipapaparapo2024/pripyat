@@ -172,9 +172,24 @@ export default class Hata {
         rightHandSpr.scale.set(0.200);
         this._charRightHandSpr = rightHandSpr;
 
+        // 23.10.2026 (по прямому указанию — "почему-то ты не выводишь файл фаланги кистей, когда
+        // игрок берёт что-то в руку"): см. тот же докблок в shmot_shop.js/home.js — "фаланги
+        // правой руки.png" вернулся отдельным слоем, видимым только когда что-то реально зажато.
+        // ⚠️ x/y/scale — приблизительная прикидка (поза "кисть хват.png"), точных исторических
+        // чисел не сохранилось — требует уточнения через редактор позиций.
+        const phalanxSpr = new PIXI.Sprite(PIXI.Texture.from('./images/фаланги правой руки.png'));
+        phalanxSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+        phalanxSpr.texture.baseTexture.update();
+        phalanxSpr.anchor.set(0, 0);
+        phalanxSpr.x = 634;
+        phalanxSpr.y = 421;
+        phalanxSpr.scale.set(0.189);
+        phalanxSpr.visible = false;
+        this._charPhalanxSpr = phalanxSpr;
+
         this._charSlots = {}; this._charSlotBases = {};
         CHAR_SLOTS.forEach(s => {
-            if(s.cat === 6) win.addChild(rightHandSpr);
+            if(s.cat === 6){ win.addChild(rightHandSpr); win.addChild(phalanxSpr); }
             const spr = new PIXI.Sprite(PIXI.Texture.EMPTY);
             spr.anchor.set(s.centerX ? 0.5 : 0, s.cat === 3 ? 1 : 0);
             spr.x = s.x; spr.y = s.y;
@@ -212,6 +227,11 @@ export default class Hata {
         rightForearmSpr.scale.set(0.218);
         win.addChild(rightForearmSpr);
         this._charRightForearmSpr = rightForearmSpr;
+        // 24.10.2026 (по прямому указанию — "кисть находится под предплечьем, так быть не
+        // должно"): явная гарантия сразу здесь, не полагаемся только на пересортировку в
+        // _updateCharClothes() ниже (она завязана на leftHandSpr и могла не успеть выполниться).
+        win.addChild(rightHandSpr);
+        win.addChild(phalanxSpr);
 
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
         leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
@@ -354,23 +374,17 @@ export default class Hata {
             const base = this._charSlotBases[cat];
             const eq = (shmot.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
             if(eq && eq.imgFile){
-                spr.texture = PIXI.Texture.from('./images/shmot/' + eq.imgFile);
-                // 18.10.2026 (тот же фикс, что в home.js.updateClothes()/shmot_shop.js/
-                // player_profile.js — см. докблок в character-sprite-mipmap-fix.test.js).
+                // 26.10.2026 (тот же фикс, что в home.js.updateClothes() — см. докблок там же):
+                // manWidth/manHeight не решал резкость (scale/width дают одинаковый GPU-семплинг
+                // на одной текстуре) — используем manImgFile (заранее уменьшенный PNG), manScale
+                // всегда 1.000.
+                spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));
                 spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
                 spr.texture.baseTexture.update();
                 spr.visible = true;
                 spr.x = base.x + (eq.manDx || 0);
                 spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
-                // 22.10.2026 (по прямому указанию, эксперимент): manWidth/manHeight —
-                // альтернатива manScale, см. тот же коммент в home.js.
-                if(eq.manWidth && eq.manHeight){
-                    spr.scale.set(1);
-                    spr.width = eq.manWidth;
-                    spr.height = eq.manHeight;
-                } else {
-                    spr.scale.set(eq.manScale || 1);
-                }
+                spr.scale.set(eq.manScale || 1);
             } else {
                 spr.texture = PIXI.Texture.EMPTY;
                 spr.visible = false;
@@ -384,8 +398,8 @@ export default class Hata {
                 // хват.png" — что-то зажато. Исключение — handBuiltIn-предметы (Сайга/Пистолет/
                 // Кружка новых сетов) уже рисуют кисть внутри своего файла — кисть-спрайт
                 // скрывается целиком.
+                const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
                 if(this._charRightHandSpr){
-                    const _handWeaponHeld = eq && eq.id !== 62 && eq.id !== 92;
                     if(_handWeaponHeld && eq.handBuiltIn){
                         this._charRightHandSpr.visible = false;
                     } else {
@@ -402,8 +416,15 @@ export default class Hata {
                         this._charRightHandSpr.scale.set(_handWeaponHeld ? 0.189 : 0.200);
                     }
                 }
-                const weaponIdx = this._win.getChildIndex(this._charLeftHandSpr) + 1;
-                this._win.addChildAt(spr, Math.min(weaponIdx, this._win.children.length));
+                // 23.10.2026 (по прямому указанию — "фаланги должны быть под оружием и под
+                // кистью"): видна только когда что-то реально зажато (не у handBuiltIn-предметов).
+                if(this._charPhalanxSpr) this._charPhalanxSpr.visible = !!(_handWeaponHeld && !eq.handBuiltIn);
+                let topIdx = this._win.getChildIndex(this._charLeftHandSpr) + 1;
+                if(this._charPhalanxSpr && this._charPhalanxSpr.visible){
+                    this._win.addChildAt(this._charPhalanxSpr, Math.min(topIdx, this._win.children.length));
+                    topIdx = this._win.getChildIndex(this._charPhalanxSpr) + 1;
+                }
+                this._win.addChildAt(spr, Math.min(topIdx, this._win.children.length));
                 if(eq && (eq.id === 62 || eq.id === 92)) this._win.addChild(spr);
                 else if(this._charRightHandSpr) this._win.addChildAt(this._charRightHandSpr, this._win.getChildIndex(spr) + 1);
             }
@@ -412,11 +433,27 @@ export default class Hata {
         // куртки сетов Бродяга/Ветеран/Следопыт (id102/107/112) поднимаются на самый верх
         // z-порядка, выше рук/предплечий/часов-цепи — длинный рукав должен закрывать руку.
         const _torsoEq = (shmot.items || []).find(it => it.cat === 1 && it.equipped);
-        if(_torsoEq && [102, 107, 112].includes(_torsoEq.id) && this._charSlots[1]){
+        if(_torsoEq && [102, 107, 112, 118, 119].includes(_torsoEq.id) && this._charSlots[1]){
             this._win.addChild(this._charSlots[1]);
             // 22.10.2026 (по прямому указанию — "шмотки на голову должны быть выше по
             // Z-индексу, чем шмотки на торс"): см. тот же коммент в home.js.
             if(this._charSlots[0]) this._win.addChild(this._charSlots[0]);
+            // 23.10.2026 (по прямому указанию, скрин — "бита прячется под куртку"): подъём
+            // куртки хоронил уже переставленные выше в forEach оружие/кисть/фаланги (cat:6) —
+            // переподнимаем их поверх куртки, НО только для предмета, реально зажатого в
+            // кулаке. 23.10.2026 (повторный скрин — "Сайга/Пистолет/Кружка должны быть МЕНЬШЕ
+            // по Z-индексу, чем куртка; часы на руке тоже под курткой"): handBuiltIn-предметы
+            // и часы/цепь (id62/92) исключены из переподъёма целиком — остаются под курткой.
+            // 26.10.2026 (по прямому указанию — та же правка, что в shmot_shop.js/home.js, для
+            // консистентности рендера персонажа во всех местах): id117 (Бита, Исполнитель) —
+            // исключение из исключения, держится поднятой в кулаке, а не у бедра.
+            const _handEq = (shmot.items || []).find(it => it.cat === 6 && it.equipped);
+            const _handWeaponHeld2 = _handEq && _handEq.id !== 62 && _handEq.id !== 92 && (!_handEq.handBuiltIn || _handEq.id === 117);
+            if(_handWeaponHeld2){
+                if(this._charPhalanxSpr && this._charPhalanxSpr.parent === this._win) this._win.addChild(this._charPhalanxSpr);
+                if(this._charSlots[6]) this._win.addChild(this._charSlots[6]);
+                if(this._charRightHandSpr && this._charRightHandSpr.parent === this._win) this._win.addChild(this._charRightHandSpr);
+            }
         }
     }
 

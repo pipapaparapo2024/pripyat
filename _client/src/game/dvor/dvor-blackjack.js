@@ -878,7 +878,16 @@ export function attachBlackjack(proto){
                 if(res.cigAmt)  items.push({type:'cigarettes', amount: res.cigAmt});
                 if(res.respAmt) items.push({type:'respect',    amount: res.respAmt});
                 if(res.expAmt)  items.push({type:'exp',        amount: res.expAmt});
-                items.push({type:'shmot', amount: 1});
+                // 24.10.2026 (по прямому указанию — "при наведении на шмотку в попапе награды
+                // должно выводиться окно как во вкладке шмоток, вообще в любом месте, где
+                // выпадает шмотка"): раньше карточка не несла ни имени, ни item.shmotItem —
+                // popups/reward.js._showNameTip() не вешает pointerover вообще без item.name
+                // (см. код там), наведение не показывало НИЧЕГО. res.shmotGranted — id предмета
+                // (blackjack.php grantShmotById()), резолвим через клиентский каталог shmot.items
+                // (тот же приём, что dvor-roulette-buy.js/yashik.js).
+                const shmotItem = (res.shmotGranted !== null && res.shmotGranted !== undefined && window.shmot)
+                    ? shmot.items.find(it => it.id === res.shmotGranted) : null;
+                items.push({type:'shmot', amount: 1, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem});
                 iface._showRewardPopup(items);
             }
 

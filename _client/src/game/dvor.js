@@ -377,6 +377,36 @@ export default class Dvor{
             this._cigSprites.push(spr);
         }
 
+        // 26.10.2026 (по прямому указанию — "иконка 2048 убрана с главного экрана, вход в игру
+        // переехал во Двор"): два новых файла, координаты продиктованы точно. "Ящик" — основная
+        // кликабельная картинка-вход в мини-игру "2048" (та же роль, что убранная иконка на
+        // главном экране); "Нажать на игру" — подпись/призыв к действию рядом, тоже кликабельна
+        // для той же цели (клик по любому из двух открывает game2048.open()).
+        // 27.10.2026 (баг найден по прямому указанию — "ящик не должен никак реагировать на
+        // наведение/нажатие, рабочей кнопкой остаётся только «нажать на игру»"): ящик был
+        // интерактивен наравне с подписью — убран hover/click целиком, картинка чисто
+        // декоративная, вход в игру теперь только через "2048 нажать на игру.png".
+        if(!this._game2048YashikSpr){
+            const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 ящик.png'));
+            spr.anchor.set(0.5);
+            spr.x = 913; spr.y = 377;
+            this._game2048YashikSpr = spr;
+        }
+        w.addChild(this._game2048YashikSpr);
+
+        if(!this._game2048PressSpr){
+            const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 нажать на игру.png'));
+            spr.anchor.set(0.5);
+            spr.x = 999; spr.y = 284;
+            spr.interactive = true; spr.buttonMode = true;
+            if(window.isMobile) helper.touchPad(spr);
+            spr.on('pointerover', ()=>{ _ss(spr, 1.08); });
+            spr.on('pointerout', ()=>{ _ss(spr, 1.0); });
+            spr.on('pointerdown', ()=>{ if(window.game2048) game2048.open(); });
+            this._game2048PressSpr = spr;
+        }
+        w.addChild(this._game2048PressSpr);
+
         this._lobbyWin = w;
     }
 
@@ -481,7 +511,10 @@ export default class Dvor{
         const lvl = this._getLevelInfo(name);
         this._setTxt(p, 'result_txt', '');
         this._setTxt(p, 'level_txt',  'Уровень: ' + lvl.level);
-        this._setTxt(p, 'exp_txt',    lvl.maxed ? 'МАКС' : lvl.cur + '/' + lvl.next);
+        // 27.10.2026 (по прямому указанию — "ограничения по уровню в азартных играх Двора быть
+        // не должно"): уровень больше никогда не "замирает" (см. _simpleLevelInfo/_pokerLevelInfo
+        // выше), поэтому ветка "МАКС" убрана — всегда реальные cur/next.
+        this._setTxt(p, 'exp_txt',    lvl.cur + '/' + lvl.next);
 
         if(name === 'dice'){
             ['p_die1','p_die2','e_die1','e_die2'].forEach(k=>this._setTxt(p,k,'?'));
@@ -509,19 +542,21 @@ export default class Dvor{
         return 22;
     }
 
+    // 27.10.2026 (баг найден по прямому указанию — "был уровень 100, добил до 101, всё ещё
+    // показывает 100"): раньше цикл останавливался на lv<100 и возвращал maxed:true ("МАКС") —
+    // игра и до этой правки не запрещала играть после 100 (exp продолжал копиться), но
+    // отображаемый уровень визуально замирал. По прямому указанию — в азартных играх Двора
+    // ограничения по уровню быть не должно вообще, цикл больше не капается, "МАКС" убран.
+    // _pokerExpPerStep(lv) для lv>90 возвращает фиксированный шаг 22 (см. функцию выше) — цикл
+    // дальше 100 продолжает использовать этот же шаг, всё равно завершается (O(exp/22) итераций).
     _pokerLevelInfo(exp){
         let lv=0, used=0;
-        while(lv<100){ const s=this._pokerExpPerStep(lv+1); if(used+s>exp)break; used+=s; lv++; }
-        // На макс. уровне (100) цикл выше останавливается, но exp продолжает копиться дальше
-        // бесконечно (игра не запрещает играть после 100) — cur=exp-used рос бы неограниченно
-        // (напр. "98613/22", т.к. _pokerExpPerStep(101) просто падает в ветку "return 22"),
-        // хотя реального следующего уровня не существует. maxed:true — экран показывает "МАКС".
-        if(lv >= 100) return {level:100, cur:0, next:1, maxed:true};
-        return {level:lv, cur:exp-used, next:this._pokerExpPerStep(lv+1), maxed:false};
+        while(true){ const s=this._pokerExpPerStep(lv+1); if(used+s>exp)break; used+=s; lv++; }
+        return {level:lv, cur:exp-used, next:this._pokerExpPerStep(lv+1)};
     }
 
     _simpleLevelInfo(exp){
-        return {level:Math.min(100,Math.floor(exp/10)), cur:exp%10, next:10};
+        return {level:Math.floor(exp/10), cur:exp%10, next:10};
     }
 
     _getLevelInfo(game){

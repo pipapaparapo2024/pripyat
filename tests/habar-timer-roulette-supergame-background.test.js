@@ -18,8 +18,8 @@ assert(/btn\.visible = canCollect/.test(habar), 'habar collect button is hidden 
 assert(/btn\.interactive = canCollect/.test(habar), 'habar collect button cannot be clicked during cooldown');
 assert(/timer\.text = hh \+ ':' \+ mm \+ ':' \+ ss/.test(habar), 'habar shows a live HH:MM:SS timer');
 assert(!/notify\.showResult\(\{text:'Следующий сбор через/.test(habar), 'habar cooldown no longer opens an error popup');
-// 03.10.2026: box y:332→320 (поднято на 12px, по прямому указанию).
-assert(/_centerTextIn\(winnerAmtTxt, \{x:848, y:320, w:104, h:23\}\)/.test(screen), 'roulette winner amount uses the marked centered text box');
+// 03.10.2026: box y:332→320 (поднято на 12px, по прямому указанию). 26.10.2026: y:320→317 (ещё -3px).
+assert(/_centerTextIn\(winnerAmtTxt, \{x:848, y:317, w:104, h:23\}\)/.test(screen), 'roulette winner amount uses the marked centered text box');
 assert(/Задний фон суперигра\/Задний фон суперигра\.png/.test(minigame), 'super-prize opens the dedicated supergame background');
 assert(fs.existsSync(superBg), 'supergame background asset exists');
 

@@ -216,6 +216,12 @@ export function attachInterfacePanels(proto){
         // поэтому её тоже нужно закрывать явно, иначе экран остаётся висеть при переключении
         // на другую вкладку (общий fallback ниже вызывает только home.closeScreen()).
         if(window.svod && typeof svod.close === 'function' && svod._pixiWin && svod._pixiWin.parent) svod.close();
+        // 23.10.2026: тот же паттерн, что у hata/habar/svod выше — новый экран "Разнарядка"
+        // тоже должен закрывать себя при переключении вкладки, иначе останется висеть поверх.
+        if(window.raznaryadka && typeof raznaryadka.close === 'function' && raznaryadka._win && raznaryadka._win.parent) raznaryadka.close();
+        // 26.10.2026: тот же паттерн, что raznaryadka выше — новая игра "2048" тоже должна
+        // закрывать себя при переключении вкладки, иначе останется висеть поверх.
+        if(window.game2048 && typeof game2048.close === 'function' && game2048._win && game2048._win.parent) game2048.close();
         if(this._openModuleName){
             this._openModuleName = null;
             if(window.home) home.closeScreen();
@@ -262,7 +268,7 @@ export function attachInterfacePanels(proto){
     proto._closeCurrentModule = function(){
         const modules = ['bosses','zone','weapons','shmot','gangs','vassilich',
                          'dvor','base','habar','leaderboard','svod','zadaniya',
-                         'battlepass','hapuga','bot','bank'];
+                         'battlepass','hapuga','bot','bank','raznaryadka','game2048'];
         for(const name of modules){
             const m = window[name];
             if(!m) continue;
@@ -334,6 +340,30 @@ export function attachInterfacePanels(proto){
             });
             rightPanel.addChild(norm, hov, hit);
         });
+
+        // 23.10.2026 (по прямому указанию — "кнопка входа была просто PNG-файл, поставь его
+        // обратно, с hover-эффектом как у рюкзака"): исходные файлы кнопки "Ежедневные задания"
+        // нашлись у пользователя отдельно (не в images/ проекта) — "задания.png"/"задания
+        // hover.png", тот же размер (236×57), что и соседние кнопки этой панели. Временный
+        // Graphics+Text плейсхолдер (стоял здесь до этого момента) заменён на настоящие
+        // спрайты, тот же hover-паттерн norm/hov/hit, что у rightCfg.forEach выше.
+        const raznYOff = rightCfg.length * (BTN_H_R + GAP_R);
+        const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания.png'));
+        const raznHov  = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания hover.png'));
+        raznNorm.y = raznHov.y = raznYOff;
+        raznHov.visible = false;
+        const raznHit = new PIXI.Graphics();
+        raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, raznYOff, BTN_W_R, BTN_H_R); raznHit.endFill();
+        raznHit.interactive = true; raznHit.buttonMode = true;
+        if(window.isMobile) helper.touchPad(raznHit);
+        raznHit.on('pointerover', () => { raznNorm.visible = false; raznHov.visible = true; });
+        raznHit.on('pointerout',  () => { raznHov.visible = false; raznNorm.visible = true; });
+        raznHit.on('pointerdown', () => {
+            console.log('[PNG right tab] clicked: raznaryadka | _openModuleName:', this._openModuleName);
+            this.openModule('raznaryadka');
+        });
+        rightPanel.addChild(raznNorm, raznHov, raznHit);
+
         root.layer1_mc.addChild(rightPanel);
         this._pngRightPanel = rightPanel;
         console.log('[interface._buildPngSidePanels] right panel built at', PANEL_X_RIGHT, PANEL_Y_RIGHT);

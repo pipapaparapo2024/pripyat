@@ -45,7 +45,16 @@ export function checkRewardLink(){
             if(res.patch) applyPatch(res.patch);
             const items = (res.summary || []).map(s => {
                 if(s.kind === 'currency') return { type: s.field, amount: s.amount };
-                if(s.kind === 'shmot')    return { type: 'shmot', amount: 1 };
+                if(s.kind === 'shmot'){
+                    // 24.10.2026 (по прямому указанию — "при наведении на шмотку в попапе
+                    // награды должно выводиться окно как во вкладке шмоток, в любом месте, где
+                    // выпадает шмотка"): s.itemId приходит от rewardlinks.php.claim() (см.
+                    // "['kind' => 'shmot', 'itemId' => $itemId]") — резолвим полный предмет
+                    // через клиентский каталог, тот же приём, что dvor-roulette-buy.js/yashik.js.
+                    const shmotItem = (s.itemId !== null && s.itemId !== undefined && window.shmot)
+                        ? shmot.items.find(it => it.id === s.itemId) : null;
+                    return { type: 'shmot', amount: 1, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem };
+                }
                 if(s.kind === 'key')      return { type: 'boss_keys', amount: s.amount };
                 if(s.kind === 'habar')    return { type: 'habar', amount: 1 };
                 return null;

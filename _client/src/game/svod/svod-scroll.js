@@ -21,7 +21,7 @@ export function attachSvodScroll(proto){
     // высоты контента (смена страницы/фильтра), scrollToTop() — когда список заменён другими
     // данными и позицию прокрутки сохранять не нужно.
     proto._buildSvodScroll = function(cfg){
-        const { parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY, thumbXAdjust } = cfg;
+        const { parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY, thumbXAdjust, trackImg, thumbImg, arrowUpImg, arrowDownImg } = cfg;
         // 17.10.2026 (по прямому указанию — "скролл в 'Мои достижения' не совпадает с
         // 'Общий топ'"): trackY — новый необязательный override, по той же схеме, что уже есть
         // у arrowUpY/arrowDownY (см. коммент 23.09.2026 ниже). Раньше track.y был ЖЁСТКО равен
@@ -56,7 +56,12 @@ export function attachSvodScroll(proto){
         parent.addChild(maskGfx);
         contentContainer.mask = maskGfx;
 
-        const track = new PIXI.Sprite(PIXI.Texture.from(IMG + 'шкала скрола.png'));
+        // 27.10.2026 (по прямому указанию — новые ассеты скролла специально для вкладки
+        // Заначки): trackImg/thumbImg/arrowUpImg/arrowDownImg — необязательные overrides
+        // (та же схема, что уже есть у trackY/arrowUpY/thumbXAdjust выше), подменяют только
+        // ТЕКСТУРЫ, не геометрию. Без них — старое общее поведение (достижения/топы Сводки
+        // не затронуты).
+        const track = new PIXI.Sprite(PIXI.Texture.from(IMG + (trackImg || 'шкала скрола.png')));
         track.x = trackX; track.y = effectiveTrackY;
         parent.addChild(track);
 
@@ -66,7 +71,7 @@ export function attachSvodScroll(proto){
         // передать arrowUpY/arrowDownY явно (эти поля уже были в JSDoc cfg выше, но раньше не
         // читались), формула остаётся дефолтом для тех caller'ов, что явно не передали override
         // (см. svod-achievements.js — там формула по-прежнему подходит, отдельно не репортили).
-        const arrowUp = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод стрелка вверх.png'));
+        const arrowUp = new PIXI.Sprite(PIXI.Texture.from(IMG + (arrowUpImg || 'свод стрелка вверх.png')));
         // 17.10.2026: дефолт теперь от effectiveTrackY (позиция трека), не viewY (позиция
         // контента) — стрелка декорирует трек, который с этой правки может не совпадать с
         // viewY (см. trackY override выше). Для caller'ов, не передающих ни trackY, ни
@@ -75,7 +80,7 @@ export function attachSvodScroll(proto){
         arrowUp.interactive = true; arrowUp.buttonMode = true;
         parent.addChild(arrowUp);
 
-        const arrowDown = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод стрелка вниз.png'));
+        const arrowDown = new PIXI.Sprite(PIXI.Texture.from(IMG + (arrowDownImg || 'свод стрелка вниз.png')));
         arrowDown.x = arrowX; arrowDown.y = (arrowDownY !== undefined) ? arrowDownY : viewY + viewH + 2;
         arrowDown.interactive = true; arrowDown.buttonMode = true;
         parent.addChild(arrowDown);
@@ -91,7 +96,7 @@ export function attachSvodScroll(proto){
         // независимо от trackX (trackX и так двигает и трек, и бегунок вместе, т.к. формула
         // ниже считает бегунок ОТ trackX — чтобы развести их в разные стороны, нужен отдельный
         // параметр). Дефолт 0 — для caller'ов без override поведение не меняется.
-        const thumb = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод скролл бегунок.png'));
+        const thumb = new PIXI.Sprite(PIXI.Texture.from(IMG + (thumbImg || 'свод скролл бегунок.png')));
         thumb.x = trackX - Math.round((thumb.width - track.width) / 2) + 1 + (thumbXAdjust || 0);
         thumb.interactive = true; thumb.buttonMode = true;
         parent.addChild(thumb);

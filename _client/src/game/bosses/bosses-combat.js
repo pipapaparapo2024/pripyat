@@ -254,15 +254,16 @@ export function attachBossesCombat(proto){
     // по итогу ничего не произошло"). Вызывается из ОБОИХ мест, где тикает таймер боя
     // (_updateFightTimer здесь и _tickBossFightTimer в bosses_fight.js) — идемпотентен:
     // повторный вызов после первого видит _bossStartMs===0 и ничего не делает.
-    // Скиллы — отдельный оверлей (root.layer2_mc), открывается напрямую через skills.open()
-    // из кнопки внутри боя (bosses_fight.js._ensureExtraButtons), в обход общего
-    // openModule()/_closeAllPanels() — у Skills нет публичного close(), только внутренний
-    // win.visible=false по крестику (skills.js._buildWin). Если бой завершается (таймаут/
-    // поражение/победа), пока игрок смотрит на скиллы, экран скиллов должен закрыться вместе
-    // с боем — репорт 17.09.2026: "время закончилось, попап показался, но вкладка скиллы
-    // осталась открытой поверх".
+    // Скиллы — отдельный оверлей (root.layer2_mc), открывается напрямую через
+    // iface._openBossesSkillsScreen() из нескольких кнопок (см. bosses_fight.js, эта кнопка
+    // выше в _ensureExtraButtons, вкладка "Скиллы" в Сводке), в обход общего
+    // openModule()/_closeAllPanels(). Если бой завершается (таймаут/поражение/победа), пока
+    // игрок смотрит на скиллы, экран скиллов должен закрыться вместе с боем — репорт
+    // 17.09.2026: "время закончилось, попап показался, но вкладка скиллы осталась открытой
+    // поверх". 27.10.2026 (по прямому указанию — старый фейковый skills.js.open() удалён
+    // целиком): переведено на закрытие РЕАЛЬНОГО экрана bosses_skills.js.
     proto._closeSkillsIfOpen = function(){
-        if(window.skills && skills._win) skills._win.visible = false;
+        if(window.iface && iface._skillsWin && iface._skillsWin.parent) iface._closeBossesSkillsScreen();
     };
 
     proto._onFightTimeout = function(idx){
@@ -994,7 +995,10 @@ export function attachBossesCombat(proto){
         skillBtn.addChild(sbg,stxt);
         skillBtn.x=winW-130; skillBtn.y=12;
         skillBtn.interactive=true;skillBtn.buttonMode=true;
-        skillBtn.on('pointerdown',()=>{ if(window.skills) skills.open(); });
+        // 27.10.2026 (по прямому указанию — удалён старый фейковый экран skills.js.open()):
+        // переведено на тот же реальный экран прокачки, что и вкладка "Скиллы" в Сводке, см.
+        // коммент в svod.js._selectMainTab().
+        skillBtn.on('pointerdown',()=>{ if(window.iface) iface._openBossesSkillsScreen(); });
         this.win.addChild(skillBtn);
         this._skillsBtn=skillBtn;
 

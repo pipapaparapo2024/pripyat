@@ -62,15 +62,21 @@ for(const line of itemsBlock.split('\n')){
     });
 }
 
-// 24.09.2026 (по прямому указанию, редактор позиций — точные калибровки для обуви/шорт/двух
-// топов): порог поднят с 0.15 до 0.23 — старый плоский manScale:0.1 был грубой прикидкой
-// "уменьши в 10 раз", новые значения (0.216-0.228) сняты пользователем напрямую на манекене и
-// заведомо превышают 0.15, оставаясь при этом кратно меньше нативного 1 — регресс-порог просто
-// поднят до реального потолка новых калиброванных значений, не отменяя саму проверку "огромный
-// файл обязан иметь manScale, а не рендериться в 100% нативного размера".
-console.log('\nTest 1: КАЖДЫЙ дроп-предмет (id41+), чей файл на диске ≥1000px по ширине или высоте, имеет manScale ≤ 0.23 (уменьшен минимум в ~4.3 раза от нативного 1)');
+// 26.10.2026 (по прямому указанию — замена scale на заранее уменьшенные PNG для резкости
+// персонажа, см. shmot-man-prescaled-images.test.js): manScale per-item больше НЕ уменьшает
+// огромные файлы "на лету" — ВСЕ предметы каталога получили manScale:1.000, а реальное
+// уменьшение теперь происходит ЗАРАНЕЕ (manImgFile — отдельный, физически уменьшенный PNG).
+// Проверка "огромный файл не рендерится в нативном размере" переносится на manImgFile: его
+// собственный natural-размер должен быть кратно меньше оригинала (а не просто иметь manScale
+// в коде, который теперь везде одинаков и ничего не доказывает).
+console.log('\nTest 1: КАЖДЫЙ дроп-предмет (id41+), чей ОРИГИНАЛЬНЫЙ файл на диске ≥1000px, имеет manImgFile СТРОГО меньше оригинала (реально уменьшен заранее, не просто manScale в коде) — точная кратность по старому индивидуальному manScale проверяется в общем тесте shmot-man-prescaled-images.test.js, не здесь (там же жили исключения 103/113)');
 {
-    const dropItems = items.filter(it => it.id >= 41 && it.imgFile);
+    const manImgM = /manImgFile:'([^']*)'/;
+    const dropItems = items.filter(it => it.id >= 41 && it.imgFile).map(it => {
+        const line = itemsBlock.split('\n').find(l => l.includes(`{id:${it.id},`));
+        const m = line && line.match(manImgM);
+        return { ...it, manImgFile: m ? m[1] : null };
+    });
     assert(dropItems.length > 0, 'найдены дроп-предметы с реальным imgFile для проверки');
 
     let checkedHuge = 0;
@@ -81,8 +87,19 @@ console.log('\nTest 1: КАЖДЫЙ дроп-предмет (id41+), чей фа
         const isHuge = w >= 1000 || h >= 1000;
         if(!isHuge) continue;
         checkedHuge++;
-        assert(it.manScale !== null && it.manScale <= 0.23,
-            `id${it.id} (${it.name}, файл ${w}x${h}) — manScale задан и ≤0.23, получили ${it.manScale}`);
+        // 27.10.2026 (по прямому указанию, живые координаты манекена): id87/112/118 получили
+        // точечную докрутку manScale поверх уже-уменьшенного manImgFile — см. EXCEPTIONS в
+        // tests/shmot-man-prescaled-images.test.js, та же логика, что у id62/92 исторически.
+        const MAN_SCALE_EXCEPTIONS = { 87: 0.992, 112: 1.004, 118: 1.004 };
+        const expectedManScale = MAN_SCALE_EXCEPTIONS[it.id] ?? 1.000;
+        assert(it.manScale === expectedManScale, `id${it.id} (${it.name}): manScale теперь ${expectedManScale} (было индивидуальное значение)`);
+        assert(!!it.manImgFile, `id${it.id} (${it.name}): manImgFile задан`);
+        if(!it.manImgFile) continue;
+        const manPath = path.join(SHMOT_DIR, it.manImgFile);
+        assert(fs.existsSync(manPath), `id${it.id}: manImgFile реально существует на диске`);
+        if(!fs.existsSync(manPath)) continue;
+        const man = pngSize(manPath);
+        assert(man.w < w && man.h < h, `id${it.id} (${it.name}, оригинал ${w}x${h} → manImgFile ${man.w}x${man.h}) — реально уменьшен, не копия оригинала`);
     }
     // 23.09.2026: было 16, стало 15 — сверка каталога сетов против _organized убрала часть
     // записей (id75/76/78/79 и др.), в т.ч. некоторые "огромные" файлы, которые тут считались.
@@ -112,10 +129,14 @@ console.log('\nTest 2: контрольный список "нетронутых
 
 console.log('\nTest 3: три головных предмета спозиционированы по данным редактора позиций (магазин одежды, слот "Голова" база x=871,y=195)');
 {
+    // 26.10.2026: manScale теперь ВСЕГДА 1.000 (см. докблок Test 1 выше) — manDx/manDy не
+    // тронуты правкой.
+    // 27.10.2026 (по прямому указанию, повторные живые координаты манекена тем же днём): id89
+    // manDx -2→-3; id90 manDx -3→-4, manDy 36→35.
     const EXPECTED = [
-        { id: 81, name: 'Повязка (Тайник)', manDx: 3, manDy: 22, manScale: 0.217 },
-        { id: 89, name: 'Респиратор с медальоном (Блэкджек)', manDx: -2, manDy: 36, manScale: 0.221 },
-        { id: 90, name: 'Респиратор (Спортик 2.0)', manDx: -3, manDy: 36, manScale: 0.224 },
+        { id: 81, name: 'Повязка (Тайник)', manDx: 3, manDy: 22, manScale: 1.000 },
+        { id: 89, name: 'Респиратор с медальоном (Блэкджек)', manDx: -3, manDy: 36, manScale: 1.000 },
+        { id: 90, name: 'Респиратор (Спортик 2.0)', manDx: -4, manDy: 35, manScale: 1.000 },
     ];
     const HEAD_BASE_X = 871, HEAD_BASE_Y = 195;
     for(const exp of EXPECTED){

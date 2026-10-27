@@ -44,9 +44,9 @@ console.log('\nTest 2: сумма джекпота (_roulJackTxt) центрир
 
 // 23.09.2026: бокс уточнён повторным снимком редактора позиций — было {x:794,y:285,w:152,h:42},
 // стало {x:794,y:288,w:152,h:31} (см. tests/roulette-sector-highlight-removed.test.js Test 4).
-console.log('\nTest 3: ник победителя (_roulWinnerNameTxt) центрируется в боксе, снятом редактором позиций 03.10.2026 (x:794,y:278,w:152,h:31 — поднято на 10px)');
+console.log('\nTest 3: ник победителя (_roulWinnerNameTxt) центрируется в боксе, снятом редактором позиций 26.10.2026 (x:794,y:276,w:152,h:31 — поднято ещё на 2px)');
 {
-    assert(/window\._centerTextIn\(winnerNameTxt, \{x:794, y:278, w:152, h:31\}\);/.test(src),
+    assert(/window\._centerTextIn\(winnerNameTxt, \{x:794, y:276, w:152, h:31\}\);/.test(src),
         'winnerNameTxt центрируется через _centerTextIn с точными координатами из скриншота редактора');
     assert(!/winnerNameTxt\.anchor\.set\(0, 0\.5\);\s*\n\s*winnerNameTxt\.x = 830; winnerNameTxt\.y = 293;/.test(src),
         'старое ручное anchor(0,0.5)+x/y для winnerNameTxt убрано (было лево-выровнено, стало центрировано)');
@@ -56,9 +56,9 @@ console.log('\nTest 3: ник победителя (_roulWinnerNameTxt) цент
 // сумма выигрыша (_roulWinnerAmtTxt) тоже переведена на window._centerTextIn() — центрируется
 // внутри бокса, размеченного редактором позиций, вместо ручного anchor(0,0.5)+x/y. Расширение
 // уже установленной консистентности, не регресс.
-console.log('\nTest 4: сумма выигрыша (_roulWinnerAmtTxt) тоже центрируется через window._centerTextIn() — box y:332→320 (поднято на 12px, 03.10.2026)');
+console.log('\nTest 4: сумма выигрыша (_roulWinnerAmtTxt) тоже центрируется через window._centerTextIn() — box y:320→317 (поднято ещё на 3px, 26.10.2026)');
 {
-    assert(/window\._centerTextIn\(winnerAmtTxt, \{x:848, y:320, w:104, h:23\}\);/.test(src),
+    assert(/window\._centerTextIn\(winnerAmtTxt, \{x:848, y:317, w:104, h:23\}\);/.test(src),
         '_roulWinnerAmtTxt центрируется в размеченном боксе (та же система, что у winnerNameTxt)');
 }
 

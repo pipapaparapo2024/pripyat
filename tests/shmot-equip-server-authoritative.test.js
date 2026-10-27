@@ -129,8 +129,10 @@ console.log('\nTest 6: shmot.js.giveRandom() убрана целиком — ж�
 {
     assert(!/giveRandom\(n\)\{/.test(shmotJs), 'giveRandom() удалена из shmot.js (была единственным клиентским путём случайной выдачи одежды)');
     const roulettePhp = read('server/core/controllers/roulette.php');
-    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'roulette'\) : null;/.test(roulettePhp),
-        'roulette.php.openCase() сам решает и записывает тату через grantShmotFromSource() до ответа клиенту (шанс сейчас 0% — дроп тату отключён в бете, выдача уже безопасна)');
+    // 26.10.2026: источник переименован 'roulette' → 'roulette_bag' (единственный реально
+    // непустой пул), шанс поднят 0→10% — см. oct26-sidorovich-bag-shmot-drop-and-jackpot-pool-reset.test.js.
+    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'roulette_bag'\) : null;/.test(roulettePhp),
+        'roulette.php.openCase() сам решает и записывает шмотку через grantShmotFromSource() до ответа клиенту (шанс 10%, источник roulette_bag)');
 }
 
 console.log('\nTest 7: dev_panel.js — _unlockAllShmot()/_resetAccount() тоже переведены на devGrantShmot (иначе dev-кнопки молча перестали бы сохраняться)');

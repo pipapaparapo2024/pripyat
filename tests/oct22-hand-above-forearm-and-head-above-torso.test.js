@@ -50,8 +50,11 @@ console.log('\nTest 1: player_profile.js — handItemSpr захватывает�
 
 console.log('\nTest 2: player_profile.js — голова (headSpr) захватывается для последующего переподнятия выше торса');
 {
-    assert(/let headSpr = null;/.test(profileSrc), 'headSpr объявлен');
-    assert(/if\(s\.cat === 0\)\{ headSpr = spr; \}/.test(profileSrc), 'headSpr захватывается на cat:0');
+    // 26.10.2026: headSpr теперь объявлен вместе с headDef (одной строкой) — добавлено той же
+    // сессией для фикса блика маски "Комбинатор" на попапе чужого профиля (headDef нужен,
+    // чтобы проверить id116 без блика, см. profileHeadIsMaskIspolnitel ниже в этом же файле).
+    assert(/let headSpr = null, headDef = null;/.test(profileSrc), 'headSpr (вместе с headDef) объявлен');
+    assert(/if\(s\.cat === 0\)\{ headSpr = spr; headDef = def; \}/.test(profileSrc), 'headSpr (и headDef) захватываются на cat:0');
 }
 
 console.log('\nTest 3: все 4 экрана — исключение "куртка выше всего" переподнимает слот головы (cat:0) сразу после торса');

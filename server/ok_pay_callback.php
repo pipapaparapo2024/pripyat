@@ -62,6 +62,47 @@
             return $types;
         }
 
+        // 26.10.2026 (ответ модерации ОК — "разработчик обязан проверять соответствие товара и
+        // его цены, передаваемых в параметрах product_code и amount", apiok.ru/dev/methods/rest/
+        // callbacks/callbacks.payment): та же индексация productCode, что у itemCatalog() выше
+        // (ОБЯЗАНА совпадать с ней один-в-один — тот же порядок offset-ов), но вместо [поле,
+        // количество] отдаёт ожидаемую цену в ОКах — тем же расчётом (price/7), что уже использует
+        // universal_pay.php.loadResponses() для голосов ВК (см. докблок файла — тот же числовой
+        // 'price', который get_item отдаёт площадке, одинаково трактуется и как голоса, и как ОКи).
+        // Без этой проверки злоумышленник мог бы прислать поддельный amount на любой productCode.
+        static function priceCatalog($prices){
+            $donats = [];
+
+            for($i = 0; $i < count($prices['stew']['default']); $i++){
+                $donats[$i] = $prices['stew']['price'][$i] / 7;
+            }
+            $coinsOff = count($prices['stew']['default']);
+            for($i = 0; $i < count($prices['coins']['default']); $i++){
+                $donats[$coinsOff + $i] = $prices['coins']['price'][$i] / 7;
+            }
+            $cigOff = $coinsOff + count($prices['coins']['default']);
+            for($i = 0; $i < count($prices['cigarettes']['default']); $i++){
+                $donats[$cigOff + $i] = $prices['cigarettes']['price'][$i] / 7;
+            }
+
+            // Тот же порядок/значения голосов за энергию, что в universal_pay.php.loadResponses()
+            // ($energy_items[*]['votes']) — держать синхронно при правке одного из двух файлов.
+            $energyVotes = [3, 7, 10, 20, 40, 60, 85, 120];
+            foreach($energyVotes as $idx => $votes){
+                $donats[100 + $idx] = $votes;
+            }
+
+            return $donats;
+        }
+
+        // Допуск на расхождение между нашим расчётом ожидаемой цены (price/7, может быть дробным)
+        // и целым amount, которое реально прислала площадка ОК — не точное сравнение float, но и
+        // не "принять любую меньшую сумму". 1 ОК — минимальный допуск на округление в любую сторону.
+        static function amountMatches($expected, $actualRaw){
+            if(!is_numeric($actualRaw)) return false;
+            return abs(floatval($expected) - floatval($actualRaw)) <= 1.0;
+        }
+
         // Подпись ОК — отсортировать параметры (кроме sig), склеить "key=value", дописать
         // секрет, md5. $params — уже БЕЗ 'sig' (вызывающий код убирает его перед вызовом, тот
         // же порядок, что checkSig() в universal_pay.php).
@@ -137,6 +178,11 @@
             exit;
         }
         function respondError($code, $msg){
+            // 26.10.2026 (ответ модерации ОК — "В случае ошибки HTTP-заголовок 'Invocation-error'
+            // должен содержать код ошибки", apiok.ru/dev/methods/rest/callbacks/callbacks.payment):
+            // раньше код ошибки уходил ТОЛЬКО в JSON-тело, без этого заголовка — документация ОК
+            // требует оба способа одновременно, не один вместо другого.
+            header('Invocation-error: ' . $code);
             echo json_encode(['error_code' => $code, 'error_msg' => $msg, 'error_data' => null]);
             exit;
         }
@@ -160,10 +206,24 @@
             respondError(1001, 'CALLBACK_INVALID_PAYMENT : missing uid/transaction_id');
         }
 
-        $catalog = OkPayCallback::itemCatalog($registry['json']->get('donuts', true));
+        $prices = $registry['json']->get('donuts', true);
+        $catalog = OkPayCallback::itemCatalog($prices);
         if(!isset($catalog[$productCode])){
             error_log('[ok_pay_callback] ОШИБКА — товар не найден | uid=' . $uid . ' | productCode=' . $productCode);
             respondError(1002, 'CALLBACK_INVALID_PAYMENT : unknown product ' . $productCode);
+        }
+
+        // 26.10.2026 (ответ модерации ОК, см. докблок OkPayCallback::priceCatalog() выше): без
+        // этой проверки amount из запроса вообще не читался — начисление зависело ТОЛЬКО от
+        // productCode, то есть кто угодно мог прислать настоящий подписанный колбэк с заниженным
+        // amount за дорогой товар (сервер всё равно начислил бы полный товар).
+        $priceCatalog = OkPayCallback::priceCatalog($prices);
+        $expectedAmount = $priceCatalog[$productCode] ?? null;
+        $actualAmount = $_GET['amount'] ?? null;
+        if($expectedAmount === null || !OkPayCallback::amountMatches($expectedAmount, $actualAmount)){
+            error_log('[ok_pay_callback] ОТКАЗ — amount не совпадает с ценой товара | uid=' . $uid
+                . ' | productCode=' . $productCode . ' | expected=' . json_encode($expectedAmount) . ' | got=' . json_encode($actualAmount));
+            respondError(1003, 'CALLBACK_INVALID_PAYMENT : amount mismatch for product ' . $productCode);
         }
 
         $tid = OkPayCallback::transKey($transactionId);

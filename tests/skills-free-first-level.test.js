@@ -77,19 +77,16 @@ console.log('\nTest 3: skills.php._spentPoints() — считает ВСЕ ур�
     }
 }
 
-console.log('\nTest 4: skills.js — spentPoints/canUp/авто-ПРОКАЧАТЬ считают скилл 0 как любой другой');
+console.log('\nTest 4: skills.js — spentPoints считает скилл 0 как любой другой');
 {
+    // 27.10.2026 (по прямому указанию — старый фейковый экран скиллов удалён целиком, см.
+    // skills.js и tests/oct27-skills-screen-unify-resource-tooltip-ss-center.test.js): этот
+    // тест раньше ТАКЖЕ проверял _updateCard()/prokBg — обе функции были частью удалённого
+    // экрана и больше не существуют. Эквивалентная проверка "канУп без исключения для скилла 0"
+    // теперь живёт в РЕАЛЬНОМ экране — см. Test 5 ниже (bosses_skills.js._getCurrentUpgradeSkillIdx).
     const spentBody = skillsSrc.match(/get spentPoints\(\)\{([\s\S]*?)\n\t\}/)[1];
     assert(/this\.levels\.reduce\(\(s, v\) => s \+ v, 0\);/.test(spentBody),
         'spentPoints суммирует все уровни без исключения индекса 0');
-
-    const updateCardBody = skillsSrc.match(/_updateCard\(card, si, availPts\)\{([\s\S]*?)const cw = 422/)[1];
-    assert(/const canUp = !maxed && availPts >= 1;/.test(updateCardBody),
-        'canUp требует очки одинаково для любого скилла — freeFirstAvail больше не влияет на кликабельность');
-
-    const prokBody = skillsSrc.match(/prokBg\.on\('pointerdown', \(\) => \{([\s\S]*?)\n\t\t\}\);/)[1];
-    assert(/return this\.availablePoints >= 1;/.test(prokBody),
-        'авто-ПРОКАЧАТЬ ищет скилл только по наличию очков — явного разрешения "без очков для скилла 0" больше нет');
 }
 
 console.log('\nTest 5: bosses_skills.js — цикл выбора скилла требует очки безусловно (без "i > 0 &&")');

@@ -53,7 +53,7 @@
             // конкретных примерах уточнил, что имел в виду другую механику — HP личное, урон
             // друга (ВК, взаимного) засчитывается независимо от того, какого босса он бьёт,
             // если в момент его удара у МЕНЯ уже шёл бой. friendsDamage/rating вернулись.
-            $this->permits = ['friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey', 'devResetDailyLimits'];
+            $this->permits = ['friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey', 'devResetDailyLimits', 'devGrantKeys'];
         }
 
         // 17.10.2026 (по прямому указанию — dev-кнопка "сбросить дневной лимит боссов"): тот же
@@ -82,6 +82,50 @@
             $data['dailyKills'] = array_fill(0, 8, 0);
             $data['dailyDate']  = '';
             $user['bosses_data'] = json_encode($data);
+            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            return $this->ops->ok(['patch' => $this->ops->patchCurrencies($user, ['bosses_data'])]);
+        }
+
+        // 26.10.2026 (репорт — "на тестовом сервере в dev-панели выдал ключи, после
+        // перезагрузки их нет, и сразу напасть на босса нельзя — ошибка 'проверьте ключи и
+        // зачистку локации'"): dev_panel.js._addKey() мутировал bosses.keys[] на клиенте и
+        // сохранял через обычный, generic users.save() — тот же путь, что и
+        // devGrantWeapons()/devGrantShmot() были созданы чинить для оружия/шмоток (см. их
+        // комментарии в users.php). users.save()._sanitizeBossesData() требует ТОЧНОГО
+        // совпадения keys[]/dailyKills[]/killsTotal[]/medalKills[] с текущим значением в БД —
+        // при любом расхождении отклоняет ВЕСЬ bosses_data целиком (это тот же анти-чит,
+        // который не даёт читеру накрутить себе ключи обычным users.save, и его specifically
+        // НЕЛЬЗЯ ослаблять). Поэтому выданные dev-панелью ключи никогда реально не долетали до
+        // БД — из-за этого же startFight() (см. fail(64) выше, "не хватает ключей") сразу
+        // отклонял попытку атаки сразу после "выдачи". Фикс — тот же узкий dev-only permit
+        // паттерн, что devResetDailyLimits() выше: пишет ТОЛЬКО keys[$idx] напрямую через
+        // Gameops, в обход whitelist-санитайзера, только для своего uid.
+        // all_amt — отдельная ветка для dev_panel.js._giveMillion() ("МИЛЛИОН ВСЕГО"): та же
+        // кнопка раньше тоже писала bosses.keys = Array(8).fill(1000000) локально и полагалась
+        // на финальный общий users.save() — тот же самый баг, просто для всех 8 ключей разом
+        // вместо одного. idx/amt — обычный путь для точечных кнопок +1/+3/+5 по одному боссу.
+        function devGrantKeys(){
+            if(!$this->_requireDevUser()) return;
+            $user = $this->ops->loadUser();
+            if(!$user) return $this->ops->fail(99);
+            $data = $this->_decodeBossesData($user['bosses_data'] ?? null);
+            if(!is_array($data)) $data = [];
+            if(!isset($data['keys']) || !is_array($data['keys'])) $data['keys'] = array_fill(0, 8, 0);
+            while(count($data['keys']) < 8) $data['keys'][] = 0;
+
+            if(isset($this->registry['user_params']['all_amt'])){
+                $allAmt = intval($this->registry['user_params']['all_amt']);
+                if($allAmt === 0) return $this->ops->fail(54);
+                for($i = 0; $i < 8; $i++) $data['keys'][$i] = max(0, intval($data['keys'][$i]) + $allAmt);
+            } else {
+                $idx = intval($this->registry['user_params']['idx'] ?? -1);
+                if($idx < 0 || $idx > 7) return $this->ops->fail(54);
+                $amt = intval($this->registry['user_params']['amt'] ?? 0);
+                if($amt === 0) return $this->ops->fail(54);
+                $data['keys'][$idx] = max(0, intval($data['keys'][$idx]) + $amt);
+            }
+            $user['bosses_data'] = json_encode($data);
+
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             return $this->ops->ok(['patch' => $this->ops->patchCurrencies($user, ['bosses_data'])]);
         }
@@ -273,7 +317,16 @@
         private function _friendIds($user){
             $myUid = abs(intval($this->registry['uid']));
             $ids = [];
-            foreach(explode(',', $user['friends']) as $fid){
+            // 26.10.2026 (прод-репорт, uid=63547944, 54+ падений/день): Database::trueJSON()
+            // превращает $user['friends'] в [] (пустой МАССИВ, не пустую строку), когда в БД
+            // лежит NULL/''/"0" — у игрока без выданного доступа к друзьям ВК это обычное
+            // состояние, не редкий край. Один из вызывающих мест (rating()) не проверял
+            // !empty() перед вызовом, поэтому голый explode(',', $user['friends']) падал
+            // TypeError'ом на массиве. Та же защита, что уже стоит чуть ниже для
+            // $row['friends'] (строка со strval()) — здесь нужна и для своего поля.
+            $rawFriends = $user['friends'] ?? '';
+            $friendIdList = is_array($rawFriends) ? $rawFriends : explode(',', strval($rawFriends));
+            foreach($friendIdList as $fid){
                 $fid = abs(intval($fid));
                 if($fid > 0 && $fid !== $myUid) $ids[] = $fid;
             }
@@ -600,7 +653,11 @@
 
             $myData = $this->_decodeBossesData($me['bosses_data'] ?? null);
             if(!is_array($myData)) $myData = [];
-            $friendIds = (!isset($me['error']) && $diffIdx !== 3) ? $this->_friendIds($me) : [];
+            // 26.10.2026: пропущенная проверка !empty($me['friends']) (есть во всех остальных
+            // 6 мест вызова _friendIds() в этом файле) — без неё падал Fatal
+            // explode(): Argument #2 ($string) must be of type string, array given, см.
+            // _friendIds() ниже и комментарий там про trueJSON().
+            $friendIds = (!isset($me['error']) && $diffIdx !== 3 && !empty($me['friends'])) ? $this->_friendIds($me) : [];
 
             // 04.10.2026 (НАЙДЕНО по репорту "урон друзьям приходит, но они не отображаются в
             // рейтинге урона/попапе победы"): сюда передавался СЫРОЙ $friendIds (плоский список
@@ -2037,6 +2094,15 @@
             ];
             error_log('[bosses.claimKill] ' . json_encode($claimDebug)
                 . ($saveVerifyMismatch ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
+
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Победить <конкретного босса>" — звать ПОСЛЕ собственного saveUser() выше (см.
+            // докблок RaznaryadkaProgress::report()). Не влияет на уже отданный $patch/$claimDebug.
+            RaznaryadkaProgress::report($this->ops, 'boss', 1, ['boss_id' => $bossId]);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников, не только со двора"): награда сигаретами за убийство босса тоже
+            // засчитывается в задание "Собрать N сухарей".
+            if($earnedCig > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $earnedCig);
 
             $patch = $this->ops->patchCurrencies($user, [
                 'coins','cigarettes','stew','exp','bosses_killed','boss_kills_0','boss_kills_1','boss_kills_2',

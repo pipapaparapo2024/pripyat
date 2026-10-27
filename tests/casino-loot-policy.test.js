@@ -45,7 +45,9 @@ ok(bossesCfg.boss_shmot_normal_chance_pct === 50, 'Обычный цельный
 ok(JSON.stringify(bossesCfg.fragment_items) === JSON.stringify({'41':20, '42':20, '43':20}), 'Три стартовых предмета боссов собираются из 20 фрагментов');
 const roulette = read('server/core/controllers/roulette.php');
 ok(/KEYRING_CHANCE_DENOM\s*=\s*1000000/.test(roulette), 'Связка ключей: 1 к 1 000 000 на попытку при доступном 30-дневном окне');
-ok(/\$tatuChancePct = 0;/.test(roulette), 'Тату из кейса рулетки отключено: 0%');
+// 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них будут шмотки,
+// включи шанс 10%"): было 0% (выключено в бете) — поднято до 10%, см. roulette.php.openCase().
+ok(/\$tatuChancePct = 10;/.test(roulette), 'Дроп шмотки из кейса рулетки включён: 10%');
 const shmot = read('_client/src/game/shmot.js');
 const dvor = read('_client/src/game/dvor.js');
 ok(!/giveRandom\(n\)\{/.test(shmot) && !/case 'shmot'/.test(dvor), 'Клиент не способен случайно выдать одежду');

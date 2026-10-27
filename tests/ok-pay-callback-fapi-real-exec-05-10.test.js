@@ -68,8 +68,28 @@ console.log('\nTest 3: исполняемая часть — формат отв
     const src = read('server/ok_pay_callback.php');
     assertRegex(/function respondOk\(\)\{\s*\n\s*\/\/[^\n]*\n\s*echo 'true';\s*\n\s*exit;/.test(src),
         'успех — голое echo \'true\' (строка "true", не JSON-объект {"response":...} как у VK)');
-    assertRegex(/function respondError\(\$code, \$msg\)\{\s*\n\s*echo json_encode\(\['error_code' => \$code, 'error_msg' => \$msg, 'error_data' => null\]\);/.test(src),
+    assertRegex(/function respondError\(\$code, \$msg\)\{[\s\S]*?echo json_encode\(\['error_code' => \$code, 'error_msg' => \$msg, 'error_data' => null\]\);/.test(src),
         'отказ — {error_code,error_msg,error_data:null}, формат ОК из apiok.ru, не формат VK');
+    // 26.10.2026 (ответ модерации ОК — "В случае ошибки HTTP-заголовок 'Invocation-error' должен
+    // содержать код ошибки"): respondError() раньше отдавал код ошибки ТОЛЬКО в JSON-теле.
+    const respondErrorIdx = src.indexOf('function respondError($code, $msg){');
+    const respondErrorBody = src.slice(respondErrorIdx, src.indexOf('exit;', respondErrorIdx));
+    assertRegex(/header\('Invocation-error: ' \. \$code\);/.test(respondErrorBody),
+        'respondError() теперь ТАКЖЕ выставляет HTTP-заголовок Invocation-error с кодом ошибки (требование документации ОК)');
+}
+
+console.log('\nTest 11 (26.10.2026, ответ модерации ОК — "разработчик обязан проверять соответствие товара и его цены, передаваемых в параметрах product_code и amount"): сервер валидирует amount, а не только product_code');
+{
+    const src = read('server/ok_pay_callback.php');
+    assertRegex(/static function priceCatalog\(\$prices\)\{/.test(src), 'OkPayCallback::priceCatalog() определён — параллельный itemCatalog() каталог ожидаемых цен');
+    assertRegex(/static function amountMatches\(\$expected, \$actualRaw\)\{/.test(src), 'OkPayCallback::amountMatches() определён — сравнение с допуском на округление');
+
+    const prodIdx = src.indexOf("\$prices = \$registry['json']->get('donuts', true);");
+    const creditIdx = src.indexOf('[$field, $count] = $catalog[$productCode];');
+    const gate = src.slice(prodIdx, creditIdx);
+    assertRegex(/\$priceCatalog = OkPayCallback::priceCatalog\(\$prices\);/.test(gate), 'priceCatalog() строится из того же $prices, что itemCatalog()');
+    assertRegex(/OkPayCallback::amountMatches\(\$expectedAmount, \$actualAmount\)/.test(gate), 'amount из запроса реально сверяется с ожидаемой ценой ПЕРЕД начислением (между каталогом и кредитом)');
+    assertRegex(/respondError\(1003,/.test(gate), 'несовпадение amount отклоняется отдельным кодом ошибки (не молча игнорируется)');
 }
 
 console.log('\nTest 4: исполняемая часть — идемпотентность (повторный transaction_id не начисляет дважды)');

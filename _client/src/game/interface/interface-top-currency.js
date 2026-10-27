@@ -74,6 +74,44 @@ export function attachTopCurrency(proto){
     };
     const otherKey = (k) => k === 'stew' ? 'coins' : 'stew';
 
+    // 27.10.2026 (по прямому указанию — "при наведении на какой-либо ресурс нет тултипа,
+    // который покажет количество, верни, у нас этот функционал был"): общий тултип точного
+    // (не сокращённого formatKK) количества ресурса, тот же визуальный стиль, что уже есть у
+    // XP-тултипа (interface.js, expHit.on('pointerover', ...)) — отдельная реализация, не
+    // общий хелпер, т.к. формата текста здесь другой (label + число, без прогресс-пары).
+    // getKey() вызывается в момент наведения — для primary/secondary строк актуальный ключ
+    // валюты меняется местами при свапе (this._topCurPinned), статичная "Rub"-плашка всегда
+    // 'cigarettes'.
+    const RES_LABELS = { stew: 'Тушёнка', coins: 'Рубли', cigarettes: 'Сухари' };
+    const _attachResTooltip = (sprites, getKey) => {
+        let tip = null;
+        const show = () => {
+            if(!window.udata || (tip && tip.parent)) return;
+            const key = getKey();
+            const amount = parseInt(udata[key] || 0);
+            tip = new PIXI.Container();
+            const txt = new PIXI.Text(
+                (RES_LABELS[key] || key) + ': ' + amount.toLocaleString('ru'),
+                { fontFamily: 'Southbank LT', fontSize: 16, fill: '#ffcc44' }
+            );
+            const padX = 14, padY = 8;
+            const bg = new PIXI.Graphics();
+            bg.beginFill(0x1a1a1a, 0.92);
+            bg.lineStyle(1, 0xcc7200, 1);
+            bg.drawRoundedRect(0, 0, txt.width + padX * 2, txt.height + padY * 2, 5);
+            bg.endFill();
+            tip.addChild(bg);
+            txt.x = padX; txt.y = padY;
+            tip.addChild(txt);
+            const anchor = sprites[0].getGlobalPosition();
+            tip.x = Math.max(4, Math.min(anchor.x, 1280 - tip.width - 4));
+            tip.y = anchor.y + sprites[0].height + 6;
+            root.layer2_mc.addChild(tip);
+        };
+        const hide = () => { if(tip && tip.parent) tip.parent.removeChild(tip); tip = null; };
+        sprites.forEach(s => { s.on('pointerover', show); s.on('pointerout', hide); });
+    };
+
     proto._buildTopCurrencyWidget = function(){
         const up = this.up;
         if(!up || this._topCurrencyBuilt) return;
@@ -126,6 +164,7 @@ export function attachTopCurrency(proto){
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(plateRub);
         plateRub.on('pointerdown', _openRubPurchase);
         if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateRub, iconRub]);
+        _attachResTooltip([plateRub, iconRub], () => 'cigarettes');
         up.addChild(iconRub);
 
         const txtRub = new PIXI.Text('0', TXT_STYLE);
@@ -169,6 +208,7 @@ export function attachTopCurrency(proto){
         if(window.isMobile && window.helper && typeof helper.touchPad === 'function') helper.touchPad(platePrimary);
         platePrimary.on('pointerdown', _openPrimaryPurchase);
         if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([platePrimary, iconPrimary]);
+        _attachResTooltip([platePrimary, iconPrimary], () => this._topCurPinned);
         up.addChild(iconPrimary);
 
         const txtPrimary = new PIXI.Text('0', TXT_STYLE);
@@ -216,6 +256,7 @@ export function attachTopCurrency(proto){
         up.addChild(iconSecondary);
 
         if(typeof this._addHoverBrightGroup === 'function') this._addHoverBrightGroup([plateSecondary, iconSecondary]);
+        _attachResTooltip([plateSecondary, iconSecondary], () => otherKey(this._topCurPinned));
 
         const txtSecondary = new PIXI.Text('0', TXT_STYLE);
         // 18.10.2026 (по прямому указанию, редактор позиций — "координаты кол-ва ресурсов у

@@ -1,6 +1,7 @@
 /** Ryukzak reward overlay. */
 import { applyPatch } from '../../../modules/patch.js';
 import REWARDS from '../../../data/ryukzak_rewards.json';
+import { buildShmotTooltipCard } from '../shmot-tooltip.js';
 
 // Пороги накопления очков рюкзака (15.09.2026, присланы пользователем) — используется ТОЛЬКО
 // для клиентского ПРЕВЬЮ уровня/прогресс-бара ДО открытия; фактический уровень и награду
@@ -80,77 +81,39 @@ export function attachRyukzak(proto){
 		});
 		win.addChild(nazadBtn);
 
-		// 17.10.2026 (по прямому указанию): баннер "ШАНС НА ШМОТКУ" — места под него теперь
-		// ЗАРЕЗЕРВИРОВАНО ВСЕГДА (грид наград слева не сдвигается в зависимости от того, видно
-		// баннер или нет — раньше в похожем макете без баннера всё "уезжало" влево, явно
-		// попросили этого избегать и сейчас, и на будущее). Фичи дропа шмотки в рюкзаке пока
-		// нет (шанс 0%) — баннер всегда в состоянии "пусто", с местом под название шмотки,
-		// которое используется dev-превью (mockShmotkaName) для визуальной проверки макета.
-		// 18.10.2026 (по прямому указанию — "этот файл выводится ТОЛЬКО когда шмотка реально
-		// выпала — а фичи дропа шмоток в рюкзаке пока нет вообще, значит баннер НЕ должен
-		// выводиться никогда, ни в коем случае"): отменяет решение 17.10.2026 "место всегда
-		// зарезервировано" — баннер скрыт целиком, карточки наград сдвинуты вправо на 140px,
-		// заполняя освободившееся место (см. CARD_X_SHIFT ниже). Когда появится реальная фича
-		// дропа шмоток — HAS_SHMOT_DROP должен стать настоящим условием по полю из reward
-		// (например reward.hasShmot), а не жёстким false.
-		// 18.10.2026 (по прямому указанию — dev-превью должно уметь принудительно показать
-		// баннер с мок-данными, см. dev_panel.js): mockReward.forceShmotBanner обходит
-		// HAS_SHMOT_DROP только для ЭТОГО конкретного вызова, реальная фича остаётся выключена.
-		const HAS_SHMOT_DROP = !!(mockReward && mockReward.forceShmotBanner);
+		// 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них будут
+		// шмотки, перенеси шанс и логику тату на шмотки с рюкзака"): фича дропа шмотки из
+		// рюкзака теперь РЕАЛЬНА (ryukzak.php.open() — grantShmotFromSource('sidorovich_bag'),
+		// 15% только на уровне рюкзака 20) — баннер больше не жёстко false. Место под него
+		// СНОВА ЗАРЕЗЕРВИРОВАНО ВСЕГДА (решение 17.10.2026, отменённое 18.10.2026 ровно потому,
+		// что фичи тогда не было) — сам баннер просто показывает/скрывает видимость по
+		// результату КОНКРЕТНОГО открытия (hasShmotNow/shmotItemNow — mutable, обновляются в
+		// колбэке запроса открытия рюкзака ниже, после applyPatch реального ответа сервера).
+		// mockReward.forceShmotBanner/mockShmot — только для dev-превью макета (dev_panel.js),
+		// работают как стартовое значение до первого реального открытия на этом экране.
+		let hasShmotNow  = !!(mockReward && mockReward.forceShmotBanner);
+		let shmotItemNow = (mockReward && mockReward.mockShmot) || null;
 		const shmotBanner = new PIXI.Sprite(PIXI.Texture.from(BASE + 'рюкзак банер шанс на шмотку.png'));
 		shmotBanner.x = 747; shmotBanner.y = 154; // 18.10.2026: снято редактором позиций
-		shmotBanner.visible = HAS_SHMOT_DROP;
+		shmotBanner.visible = hasShmotNow;
 		win.addChild(shmotBanner);
 
 		// 18.10.2026 (по прямому указанию — "задел на будущее": при наведении на баннер должно
 		// выскакивать то же окно с описанием, что и при наведении на шмотку во вкладке
-		// «Шмотки» (shmot_shop.js._showShopTip), только БЕЗ строки "Требования"): фичи дропа
-		// шмотки в рюкзаке ещё нет (HAS_SHMOT_DROP всегда false в проде), поэтому полноценных
-		// данных предмета (bonus/set) у нас по умолчанию нет — tooltip собирается из того, что
-		// передано в mockReward (или появится в реальном reward.shmot в будущем), без выдумывания
-		// полей. PIXI не хит-тестит invisible-спрайты — пока HAS_SHMOT_DROP=false, хендлер
-		// просто никогда не сработает, отдельная проверка видимости не нужна.
-		const shmotTipData = (mockReward && mockReward.mockShmot) || null;
+		// «Шмотки») → 26.10.2026: вместо собственной вёрстки карточки используем общий
+		// компонент buildShmotTooltipCard (shmot-tooltip.js) — тот же, что уже показывает
+		// попап сумки покера/кейса рулетки (dvor-poker-bag.js/popups/reward.js), не дублируем
+		// разметку "Бонус:"/"Сет:" в третьем месте.
 		const shmotTipCard = new PIXI.Container();
 		shmotTipCard.visible = false;
 		win.addChild(shmotTipCard);
 		const _showShmotBannerTip = () => {
-			if(!shmotTipData) return;
+			if(!shmotItemNow) return;
 			while(shmotTipCard.children.length) shmotTipCard.removeChildAt(0);
-			const PAD = 12, CONTENT_W = 230;
-			const titleStyle = { fontFamily:'Southbank LT', fontSize:17, fill:'#ac3b26', wordWrap:true, wordWrapWidth:CONTENT_W };
-			const lblStyle   = { fontFamily:'Southbank LT', fontSize:14, fill:'#2a2118' };
-			const valStyle   = { fontFamily:'Southbank LT', fontSize:14, fill:'#ac5238' };
-			let ty = PAD;
-			const title = new PIXI.Text(shmotTipData.name || '', titleStyle);
-			title.x = PAD; title.y = ty;
-			shmotTipCard.addChild(title);
-			ty += title.height + 8;
-			if(shmotTipData.bonus){
-				const bonusLbl = new PIXI.Text('Бонус: ', lblStyle);
-				bonusLbl.x = PAD; bonusLbl.y = ty;
-				shmotTipCard.addChild(bonusLbl);
-				const bonusVal = new PIXI.Text(shmotTipData.bonus, Object.assign({}, valStyle, { wordWrap:true, wordWrapWidth: CONTENT_W - bonusLbl.width }));
-				bonusVal.x = PAD + bonusLbl.width; bonusVal.y = ty;
-				shmotTipCard.addChild(bonusVal);
-				ty += Math.max(bonusLbl.height, bonusVal.height) + 6;
-			}
-			if(shmotTipData.set){
-				const setLbl = new PIXI.Text('Сет: ', lblStyle);
-				setLbl.x = PAD; setLbl.y = ty;
-				shmotTipCard.addChild(setLbl);
-				const setVal = new PIXI.Text(shmotTipData.set, Object.assign({}, valStyle, { wordWrap:true, wordWrapWidth: CONTENT_W - setLbl.width }));
-				setVal.x = PAD + setLbl.width; setVal.y = ty;
-				shmotTipCard.addChild(setVal);
-				ty += Math.max(setLbl.height, setVal.height);
-			}
-			const totalW = CONTENT_W + PAD * 2, totalH = ty + PAD;
-			const bg = new PIXI.Graphics();
-			bg.beginFill(0xfbeee0, 0.97);
-			bg.lineStyle(2, 0xc79a72, 1);
-			bg.drawRoundedRect(0, 0, totalW, totalH, 8);
-			bg.endFill();
-			shmotTipCard.addChildAt(bg, 0);
+			// showRequirements:false — у баннера рюкзака нижней строки с условием получения быть
+			// не должно (в отличие от попапа награды сумки/кейса, где она нужна), см. shmot-tooltip.js.
+			const { card } = buildShmotTooltipCard(shmotItemNow, { showRequirements: false });
+			shmotTipCard.addChild(card);
 			shmotTipCard.x = shmotBanner.x + shmotBanner.width + 8;
 			shmotTipCard.y = shmotBanner.y;
 			shmotTipCard.visible = true;
@@ -167,15 +130,18 @@ export function attachRyukzak(proto){
 		cornerStrap.x = 952; cornerStrap.y = 545;
 		win.addChild(cornerStrap);
 
-		const shmotNameTxt = new PIXI.Text(mockReward && mockReward.mockShmotkaName ? mockReward.mockShmotkaName : '', {
-			fontFamily: 'Southbank LT', fontSize: 18, fill: '#d4b99c',
-			dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
-		});
+		const shmotNameTxt = new PIXI.Text(
+			mockReward && mockReward.mockShmotkaName ? mockReward.mockShmotkaName : (shmotItemNow ? (shmotItemNow.name || '') : ''),
+			{
+				fontFamily: 'Southbank LT', fontSize: 18, fill: '#d4b99c',
+				dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1
+			}
+		);
 		shmotNameTxt.anchor.set(0.5, 0.5);
 		// 20.10.2026 (по прямому указанию — "для текста шмотки сдвинь вправо на 3px и вверх на
 		// 12px"): +144→+147, +394→+382.
 		shmotNameTxt.x = shmotBanner.x + 147; shmotNameTxt.y = shmotBanner.y + 382;
-		shmotNameTxt.visible = HAS_SHMOT_DROP;
+		shmotNameTxt.visible = hasShmotNow;
 		win.addChild(shmotNameTxt);
 
 		// 20.10.2026 (по прямому указанию, редактор позиций — "новый хитбокс для названия
@@ -207,11 +173,11 @@ export function attachRyukzak(proto){
 		// Координаты — продиктованы пользователем (шаг между ячейками верхнего ряда 121px,
 		// нижнего — 114px). Карточки — уже готовый арт 114×147 (иконка + место под подпись
 		// внизу карточки), рисуются в натуральном размере (без 0.81, как у старых иконок).
-		// 18.10.2026 (по прямому указанию, общий сдвиг y+40 для файлов без отдельных координат):
-		// 18.10.2026 (по прямому указанию): пока баннер "шанс на шмотку" скрыт (HAS_SHMOT_DROP
-		// выше), карточки сдвигаются вправо на 140px, занимая освободившееся место. Когда
-		// баннер снова станет показываться — сдвиг автоматически уберётся.
-		const CARD_X_SHIFT = HAS_SHMOT_DROP ? 0 : 140;
+		// 18.10.2026 (по прямому указанию, общий сдвиг y+40 для файлов без отдельных координат).
+		// 26.10.2026: раньше сдвигались на 140px вправо, пока фичи дропа шмотки не было (место
+		// под баннер "съедалось" гридом наград) — теперь фича реальна, место снова всегда
+		// зарезервировано (см. комментарий у shmotBanner выше), сдвига нет.
+		const CARD_X_SHIFT = 0;
 		const TOP_ROW    = [{x:334+CARD_X_SHIFT,y:203},{x:455+CARD_X_SHIFT,y:203},{x:576+CARD_X_SHIFT,y:203}];
 		const BOTTOM_ROW  = [{x:288+CARD_X_SHIFT,y:345},{x:402+CARD_X_SHIFT,y:345},{x:516+CARD_X_SHIFT,y:345},{x:630+CARD_X_SHIFT,y:345}];
 		// 20.10.2026 (по прямому указанию — "количество ключей не отображается и не меняется,
@@ -424,6 +390,18 @@ export function attachRyukzak(proto){
 					// подтягиваем его в weapons.data — тот же приём, что уже делают
 					// poker.js/habar.js после выдачи оружия.
 					if(res.patch.weapons !== undefined && window.weapons) weapons._loadFromUdata();
+					// 26.10.2026: см. ryukzak.php.open() — hasShmot/shmotItemId теперь реальные
+					// (grantShmotFromSource('sidorovich_bag'), 15% на уровне рюкзака 20), а не
+					// жёстко false. shmot._loadFromUdata() нужен ДО поиска по id — applyPatch()
+					// выше уже обновил udata['shmot'], но shmot.items (owned/equipped) сам себя
+					// не перечитывает.
+					if(res.patch.shmot !== undefined && window.shmot && typeof shmot._loadFromUdata === 'function') shmot._loadFromUdata();
+					const shmotItemId = (res.shmotItemId !== undefined && res.shmotItemId !== null) ? parseInt(res.shmotItemId) : null;
+					hasShmotNow  = !!res.hasShmot && shmotItemId !== null;
+					shmotItemNow = (hasShmotNow && window.shmot) ? (shmot.items || []).find(it => it.id === shmotItemId) || null : null;
+					shmotBanner.visible = hasShmotNow;
+					shmotNameTxt.text = shmotItemNow ? (shmotItemNow.name || '') : '';
+					shmotNameTxt.visible = hasShmotNow;
 					const r = res.reward;
 					_renderRewardIcons(r);
 					lvlTxt.text = String(r.level);

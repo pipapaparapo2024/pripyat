@@ -574,7 +574,7 @@ test('Связка ключей экипируется как обычный п�
     const shopSrc = readSrc('game/shell/overlays/shmot_shop.js');
     const shmotPhp = fs.readFileSync(path.join(__dirname, 'server', 'core', 'controllers', 'shmot.php'), 'utf-8');
     const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, 'server', 'json', 'shmot_items.json'), 'utf-8'));
-    assert(/id:100, cat:6[\s\S]{0,260}cellDx:-10, cellDy:-26, cellScale:0\.239[\s\S]{0,180}manDx:-13, manDy:30, manScale:0\.170/.test(shmotSrc),
+    assert(/id:100, cat:6[\s\S]{0,260}cellDx:-10, cellDy:-26, cellScale:0\.239[\s\S]{0,180}manDx:-13, manDy:30, manScale:1\.000, manImgFile:'уменьшено связка ключей v2\.png'/.test(shmotSrc),
         'у связки не заданы новые масштаб и посадка на персонаже');
     assert(/bonus:'Атака любого босса без использования ключей'[\s\S]{0,120}source:'Рулетка \(мини-игра\)'/.test(shmotSrc),
         'у связки неверные текст бонуса или требование');

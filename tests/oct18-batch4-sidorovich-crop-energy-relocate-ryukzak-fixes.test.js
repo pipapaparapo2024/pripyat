@@ -101,7 +101,10 @@ console.log('\n5) sidorovich.js — обрезка прозрачных поле
     assert(/konservaIdle\.y = PANEL_Y_SID \+ 251 - 32 \+ 18;/.test(sidSrc), 'консервы — компенсация +18 (обрезан верх)');
     assert(/sigShelf\.y = PANEL_Y_SID \+ 55 - 32 - 6 \+ 43;/.test(sidSrc), 'сухари — компенсация +43 (обрезан верх)');
     assert(/posylkaIdle\.x = 919 \+ 5;/.test(sidSrc), 'посылка — компенсация +5 (обрезан левый край)');
-    assert(/sumkaFront\.y = PANEL_Y_SID \+ 111 \+ 151;/.test(sidSrc), 'сумка — компенсация +151 (обрезан верх)');
+    // 27.10.2026 (по прямому указанию, редактор позиций — "x:0,y:305"): формула от PANEL_Y_SID
+    // заменена абсолютными координатами, компенсация обрезки больше не нужна отдельной строкой.
+    assert(/sumkaFront\.x = 0; sumkaFront\.y = 305;/.test(sidSrc), 'сумка — абсолютная позиция x:0,y:305 (редактор позиций)');
+    assert(/sumkaFront\.width = 339; sumkaFront\.height = 374;/.test(sidSrc), 'сумка — явные width/height (новая конвенция, см. AGENTS.md)');
     // 19.10.2026 (по прямому указанию — "хитбокс ящика нужно убрать"): chestHit удалён целиком,
     // клик по ящику теперь на posylkaIdle.on('pointerdown', ...) — см. oct19-batch-....test.js.
     assert(!/const chestHit = new PIXI\.Graphics/.test(sidSrc), 'chestHit (Graphics) больше не создаётся (19.10.2026)');
@@ -128,16 +131,18 @@ console.log('\n7) svod-achievements.js — иконки bp_50/meta_500: шири
     assert(/c\._iconSpr\.height = 44;/.test(achSrc), 'высота не менялась (44)');
 }
 
-console.log('\n8) ryukzak.js — баннер "шанс на шмотку" скрыт по умолчанию (кроме dev-превью), карточки сдвинуты на 140px');
+console.log('\n8) ryukzak.js — баннер "шанс на шмотку" показывает РЕАЛЬНЫЙ результат (26.10.2026: фича дропа включена, см. ryukzak.php.open())');
 {
-    // 18.10.2026 (4-е указание тем же днём — dev-превью должно уметь принудительно показать
-    // баннер): HAS_SHMOT_DROP больше не жёсткий false — зависит от mockReward.forceShmotBanner,
-    // см. ryukzak-shmot-banner-hover-tooltip-and-dev-preview.test.js для полной проверки.
-    assert(/const HAS_SHMOT_DROP = !!\(mockReward && mockReward\.forceShmotBanner\);/.test(ryukzakSrc),
-        'HAS_SHMOT_DROP — false по умолчанию, true только для dev-превью с forceShmotBanner');
-    assert(/shmotBanner\.visible = HAS_SHMOT_DROP;/.test(ryukzakSrc), 'shmotBanner.visible завязан на HAS_SHMOT_DROP');
-    assert(/shmotNameTxt\.visible = HAS_SHMOT_DROP;/.test(ryukzakSrc), 'shmotNameTxt.visible завязан на HAS_SHMOT_DROP');
-    assert(/const CARD_X_SHIFT = HAS_SHMOT_DROP \? 0 : 140;/.test(ryukzakSrc), 'CARD_X_SHIFT — 140px, когда баннер скрыт');
+    // 26.10.2026 (по прямому указанию — "перенеси шанс и логику тату на шмотки с рюкзака"):
+    // HAS_SHMOT_DROP (жёстко false/мок) заменён на mutable hasShmotNow, обновляемый из
+    // реального res.hasShmot после ryukzak.open(). Полная проверка — в
+    // tests/oct26-sidorovich-bag-shmot-drop-and-jackpot-pool-reset.test.js.
+    assert(/let hasShmotNow\s*=\s*!!\(mockReward && mockReward\.forceShmotBanner\);/.test(ryukzakSrc),
+        'hasShmotNow — стартует из mockReward.forceShmotBanner (dev-превью), затем обновляется реальным ответом сервера');
+    assert(/shmotBanner\.visible = hasShmotNow;/.test(ryukzakSrc), 'shmotBanner.visible завязан на hasShmotNow');
+    assert(/shmotNameTxt\.visible = hasShmotNow;/.test(ryukzakSrc), 'shmotNameTxt.visible завязан на hasShmotNow');
+    // Место под баннер теперь ВСЕГДА зарезервировано (фича реальна) — сдвига карточек нет.
+    assert(/const CARD_X_SHIFT = 0;/.test(ryukzakSrc), 'CARD_X_SHIFT — всегда 0, баннер больше не "скрыт по умолчанию"');
     assert(/x:334\+CARD_X_SHIFT,y:203/.test(ryukzakSrc) && /x:288\+CARD_X_SHIFT,y:345/.test(ryukzakSrc),
         'TOP_ROW/BOTTOM_ROW используют CARD_X_SHIFT');
 }

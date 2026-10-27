@@ -44,18 +44,18 @@ console.log('\nTest 1: фон экрана зариков — тематичес
     const body  = diceScreenSrc.slice(start, end);
 
     assert(!!body && start !== -1, '_buildDiceScreen() найден');
-    assert(/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'двор зарики фон экран\.png'\)\);/.test(body),
-        'bg использует "двор зарики фон экран.png" (актуальный тематический фон с панелью правил и таблицей наград)');
+    assert(/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\(BASE \+ 'двор зарики фон экран 2\.png'\)\);/.test(body),
+        'bg использует "двор зарики фон экран 2.png" (актуальный тематический фон с панелью правил и таблицей наград)');
     assert(!/'зарики фон вкладка двор\.png'/.test(diceScreenSrc),
         'старая ссылка на дубликат фона лобби Двора ("зарики фон вкладка двор.png") полностью убрана из файла (не осталась мёртвым кодом)');
     // 20.10.2026 (редактор позиций): x:-1 y:22 w:1280 h:690 — заменяет прежнее bg.y=27.
     assert(/bg\.x = -1; bg\.y = 22; bg\.width = 1280; bg\.height = 690;/.test(body), 'позиция/размер фона обновлены по снимку редактора позиций');
 }
 
-console.log('\nTest 2: файл "двор зарики фон экран.png" реально существует на диске и имеет ожидаемый нативный размер 1280×676');
+console.log('\nTest 2: файл "двор зарики фон экран 2.png" реально существует на диске и имеет ожидаемый нативный размер 1280×676');
 {
-    const imgPath = path.join(root, '_client', 'development', 'images', 'двор зарики фон экран.png');
-    assert(fs.existsSync(imgPath), 'файл существует: _client/development/images/двор зарики фон экран.png');
+    const imgPath = path.join(root, '_client', 'development', 'images', 'двор зарики фон экран 2.png');
+    assert(fs.existsSync(imgPath), 'файл существует: _client/development/images/двор зарики фон экран 2.png');
 
     // PNG IHDR: 8-байтная сигнатура, затем чанк IHDR — ширина/высота big-endian uint32 на
     // смещениях 16 и 20 соответственно (без внешних библиотек, тот же приём, что уже
@@ -71,7 +71,7 @@ console.log('\nTest 2: файл "двор зарики фон экран.png" р
 console.log('\nTest 3: файл предзагружается заранее (game-boot.js._allGamePngs) — не будет визуально "хлопать" при первом открытии зариков');
 {
     const bootSrc = readSrc('_client/src/game/game-boot.js');
-    assert(/'двор зарики фон экран\.png'/.test(bootSrc), '"двор зарики фон экран.png" присутствует в списке ранней предзагрузки текстур');
+    assert(/'двор зарики фон экран 2\.png'/.test(bootSrc), '"двор зарики фон экран 2.png" присутствует в списке ранней предзагрузки текстур');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

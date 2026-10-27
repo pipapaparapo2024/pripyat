@@ -65,7 +65,10 @@ export function attachRoulette(proto){
         // показывалась захардкоженная стартовая сумма, пока не раскрутишь колесо хоть раз.
         if(window.TS){
             TS.php('roulette.status', {}, (res)=>{
-                this._roulJackpotPool = (res && res.jackpot_pool != null) ? parseInt(res.jackpot_pool) : 3000;
+                // 26.10.2026 (по прямому указанию — "сумма джекпота должна начинаться с нуля,
+                // а не от 3000"): фолбэк 3000 был той же старой хардкоженной стартовой суммой,
+                // что и на сервере (см. roulette.php.status()) — переведён на 0.
+                this._roulJackpotPool = (res && res.jackpot_pool != null) ? parseInt(res.jackpot_pool) : 0;
                 console.log('[dvor-roulette._openRouletteScreen] jackpot_pool с сервера:', this._roulJackpotPool);
                 this._updateRouletteUI();
                 this._updateRoulettePityTxt(res);
@@ -98,7 +101,9 @@ export function attachRoulette(proto){
         // должно быть видно игроку), но и саму накопленную сумму (что видно быть должно —
         // это и есть весь смысл растущего джек-пота). Число обновляется через
         // roulette.status (при открытии экрана) и roulette.spin (после каждого спина).
-        if(this._roulJackTxt) this._roulJackTxt.text = (this._roulJackpotPool || 3000).toLocaleString('ru-RU');
+        // 26.10.2026: фолбэк был на старую хардкоженную стартовую сумму (см. комментарий у
+        // _openRouletteScreen() выше), теперь растёт честно с нуля.
+        if(this._roulJackTxt) this._roulJackTxt.text = (this._roulJackpotPool || 0).toLocaleString('ru-RU');
 
         try {
             const w = helper.safeParseJSON(udata['roulette_winner'], null);
@@ -204,7 +209,7 @@ export function attachRoulette(proto){
                 if(window.iface) iface._openSidorovichError('Не удалось прокрутить рулетку', 'Попробуйте ещё раз');
                 return;
             }
-            this._roulJackpotPool = res.jackpot_pool != null ? parseInt(res.jackpot_pool) : (this._roulJackpotPool || 3000);
+            this._roulJackpotPool = res.jackpot_pool != null ? parseInt(res.jackpot_pool) : (this._roulJackpotPool || 0);
             const idx = res.slotIdx;
             this._animRouletteWheel(idx, () => {
                 // Приз уже подтверждён сервером, но интерфейс получает его только в момент,

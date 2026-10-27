@@ -65,8 +65,12 @@ console.log('\nTest 4: _updatePokerUI() заполняет маску по то�
     const start = screenJs.indexOf('proto._updatePokerUI');
     const end = screenJs.indexOf('if(this._pokerLvlIcons)', start);
     const body = screenJs.slice(start, end);
-    assert(/const ratio = lvl\.maxed \? 1 : \(lvl\.next > 0 \? Math\.min\(1, lvl\.cur \/ lvl\.next\) : 0\);/.test(body),
-        'формула доли прогресса (cur/next, с учётом maxed) не изменилась');
+    // 27.10.2026 (по прямому указанию — "ограничения по уровню в азартных играх Двора быть не
+    // должно"): maxed-ветка убрана вместе с самим ограничением (см.
+    // poker-maxlevel-and-habar-filename-collision.test.js Test 2) — уровень больше никогда не
+    // "замирает", формула всегда считает реальную долю cur/next.
+    assert(/const ratio = lvl\.next > 0 \? Math\.min\(1, lvl\.cur \/ lvl\.next\) : 0;/.test(body),
+        'формула доли прогресса (cur/next) считается без maxed-ветки');
     assert(/this\._pokerExpBarFill\.drawRect\(511, 115, fw, 9\)/.test(body), 'маска рисуется на тех же координатах, что и сама заливка (y:115)');
 }
 

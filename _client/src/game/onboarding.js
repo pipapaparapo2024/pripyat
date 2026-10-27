@@ -24,6 +24,7 @@ export default class Onboarding{
         this._tourWin = null;
         this._activeTourKey = null;
         this._narrationInstance = null;
+        this._narrationAlias = null;
         this._narrationUrl = null;
         this._pendingIdleNarration = false;
         this._idleTimer = null;
@@ -127,16 +128,24 @@ export default class Onboarding{
             return;
         }
         const alias = 'onboarding_' + url;
+        this._narrationAlias = alias;
         const myGen = (this._narrationGen = (this._narrationGen || 0) + 1);
+        // 24.10.2026 (по прямому указанию — "регулировка громкости не работает"): раньше громкость
+        // была зафиксирована на максимуме, озвучка обучения не слушала слайдер "звук" вообще (см.
+        // modules/audio-volumes.js). Читаем ТЕКУЩЕЕ значение при каждом play() — живое изменение
+        // слайдера ПОКА играет реплика дополнительно подхватывается через applyAudioVolumes()
+        // (теперь проходит и по onboarding_*-alias'ам).
+        const vol = window._sndVol !== undefined ? window._sndVol : 0.7;
         const start = () => {
             if(myGen !== this._narrationGen) return; // успели переключиться, пока грузилось
             try{
                 this._narrationInstance = PIXI.sound.play(alias, {
-                    volume: 1,
+                    volume: vol,
                     complete: () => {
                         if(myGen !== this._narrationGen) return;
                         console.log('[onboarding._playNarration] озвучка доиграла: ' + url);
                         this._narrationInstance = null;
+                        this._narrationAlias = null;
                         this._narrationUrl = null;
                         if(onComplete) onComplete();
                         this._flushQueuedIdleNarration();
@@ -158,10 +167,24 @@ export default class Onboarding{
 
     _stopNarration(){
         this._narrationGen = (this._narrationGen || 0) + 1; // глушит устаревший complete-колбэк
-        if(this._narrationInstance && typeof this._narrationInstance.stop === 'function'){
-            try{ this._narrationInstance.stop(); } catch(e){}
+        // 24.10.2026 (баг найден по прямому указанию — "предыдущий звук/MP3 не останавливается"):
+        // this._narrationInstance.stop() молча ничего не делал, когда play() возвращал Promise, а
+        // не реальный инстанс. Это случается при ПОВТОРНОМ вызове с ТЕМ ЖЕ alias, пока первая
+        // загрузка этого же mp3 ещё не завершилась (например ONBOARDING_EXTRA_SOUNDS.idle,
+        // переигрываемый таймером простоя, или быстрый повторный клик по шагу с тем же звуком):
+        // PIXI.sound.exists(alias) уже true (alias зарегистрирован), но isLoaded ещё false — play()
+        // внутри библиотеки возвращает Promise без метода .stop(), и реальное воспроизведение
+        // стартует ПОЗЖЕ само (autoPlay), без всякой связи с this._narrationInstance — остановить
+        // было нечем. Останавливаем через сам объект Sound по alias (PIXI.sound.find) — его
+        // stop() корректно обрабатывает оба случая: если звук ещё грузится — снимает
+        // autoPlay/_autoPlayOptions (не даст запуститься после загрузки), если уже играет —
+        // останавливает все его инстансы. Тот же приём, что
+        // modules/background-music.js._stopStrayTracks().
+        if(this._narrationAlias && PIXI.sound.exists(this._narrationAlias)){
+            try{ PIXI.sound.find(this._narrationAlias).stop(); } catch(e){}
         }
         this._narrationInstance = null;
+        this._narrationAlias = null;
         this._narrationUrl = null;
     }
 

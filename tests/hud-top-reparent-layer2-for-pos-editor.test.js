@@ -61,12 +61,20 @@ console.log('\nTest 3: регресс-гвард — хит-тест редак�
         '_uFindAllAt() в первую очередь сканирует layer2_mc — именно туда теперь попадает this.up');
 }
 
-console.log('\nTest 4: регресс-гвард — "поднять поверх своего текущего родителя" в bosses.js/skills.js не завязаны на конкретный слой (не сломаны переносом)');
+console.log('\nTest 4: регресс-гвард — "поднять поверх" в bosses.js/bosses_skills.js не завязаны на конкретный слой (не сломаны переносом)');
 {
+    // 27.10.2026 (по прямому указанию — старый фейковый экран скиллов, где раньше жила эта
+    // строка, удалён целиком из skills.js): реальный экран прокачки — bosses_skills.js
+    // (iface._openBossesSkillsScreen()) — поднимает iface.up другим, но тоже
+    // родитель-агностичным способом: addChild в root.layer2_mc напрямую, без обращения к
+    // текущему parent вообще, поэтому тоже не завязан на то, в каком слое up был до этого.
+    const bossesSkillsSrc = fs.readFileSync(
+        path.join(__dirname, '..', '_client', 'src', 'game', 'shell', 'overlays', 'bosses_skills.js'), 'utf-8'
+    );
     assert(/if\(iface\.up   && iface\.up\.parent\)   iface\.up\.parent\.addChild\(iface\.up\);/.test(bossesSrc),
         'bosses.js поднимает iface.up через iface.up.parent (родитель-агностично, слой не важен)');
-    assert(/if\(window\.iface && iface\.up && iface\.up\.parent\) iface\.up\.parent\.addChild\(iface\.up\);/.test(skillsSrc),
-        'skills.js делает то же самое — оба места продолжат работать независимо от того, какой именно слой сейчас родитель');
+    assert(/if\(this\.up\) root\.layer2_mc\.addChild\(this\.up\);/.test(bossesSkillsSrc),
+        'bosses_skills.js._openBossesSkillsScreen() тоже поднимает iface.up — напрямую в layer2_mc, не читая parent вообще');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -52,6 +52,9 @@ Class Bp {
         $user['bp_claimed'] = json_encode($claimed);
 
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+        // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+        // источников"): награда боевого пропуска тоже засчитывается, если она сигаретами.
+        if($type === 'cigarettes' && $amount > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $amount);
         $this->ops->ok(['patch' => $this->ops->patchCurrencies($user), 'level' => $lv, 'reward' => ['type'=>$type,'amount'=>$amount]]);
     }
 }

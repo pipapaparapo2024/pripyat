@@ -20,7 +20,11 @@ assert(/udata\['nick'\] = vkNick;[\s\S]*?TS\.php\('users\.save'/.test(preloader)
 assert(/const nick = String\(profile\.nick \|\| ''\)\.trim\(\) \|\| String\(fallbackNick \|\| ''\)\.trim\(\)/.test(profile), 'игровой ник имеет приоритет над VK fallback');
 assert(/profile\._setDisplayNick = \(resolvedNick\) =>/.test(profile), 'пустой старый ник заменяется именем VK после резолва профиля');
 assert(/avatarSpr\.interactive = true; avatarSpr\.buttonMode = true;[\s\S]*?window\.open\('https:\/\/vk\.com\/id'/.test(profile), 'аватар визитки кликабелен и открывает VK');
-assert(!/кнопка у друга просьба заначек\.png/.test(profile), 'кнопка просьбы заначек удалена');
+// 26.10.2026 (по прямому указанию — фича "Заначки"): кнопка вернулась — теперь у неё есть
+// реальное серверное действие (zanachki.getFriendWishlist/giveCard), см.
+// tests/zanachki-php-real-exec.test.js. Старая проверка "кнопка удалена" (22-25.09.2026, когда
+// у неё НЕ было действия) больше не актуальна — заменена на обратную.
+assert(/кнопка у друга просьба заначек\.png/.test(profile), 'кнопка просьбы заначек СНОВА на месте (теперь с реальным действием)');
 assert(/if\(!String\(res\.target_nick \|\| ''\)\.trim\(\)\) res\.target_nick = profile\.displayNick/.test(profile), 'в Зарубе пустой серверный ник заменяется ником визитки');
 assert(/const myNick = String\(udata\['nick'\] \|\| ''\)\.trim\(\)/.test(profile), 'вместо «Ты» выводится игровой ник атакующего');
 // 25.09.2026 (по прямому указанию, редактор позиций — "силу проигравшего и победителя подними

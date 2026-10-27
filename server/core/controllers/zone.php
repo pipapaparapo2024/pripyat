@@ -323,6 +323,11 @@
             if(mt_rand(1, 100) <= 7){
                 $user['stash_count'] = $this->ops->i($user, 'stash_count') + 1;
                 $stashOut['dropped'] = true;
+                // 26.10.2026 (по прямому указанию — фича "Заначки"): вместо слепого +1 выдаём
+                // конкретную случайную карточку (коллекция+позиция), см. zanachkimodel.php. Весь
+                // метод уже целиком под advisory-локом _withUserLock() выше — отдельной защиты
+                // колонки stash_data здесь не требуется (в отличие от yashik/poker/roulette).
+                ZanachkiModel::grantRandomCards($this->ops, $user, 1);
             }
 
             // Захват локации целиком — если этот чекпоинт оказался последним незаполненным.
@@ -336,13 +341,26 @@
             if($totalRespGain > 0){
                 $user[$locRespKey] = $this->ops->i($user, $locRespKey) + $totalRespGain;
             }
+            // Суммарные сигареты этого запроса (чекпоинт + бонус захвата, если локация закрылась
+            // этим чекпоинтом) — для задания "Собрать N сухарей" (см. report('sukhari', ...) ниже).
+            $totalCigGain = $earnedCig + ($captureOut ? $captureOut['cig'] : 0);
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             if($totalRespGain > 0) $this->_recordRespectLeader($locIdx, $user[$locRespKey]);
 
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт заданий
+            // "Потратить N энергии" и "Заработать N уважения" — звать ПОСЛЕ собственного
+            // saveUser() выше (см. докблок RaznaryadkaProgress::report()).
+            RaznaryadkaProgress::report($this->ops, 'energy', $energyCost);
+            if($totalRespGain > 0) RaznaryadkaProgress::report($this->ops, 'respect', $totalRespGain);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников, не только со двора"): прохождение чекпоинтов Зоны — самый частый
+            // источник сигарет в игре, тоже засчитывается в "Собрать N сухарей".
+            if($totalCigGain > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $totalCigGain);
+
             $patch = $this->ops->patchCurrencies($user, [
                 'coins','cigarettes','stew','energy','energy_time','exp','respect',
-                'energy_spent','zone_fights','total_damage','zone','stash_count',
+                'energy_spent','zone_fights','total_damage','zone','stash_count','stash_data',
                 $zfKey, $locRespKey,
             ]);
 
@@ -397,6 +415,15 @@
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             $this->_recordRespectLeader($locIdx, $user[$locRespKey]);
+
+            // 24.10.2026 (баг найден по прямому указанию — "проверь задания на прохождение"):
+            // ручной захват локации (эта кнопка-подстраховка) реально начисляет уважение
+            // ($captureOut['resp']), но не учитывался в задании "Заработать N уважения" —
+            // report('respect', ...) вызывался только в fillCheckpoint() (обычный путь захвата).
+            if($captureOut['resp'] > 0) RaznaryadkaProgress::report($this->ops, 'respect', $captureOut['resp']);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): этот же ручной захват начисляет и сигареты ($captureOut['cig']).
+            if($captureOut['cig'] > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $captureOut['cig']);
 
             $patch = $this->ops->patchCurrencies($user, ['cigarettes','exp','respect','zone',$locRespKey]);
             $this->ops->ok(['patch' => $patch, 'captured' => true, 'capture' => $captureOut]);
@@ -494,6 +521,13 @@
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             if($totalResp > 0) $this->_recordRespectLeader($locIdx, $user[$locRespKey]);
 
+            // 24.10.2026 (баг найден по прямому указанию — "проверь задания на прохождение"):
+            // доход бизнеса одной локации не учитывался в задании "Заработать N уважения".
+            if($totalResp > 0) RaznaryadkaProgress::report($this->ops, 'respect', $totalResp);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): доход бизнеса тоже начисляет сигареты.
+            if($totalCig > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $totalCig);
+
             $patch = $this->ops->patchCurrencies($user, ['cigarettes','exp','respect',$collectKey,$locRespKey]);
             $this->ops->ok(['patch' => $patch, 'cig' => $totalCig, 'exp' => $totalExp, 'resp' => $totalResp]);
             });
@@ -551,6 +585,14 @@
                 if($totalResp) $this->ops->add($user, 'respect', $totalResp);
                 if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
                 foreach($respectUpdates as $locIdx => $total) $this->_recordRespectLeader($locIdx, $total);
+
+                // 24.10.2026 (баг найден по прямому указанию — "проверь задания на
+                // прохождение"): общий сбор дохода всех локаций разом тоже не учитывался в
+                // задании "Заработать N уважения" — тот же пробел, что у collectIncome() выше.
+                if($totalResp > 0) RaznaryadkaProgress::report($this->ops, 'respect', $totalResp);
+                // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+                // источников"): общий сбор дохода тоже начисляет сигареты.
+                if($totalCig > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $totalCig);
 
                 $patchFields = ['cigarettes', 'exp', 'respect'];
                 for($i = 0; $i < 5; $i++){

@@ -470,11 +470,14 @@
             $session['active'] = null;
             $user['dice_session'] = json_encode($session);
 
-            $clientRewards = []; $shmotGranted = []; $weaponTypesGranted = [];
-            $applyCurrency = function($type, $amt) use (&$user, &$clientRewards, &$shmotGranted, &$weaponTypesGranted){
+            $clientRewards = []; $shmotGranted = []; $weaponTypesGranted = []; $cigEarned = 0;
+            $applyCurrency = function($type, $amt) use (&$user, &$clientRewards, &$shmotGranted, &$weaponTypesGranted, &$cigEarned){
                 $amt = intval($amt);
                 switch($type){
-                    case 'cig': $this->ops->add($user, 'cigarettes', $amt); break;
+                    // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из
+                    // любых источников"): $cigEarned копится отдельно от $user['cigarettes'] —
+                    // используется ниже (ПОСЛЕ saveUser()) для report('sukhari', ...).
+                    case 'cig': $this->ops->add($user, 'cigarettes', $amt); $cigEarned += $amt; break;
                     case 'exp':
                         $this->ops->add($user, 'exp', $amt);
                         // battlepass.addXp() — отдельная, ещё не перенесённая система; клиент
@@ -547,6 +550,14 @@
             $user['dvor_games'] = $this->ops->i($user, 'dvor_games') + 1;
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Сыграть N раз в зарики" — звать ПОСЛЕ собственного saveUser() выше.
+            RaznaryadkaProgress::report($this->ops, 'dice', 1);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): сигареты, выигранные в зарики, тоже засчитываются.
+            if($cigEarned > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigEarned);
+
             $verify = $this->_verifySaved($user['dice_session']);
 
             $debug = [

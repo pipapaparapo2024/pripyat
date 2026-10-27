@@ -48,7 +48,13 @@ export function attachRouletteMinigame(proto){
         takeBtn.on('pointerover', ()=>{ _sa(takeBtn, 0.85); takeBtn.scale.set(1.08); });
         takeBtn.on('pointerout',  ()=>{ _sa(takeBtn, 1); takeBtn.scale.set(1); });
         takeBtn.on('pointerdown', ()=>{
+            // 26.10.2026 (см. тот же комментарий у roulette.pickCup() в этом файле ниже —
+            // одинаковый класс гонки): claimPrize() тоже пишет coins/coins_earned прямо в
+            // строку игрока в обход debounce-автосейва — защищаем тем же suspend/resume.
+            if(window.flushPlayerSave) flushPlayerSave('roulette_claimprize_flush_prev', () => {
+            if(window.suspendPlayerSave) suspendPlayerSave('roulette_claimprize');
             TS.php('roulette.claimPrize', {}, (res)=>{
+                if(window.resumePlayerSave) resumePlayerSave('roulette_claimprize');
                 if(res && res.patch) applyPatch(res.patch);
                 if(win.parent) win.parent.removeChild(win);
                 // 04.10.2026: сумма — из ответа сервера (res.amount, roulette.php.claimPrize()
@@ -61,7 +67,11 @@ export function attachRouletteMinigame(proto){
                 // стандартный попап награды, что и везде в игре (iface._showRewardPopup).
                 if(window.iface) iface._showRewardPopup([{type:'coins', amount}]);
                 else if(this._roulResultTxt) this._roulResultTxt.text = 'Приз: +' + amount.toLocaleString('ru') + 'р';
-            }, ()=>{ if(this._roulResultTxt) this._roulResultTxt.text = 'Не удалось забрать приз'; });
+            }, ()=>{
+                if(window.resumePlayerSave) resumePlayerSave('roulette_claimprize');
+                if(this._roulResultTxt) this._roulResultTxt.text = 'Не удалось забрать приз';
+            });
+            });
         });
         win.addChild(takeBtn);
 
@@ -250,7 +260,22 @@ export function attachRouletteMinigame(proto){
                 cups.forEach(c => { c.interactive = false; c.buttonMode = false; });
 
                 console.log('[dvor-roulette-minigame] КЛИК стаканчик idx=' + i + ' | performance.now()=' + performance.now().toFixed(1) + 'ms Date.now()=' + Date.now());
+                // 26.10.2026 (по прямому репорту — "сорвал джекпот, а деньги не упали"): этот
+                // запрос пишет coins/exp/weapons/roulette_winner ПРЯМО в строку игрока через
+                // Gameops::saveUser() (roulette.php.pickCup()), в обход обычного debounce-автосейва
+                // (player-save.js) — тот же класс гонки, что уже закрыт для boss start/attack/
+                // claimKill и для _spinRoulette() в этом же файле чуть выше. Если автосейв
+                // (debounce/periodic/hidden/pagehide) успевал сработать МЕЖДУ открытием мини-игры
+                // и этим кликом, он отправлял СТАРЫЙ снимок udata (ещё без начисленного куша) и,
+                // если его ответ долетал ПОСЛЕ прямой записи сервера, тихо затирал её обратно —
+                // см. память агента incident_checkall_flush_wipes_server_credits (тот же класс
+                // багов, что уже чинили для покупки валюты). flushPlayerSave() ПЕРЕД запросом
+                // гарантирует, что предыдущие несохранённые изменения уже ушли; suspend/resume —
+                // что НИКАКОЙ автосейв не сможет сработать ПОКА сам pickCup() летит туда-обратно.
+                flushPlayerSave('roulette_pickcup_flush_prev', () => {
+                if(window.suspendPlayerSave) suspendPlayerSave('roulette_pickcup');
                 TS.php('roulette.pickCup', {idx:i}, (res)=>{
+                    if(window.resumePlayerSave) resumePlayerSave('roulette_pickcup');
                     // 10.10.2026 (по прямому указанию — ТЗ "игроки не должны видеть под каким
                     // стаканчиком куш/связка" + репорт "debug сливается в консоль браузера"):
                     // roulette.pickCup() больше не отдаёт поле debug (оно содержало 'allCups' —
@@ -288,6 +313,19 @@ export function attachRouletteMinigame(proto){
                     // физически не успевал прорисоваться на экране до попапа).
                     const _finishReveal = () => {
                         if(res.patch) applyPatch(res.patch);
+                        // 26.10.2026 (по прямому репорту — "сорвал джекпот, но ник/иконка/сумма
+                        // победителя сразу не показывались, только при перезаходе в рулетку"):
+                        // applyPatch() выше уже обновил udata['roulette_winner'] (при реальном
+                        // куше, см. roulette.php.pickCup()), но баннер победителя на основном
+                        // экране рулетки (this._roulWinnerNameTxt/_roulWinnerAmtTxt/_roulWinnerPhotoSpr)
+                        // перечитывается из udata только внутри _updateRouletteUI() — она звалась
+                        // лишь при открытии экрана/после обычного спина (dvor-roulette-screen.js.
+                        // _resolveRouletteNewScreen()), а не после ЭТОГО, более позднего события
+                        // (клик по стаканчику внутри уже открытой мини-игры, которая может идти и
+                        // ПОСЛЕ того, как _updateRouletteUI() в этом раунде уже успела отработать
+                        // со старыми данными). Без этого вызова победитель видел собственную
+                        // победу только при следующем открытии экрана рулетки.
+                        this._updateRouletteUI();
                         // 11.10.2026 (по прямому репорту — "выбил автомат/пистолет в мини-игре,
                         // а по факту не начислило"): auto/gun/machete раньше шли как clientReward
                         // + weapons.grantAmmo() (локальная мутация, ждущая следующего автосейва),
@@ -369,8 +407,10 @@ export function attachRouletteMinigame(proto){
                         }
                     });
                 }, ()=>{
+                    if(window.resumePlayerSave) resumePlayerSave('roulette_pickcup');
                     resultTxt.text = 'Ошибка связи с сервером';
                 });
+                }); // flushPlayerSave('roulette_pickcup_flush_prev', ...) — см. коммент выше
             });
 
             win.addChild(cup);

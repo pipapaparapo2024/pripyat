@@ -141,7 +141,7 @@
             // запрос к любому из них между чтением выше и общим сохранением ниже мог затереть
             // начисленную здесь награду устаревшим снимком (тот же класс гонки, что чинили в
             // rewardlinks.php/poker.php::resolve() — см. комментарий там). Берём тот же лок.
-            $lockFields = ['stash_count', 'shmot', 'max_energy'];
+            $lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];
             $link = $this->_rawLink();
             if($link){
                 $link->begin_transaction();
@@ -164,18 +164,23 @@
             $this->ops->add($user, 'exp', $reward['exp']);
             $this->ops->add($user, 'cigarettes', $reward['cig']);
             $this->ops->add($user, 'stash_count', $reward['stash']);
+            // 26.10.2026 (по прямому указанию — фича "Заначки"): вместо слепого +N выдаём N
+            // конкретных случайных карточек (коллекция+позиция), см. zanachkimodel.php.
+            // stash_data уже в $lockFields выше.
+            ZanachkiModel::grantRandomCards($this->ops, $user, $reward['stash']);
             $this->ops->add($user, 'coins', $reward['coins']);
             $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $reward['coins'];
 
-            // Тату (шмотка) из сумки — раньше решалось и СОХРАНЯЛОСЬ на клиенте
+            // Шмотка из сумки — раньше решалось и СОХРАНЯЛОСЬ на клиенте
             // (dvor._give('shmot',1) → shmot.giveRandom() → users.save), которое
             // users.php._sanitizeShmot() молча отклоняет (users.save не может сам
             // выставить owned=true) — приз никогда реально не доходил до игрока. Теперь
             // решение и запись — на сервере, тем же grantShmotFromSource(), что и у боссов
-            // (bosses.php.claimKill()). Шанс = 0 — дроп тату по-прежнему выключен в бете
-            // (см. dvor-poker-bag.js, "Бета: выпадение тату отключено") — поднять шанс
-            // достаточно поменять эту константу, выдача уже безопасна.
-            $tatuChancePct = 0;
+            // (bosses.php.claimKill()). 26.10.2026 (по прямому указанию — "тату пока отложили
+            // в сторону, вместо них будут шмотки, включи шанс 10%"): был 0 (дроп тату отключён
+            // в бете), источник 'poker' в каталоге уже содержит 5 реальных предметов — поднятие
+            // шанса безопасно без дополнительных правок источника (в отличие от roulette.php).
+            $tatuChancePct = 10;
             $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'poker') : null;
             $hasTatu = $tatuItemId !== null;
 
@@ -197,6 +202,10 @@
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             foreach($lockedUpdates as $col => $val) $user[$col] = $val;
 
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): сигареты из сумки покера тоже засчитываются в "Собрать N сухарей".
+            if($reward['cig'] > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $reward['cig']);
+
             $debug = [
                 'fn' => 'openBag', 'uid' => abs(intval($this->registry['uid'])),
                 'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
@@ -204,7 +213,7 @@
             ];
             error_log('[poker.openBag] ' . json_encode($debug));
 
-            $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'coins', 'coins_earned', 'shmot', 'max_energy']);
+            $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'max_energy']);
             $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
             // 20.10.2026 (та же правка, что у roulette.php.openCase() — "наведение должно
             // показывать название выпавшей шмотки"): tatuItemId раньше уходил только в $debug.
@@ -670,6 +679,18 @@
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
             foreach($lockedUpdates as $col => $val) $user[$col] = $val;
+
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Сыграть N раз в покер" — звать ПОСЛЕ собственного saveUser() выше. Сейчас ни
+            // один месяц в raznaryadka_config.json не использует type:'poker' — хук готов на
+            // будущее, report() просто не найдёт совпадения в календаре и ничего не изменит.
+            RaznaryadkaProgress::report($this->ops, 'poker', 1);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): фиксированная награда сигаретами за партию ($catalog['cig_reward'])
+            // + комбо-награда, если она сама оказалась сигаретами ($c['type']==='cigarettes').
+            $cigEarnedPoker = intval($catalog['cig_reward']) + ($c['type'] === 'cigarettes' ? intval($c['amt']) : 0);
+            if($cigEarnedPoker > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigEarnedPoker);
+
             $verify = $this->_verifySaved($user['poker_session']);
 
             $debug = [

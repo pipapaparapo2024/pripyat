@@ -38,13 +38,35 @@ window._makeModalDimmer = (onClose, alpha = 0.55) => {
 	return dimmer;
 };
 
+// 27.10.2026 (по прямому указанию — "пройдись по всей игре, в файлах где есть hover эффект
+// увеличения, сделай так чтобы он был центрирован по центру файла, scale равномерный по всем
+// сторонам"): раньше scale.set() двигал только scale, x/y оставались на месте — для спрайтов с
+// anchor(0,0) (подавляющее большинство кнопок проекта, т.к. это дефолт PIXI.Sprite) это визуально
+// растягивало кнопку вправо-вниз от точки клика вместо равномерного роста от центра файла.
+// Компенсация ниже сдвигает x/y на каждом кадре анимации ровно настолько, чтобы ГЕОМЕТРИЧЕСКИЙ
+// ЦЕНТР текстуры (точка 0.5/0.5, НЕЗАВИСИМО от anchor) оставался на месте — общая формула учитывает
+// anchor.x/anchor.y, поэтому спрайты, УЖЕ центрированные через anchor(0.5,0.5) (их в проекте тоже
+// немало — например dvor.js._dvorCloudSprites), получают нулевую компенсацию и продолжают расти
+// как раньше, без двойного фикса. Это единственное место правки — _ss() уже вызывается ИЗ КАЖДОГО
+// существующего `scale.set(x)` внутри pointerover/pointerout по всему проекту благодаря патчу
+// EventEmitter.prototype.on ниже, поэтому фикс здесь автоматически центрирует ВСЕ такие места
+// разом, не требуя правки каждого экрана по отдельности.
 window._ss = (spr, target, speed) => {
 	speed = speed || 0.18;
 	if(spr._ssRaf){ cancelAnimationFrame(spr._ssRaf); spr._ssRaf = null; }
+	const baseScale = spr.scale.x || 1;
+	const unscaledW = spr.width / baseScale, unscaledH = spr.height / baseScale;
+	const ax = (spr.anchor && typeof spr.anchor.x === 'number') ? spr.anchor.x : 0;
+	const ay = (spr.anchor && typeof spr.anchor.y === 'number') ? spr.anchor.y : 0;
+	const _applyCentered = (from, to) => {
+		spr.x += (0.5 - ax) * unscaledW * (from - to);
+		spr.y += (0.5 - ay) * unscaledH * (from - to);
+		spr.scale.set(to);
+	};
 	const _ssStep = () => {
 		const cur = spr.scale.x; const d = target - cur;
-		if(Math.abs(d) < 0.002){ spr.scale.set(target); spr._ssRaf = null; return; }
-		spr.scale.set(cur + d * speed);
+		if(Math.abs(d) < 0.002){ _applyCentered(cur, target); spr._ssRaf = null; return; }
+		_applyCentered(cur, cur + d * speed);
 		spr._ssRaf = requestAnimationFrame(_ssStep);
 	};
 	spr._ssRaf = requestAnimationFrame(_ssStep);

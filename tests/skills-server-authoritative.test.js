@@ -147,11 +147,20 @@ console.log('\nTest 7: клиент skills.js — upgrade() асинхронны
     assert(/err && err\.code === 77/.test(body), 'отдельно обрабатывает код 77 (уже максимум)');
 }
 
-console.log('\nTest 8: оба места вызова upgrade() (кнопка ПРОКАЧАТЬ и +1 уровень) больше не ветвятся по возврату — вся UI-логика внутри upgrade()');
+console.log('\nTest 8: вызов upgrade() не ветвится по синхронному возврату — вся UI-логика внутри upgrade()');
 {
-    const occurrences = (skillsSrc.match(/this\.upgrade\((i|realIdx)\);/g) || []).length;
-    assert(occurrences === 2, 'оба вызывающих места используют fire-and-forget this.upgrade(...) — найдено ' + occurrences);
-    assert(!/if\(this\.upgrade\(/.test(skillsSrc), 'нигде не осталось старого "if(this.upgrade(...))" (синхронный возврат больше не используется)');
+    // 27.10.2026 (по прямому указанию — старый фейковый экран скиллов, где жили ОБА вызывающих
+    // места этого теста (кнопка "ПРОКАЧАТЬ" и "+1 уровень" на карточке), удалён целиком из
+    // skills.js — см. tests/oct27-skills-screen-unify-resource-tooltip-ss-center.test.js.
+    // Единственное оставшееся вызывающее место — bosses_skills.js (реальный экран прокачки),
+    // использует onDone-колбэк, а не синхронный return.
+    const bossesSkillsSrc = fs.readFileSync(
+        path.join(__dirname, '..', '_client', 'src', 'game', 'shell', 'overlays', 'bosses_skills.js'), 'utf-8'
+    );
+    assert(!/if\(this\.upgrade\(/.test(skillsSrc), 'skills.js: нигде не осталось старого "if(this.upgrade(...))" (синхронный возврат больше не используется)');
+    assert(!/if\(this\.upgrade\(/.test(bossesSkillsSrc), 'bosses_skills.js: тоже не ветвится по синхронному возврату upgrade()');
+    assert(/skills\.upgrade\(idx, \(ok\) => \{ if\(ok\) this\._updateBossesSkillsScreen\(\); \}\);/.test(bossesSkillsSrc),
+        'bosses_skills.js использует onDone-колбэк — единственное реальное вызывающее место теперь');
 }
 
 console.log('\nTest 9: _saveToUdata()/_loadFromUdata() — skillsDmgSpent всё ещё пишется в skills_data, но это больше НЕ источник истины');

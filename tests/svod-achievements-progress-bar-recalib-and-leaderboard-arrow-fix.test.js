@@ -48,8 +48,10 @@ console.log('\nTest 3: svod-scroll.js — arrowUpY/arrowDownY из cfg реал�
     // arrowUpY/arrowDownY, позиция в деструктуризации — в конце.
     // 17.10.2026 (тем же днём, повторный репорт): добавлен thumbXAdjust следом за trackY — та
     // же схема override, сдвигает только бегунок независимо от trackX (см. svod-scroll.js).
-    assert(/const \{ parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY, thumbXAdjust \} = cfg;/.test(scrollSrc),
-        'arrowUpY/arrowDownY/trackY/thumbXAdjust добавлены в деструктуризацию cfg');
+    // 27.10.2026: добавлены trackImg/thumbImg/arrowUpImg/arrowDownImg — та же схема override,
+    // подменяют только ТЕКСТУРЫ для вкладки Заначки (см. svod-zanachki.js), не геометрию.
+    assert(/const \{ parent, contentContainer, viewX, viewY, viewW, viewH, trackX, arrowX, stepPx, arrowUpY, arrowDownY, trackY, thumbXAdjust, trackImg, thumbImg, arrowUpImg, arrowDownImg \} = cfg;/.test(scrollSrc),
+        'arrowUpY/arrowDownY/trackY/thumbXAdjust/trackImg/thumbImg/arrowUpImg/arrowDownImg добавлены в деструктуризацию cfg');
     assert(/arrowUp\.y = \(arrowUpY !== undefined\) \? arrowUpY : effectiveTrackY - 32;/.test(scrollSrc),
         'arrowUp.y использует override, если передан, иначе формула от effectiveTrackY (было viewY, теперь декоративная Y трека, не контента)');
     assert(/arrowDown\.y = \(arrowDownY !== undefined\) \? arrowDownY : viewY \+ viewH \+ 2;/.test(scrollSrc),

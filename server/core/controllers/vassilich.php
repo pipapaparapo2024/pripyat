@@ -135,6 +135,12 @@ Class Vassilich {
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
+        // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+        // источников"): если выпавший лут Василича оказался сигаретами — тоже засчитывается
+        // (стоимость открытия в 5 сигарет — отдельная трата, не влияет на награду за выпавший лут).
+        $lootCig = intval($pick['effect']['cigarettes'] ?? 0);
+        if($lootCig > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $lootCig);
+
         $this->ops->ok(['patch' => $this->ops->patchCurrencies($user), 'loot' => ['name'=>$pick['name'], 'rarity'=>intval($pick['rarity']??0)]]);
     }
 

@@ -484,6 +484,13 @@
             $user['blackjack_session'] = json_encode($session, JSON_UNESCAPED_UNICODE);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
 
+            // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
+            // "Сыграть N раз в блек-джек" — звать ПОСЛЕ собственного saveUser() выше.
+            RaznaryadkaProgress::report($this->ops, 'blackjack', 1);
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): сигареты блэкджека (и премиальные, и утешительные) тоже засчитываются.
+            if($cigAmt > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigAmt);
+
             $verifyUser = $this->ops->loadUser(['id', 'blackjack_session']);
             $verifyRaw  = $verifyUser ? ($verifyUser['blackjack_session'] ?? null) : '!!! loadUser() ПОСЛЕ save вернул null !!!';
 

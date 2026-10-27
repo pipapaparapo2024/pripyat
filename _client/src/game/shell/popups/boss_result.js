@@ -33,7 +33,9 @@ export function attachBossResultPopup(proto){
 
     // Точные координаты из PSD (X/Y слоя в Photoshop) — top-left, натуральный размер файла.
     const BG_POS       = { x: 0,   y: 0   };
-    const PORTRAIT_POS = { x: 414, y: 225 };
+    // 26.10.2026 (редактор позиций, 6 из 8 боссов измерены: охотник/ястреб y226, баркут/
+    // борода/жгут y223, крыс y224 — x414 единогласно) — обновлено на моду (223).
+    const PORTRAIT_POS = { x: 414, y: 223 };
     const AGAIN_BTN_POS= { x: 435, y: 453 };
     const BANNER_POS   = { x: 478, y: 112 };
     const SHARE_BTN_POS= { x: 536, y: 606 };

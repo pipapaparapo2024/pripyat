@@ -45,7 +45,12 @@ console.log('\nTest 1: dvor-blackjack.js._resolveBlackjack — рядовые п
     // АА, КК, QQ"): попап ВЕРНУЛСЯ, но строго под условием res.shmot — не для любой пары.
     const popupIdx = body.indexOf('iface._showRewardPopup(');
     assert(popupIdx > -1, 'попап награды шмотки для AA/KK/QQ (iface._showRewardPopup) присутствует');
-    const guardBefore = body.slice(Math.max(0, popupIdx - 600), popupIdx);
+    // 24.10.2026: окно сужения было фиксированным (600 символов) — выросший комментарий перед
+    // iface._showRewardPopup(...) (резолв shmotItem для богатой карточки по наведению) вытолкнул
+    // `if(res.shmot` за его границы, хотя сама защита никуда не делась. Ищем ПОСЛЕДНЕЕ
+    // вхождение `if(res.shmot` перед popupIdx во ВСЁМ теле функции — устойчиво к росту кода между
+    // условием и вызовом попапа.
+    const guardBefore = body.slice(0, popupIdx);
     assert(/if\(res\.shmot/.test(guardBefore), 'попап награды вызывается ТОЛЬКО внутри if(res.shmot ...) — не для любой пары');
 }
 

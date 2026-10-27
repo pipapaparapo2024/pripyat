@@ -158,16 +158,25 @@
 
             $rtype = $def['reward_type'] ?? 'coins';
             $rval  = $def['reward_val']  ?? 0;
+            $cigEarnedTask = 0;
             if($rtype === 'cig_coins' && is_array($rval)){
-                $this->ops->add($user, 'cigarettes', intval($rval[0]));
+                $cigEarnedTask = intval($rval[0]);
+                $this->ops->add($user, 'cigarettes', $cigEarnedTask);
                 $this->ops->add($user, 'coins', intval($rval[1]));
             } else {
                 $map = ['coins' => 'coins', 'stew' => 'stew', 'cig' => 'cigarettes'];
                 $cur = $map[$rtype] ?? 'coins';
-                $this->ops->add($user, $cur, is_array($rval) ? intval($rval[0]) : intval($rval));
+                $amt = is_array($rval) ? intval($rval[0]) : intval($rval);
+                if($cur === 'cigarettes') $cigEarnedTask = $amt;
+                $this->ops->add($user, $cur, $amt);
             }
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+
+            // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+            // источников"): награда старой системы заданий (zadaniya.js) тоже засчитывается,
+            // если она сигаретами.
+            if($cigEarnedTask > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigEarnedTask);
 
             $this->ops->ok(['patch' => $this->ops->patchCurrencies($user)]);
         }
