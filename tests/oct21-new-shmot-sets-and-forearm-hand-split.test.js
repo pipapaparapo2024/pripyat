@@ -113,124 +113,109 @@ console.log('\nTest 3a: cellDx/cellDy/cellScale/manDx/manDy новых пред�
     }
 }
 
-console.log('\nTest 3c: id105/110/115 (cat:6) — cellDx/cellDy/cellScale/manDx/manDy/manScale подтверждены живым редактором позиций на манекене магазина (22.10.2026), НЕ копия эталона');
+console.log('\nTest 3c: id105/110/115 (cat:6) — cellDx/cellDy/cellScale/manDx/manDy/manWidth/manHeight подтверждены живым редактором позиций на манекене магазина (22.10.2026), НЕ копия эталона');
 {
-    // cellDx/cellDy (-4,-32) случайно совпали с эталоном id91 — manScale/cellScale/manDx/manDy
-    // индивидуальны для каждого предмета (разная геометрия файла/хвата оружия).
+    // 27.10.2026 (по прямому указанию — перевод ВСЕХ предметов каталога на персонаже с manScale
+    // на явные manWidth/manHeight, см. shmot_shop.js._updateManSprites). Значения ниже —
+    // round(native_manImgFile_W/H × старый manScale), визуальный размер не меняется (см.
+    // AGENTS.md про отсутствие эффекта на резкость — это чисто формат данных).
+    // cellDx/cellDy (-4,-32) случайно совпали с эталоном id91 — manWidth/manHeight/cellScale/
+    // manDx/manDy индивидуальны для каждого предмета (разная геометрия файла/хвата оружия).
     const CONFIRMED = {
-        105: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.140, manDx:-108, manDy:3, manScale:1.000,'},
+        105: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.140, manDx:-108, manDy:3, manWidth:162, manHeight:178,'},
         // 23.10.2026 (по прямому указанию, вторая калибровка — "шмот пистолет ветеран...
         // x:819,y:422" на манекене магазина шмоток, cat:6 там x:856 → manDx=819-856=-37;
         // y:418 → manDy=422-418=4).
-        110: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.270, manDx:-37, manDy:4, manScale:1.000,'},
+        110: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.270, manDx:-37, manDy:4, manWidth:87, manHeight:65,'},
         // 23.10.2026 (по прямому указанию, вторая калибровка — "шмот кружка следопыт...
         // x:820,y:418" на манекене магазина шмоток, cat:6 там x:856 → manDx=820-856=-36;
         // y:418 → manDy=418-418=0).
-        115: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.211, manDx:-36, manDy:0, manScale:1.000,'},
+        115: {cat: 6, expected: 'cellDx:-4, cellDy:-32, cellScale:0.211, manDx:-36, manDy:0, manWidth:82, manHeight:88,'},
         // 23.10.2026 (по прямому указанию, скрин — "обувь бродяга и обувь ветеран опустил вниз
-        // на 7 пикселей"): manDy:7→14, cellDx/cellDy/cellScale/manDx/manScale не менялись.
-        104: {cat: 3, expected: 'cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:14, manScale:1.000,'},
-        109: {cat: 3, expected: 'cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:14, manScale:1.000,'},
+        // на 7 пикселей"): manDy:7→14, cellDx/cellDy/cellScale/manDx/manWidth/manHeight не менялись.
+        104: {cat: 3, expected: 'cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:14, manWidth:246, manHeight:95,'},
+        109: {cat: 3, expected: 'cellDx:-4, cellDy:-20, cellScale:0.110, manDx:4, manDy:14, manWidth:246, manHeight:95,'},
         // 22.10.2026 (вторая волна калибровки, та же сессия): головные уборы (cat:0) и куртки
         // (cat:1) трёх новых сетов — тоже подтверждены редактором позиций, больше не копия
-        // эталона. Куртки (102/107/112) намеренно используют ОДНО И ТО ЖЕ manDx/manDy/manScale
-        // (пользователь применил одну калибровку сразу ко всем трём).
-        101: {cat: 0, expected: 'cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:7, manScale:1.000,'},
-        106: {cat: 0, expected: 'cellDx:-12, cellDy:-30, cellScale:0.260, manDx:1, manDy:11, manScale:1.000,'},
+        // эталона. Куртки (102/107/112) намеренно используют ОДНО И ТО ЖЕ manDx/manDy (но РАЗНЫЙ
+        // manWidth/manHeight — нативные файлы отличаются разрешением).
+        101: {cat: 0, expected: 'cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:7, manWidth:134, manHeight:108,'},
+        106: {cat: 0, expected: 'cellDx:-12, cellDy:-30, cellScale:0.260, manDx:1, manDy:11, manWidth:69, manHeight:42,'},
         // 23.10.2026 (по прямому указанию — "шмотки на торс, три куртки, подними вверх на 3
         // пикселя и уменьши скейл до 0.114, это в гардеробе"): cellDy -30→-33 (вверх на 3px),
-        // cellScale 0.126→0.114 — только окно гардероба, manDx/manDy/manScale на персонаже
-        // не трогались в этот раз.
-        102: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-70, manDy:-27, manScale:1.000,'},
-        107: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-70, manDy:-27, manScale:1.000,'},
+        // cellScale 0.126→0.114 — только окно гардероба, manDx/manDy/manWidth/manHeight на
+        // персонаже не трогались в этот раз.
+        102: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-70, manDy:-27, manWidth:232, manHeight:212,'},
+        107: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-70, manDy:-27, manWidth:232, manHeight:212,'},
         // 22.10.2026 (вторая правка, та же сессия): куртка Следопыт откалибрована ОТДЕЛЬНО от
-        // Бродяги/Ветерана (новое "новое расположение" от пользователя), больше не разделяет
-        // их общее manDx/manDy/manScale.
+        // Бродяги/Ветерана (новое "новое расположение" от пользователя).
         // 27.10.2026 (по прямому указанию — редактор позиций на манекене, x:730,y:235,
-        // scale:1.004, cat:1 база {x:804,y:258}): manDx -75→-74, manScale 1.000→1.004.
-        112: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-74, manDy:-23, manScale:1.004,'},
+        // scale:1.004, cat:1 база {x:804,y:258}): manDx -75→-74, итоговый manWidth/manHeight
+        // чуть крупнее соседей (233×209 вместо 232×212 — тот же порядок величины).
+        112: {cat: 1, expected: 'cellDx:-2, cellDy:-33, cellScale:0.114, manDx:-74, manDy:-23, manWidth:233, manHeight:209,'},
         // 22.10.2026 (вторая волна калибровки): штаны трёх сетов — одна и та же калибровка
         // (cellDx/cellDy почти не изменились относительно эталона id52, но cellScale сильно
         // меньше — у этих PNG заметно выше нативное разрешение, чем у "Трико Крыс").
         // 23.10.2026 (по прямому указанию, скрин — "у штанов бродяга/следопыт большой прозрачный
         // отступ сверху, убери, подгони под штаны ветеран и в окне гардероба, и на персонаже"):
-        // ПЕРВАЯ попытка (в этом же дне) пересчитала только cellDx/cellDy/cellScale/manDx/manDy/
-        // manScale БЕЗ изменения самих PNG — вышла математическая ошибка (абсолютная позиция
-        // вместо относительной внутри своей ячейки грида, т.к. id103/108/113 в РАЗНЫХ колонках)
-        // плюс пользователь явно уточнил повторно "убери отступ и по сторонам тоже" — одной
-        // калибровкой позиции отступ по БОКАМ не убрать, если он физически в файле. ВТОРАЯ
-        // попытка (эта): PNG-файлы "шмот штаны бродяга.png"/"шмот штаны следопыт.png" физически
-        // ОБРЕЗАНЫ по alpha-bbox (PIL, порог alpha>20) — бродяга 1471×1707→1364×620 (бокс
-        // 100,832,1464,1452), следопыт 1471×1707→1364×610 (бокс 100,832,1464,1442); оригиналы
-        // сохранены в _archive_unused_images_29_09_2026/*_original_pre_crop_23_10.png. После
-        // обрезки видимый контент = весь канвас, поэтому cellDx/cellDy/manDx/manDy естественным
-        // образом сходятся к почти тем же числам, что у id108 (отличие только в cellScale/
-        // manScale — из-за разного итогового разрешения кропа). id108 (эталон) не менялся.
-        // 23.10.2026 (ТРЕТЬЯ правка, тот же день — продиктованы точные координаты из
-        // универсального редактора позиций): "x:73,y:755,scale:0.094,w:128,h:73" (гардероб,
-        // бродяга) и "x:387,y:757,scale:0.095,w:129,h:73" (гардероб, следопыт) — w/h НЕ сходятся
-        // с uniform-scale от native (1364×620/610) → угловая ручка редактора тащилась НЕ
-        // пропорционально (scale.x≠scale.y), отсюда cellWidth/cellHeight вместо cellScale (та
-        // же идея, что manWidth/manHeight у id111). cellDx/cellDy пересчитаны из x/y через
-        // формулу img.x=cx+77+cellDx (своя колонка каждого). "x:863,y:379,scale:0.224,w:305,
-        // h:139" (на игроке, бродяга) — ЗДЕСЬ scale uniform (305=1364×0.224, 139≈620×0.224) →
-        // обычный manScale; пользователь попросил "такие же характеристики" для следопыта —
-        // те же manDx/manDy/manScale, что у бродяги.
-        // 27.10.2026 (по прямому указанию — редактор позиций, повторный репорт "прозрачный
-        // отступ по бокам"): cellHeight 73 оказался слишком мал для развёрнутых штанин (не
-        // связано с PNG — альфа-канал уже чистый от 23.10.2026, см. комментарий выше), из-за
-        // чего растянутая в короткий бокс иконка визуально смотрелась с пустотой по бокам.
-        // Новые cellDx/cellDy пересчитаны из абсолютных x/y редактора той же формулой
-        // x=cx+77+cellDx относительно уже известной базы ячейки (выведена из старых
-        // cellDx/cellDy и старого x/y asset_v=673: cx+77=77,cy+98=786 для id103;
-        // cx+77=391,cy+98=786 для id113).
+        // PNG-файлы "шмот штаны бродяга.png"/"шмот штаны следопыт.png" физически ОБРЕЗАНЫ по
+        // alpha-bbox (PIL, порог alpha>20) — бродяга 1471×1707→1364×620, следопыт
+        // 1471×1707→1364×610; оригиналы сохранены в
+        // _archive_unused_images_29_09_2026/*_original_pre_crop_23_10.png.
         // 27.10.2026 (по прямому указанию — редактор позиций на манекене, cat:2 база
         // {x:893,y:358}): бродяга x:865,y:379 → manDx -30→-28; следопыт x:864,y:379 →
-        // manDx -30→-29 (manDy/manScale без изменений у обоих).
-        103: {cat: 2, expected: 'cellDx:-8, cellDy:-67, cellWidth:128, cellHeight:196, manDx:-28, manDy:21, manScale:1.000,'},
-        108: {cat: 2, expected: 'cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manScale:1.000,'},
-        113: {cat: 2, expected: 'cellDx:-9, cellDy:-63, cellWidth:129, cellHeight:207, manDx:-29, manDy:21, manScale:1.000,'},
+        // manDx -30→-29 (manDy без изменений у обоих).
+        //
+        // 28.10.2026 (по прямому указанию, повторный снимок универсального редактора позиций —
+        // "x:71,y:753,w:128,h:86" (бродяга) / "x:385,y:755,w:129,h:86" (следопыт) в окне
+        // гардероба): cellWidth/cellHeight читаются из w/h напрямую (абсолютный пиксельный
+        // размер спрайта, не зависит от ячейки). cellDx/cellDy пересчитаны вручную из абсолютных
+        // координат редактора — формула img.x = cx + 77 + cellDx / img.y = cy + 98 + cellDy
+        // (shmot_shop.js._shopRefresh), где cx/cy — позиция ячейки в сетке (cellW:145, cellH:160,
+        // gap:12, cols:3), а индекс ячейки взят по порядку cat:2 в каталоге (вкладка "Все", не
+        // "Мои" — 13-я и 15-я по счёту позиции среди предметов категории "Штаны"): бродяга idx12
+        // → col0/row4 → cx:0,cy:688 → cellDx:71-77-0=-6, cellDy:753-98-688=-33; следопыт idx14 →
+        // col2/row4 → cx:314,cy:688 → cellDx:385-77-314=-6, cellDy:755-98-688=-31. Самосогласованность
+        // двух независимых предметов (оба дали практически одинаковый cellDx≈-6, а cellDy упал
+        // примерно вдвое вместе с cellHeight, упавшей тоже примерно вдвое) — хороший знак, что
+        // расчёт верный, но формула НЕ проверялась живым открытием игры (правило №6) — если после
+        // деплоя штаны в ячейке гардероба всё же не на месте, скорее всего редактор снимался на
+        // вкладке "Мои" (другой порядок/меньше предметов) — тогда нужно переснять cellDx/cellDy.
+        103: {cat: 2, expected: 'cellDx:-6, cellDy:-33, cellWidth:128, cellHeight:86, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
+        108: {cat: 2, expected: 'cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manWidth:300, manHeight:202,'},
+        113: {cat: 2, expected: 'cellDx:-6, cellDy:-31, cellWidth:129, cellHeight:86, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
     };
     for(const [id, {cat, expected}] of Object.entries(CONFIRMED)){
         const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:${cat}, [^\\n]*`));
         assert(!!m, `id${id}: запись найдена`);
-        if(m) assert(m[0].includes(expected), `id${id}: cellDx/cellDy/cellScale/manDx/manDy/manScale подтверждены редактором`);
+        if(m) assert(m[0].includes(expected), `id${id}: cellDx/cellDy/cellScale/manDx/manDy/manWidth/manHeight подтверждены редактором`);
     }
 
-    // 26.10.2026: id111 (Панама Следопыт) был единственным экспериментом с manWidth/manHeight
-    // (22.10.2026) — тот эксперимент и привёл к выводу "scale vs width/height не меняет
-    // резкость" (см. докблок shmot-man-prescaled-images.test.js). Теперь id111 мигрирован на
-    // тот же manImgFile-паттерн, что и все остальные 77 предметов — manWidth/manHeight убраны.
+    // 27.10.2026: id111 (Панама Следопыт) — единственный предмет, который уже один раз прошёл
+    // через эксперимент manWidth/manHeight (22.10.2026) и был откатан на manImgFile+manScale
+    // (26.10.2026). Теперь, с полным переводом каталога на manWidth/manHeight, id111 снова его
+    // использует — наравне со всеми остальными 77 предметами, никакого особого случая больше нет.
     const m111 = shmotSrc.match(/\{id:111, cat:0, [^\n]*/);
     assert(!!m111, 'id111: запись найдена');
     if(m111){
-        assert(m111[0].includes("cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:15, manScale:1.000,"),
-            'id111: cellDx/cellDy/cellScale/manDx/manDy подтверждены редактором, manScale теперь 1.000');
-        assert(!m111[0].includes('manWidth') && !m111[0].includes('manHeight'),
-            'id111: manWidth/manHeight убраны (мигрирован на manImgFile, как все остальные)');
+        assert(m111[0].includes("cellDx:-12, cellDy:-30, cellScale:0.260, manDx:-5, manDy:15, manWidth:80, manHeight:66,"),
+            'id111: cellDx/cellDy/cellScale/manDx/manDy/manWidth/manHeight подтверждены');
+        assert(!m111[0].includes('manScale'), 'id111: manScale убран (мигрирован на manWidth/manHeight, как все остальные)');
     }
 }
 
-console.log('\nTest 3b: manScale — больше НЕ вычисляется из разрешения файла (см. shmot-man-prescaled-images.test.js)');
+console.log('\nTest 3b: manScale убран из каталога целиком (27.10.2026, перевод на manWidth/manHeight)');
 {
-    // 26.10.2026 (по прямому указанию — замена scale на заранее уменьшенные PNG для резкости
-    // персонажа): вся эвристика "renderedH = nativeH(imgFile) * manScale ≈ эталон" ниже устарела
-    // — рендер-размер на персонаже теперь определяется НАТУРАЛЬНЫМ размером manImgFile (уже
-    // уменьшенного заранее под точную цель), а manScale у ВСЕХ предметов каталога (включая
-    // 101-115) теперь ровно 1.000. Проверка "manImgFile существует и его размер соответствует
-    // старой цели ±1px" перенесена в общий тест для всех 78 предметов разом — не дублируем её
-    // здесь поштучно для одного батча.
-    // 27.10.2026 (по прямому указанию, живые координаты манекена — scale:1.004): id112 (Куртка
-    // Следопыт) вышел за рамки "ровно 1.000" — это реальное измерение редактора позиций, не
-    // регрессия. Полный список подобных исключений по всему каталогу — см. EXCEPTIONS в
-    // shmot-man-prescaled-images.test.js.
+    // 27.10.2026 (по прямому указанию — перевод ВСЕХ предметов каталога с manScale на явные
+    // manWidth/manHeight, чисто формат данных, без визуального эффекта — см. AGENTS.md). Раньше
+    // этот тест проверял, что manScale у 101-115 равен 1.000 (манImgFile уже давал нужный размер).
+    // Теперь поля manScale у этих предметов не существует вообще — проверяем вместо этого, что
+    // manWidth/manHeight присутствуют и что ни у одного предмета 101-115 не осталось manScale.
     for(let id = 101; id <= 115; id++){
-        if(id === 111) continue; // id111 — особый случай, см. Test 3c выше (manImgFile вместо manWidth/manHeight)
-        const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:(\\d)[\\s\\S]{0,250}?manScale:([\\d.]+)`));
-        assert(!!m, `id${id}: запись найдена`);
-        if(!m) continue;
-        const expected = id === 112 ? 1.004 : 1.000;
-        assert(parseFloat(m[2]) === expected, `id${id}: manScale теперь ${expected} (было вычислено из разрешения файла)`);
+        const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:(\\d)[\\s\\S]{0,250}?manWidth:(\\d+), manHeight:(\\d+)`));
+        assert(!!m, `id${id}: запись с manWidth/manHeight найдена`);
+        const mScale = shmotSrc.match(new RegExp(`\\{id:${id}, cat:\\d[\\s\\S]{0,250}?manScale:`));
+        assert(!mScale, `id${id}: manScale больше не присутствует`);
     }
 }
 

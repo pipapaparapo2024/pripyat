@@ -200,8 +200,8 @@ export function attachShmotShop(proto){
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
-        exitBtn.on('pointerout', ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>{
             win.visible = false;
             if(this._shopWheelHandler) document.querySelector('canvas').removeEventListener('wheel', this._shopWheelHandler);
@@ -711,9 +711,12 @@ export function attachShmotShop(proto){
             const spr = this._manSlots[cat];
             const eq = (this.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
             if(eq && eq.imgFile){
-                // 26.10.2026 (тот же фикс, что в home.js.updateClothes() — см. докблок там же):
-                // manWidth/manHeight не решал резкость — используем manImgFile (заранее
-                // уменьшенный PNG), manScale всегда 1.000.
+                // 27.10.2026 (по прямому указанию — перевод предметов на персонаже с manScale на
+                // явные manWidth/manHeight, по той же конвенции, что уже используется в гардеробной
+                // сетке через cellWidth/cellHeight). Резкость при этом НЕ меняется (см. историю
+                // отката 26.10.2026 в AGENTS.md) — manImgFile (заранее уменьшенный PNG) остаётся
+                // реальным источником качества картинки, manWidth/manHeight лишь фиксируют тот же
+                // видимый размер, что раньше давала пара manImgFile+manScale, явными пикселями.
                 spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));
                 spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
                 spr.texture.baseTexture.update();
@@ -726,7 +729,8 @@ export function attachShmotShop(proto){
                     spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
                 }
 
-                spr.scale.set(eq.manScale || 1);
+                spr.width  = eq.manWidth  || spr.texture.width;
+                spr.height = eq.manHeight || spr.texture.height;
             } else {
                 spr.texture = PIXI.Texture.EMPTY;
                 spr.visible = false;

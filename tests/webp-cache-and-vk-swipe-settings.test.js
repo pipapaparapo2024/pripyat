@@ -105,12 +105,12 @@ console.log('\nTest 3: WebP-двойники созданы для всех ис
 console.log('\nTest 4: исходные иконки шмоток (cellScale/imgFile) НЕ тронуты — только добавлен отдельный manImgFile');
 {
     // 26.10.2026: "не уменьшать оригиналы" (28.09.2026) по-прежнему в силе — imgFile/cellScale
-    // не менялись. Но manScale теперь ВСЕГДА 1.000 (заранее уменьшенный manImgFile вместо
-    // scale на большом файле, см. shmot-man-prescaled-images.test.js) — старая калибровка
-    // manScale per-item больше не актуальна, проверяем новую инвариацию вместо неё.
+    // не менялись. manScale per-item был заменён на заранее уменьшенный manImgFile
+    // (см. shmot-man-prescaled-images.test.js), а 27.10.2026 само поле manScale переведено на
+    // явные manWidth/manHeight — проверяем новую инвариацию вместо старой.
     const shmot = R('_client', 'src', 'game', 'shmot.js');
-    assert(/\{id:43, cat:2, name:'Шорты \(Ястреб\)',.*?manScale:1\.000, manImgFile:/.test(shmot), 'id43 Шорты (Ястреб): manScale 1.000 + manImgFile');
-    assert(/\{id:65, cat:2, name:'Шорты \(Зарики\)',.*?manScale:1\.000, manImgFile:/.test(shmot), 'id65 Шорты (Зарики): manScale 1.000 + manImgFile');
+    assert(/\{id:43, cat:2, name:'Шорты \(Ястреб\)',.*?manWidth:215, manHeight:95, manImgFile:/.test(shmot), 'id43 Шорты (Ястреб): manWidth:215 manHeight:95 + manImgFile');
+    assert(/\{id:65, cat:2, name:'Шорты \(Зарики\)',.*?manWidth:214, manHeight:164, manImgFile:/.test(shmot), 'id65 Шорты (Зарики): manWidth:214 manHeight:164 + manImgFile');
 
     const IMG = path.join(ROOT, '_client', 'development', 'images', 'shmot');
     const b = fs.readFileSync(path.join(IMG, 'шмот шорты картежник блэкджек.png')).subarray(0, 24);

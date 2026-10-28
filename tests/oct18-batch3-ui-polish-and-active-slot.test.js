@@ -189,13 +189,14 @@ console.log('\n10) yashik_activ.png убран из игры целиком (sid
     assert(!/'yashik_activ\.png'/.test(bootSrc), 'game-boot.js больше не грузит yashik_activ.png в прелоаде');
 }
 
-console.log('\n11) habar.js / game-boot.js — новый файл фона хабара (v2 → v3)');
+console.log('\n11) habar.js / game-boot.js — новый файл фона хабара (v2 → v3 → v4, 28.10.2026)');
 {
-    assert(/'\.\/images\/хабар страница v3\.png'/.test(habarSrc), 'habar.js ссылается на хабар страница v3.png');
+    // 28.10.2026 (по прямому указанию — новый фон хабара): v3 → "хабар фон v4.png".
+    assert(/'\.\/images\/хабар фон v4\.png'/.test(habarSrc), 'habar.js ссылается на хабар фон v4.png');
     // Та же ловушка: комментарий выше в файле дословно цитирует старый путь в кавычках — ищем
     // именно ВЫЗОВ Texture.from(...) со старым путём, не голую подстроку.
-    assert(!/Texture\.from\('\.\/images\/хабар страница\.png'\)/.test(habarSrc), 'habar.js больше НЕ создаёт текстуру из хабар страница.png (без версии)');
-    assert(/'хабар страница v3\.png'/.test(bootSrc), 'game-boot.js грузит хабар страница v3.png в прелоаде');
+    assert(!/Texture\.from\('\.\/images\/хабар страница v3\.png'\)/.test(habarSrc), 'habar.js больше НЕ создаёт текстуру из хабар страница v3.png');
+    assert(/'хабар фон v4\.png'/.test(bootSrc), 'game-boot.js грузит хабар фон v4.png в прелоаде');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

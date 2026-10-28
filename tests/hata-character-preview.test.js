@@ -78,7 +78,8 @@ console.log('\nTest 4: _updateCharClothes() зеркалит Home.updateClothes(
         const body = m[1];
         assert(/shmot\.items \|\| \[\]/.test(body), 'читает window.shmot.items (общий источник истины)');
         assert(/eq\.manDx \|\| 0/.test(body) && /eq\.manDy \|\| 0/.test(body), 'использует eq.manDx/manDy');
-        assert(/eq\.manScale \|\| 1/.test(body), 'использует eq.manScale');
+        // 27.10.2026 (перевод предметов на персонаже с manScale на явные manWidth/manHeight)
+        assert(/eq\.manWidth\s*\|\|/.test(body) && /eq\.manHeight\s*\|\|/.test(body), 'использует eq.manWidth/manHeight');
         assert(/eq\.imgFile === 'штаны_1\.png' \? -28 : 0/.test(body), 'учитывает спец-хак -28 для штаны_1.png');
     }
 }

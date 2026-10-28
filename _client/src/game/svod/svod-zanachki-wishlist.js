@@ -73,8 +73,8 @@ export function attachSvodZanachkiWishlist(proto){
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = WISHLIST_EXIT_X; exitBtn.y = WISHLIST_EXIT_Y;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  ()=>{ exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(WISHLIST_EXIT_SCALE * 1.08); });
+        exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(WISHLIST_EXIT_SCALE); });
         exitBtn.on('pointerdown', ()=>{
             if(win.parent) win.parent.removeChild(win);
             if(this._zanachkiWishlistWin === win) this._zanachkiWishlistWin = null;
@@ -92,6 +92,21 @@ export function attachSvodZanachkiWishlist(proto){
             card.x = cardX; card.y = ITEM_Y0;
             win.addChild(card);
 
+            // 28.10.2026 (по прямому указанию — "пиши также их количество снизу, как у
+            // остальных карточек прописаны цифры", подтверждено: показывать кол-во копий,
+            // которые есть у МЕНЯ сейчас, тот же мехнизм/стиль, что countTxt в основной сетке
+            // svod-zanachki.js, строка тоньше — strokeThickness 1 вместо 2 по прямому указанию).
+            const key = col + '_' + pos;
+            const owned = Number((ctx.myOwnedCounts && ctx.myOwnedCounts[key]) || 0);
+            const countTxt = new PIXI.Text(String(owned), {
+                fontFamily: FONT, fontSize: 14, fill: '#000000',
+                stroke: '#000000', strokeThickness: 1, padding: 4,
+            });
+            countTxt.anchor.set(0.5, 0);
+            countTxt.x = cardX + card.width / 2;
+            countTxt.y = card.y + card.height + 4;
+            win.addChild(countTxt);
+
             const actionX = ACTION_X0 + idx * ITEM_PITCH;
             const actionBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'заначки кнопка убрать.png'));
             actionBtn.x = actionX; actionBtn.y = ACTION_Y0;
@@ -106,7 +121,7 @@ export function attachSvodZanachkiWishlist(proto){
                         if(!e) return;
                         if(this._zanachkiState) this._zanachkiState.wishlist = e.wishlist || [];
                         if(typeof this._zanachkiApplyWishlistTextures === 'function') this._zanachkiApplyWishlistTextures();
-                        this._buildZanachkiWishlistPopup(e.wishlist || [], 'own', {});
+                        this._buildZanachkiWishlistPopup(e.wishlist || [], 'own', { myOwnedCounts: ctx.myOwnedCounts });
                     });
                 });
             } else {
@@ -121,8 +136,7 @@ export function attachSvodZanachkiWishlist(proto){
                 giveLbl.y = ACTION_Y0 + actionBtn.height / 2;
                 win.addChild(giveLbl);
 
-                const key = col + '_' + pos;
-                const owned = Number((ctx.myOwnedCounts && ctx.myOwnedCounts[key]) || 0);
+                // key/owned уже посчитаны выше (для countTxt) — переиспользуются здесь как есть.
                 if(owned > 0){
                     actionBtn.interactive = true; actionBtn.buttonMode = true;
                     actionBtn.on('pointerover', ()=>{ actionBtn.alpha = 0.8; });

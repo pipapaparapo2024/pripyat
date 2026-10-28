@@ -23,9 +23,13 @@ export default class Habar{
         // см. _collectDay()) вообще не включал dice_points в награды этих двух тиров, только
         // Авторитетный/Элитный. Добавлено dice_points:1 в оба, синхронно с server/json/
         // habar_daily_config.json (сверено построчно с картинкой — остальные суммы совпадали).
+        // 28.10.2026 (по прямому указанию — новый фон "хабар фон v4.png" визуально показывает
+        // другие цены: 150/250/700/1200 тушёнки вместо старых 100/200/300/500): цены синхронно
+        // обновлены здесь, в server/json/habar_containers.json (реальное списание, habar.php.buy())
+        // и в server/json/habar_daily_config.json (fallback-зеркало того же списка).
         this.containers = [
             {
-                id:0, name:'Обычный', price:100,
+                id:0, name:'Обычный', price:150,
                 rewards:[
                     {type:'damage',       amount:100000},
                     {type:'dice_points',  amount:1},
@@ -35,7 +39,7 @@ export default class Habar{
                 ],
             },
             {
-                id:1, name:'Пацанский', price:200,
+                id:1, name:'Пацанский', price:250,
                 rewards:[
                     {type:'damage',       amount:200000},
                     {type:'dice_points',  amount:1},
@@ -46,7 +50,7 @@ export default class Habar{
                 ],
             },
             {
-                id:2, name:'Авторитетный', price:300,
+                id:2, name:'Авторитетный', price:700,
                 rewards:[
                     {type:'damage',       amount:300000},
                     {type:'coins',        amount:30},
@@ -58,7 +62,7 @@ export default class Habar{
                 ],
             },
             {
-                id:3, name:'Элитный', price:500,
+                id:3, name:'Элитный', price:1200,
                 rewards:[
                     {type:'damage',       amount:500000},
                     {type:'coins',        amount:50},
@@ -95,7 +99,9 @@ export default class Habar{
         // 18.10.2026 (по прямому указанию — "для хабара я достал новый файл"): v2 → v3,
         // переименовано против кеша VK/браузера на то же имя файла (тот же приём, что у
         // "рулетка колесо v2.png"/"зона локация ... v3.png").
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар страница v3.png'));
+        // 28.10.2026 (по прямому указанию — новый фон хабара): тот же нативный размер
+        // (1280×535), что и у старого v3 — позиция/без width-height не меняется.
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар фон v4.png'));
         bg.y = 36;
         win.addChild(bg);
 
@@ -105,8 +111,8 @@ export default class Habar{
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1197; exitBtn.y = 56;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
-        exitBtn.on('pointerout',  ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this.close());
         win.addChild(exitBtn);
 

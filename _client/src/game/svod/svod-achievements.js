@@ -381,18 +381,18 @@ export function attachSvodAchievements(proto){
         // списком. trackY/arrowUpY — новые overrides (см. svod-scroll.js) — задают декоративную
         // позицию трека/стрелки ОТДЕЛЬНО от позиции контента, здесь явно выставлены на те же
         // 236/204, что получаются у svod-leaderboard.js (LIST_TOP=236, дефолт arrowUp=236-32).
-        // 17.10.2026 (по прямому указанию, повторный репорт тем же днём — "шкала скролла в Моих
-        // достижениях сдвинь вправо на 1px, а сам скролл (бегунок) влево на 1px"): trackX
-        // 1035→1036 (двигает трек ВПРАВО на 1px — и вместе с ним бегунок, т.к. формула бегунка в
-        // svod-scroll.js считается от trackX); thumbXAdjust:-2 компенсирует это +1 от trackX и
-        // добавляет свой собственный -1 — итоговый чистый сдвиг бегунка ровно -1px, независимо
-        // от трека. Только для ЭТОЙ вкладки (достижения) — svod-leaderboard.js не трогали.
+        // 28.10.2026 (по прямому указанию — унификация скролла Сводки: "беру точные координаты
+        // у Топ по урону... ставлю те же самые у... аккордеона Мои достижения"): прежние
+        // отдельные trackX:1036/arrowX:1034/thumbXAdjust:-2 (разъехавшиеся за несколько правок,
+        // см. история выше) заменены на точные значения эталона (urn-вкладка в
+        // svod-leaderboard.js) — trackX:1033, arrowX:1032, без thumbXAdjust. trackY/arrowUpY
+        // подняты на те же 238/206, что теперь использует урон после расширения окна списка
+        // (LIST_TOP 236→238 там же) — декоративный трек визуально совпадает на всех вкладках.
         const scroll = this._buildSvodScroll({
             parent: win,
             contentContainer: cardsContainer,
             viewX: CARD_X, viewY: LIST_TOP, viewW: CARD_W, viewH: LIST_H,
-            trackX: 1036, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,
-            thumbXAdjust: -2,
+            trackX: 1033, arrowX: 1032, trackY: 238, arrowUpY: 206, arrowDownY: 480,
             stepPx: CARD_STEP,
             getTotalH: () => totalContentH,
         });

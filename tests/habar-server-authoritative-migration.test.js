@@ -39,7 +39,8 @@ console.log('\nНовый каталог наград — 1-в-1 с прежни
     assert(cfg.total_days === 30, 'лимит — 30 дней действия хабара (теперь от даты ПОКУПКИ, не от числа сборов)');
     assert(Array.isArray(cfg.containers) && cfg.containers.length === 4, '4 тира контейнера, как и в клиентском this.containers');
     const elite = cfg.containers.find(c => c.id === 3);
-    assert(!!elite && elite.price.amount === 500, 'тир "Элитный" (id3) — цена 500, как в клиенте');
+    // 28.10.2026 (по прямому указанию — новые цены хабара: 150/250/700/1200, были 100/200/300/500).
+    assert(!!elite && elite.price.amount === 1200, 'тир "Элитный" (id3) — цена 1200, как в клиенте');
     assert(elite.rewards.some(r => r.type === 'damage' && r.amount === 500000), 'тир "Элитный" — 500000 урона Седого, как в клиенте');
     assert(elite.rewards.some(r => r.type === 'poker_chips' && r.amount === 4), 'тир "Элитный" — 4 фишки покера, как в клиенте');
 }

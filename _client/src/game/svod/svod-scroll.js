@@ -16,7 +16,7 @@ export function attachSvodScroll(proto){
     const IMG = './images/';
 
     // cfg: { parent, contentContainer, viewX, viewY, viewW, viewH, trackX, trackY,
-    //        arrowUpY, arrowDownY, stepPx, getTotalH }
+    //        arrowUpY, arrowDownY, stepPx, getTotalH, thumbTravelTop, thumbTravelBottom }
     // Возвращает { refresh(), scrollToTop(), destroy() } — refresh() вызывать при изменении общей
     // высоты контента (смена страницы/фильтра), scrollToTop() — когда список заменён другими
     // данными и позицию прокрутки сохранять не нужно.
@@ -110,7 +110,14 @@ export function attachSvodScroll(proto){
         // стал уезжать на 90px (332-242) ниже физического низа нарисованного трека. Диапазон
         // теперь считается от track.y/track.height — бегунок гарантированно не выходит за
         // пределы того, что реально нарисовано.
-        let trackTop = track.y, trackBottom = track.y + track.height - thumb.height;
+        // 28.10.2026 (по прямому указанию — редактор позиций: бегунок заначек стоит у x:1188,
+        // y:248 в начале и x:1188,y:450 в конце, тогда как трек ("заначки скролл шкала.png",
+        // 35×364) начинается на track.y=203 — физический старт/конец трека НЕ совпадает с
+        // желаемым диапазоном движения бегунка (как раньше у thumbXAdjust по оси X — здесь тот
+        // же приём по оси Y). thumbTravelTop/thumbTravelBottom — необязательные overrides,
+        // без них поведение прежнее (от track.y/track.height).
+        let trackTop = (cfg.thumbTravelTop !== undefined) ? cfg.thumbTravelTop : track.y;
+        let trackBottom = (cfg.thumbTravelBottom !== undefined) ? cfg.thumbTravelBottom : track.y + track.height - thumb.height;
         let scrollRange = 0;
         let scrollY = 0;
 
@@ -228,7 +235,7 @@ export function attachSvodScroll(proto){
         const refresh = () => {
             const totalH = cfg.getTotalH();
             scrollRange = Math.max(0, totalH - viewH);
-            trackBottom = track.y + track.height - thumb.height;
+            trackBottom = (cfg.thumbTravelBottom !== undefined) ? cfg.thumbTravelBottom : track.y + track.height - thumb.height;
             const canScroll = scrollRange > 0;
             track.visible = arrowUp.visible = arrowDown.visible = thumb.visible = canScroll;
             setScroll(Math.min(scrollY, scrollRange));

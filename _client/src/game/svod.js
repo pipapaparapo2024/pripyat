@@ -35,17 +35,26 @@ export default class Svod{
         blocker.interactive = true;
         win.addChild(blocker);
 
-        const bg = new PIXI.Sprite(PIXI.Texture.from(IMG + 'сводка фон.png'));
+        // 28.10.2026 (по прямому указанию — новый фон Сводки): тот же нативный размер
+        // (1280×648), что и у старого — позиция не меняется.
+        const bg = new PIXI.Sprite(PIXI.Texture.from(IMG + 'сводка фон новый.png'));
         bg.x = -3; bg.y = 72;
         win.addChild(bg);
+
+        // 28.10.2026 (по прямому указанию — "боковая часть, область под кнопки", редактор
+        // позиций x:43,y:73 — было y:44): декоративная панель ПОД кнопками вкладок по z-order
+        // (добавлена раньше цикла MAIN_TABS ниже — сами кнопки рисуются поверх неё).
+        const sideBg = new PIXI.Sprite(PIXI.Texture.from(IMG + 'сводка боковая часть под кнопки.png'));
+        sideBg.x = 43; sideBg.y = 73;
+        win.addChild(sideBg);
 
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  ()=>{ exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this.close());
         win.addChild(exitBtn);
 
@@ -69,19 +78,23 @@ export default class Svod{
         // снизу (не отдельная панель Сводки — клик открывает iface._openBossesSkillsScreen(),
         // см. особый случай в _selectMainTab() ниже). Точные x/y — рабочее приближение по тому же
         // шагу, что у существующих табов (~64-77px) — подогнать через редактор позиций.
+        // 28.10.2026 (по прямому указанию, редактор позиций — "тоже самое и для файла не
+        // актив/актив", т.е. ОДНА точка x/y/scale на обе текстуры каждой вкладки, без отдельных
+        // activeDy/passiveDy поправок, как было раньше).
         const MAIN_TABS = [
-            { key:'zanachki',activeImg:'заначки актив.png',               passiveImg:'заначки пассив.png',                x:200,   y:206   },
-            { key:'respect',activeImg:'кнопка топ по авторитету актив.png',passiveImg:'кнопка топ по авторитету пассив.png',x:199.5, y:273.5, activeDy:-2 },
-            { key:'damage', activeImg:'кнопка топ по урону актив.png',     passiveImg:'кнопка топ по урону пассив.png',     x:197.5, y:337,   activeDy:-4 },
-            { key:'ach',    activeImg:'кнопка топ по достижениям актив.png',passiveImg:'кнопка топ по достижения пассив.png',x:201,   y:414,   activeDy:-10, passiveDy:-9 },
-            { key:'skills', activeImg:'скиллы актив.png',                 passiveImg:'скиллы пассив.png',                 x:201,   y:478   },
+            { key:'zanachki',activeImg:'заначки актив.png',               passiveImg:'заначки пассив.png',                x:208, y:393, scale:0.960 },
+            { key:'respect',activeImg:'кнопка топ по авторитету актив.png',passiveImg:'кнопка топ по авторитету пассив.png',x:212, y:186, scale:1.020 },
+            { key:'damage', activeImg:'кнопка топ по урону актив.png',     passiveImg:'кнопка топ по урону пассив.png',     x:208, y:254, scale:0.987 },
+            { key:'ach',    activeImg:'кнопка топ по достижениям актив.png',passiveImg:'кнопка топ по достижения пассив.png',x:209, y:325, scale:1.000 },
+            { key:'skills', activeImg:'скиллы актив.png',                 passiveImg:'скиллы пассив.png',                 x:210, y:461, scale:0.953 },
         ];
 
         const tabSprites = {};
         MAIN_TABS.forEach(t => {
             const spr = new PIXI.Sprite(PIXI.Texture.from(IMG + t.passiveImg));
             spr.anchor.set(0.5, 0.5);
-            spr.x = t.x; spr.y = t.y + (t.passiveDy || 0);
+            spr.scale.set(t.scale || 1);
+            spr.x = t.x; spr.y = t.y;
             spr.interactive = true; spr.buttonMode = true;
             spr.on('pointerdown', ()=>this._selectMainTab(t.key));
             win.addChild(spr);
@@ -106,10 +119,6 @@ export default class Svod{
             panel = this._buildLeaderboardPanel({
                 cat: 4, bg: 'задний фон топы по авторитету.png', valueLabel: 'АВТОРИТЕТ',
                 secondScope: 'friends', secondBtnActive: 'друзья актив.png', secondBtnPassive: 'друзья неактив.png',
-                // 17.10.2026 (по прямому указанию): окно списка расширено до h:286 (x:356,y:236,
-                // w:669 — уже совпадали с ROW_X/LIST_TOP/ROW_W, менялась только высота). «Топ по
-                // урону» явно остался прежним (242) — см. listH в svod-leaderboard.js.
-                listH: 286,
             });
         } else if(key === 'damage'){
             panel = this._buildLeaderboardPanel({
@@ -142,9 +151,6 @@ export default class Svod{
             panel = this._buildLeaderboardPanel({
                 cat: 5, bg: 'задний фон топы по достижения.png', valueLabel: 'ОЧКИ',
                 secondBtnActive: 'мои достижения актив.png', secondBtnPassive: 'мои достижения пассив.png',
-                // 17.10.2026 (по прямому указанию) — то же расширение окна, что у «Топ по
-                // авторитету», см. коммент там.
-                listH: 286,
                 onSecondTab: () => {
                     panel.visible = false;
                     achPanel.visible = true;
@@ -187,7 +193,6 @@ export default class Svod{
             const spr = this._svodTabSprites[t.key];
             const isActive = t.key === key;
             spr.texture = PIXI.Texture.from('./images/' + (isActive ? t.activeImg : t.passiveImg));
-            spr.y = t.y + (isActive ? (t.activeDy || 0) : (t.passiveDy || 0));
         });
 
         Object.keys(this._svodPanels).forEach(k => {

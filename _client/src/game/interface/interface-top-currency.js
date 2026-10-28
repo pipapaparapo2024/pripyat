@@ -83,10 +83,31 @@ export function attachTopCurrency(proto){
     // валюты меняется местами при свапе (this._topCurPinned), статичная "Rub"-плашка всегда
     // 'cigarettes'.
     const RES_LABELS = { stew: 'Тушёнка', coins: 'Рубли', cigarettes: 'Сухари' };
+    // 28.10.2026 (баг найден по прямому указанию, скриншот — "тултип висит"): на тач-устройствах
+    // (и в редких edge-кейсах при быстром перемещении курсора между перекрывающимися спрайтами на
+    // десктопе) pointerout у PIXI может не сработать ни разу после pointerover — тултип оставался
+    // в root.layer2_mc навсегда, пока не откроется другой экран. Тот же класс проблемы, что уже
+    // задокументирован в AGENTS.md ("Hover-состояния на тач-устройствах... могут «залипать»").
+    // Фикс — защитный таймер: тултип ВСЕГДА самоуничтожается через HIDE_TIMEOUT_MS, даже если ни
+    // pointerout, ни повторный show() не пришли. pointerout по-прежнему первичный путь закрытия
+    // (мгновенный на десктопе) — таймер только подстраховка, не замена.
+    const HIDE_TIMEOUT_MS = 2500;
+    // 27.10.2026 (по прямому указанию — "тултип при наведении на опыт сдвинь на 50px вправо",
+    // 28.10.2026 повторено для "опыт и другие ресурсы"): тот же сдвиг, что уже применён к
+    // XP-тултипу (interface.js, expHit.on('pointerover', ...), _tipRawX = ... + 15, итоговый
+    // сдвиг от исходной позиции +50) — здесь применяется к этому, отдельному тултипу валют.
+    const TIP_OFFSET_X = 50;
     const _attachResTooltip = (sprites, getKey) => {
         let tip = null;
+        let hideTimer = null;
+        const hide = () => {
+            if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
+            if(tip && tip.parent) tip.parent.removeChild(tip);
+            tip = null;
+        };
         const show = () => {
-            if(!window.udata || (tip && tip.parent)) return;
+            if(!window.udata) return;
+            hide(); // пересоздаём на каждый pointerover — обновляет и число, и таймер
             const key = getKey();
             const amount = parseInt(udata[key] || 0);
             tip = new PIXI.Container();
@@ -104,11 +125,11 @@ export function attachTopCurrency(proto){
             txt.x = padX; txt.y = padY;
             tip.addChild(txt);
             const anchor = sprites[0].getGlobalPosition();
-            tip.x = Math.max(4, Math.min(anchor.x, 1280 - tip.width - 4));
+            tip.x = Math.max(4, Math.min(anchor.x + TIP_OFFSET_X, 1280 - tip.width - 4));
             tip.y = anchor.y + sprites[0].height + 6;
             root.layer2_mc.addChild(tip);
+            hideTimer = setTimeout(hide, HIDE_TIMEOUT_MS);
         };
-        const hide = () => { if(tip && tip.parent) tip.parent.removeChild(tip); tip = null; };
         sprites.forEach(s => { s.on('pointerover', show); s.on('pointerout', hide); });
     };
 

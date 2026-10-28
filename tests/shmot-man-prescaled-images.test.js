@@ -11,13 +11,18 @@
  * manWidth/manHeight 22.10.2026 — и это НЕ решило жалобы на резкость, пришлось возвращаться к
  * этому эксперименту заново 26.10.2026.
  *
- * Реализация — для КАЖДОГО из 78 предметов каталога shmot.js (всех, которые показываются НА
- * персонаже: home.js/hata.js/shmot_shop.js-манекен/player_profile.js — НЕ иконка в списке
- * магазина, та по-прежнему использует оригинальный imgFile + cellScale):
+ * Реализация (26.10.2026) — для КАЖДОГО из 78 предметов каталога shmot.js (всех, которые
+ * показываются НА персонаже: home.js/hata.js/shmot_shop.js-манекен/player_profile.js — НЕ
+ * иконка в списке магазина, та по-прежнему использует оригинальный imgFile + cellScale):
  *  - сгенерирован manImgFile — копия imgFile, заранее уменьшенная (PIL, LANCZOS) до точного
  *    пиксельного размера round(nativeW*oldManScale) × round(nativeH*oldManScale);
- *  - manScale в каталоге стал 1.000 у ВСЕХ предметов (включая id111 — manWidth/manHeight убраны);
- *  - 4 места рендера персонажа переключены на (eq.manImgFile || eq.imgFile) + manScale(=1.000).
+ *  - manScale в каталоге стал 1.000 у ВСЕХ предметов (включая id111 — manWidth/manHeight убраны).
+ *
+ * 27.10.2026 (по прямому указанию, отдельный батч — перевод ВСЕГО каталога с manScale на явные
+ * manWidth/manHeight, чисто формат данных, без визуального эффекта): manScale полностью убран
+ * из каталога, вместо него manWidth/manHeight = round(native-размер manImgFile × тот же
+ * коэффициент, что раньше был в manScale). 4 места рендера персонажа переключены на
+ * (eq.manImgFile || eq.imgFile) + spr.width/height = eq.manWidth/manHeight.
  *
  * Оригинальный imgFile НЕ тронут (нужен для cellScale/иконки в списке — другой экран, другой
  * целевой размер показа, трогать его резкость этим батчем не просили).
@@ -52,38 +57,50 @@ for(const line of lines){
     const idM = line.match(/\{id:(\d+)/);
     if(!idM) continue;
     const imgM = line.match(/imgFile:'([^']*)'/);
-    const manScaleM = line.match(/manScale:([\d.]+)/);
+    const manWidthM = line.match(/manWidth:(\d+)/);
+    const manHeightM = line.match(/manHeight:(\d+)/);
     const manImgM = line.match(/manImgFile:'([^']*)'/);
     items.push({
         id: parseInt(idM[1]),
         imgFile: imgM ? imgM[1] : null,
-        manScale: manScaleM ? parseFloat(manScaleM[1]) : null,
+        manWidth: manWidthM ? parseInt(manWidthM[1]) : null,
+        manHeight: manHeightM ? parseInt(manHeightM[1]) : null,
         manImgFile: manImgM ? manImgM[1] : null,
     });
 }
 
-console.log(`\nTest 1: все 78 предметов каталога имеют manScale:1.000 и manImgFile`);
+console.log(`\nTest 1: все 78 предметов каталога имеют manWidth/manHeight и manImgFile (27.10.2026: manScale убран целиком, переведён в явные пиксели)`);
 {
     assert(items.length === 78, `в каталоге 78 предметов (нашлось ${items.length})`);
     const missingManImg = items.filter(it => !it.manImgFile);
     assert(missingManImg.length === 0, `у всех предметов задан manImgFile (без него: ${missingManImg.map(i => i.id).join(',') || 'нет'})`);
-    // 27.10.2026 (по прямому указанию, редактор позиций на манекене — живые репорты "слишком
-    // мелкая/крупная на персонаже"): id62 (Часы Покер)/id80 (Дубинка Зарики)/id92 (Цепь
-    // Тинейджер) получили manScale, ОТЛИЧНЫЙ от 1.000 поверх уже предзауменьшенного manImgFile —
-    // сам факт наличия manImgFile+pre-shrink не исключает точечную докрутку масштаба, если
-    // реальное измерение на манекене показало, что готовый файл всё равно велик/мал. Инвариант
-    // "всегда ровно 1.000" был прикидкой общего правила, не строгим архитектурным ограничением.
-    // id80 (Дубинка) вернулась к 1.000 27.10.2026 — manImgFile заменён на натуральный 133×121px
-    // файл вместо урезанного 44×40px, больше не нужна докрутка под низкое разрешение.
-    // 27.10.2026 (по прямому указанию, повторные живые координаты манекена тем же днём): id87
-    // (Футболка Тинейджер) 0.992, id112 (Куртка Следопыт)/id118 (Худи белая Исполнительный)
-    // 1.004 — та же логика точечной докрутки, что у id62/92 выше.
+    const missingManWH = items.filter(it => it.manWidth == null || it.manHeight == null);
+    assert(missingManWH.length === 0, `у всех предметов заданы manWidth/manHeight (без них: ${missingManWH.map(i => i.id).join(',') || 'нет'})`);
+
+    // manScale полностью убран из каталога как РЕАЛЬНОЕ поле — проверяем только реальные
+    // записи {id:...} (уже вырезанные в `lines` выше), не комментарии (у части из них в тексте
+    // исторически остались упоминания вида "manScale:1.000", это не код).
+    const scaleFieldLeft = lines.filter(l => /manScale:/.test(l));
+    assert(scaleFieldLeft.length === 0, `manScale нигде не остался как поле в записях предметов (найдено у: ${scaleFieldLeft.map(l => (l.match(/\{id:(\d+)/)||[])[1]).join(',') || 'нет'})`);
+
+    // 27.10.2026 (та же точечная докрутка масштаба, что раньше жила в поле manScale — см. историю
+    // в shmot-huge-images-scaled-down-and-head-positions.test.js): manWidth/manHeight каждого
+    // предмета = round(native-размер его manImgFile × коэффициент), где коэффициент почти всегда
+    // 1.000, кроме 5 задокументированных исключений (живые измерения редактора позиций).
     const EXCEPTIONS = { 62: 0.880, 92: 0.842, 87: 0.992, 112: 1.004, 118: 1.004 };
-    const wrongScale = items.filter(it => it.manScale !== 1.000 && it.manScale !== EXCEPTIONS[it.id]);
-    assert(wrongScale.length === 0, `у всех предметов manScale === 1.000, кроме задокументированных исключений (отличается у: ${wrongScale.map(i => i.id + '=' + i.manScale).join(',') || 'нет'})`);
-    // manWidth/manHeight — старый эксперимент (22.10.2026, id111) — полностью убран из каталога.
-    assert(!/manWidth:/.test(shmotSrc) && !/manHeight:/.test(shmotSrc),
-        'manWidth/manHeight нигде не остались в каталоге (мигрированы на manImgFile)');
+    let mismatched = [];
+    for(const it of items){
+        if(!it.manImgFile) continue;
+        const manPath = path.join(SHMOT_DIR, it.manImgFile);
+        if(!fs.existsSync(manPath)) continue; // отдельная забота Test 2
+        const native = pngSize(manPath);
+        const coef = EXCEPTIONS[it.id] ?? 1.000;
+        const expW = Math.round(native.w * coef), expH = Math.round(native.h * coef);
+        if(it.manWidth !== expW || it.manHeight !== expH){
+            mismatched.push(`${it.id}: expected ${expW}x${expH}, got ${it.manWidth}x${it.manHeight}`);
+        }
+    }
+    assert(mismatched.length === 0, `manWidth/manHeight у всех предметов = round(native × коэффициент) (расхождения: ${mismatched.join('; ') || 'нет'})`);
 }
 
 console.log(`\nTest 2: КАЖДЫЙ manImgFile реально существует на диске, намеспейс-имя "уменьшено <imgFile>" (кроме 3 предметов, у которых оригинал УЖЕ рендерился в родном/около-родном разрешении — там manImgFile===imgFile, уменьшать нечего), строго меньше оригинала (где применимо), та же пропорция сторон`);
@@ -151,7 +168,7 @@ console.log('\nTest 3: 4 экрана персонажа (home/hata/shmot_shop-�
     }
 }
 
-console.log('\nTest 4: manWidth/manHeight-ветка (эксперимент 22.10.2026) убрана из всех 4 мест рендера — мёртвый код не остался');
+console.log('\nTest 4: 27.10.2026 — все 4 места рендера персонажа переведены с manScale на manWidth/manHeight (spr.width/height вместо spr.scale.set)');
 {
     const SCREENS = [
         '_client/src/game/home.js',
@@ -161,7 +178,8 @@ console.log('\nTest 4: manWidth/manHeight-ветка (эксперимент 22.
     ];
     for(const rel of SCREENS){
         const src = fs.readFileSync(path.join(root, rel), 'utf-8');
-        assert(!/\.manWidth\b/.test(src) && !/\.manHeight\b/.test(src), `${rel}: manWidth/manHeight нигде не используются`);
+        assert(/\.manWidth\b/.test(src) && /\.manHeight\b/.test(src), `${rel}: manWidth/manHeight используются`);
+        assert(!/\.manScale\b/.test(src), `${rel}: manScale больше не используется`);
     }
 }
 

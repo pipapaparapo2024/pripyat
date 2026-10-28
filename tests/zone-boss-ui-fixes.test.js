@@ -29,7 +29,8 @@ const energy = read('_client/src/game/shell/popups/energy_buy.js');
 const top = read('_client/src/game/svod/svod-leaderboard.js');
 // 08.10.2026 (фикс пикселизации текста): scale.set(1.3) убран, коэффициент свёрнут в fontSize
 // (14 → 18); позиция x/y не менялась.
-must(top, "resetTxt.x = 462; resetTxt.y = 496;", 'новая позиция таймера сброса');
+// 28.10.2026 (по прямому указанию, редактор позиций): y 496→506.
+must(top, "resetTxt.x = 462; resetTxt.y = 506;", 'новая позиция таймера сброса');
 if(top.includes('resetTxt.scale.set(')) throw new Error('resetTxt.scale.set() больше не должен вызываться — scale свёрнут в fontSize');
 must(top, "fontFamily:'Southbank LT', fontSize:18, fill:'#e8d9b8', align:'center',", 'resetTxt fontSize=18 (было 14 × scale 1.3)');
 // 25.09.2026 (см. комментарий у nameTxt в svod-leaderboard.js): строка-пул для ника — ОДНА общая

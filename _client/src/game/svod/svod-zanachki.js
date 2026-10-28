@@ -73,6 +73,17 @@ const TRACK_X = 1181, ARROW_X = 1183, TRACK_Y = 203, ARROW_UP_Y = 216, ARROW_DOW
 // исходнике) над звездой наград — выводим шириной 25px, высота пропорциональна (25×77/68≈28).
 const SUKHARI_ICON_W = 25, SUKHARI_ICON_H = Math.round(SUKHARI_ICON_W * 77 / 68);
 
+// 28.10.2026 (по прямому указанию, 2-й скрин старого ТЗ — "первые 3 коллекции дают +50 опыта/
+// сухарей, последние три +80, все остальные +70"): раньше была ОДНА плоская константа на все
+// 15 коллекций (ZanachkiModel::COLLECTION_CIG_REWARD/EXP_REWARD=50) — теперь сервер и клиент
+// считают награду по тому же правилу независимо (сервер — источник истины для начисления,
+// клиент — только для отображения текста в строке коллекции, см. zanachkimodel.php).
+function rewardAmountForCol(col){
+    if(col <= 3) return 50;
+    if(col >= 13) return 80;
+    return 70;
+}
+
 function isCollectionComplete(stashData, col){
     const data = (stashData && stashData[col]) || {};
     for(let pos = 1; pos <= 7; pos++){
@@ -93,44 +104,42 @@ export function attachSvodZanachki(proto){
         win.addChild(bg);
 
         // 27.10.2026 (по прямому указанию — "у заначек должен быть свой выход"): отдельная
-        // кнопка выхода экрана Заначки (помимо общей кнопки выхода Сводки) — делает то же самое
-        // (закрывает весь Свод), просто размещена по месту, продиктованному для этого экрана.
+        // кнопка выхода экрана Заначки (помимо общей кнопки выхода Сводки), размещена по месту,
+        // продиктованному для этого экрана.
+        // 28.10.2026 (баг найден по прямому указанию — "при закрытии вкладки заначек почему-то
+        // закрывается сама Сводка, такого быть не должно"): раньше звала this.close() — то же
+        // самое, что и ОБЩАЯ кнопка выхода Сводки (1240,83, см. svod.js) — то есть на экране было
+        // ДВЕ кнопки, обе закрывающие весь Свод целиком. Теперь эта (локальная для вкладки)
+        // кнопка просто возвращает на дефолтную вкладку ('respect'), как если бы игрок нажал на
+        // таб «Топ по авторитету» — Свод остаётся открытым, закрывает его только общая кнопка.
         const zanachkiExitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
         zanachkiExitBtn.scale.set(EXIT_SCALE);
         if(window.isMobile) helper.touchPad(zanachkiExitBtn);
         zanachkiExitBtn.x = EXIT_X; zanachkiExitBtn.y = EXIT_Y;
         zanachkiExitBtn.interactive = true; zanachkiExitBtn.buttonMode = true;
-        zanachkiExitBtn.on('pointerover', ()=>{ zanachkiExitBtn.alpha = 0.75; });
-        zanachkiExitBtn.on('pointerout',  ()=>{ zanachkiExitBtn.alpha = 1; });
-        zanachkiExitBtn.on('pointerdown', ()=>this.close());
+        zanachkiExitBtn.on('pointerover', ()=>{ zanachkiExitBtn.scale.set(EXIT_SCALE * 1.08); });
+        zanachkiExitBtn.on('pointerout',  ()=>{ zanachkiExitBtn.scale.set(EXIT_SCALE); });
+        zanachkiExitBtn.on('pointerdown', ()=>this._selectMainTab('respect'));
         win.addChild(zanachkiExitBtn);
 
-        // Заголовок "Собрано коллекций N/M" — 27.10.2026 (по прямому указанию, репозиция по
-        // скрину-референсу плашки): ДВА отдельных блока — надпись "Собрано коллекций:" и счёт
-        // "N / 15" под ней, не один текст с переносом строки, как было раньше. Хитбокс плашки
-        // (редактор позиций) x:944,y:111,scale:1.355,w:206,h:61 — контейнер ставится в эту
-        // точку целиком с этим scale, оба текста — его дети в НЕмасштабированных локальных
-        // координатах (ширина плашки до масштабирования = 206).
-        const headerCont = new PIXI.Container();
-        headerCont.x = 944; headerCont.y = 111;
-        headerCont.scale.set(1.355);
-        win.addChild(headerCont);
-
+        // Заголовок "Собрано коллекций N/M" — 28.10.2026 (по прямому указанию, редактор позиций
+        // новой боковой панели — "боковая часть (область под кнопки).png", см. svod.js): плашка
+        // переехала с правой декоративной рамки (944,111,scale1.355) на новую левую боковую
+        // панель — координаты теперь ПРЯМЫЕ (win-дети, без общего масштабирующего контейнера),
+        // x:75,y:0 — надпись, x:75,y:16 — счёт.
         const labelTxt = new PIXI.Text('Собрано коллекций:', {
             fontFamily: FONT, fontSize: 14, fill: '#ffffff',
-            stroke: '#000000', strokeThickness: 2,
+            stroke: '#000000', strokeThickness: 2, padding: 4,
         });
-        labelTxt.anchor.set(0.5, 0);
-        labelTxt.x = 103; labelTxt.y = 0;
-        headerCont.addChild(labelTxt);
+        labelTxt.x = 75; labelTxt.y = 0;
+        win.addChild(labelTxt);
 
         const countTxt = new PIXI.Text('0 / 15', {
             fontFamily: FONT, fontSize: 28, fill: '#ffffff',
-            stroke: '#000000', strokeThickness: 2,
+            stroke: '#000000', strokeThickness: 2, padding: 4,
         });
-        countTxt.anchor.set(0.5, 0);
-        countTxt.x = 103; countTxt.y = 22;
-        headerCont.addChild(countTxt);
+        countTxt.x = 75; countTxt.y = 16;
+        win.addChild(countTxt);
         this._zanachkiLabelTxt = labelTxt;
         this._zanachkiCountTxt = countTxt;
 
@@ -142,7 +151,19 @@ export function attachSvodZanachki(proto){
         reqBtn.on('pointerover', ()=>{ reqBtn.alpha = 0.8; });
         reqBtn.on('pointerout',  ()=>{ reqBtn.alpha = 1; });
         reqBtn.on('pointerdown', ()=>{
-            this._buildZanachkiWishlistPopup((this._zanachkiState && this._zanachkiState.wishlist) || [], 'own', {});
+            // 28.10.2026 (по прямому указанию — "пиши также их количество снизу, как у остальных
+            // карточек прописаны цифры"): тот же myOwnedCounts, что уже передаётся в режим
+            // 'friend' (см. player_profile.js._openFriendStashWishlist) — построен здесь из
+            // актуального this._zanachkiState.stashData, т.к. в режиме 'own' сервер отдельно
+            // такую карту не присылает (своё состояние уже загружено на этом экране).
+            const stashData = (this._zanachkiState && this._zanachkiState.stashData) || {};
+            const myOwnedCounts = {};
+            Object.keys(stashData).forEach(col => {
+                Object.keys(stashData[col] || {}).forEach(pos => {
+                    myOwnedCounts[col + '_' + pos] = Number(stashData[col][pos]) || 0;
+                });
+            });
+            this._buildZanachkiWishlistPopup((this._zanachkiState && this._zanachkiState.wishlist) || [], 'own', { myOwnedCounts });
         });
         win.addChild(reqBtn);
 
@@ -176,13 +197,17 @@ export function attachSvodZanachki(proto){
                 // хотя они есть"): раньше текст был чёрным (#000000) без обводки поверх тёмного
                 // фона карточки — рендерился, просто физически не виден на тёмном арте. Белый
                 // + чёрная обводка — тот же стиль, что у остальных подписей этого экрана.
+                // 28.10.2026 (по прямому указанию — редактор позиций, новое место светлее):
+                // опущено на 92px, сдвинуто вправо на 35px, шрифт снова чёрный (теперь на
+                // достаточно светлом фоне новой позиции, обводка остаётся чёрной — то же самое,
+                // что сплошной чёрный текст без разницы в виде).
                 const countTxt = new PIXI.Text('', {
-                    fontFamily: FONT, fontSize: 14, fill: '#ffffff',
-                    stroke: '#000000', strokeThickness: 2,
+                    fontFamily: FONT, fontSize: 14, fill: '#000000',
+                    stroke: '#000000', strokeThickness: 2, padding: 4,
                 });
                 countTxt.anchor.set(0.5, 0);
-                countTxt.x = cardX + card.width / 2;
-                countTxt.y = card.y + card.height - 18;
+                countTxt.x = cardX + card.width / 2 + 35;
+                countTxt.y = card.y + card.height - 18 + 92;
                 content.addChild(countTxt);
                 countTxts[key] = countTxt;
 
@@ -218,6 +243,11 @@ export function attachSvodZanachki(proto){
             // stashData/claimed после списания карт.
             const claimBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'заначки кнопка забрать.png'));
             claimBtn.x = CLAIM_X; claimBtn.y = rowY + CLAIM_Y_OFF;
+            // 28.10.2026 (по прямому указанию — "для кнопки Забрать тоже сделай hover-эффект
+            // увеличения"): тот же паттерн, что у reqSpr выше — scale-бамп, гейтится interactive
+            // (кнопка неактивна, пока набор не полон, см. _zanachkiRefreshClaims).
+            claimBtn.on('pointerover', ()=>{ if(claimBtn.interactive) claimBtn.scale.set(1.08); });
+            claimBtn.on('pointerout',  ()=>{ claimBtn.scale.set(1); });
             claimBtn.on('pointerdown', ()=>{
                 if(!claimBtn._enabled) return;
                 TS.php('zanachki.claimCollection', {collection_id: col}, (e) => {
@@ -245,26 +275,32 @@ export function attachSvodZanachki(proto){
 
             const rewardLabelTxt = new PIXI.Text('Награда:', {
                 fontFamily: FONT, fontSize: 15, fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 2,
+                stroke: '#000000', strokeThickness: 2, padding: 4,
             });
             rewardLabelTxt.x = STAR_X; rewardLabelTxt.y = rowY + STAR_Y_OFF - 50;
             content.addChild(rewardLabelTxt);
 
-            // 27.10.2026 (по прямому указанию — "это должны быть две разные надписи"): раньше
-            // был один текст "+50 сухарей  +50 опыта" — разделён на 2 отдельных PIXI.Text.
-            // "+50 сухарей" поднята на 20px, "+50 опыта" — правее файла "заначки иконка звезда".
-            const sukhariRewardTxt = new PIXI.Text('+50 сухарей', {
+            // 28.10.2026 (по прямому указанию — редактор позиций для 1-й коллекции + "знак +
+            // выглядит не так, посмотри и исправь"): "+" — первый символ строки, strokeThickness
+            // без запаса padding в PIXI.TextStyle обрезает canvas ровно по метрикам текста без
+            // полей под обводку — у тонких/узких глифов вроде "+" обводка слева/сверху уезжала
+            // за край canvas и визуально "срезалась" (тот же класс бага уже чинился похожим
+            // padding в interface-currency-purchase.js, TXT_STYLE_BASE). amt — число награды,
+            // РАЗНОЕ по коллекциям (см. rewardAmountForCol выше, тот же разброс 50/70/80, что и
+            // на сервере в ZanachkiModel::collectionReward()).
+            const amt = rewardAmountForCol(col);
+            const sukhariRewardTxt = new PIXI.Text('+' + amt + ' сухарей', {
                 fontFamily: FONT, fontSize: 15, fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 2,
+                stroke: '#000000', strokeThickness: 2, padding: 4,
             });
-            sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF + 2 - 20;
+            sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF - 26;
             content.addChild(sukhariRewardTxt);
 
-            const expRewardTxt = new PIXI.Text('+50 опыта', {
+            const expRewardTxt = new PIXI.Text('+' + amt + ' опыта', {
                 fontFamily: FONT, fontSize: 15, fill: '#ffffff',
-                stroke: '#000000', strokeThickness: 2,
+                stroke: '#000000', strokeThickness: 2, padding: 4,
             });
-            expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = starIcon.y;
+            expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = rowY + STAR_Y_OFF + 5;
             content.addChild(expRewardTxt);
         }
 
@@ -283,6 +319,11 @@ export function attachSvodZanachki(proto){
             arrowUpImg: 'заначки скролл стрелка вверх.png', arrowDownImg: 'заначки скролл стрелка вниз.png',
             stepPx: ROW_H,
             getTotalH: () => 15 * ROW_H,
+            // 28.10.2026 (по прямому указанию, редактор позиций — бегунок в начале x:1188,y:248,
+            // в конце x:1188,y:450): физический диапазон движения не совпадает с track.y/
+            // track.height (трек "заначки скролл шкала.png" начинается на TRACK_Y=203, что выше
+            // желаемого верха 248) — см. thumbTravelTop/thumbTravelBottom в svod-scroll.js.
+            thumbTravelTop: 248, thumbTravelBottom: 450,
         });
         this._zanachkiScroll = scroll;
 

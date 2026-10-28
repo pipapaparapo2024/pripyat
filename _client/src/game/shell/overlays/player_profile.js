@@ -150,15 +150,16 @@ export function attachPlayerProfile(proto){
             if(equippedIdx !== -1){
                 def = catalog.find(it => it.id === equippedIdx);
                 if(def && def.imgFile){
-                    // 26.10.2026 (тот же фикс, что в home.js.updateClothes() — см. докблок там
-                    // же): manWidth/manHeight не решал резкость — используем manImgFile (заранее
-                    // уменьшенный PNG), manScale всегда 1.000.
+                    // 27.10.2026 (по прямому указанию — перевод предметов на персонаже с manScale
+                    // на явные manWidth/manHeight, см. докблок в shmot_shop.js._updateManSprites).
+                    // Резкость по-прежнему даёт manImgFile (заранее уменьшенный PNG).
                     spr.texture = PIXI.Texture.from('./images/shmot/' + (def.manImgFile || def.imgFile));
                     spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
                     spr.texture.baseTexture.update();
                     spr.x = s.x + (def.manDx || 0);
                     spr.y = s.y + (def.manDy || 0) + (def.imgFile === 'штаны_1.png' ? -28 : 0);
-                    spr.scale.set(def.manScale || 1);
+                    spr.width  = def.manWidth  || spr.texture.width;
+                    spr.height = def.manHeight || spr.texture.height;
                 }
             }
             win.addChild(spr);
@@ -353,8 +354,8 @@ export function attachPlayerProfile(proto){
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
-        exitBtn.on('pointerout',  ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this._closePlayerProfile());
         win.addChild(exitBtn);
 
@@ -592,10 +593,11 @@ export function attachPlayerProfile(proto){
         // 26.10.2026 (по прямому указанию — фича "Заначки"): новая кнопка "Попросить заначки"
         // встаёт НАД двумя существующими, обе опущены вниз, чтобы освободить ей место (качалка
         // была y:176 → +80 = 256, зарубиться была y:357 → +60 = 417).
+        // 28.10.2026 (по прямому указанию, редактор позиций — все три на +20px по Y).
         const buttons = [
-            { file: 'кнопка у друга просьба заначек.png',  x: 1039, y: 100, action: 'stash_request' },
-            { file: 'кнопка у друга позвать в качалку.png', x: 1039, y: 256, action: 'gym_invite' },
-            { file: 'кнопка у друга зарубиться .png',       x: 1040, y: 417, action: 'fight_challenge' },
+            { file: 'кнопка у друга просьба заначек.png',  x: 1039, y: 120, action: 'stash_request' },
+            { file: 'кнопка у друга позвать в качалку.png', x: 1039, y: 276, action: 'gym_invite' },
+            { file: 'кнопка у друга зарубиться .png',       x: 1040, y: 437, action: 'fight_challenge' },
         ];
         buttons.forEach(b => {
             const btn = new PIXI.Sprite(PIXI.Texture.from('./images/' + b.file));
@@ -674,6 +676,9 @@ export function attachPlayerProfile(proto){
     // 'прокачал бицуху.png' (1280×531, старый файл оставлен на диске неиспользуемым). Размер
     // расходится на 7px по высоте — не критично, явного height в коде нет (нативный размер,
     // x/y=0,71 не трогались).
+    // 28.10.2026 (по прямому указанию — "сделай его немного прозрачнее"): пиковая alpha во
+    // время показа снижена с 1 до 0.85 (было полностью непрозрачным).
+    const GYM_PUMP_BANNER_ALPHA = 0.85;
     proto._showGymPumpBanner = function(){
         if(this._gymPumpBannerWin && this._gymPumpBannerWin.parent){
             this._gymPumpBannerWin.parent.removeChild(this._gymPumpBannerWin);
@@ -691,11 +696,11 @@ export function attachPlayerProfile(proto){
         if(window.gsap){
             gsap.killTweensOf(banner);
             gsap.timeline()
-                .to(banner, {alpha:1, duration:0.15})
-                .to(banner, {alpha:1, duration:1.5})
+                .to(banner, {alpha:GYM_PUMP_BANNER_ALPHA, duration:0.15})
+                .to(banner, {alpha:GYM_PUMP_BANNER_ALPHA, duration:1.5})
                 .to(banner, {alpha:0, duration:0.25, onComplete:_remove});
         } else {
-            banner.alpha = 1;
+            banner.alpha = GYM_PUMP_BANNER_ALPHA;
             setTimeout(_remove, 1900);
         }
     };

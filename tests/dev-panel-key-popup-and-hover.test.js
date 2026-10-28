@@ -21,7 +21,9 @@ assert(/buyLabelTxt\.x = 559; buyLabelTxt\.y = 415;/.test(popup), '"Купить
 assert(/fontSize: 18,/.test(popup), '"Купить за" fontSize is 18 (20×0.908), not via scale');
 assert(!/buyLabelTxt\.scale\.set\(/.test(popup), '"Купить за" no longer uses scale.set');
 assert(/buyBtn\.on\('pointerover', \(\) => \{ _sa\(buyBtn, 0\.85\); _ss\(buyBtn, 1\.08\); \}\)/.test(popup), 'buy button uses smooth hover scaling');
-assert(/exitBtn\.on\('pointerover', \(\) => \{ _sa\(exitBtn, 0\.75\); _ss\(exitBtn, 1\.08\); \}\)/.test(popup), 'close button uses smooth hover scaling');
+// 28.10.2026: _sa() (alpha hover) убран у ВСЕХ кнопок выхода проекта (по прямому указанию —
+// "только hover scale эффект, без прозрачности") — было _sa(exitBtn,0.75);_ss(exitBtn,1.08);
+assert(/exitBtn\.on\('pointerover', \(\) => \{ _ss\(exitBtn, 1\.08\); \}\)/.test(popup), 'close button uses scale-only hover (no alpha)');
 assert(/emitter\.on = function\(event, listener, \.\.\.args\)/.test(uiKit) && /window\._ss\(target, x\)/.test(uiKit), 'legacy hover scale setters are globally animated through _ss');
 assert(/shareBtn\.x = 685;/.test(levelUp) && /shareBtn\.y = 500;/.test(levelUp), 'share button is positioned at x=685, y=500');
 assert(/_locExecActiv\._disableHoverScale = true;/.test(zonePopup), '"Выполнить" button opts out of hover scaling');

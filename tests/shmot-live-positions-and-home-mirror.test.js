@@ -101,14 +101,15 @@ console.log('\nTest 4: home.js CLOTH_SLOTS повторяет тот же пор
 }
 
 // ── Test 5: Home.updateClothes() зеркалит логику _updateManSprites (включая штаны_1 хак) ──
-console.log('\nTest 5: Home.updateClothes() корректно читает manDx/manDy/manScale и штаны_1-хак');
+console.log('\nTest 5: Home.updateClothes() корректно читает manDx/manDy/manWidth/manHeight и штаны_1-хак');
 {
     const m = homeSrc.match(/updateClothes\(\)\{([\s\S]*?)\n\t\}/);
     assert(!!m, 'updateClothes() найден в home.js');
     if (m) {
         const body = m[1];
         assert(/eq\.manDx \|\| 0/.test(body) && /eq\.manDy \|\| 0/.test(body), 'использует eq.manDx/manDy');
-        assert(/eq\.manScale \|\| 1/.test(body), 'использует eq.manScale');
+        // 27.10.2026 (перевод предметов на персонаже с manScale на явные manWidth/manHeight)
+        assert(/eq\.manWidth\s*\|\|/.test(body) && /eq\.manHeight\s*\|\|/.test(body), 'использует eq.manWidth/manHeight');
         assert(/eq\.imgFile === 'штаны_1\.png' \? -28 : 0/.test(body), 'учитывает спец-хак -28 для штаны_1.png');
         assert(/shmot\.items \|\| \[\]/.test(body), 'читает именно window.shmot.items (общий источник истины)');
     }

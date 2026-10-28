@@ -296,21 +296,19 @@ export default class Home{
 			const base = this._clothSlotBases[cat];
 			const eq = (shmot.items || []).find(it => it.cat === parseInt(cat) && it.equipped);
 			if(eq && eq.imgFile){
-				// 26.10.2026 (по прямому указанию, по итогам A/B-теста на маске "Комбинатор" —
-				// "справа качество получше было"): манёвр с manWidth/manHeight (22.10.2026,
-				// эксперимент у id111) НЕ решал задачу — sprite.width/height в PixiJS растягивают
-				// ТУ ЖЕ текстуру тем же GPU-семплингом, что и sprite.scale, резкость идентична.
-				// Настоящий фикс — заранее уменьшенный PNG (LANCZOS) под точный размер показа на
-				// персонаже, без доп. масштабирования в коде. manImgFile — такой файл для КАЖДОГО
-				// предмета каталога (shmot.js), manScale теперь всегда 1.000 (ветка
-				// manWidth/manHeight убрана как мёртвый код — больше не нужна).
+				// 27.10.2026 (по прямому указанию — перевод предметов на персонаже с manScale на
+				// явные manWidth/manHeight, см. докблок в shmot_shop.js._updateManSprites). Резкость
+				// по-прежнему даёт manImgFile (заранее уменьшенный PNG) — явный размер её не меняет
+				// (см. историю отката 26.10.2026 в AGENTS.md), просто другая форма записи того же
+				// видимого размера.
 				spr.texture = PIXI.Texture.from('./images/shmot/' + (eq.manImgFile || eq.imgFile));
 				spr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
 				spr.texture.baseTexture.update();
 				spr.visible = true;
 				spr.x = base.x + (eq.manDx || 0);
 				spr.y = base.y + (eq.manDy || 0) + (eq.imgFile === 'штаны_1.png' ? -28 : 0);
-				spr.scale.set(eq.manScale || 1);
+				spr.width  = eq.manWidth  || spr.texture.width;
+				spr.height = eq.manHeight || spr.texture.height;
 			} else {
 				spr.texture = PIXI.Texture.EMPTY;
 				spr.visible = false;

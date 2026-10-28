@@ -65,6 +65,17 @@ console.log('\nTest 4: _showGymPumpBanner() — не копится при по�
     assert(/setTimeout\(_remove, 1900\);/.test(body), 'есть fallback без gsap — не блокирует показ, если gsap недоступен');
 }
 
+console.log('\nTest 5: _showGymPumpBanner() — 28.10.2026 (по прямому указанию, "сделай немного прозрачнее"): пиковая alpha снижена с 1 до 0.85');
+{
+    const start = profileJs.indexOf('proto._showGymPumpBanner = function');
+    const end   = profileJs.indexOf('\n    };', start);
+    const body  = profileJs.slice(start, end);
+    assert(/const GYM_PUMP_BANNER_ALPHA = 0\.85;/.test(profileJs), 'константа пиковой прозрачности объявлена (0.85 — чуть прозрачнее, чем было)');
+    assert(/\.to\(banner, \{alpha:GYM_PUMP_BANNER_ALPHA, duration:0\.15\}\)/.test(body), 'gsap-появление анимирует ДО новой пиковой alpha, не до 1');
+    assert(/\.to\(banner, \{alpha:GYM_PUMP_BANNER_ALPHA, duration:1\.5\}\)/.test(body), 'gsap-удержание держит новую пиковую alpha');
+    assert(/banner\.alpha = GYM_PUMP_BANNER_ALPHA;/.test(body), 'fallback без gsap тоже использует новую пиковую alpha, не захардкоженную 1');
+}
+
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

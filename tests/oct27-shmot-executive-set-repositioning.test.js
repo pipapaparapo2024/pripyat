@@ -42,15 +42,16 @@ console.log('\nTest 1: MAN_SLOTS cat:6 база (856,418) — основа дл�
 console.log('\nTest 2: Часы (Покер, id62) — репозиция на персонаже (x:897,y:408,scale:0.880 → manDx:41,manDy:-10)');
 {
     assert(856 + 41 === 897 && 418 - 10 === 408, 'арифметика пересчёта manDx/manDy часов сходится (41,-10 → 897,408)');
-    assert(/\{id:62, cat:6, name:'Часы \(Покер\)',[^}]*manDx:41, manDy:-10, manScale:0\.880,/.test(shmotJsSrc),
-        'id62: manDx:41, manDy:-10, manScale:0.880 записаны в каталог');
+    // 27.10.2026: manScale:0.880 переведён на manWidth/manHeight (round(native 25×25 × 0.880)).
+    assert(/\{id:62, cat:6, name:'Часы \(Покер\)',[^}]*manDx:41, manDy:-10, manWidth:22, manHeight:22,/.test(shmotJsSrc),
+        'id62: manDx:41, manDy:-10, manWidth:22, manHeight:22 записаны в каталог');
 }
 
 console.log('\nTest 3: Цепь (Тинейджер, id92) — репозиция на персонаже (x:893,y:406,scale:0.842 → manDx:37,manDy:-12)');
 {
     assert(856 + 37 === 893 && 418 - 12 === 406, 'арифметика пересчёта manDx/manDy цепи сходится (37,-12 → 893,406)');
-    assert(/\{id:92, cat:6, name:'Цепь \(Тинейджер\)',[^}]*manDx:37, manDy:-12, manScale:0\.842,/.test(shmotJsSrc),
-        'id92: manDx:37, manDy:-12, manScale:0.842 записаны в каталог');
+    assert(/\{id:92, cat:6, name:'Цепь \(Тинейджер\)',[^}]*manDx:37, manDy:-12, manWidth:32, manHeight:53,/.test(shmotJsSrc),
+        'id92: manDx:37, manDy:-12, manWidth:32, manHeight:53 записаны в каталог');
 }
 
 console.log('\nTest 3b (РЕАЛЬНЫЙ баг, 27.10.2026 — "дубинка на персонаже микроскопическая", изначально спутана с Битой): Дубинка (Зарики, id80) — manDx/manDy не были заданы вообще, manScale:1.000 на 44×40px файле');
@@ -63,8 +64,8 @@ console.log('\nTest 3b (РЕАЛЬНЫЙ баг, 27.10.2026 — "дубинка 
     // т.к. оба файла без внутренних отступов, их bbox = весь канвас, см. shmot-man-prescaled-
     // images.test.js).
     assert(856 - 72 === 784 && 418 - 69 === 349, 'арифметика пересчёта manDx/manDy дубинки сходится (-72,-69 → 784,349)');
-    assert(/\{id:80, cat:6, name:'Дубинка \(Зарики\)',[^}]*manDx:-72, manDy:-69, manScale:1\.000,/.test(shmotJsSrc),
-        'id80: manDx:-72, manDy:-69, manScale:1.000 записаны в каталог (натуральный 133×121px файл вместо урезанного 44×40px)');
+    assert(/\{id:80, cat:6, name:'Дубинка \(Зарики\)',[^}]*manDx:-72, manDy:-69, manWidth:133, manHeight:121,/.test(shmotJsSrc),
+        'id80: manDx:-72, manDy:-69, manWidth:133, manHeight:121 записаны в каталог (натуральный 133×121px файл, round(133×1.000)=133)');
 }
 
 console.log('\nTest 4: "фаланги правой руки.png" — уточнённая позиция (x:862,y:449,scale:0.789)');
@@ -84,16 +85,19 @@ console.log('\nTest 5 (регресс-гвард — репорт "микрос�
     // что пользователь сам откалибровал и подтвердил 26.10.2026. Код-бага НЕ найдено — возможно,
     // это пересмотр самой калибровки (не баг), либо проблема в чём-то, что эта проверка не
     // покрывает (просьба уточнить номер через редактор позиций, как для часов/цепи выше).
-    assert(/\{id:117, cat:6,[^}]*manDx:-111, manDy:-60, manScale:1\.000,/.test(shmotJsSrc),
-        'id117: manDx/manDy/manScale НЕ изменены этой правкой (ждут подтверждения/новых чисел)');
+    assert(/\{id:117, cat:6,[^}]*manDx:-111, manDy:-60, manWidth:162, manHeight:133,/.test(shmotJsSrc),
+        'id117: manDx/manDy/manWidth/manHeight НЕ изменены этой правкой (ждут подтверждения/новых чисел)');
 }
 
 console.log('\nTest 6: Бита (id117) — иконка гардероба (cellDx/cellDy/cellScale/cellRot) и бонус (+40 к автомату)');
 {
     // 27.10.2026: повторное уточнение через редактор позиций (x:225,y:931,scale:0.169,w:131,h:107) —
     // база ячейки (cx+77=229,cy+98=973) выведена из исходной калибровки 25.10.2026, cellRot не менялся.
-    assert(/\{id:117, cat:6, name:'Бита \(Исполнительный\)',[^}]*cellDx:-4, cellDy:-42, cellScale:0\.169, cellRot:10,/.test(shmotJsSrc),
-        'id117: позиция иконки гардероба (cellDx:-4,cellDy:-42,cellScale:0.169,cellRot:10)');
+    // 27.10.2026 (ТРЕТИЙ заход тем же днём — "x:220,y:930,scale:0.169,rot:10°,w:130,h:107"):
+    // cellDx/cellDy пересчитаны (idx=16 → cx=157,cy=860 → -14,-28), cellScale → явные
+    // cellWidth/cellHeight.
+    assert(/\{id:117, cat:6, name:'Бита \(Исполнительный\)',[^}]*cellDx:-14, cellDy:-28, cellWidth:130, cellHeight:107, cellRot:10,/.test(shmotJsSrc),
+        'id117: позиция иконки гардероба (cellDx:-14,cellDy:-28,cellWidth:130,cellHeight:107,cellRot:10)');
     assert(/\{id:117, cat:6,[^}]*bonus:'\+40 к автомату',  bk:'auto_flat',     bv:40,/.test(shmotJsSrc),
         'id117: бонус +40 к автомату (была ошибка +250)');
     assert(/if\(item\.cellRot\) img\.rotation = item\.cellRot \* Math\.PI \/ 180;/.test(shopSrc),

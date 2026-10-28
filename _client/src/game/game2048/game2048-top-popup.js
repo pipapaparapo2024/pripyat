@@ -13,8 +13,13 @@
 // Полноценный свайп-скролл — по рецепту из AGENTS.md ("Рецепт свайпа"), добавить отдельным
 // шагом, когда область подтверждена.
 import { applyPatch } from '../../modules/patch.js';
+import { formatAchNum } from '../../modules/achievement-tiers.js';
 
-const ROW_H = 46;
+// 28.10.2026 (по прямому указанию — "расстояние между всеми текстами уменьши на 9 пикселей,
+// для всего"): 46 → 37. Повторное указание тем же днём ("увеличь... на 1px"): 37 → 38. Третье
+// указание тем же днём ("уменьши... на 1px"): 38 → 37. Четвёртое указание тем же днём
+// ("уменьши ещё на 0.5px"): 37 → 36.5.
+const ROW_H = 46 - 9 + 1 - 1 - 0.5;
 // 27.10.2026 (баг найден по прямому указанию — "вижу x100 x50, но не понимаю к чему это
 // относится"): артворк "2048 топ попап.png" рисует РОВНО 5 иконок в ОДНОМ ряду (монета/пистолет/
 // автомат/сухари/XP — см. зум-кроп нижней части карточки топ-1, иконки с шагом 65px, центр
@@ -34,8 +39,24 @@ const ICON_MAP = {
 const LIFETIME_ROW_Y0 = 525;
 const LIFETIME_X_MAP = { coins: 762, gun: 814, auto: 867, cig: 918, exp: 977 };
 
-const STYLE_NICK = { fontFamily: 'Bebas Neue Pro', fontSize: 18, fontWeight: '400', fill: '#000000' };
-const STYLE_GAMES_BIG = { fontFamily: 'Bebas Neue Pro', fontSize: 30, fontWeight: '400', fill: '#f4b960',
+// 28.10.2026 (баг найден по прямому указанию — "никнейм топ-1 криво стоит / будто пустой"):
+// fill был чёрным на тёмной плашке фона — текст физически рендерился, просто был невидим
+// (та же причина, что уже чинилась для countTxt в svod-zanachki.js 27.10.2026). Белый — тот же
+// цвет, что уже используется для emptyTopTxt (override fill:'#ffffff' поверх этого стиля, см.
+// ниже) и для соседних строк списка (STYLE_ROW_NAME/GAMES/PLACE на этом же экране).
+//
+// 28.10.2026 (второй баг, найден при проверке "не гонка ли шрифта"): fontFamily был буквально
+// 'Bebas Neue Pro' — а такого @font-face в fonts.css НЕТ и никогда не было, зарегистрированы
+// только 'Bebas Neue Pro Middle' и 'Bebas Neue Pro Bold' (см. game2048.js: FONT_STAT, тот же
+// баг с момента создания фичи 26.10.2026). Это не гонка загрузки — текст был ОБРЕЧЕН всегда
+// рисоваться системным fallback-шрифтом, с любым document.fonts.ready-ожиданием ниже: браузер
+// никогда не просит именно 'Bebas Neue Pro', значит document.fonts.check для неё никогда не
+// станет true, и ожидание ниже зависло бы бесконечным циклом пересборки. Переведено на реально
+// зарегистрированный 'Bebas Neue Pro Middle' (тот же файл, что уже используется в верхнем HUD,
+// interface.js/interface-top-currency.js) — он и был, судя по всему, тем шрифтом, который
+// визуально диктовался 26.10.2026.
+const STYLE_NICK = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 18, fontWeight: '400', fill: '#ffffff' };
+const STYLE_GAMES_BIG = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 16, fontWeight: '400', fill: '#f4b960',
     dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1 };
 const STYLE_ROW_NAME = { fontFamily: 'Arial Narrow', fontWeight: 'bold', fontSize: 16, fill: '#ffffff' };
 const STYLE_ROW_GAMES = { fontFamily: 'Arial Narrow', fontWeight: 'bold', fontSize: 14, fill: '#ffffff' };
@@ -49,6 +70,30 @@ const STYLE_LIFETIME = { fontFamily: 'Arial Narrow', fontWeight: 'bold', fontSiz
 export function attachGame2048TopPopup(proto){
 
     proto._openGame2048TopPopup = function(){
+        // 28.10.2026 (баг найден по прямому указанию — "никнейм и кол-во партий топ-1 не в
+        // хитбоксах, хотя координаты верные"): тот же класс гонки, что уже чинился 20.10.2026 в
+        // interface-currency-purchase.js — PIXI печёт canvas текста СРАЗУ по запросу, не дожидаясь
+        // реальной загрузки @font-face "Bebas Neue Pro Middle" (подключается только DOM-трюком в
+        // index.html, нигде не ждётся document.fonts.ready). Если попап строится раньше, чем
+        // шрифт готов (вероятно — дев-панель открывает его почти сразу после загрузки игры),
+        // canvas молча подставляет системный fallback с другими пропорциями глифов — отсюда и
+        // "текст не на том месте". Усугубляет это then, что _topWin кешируется НАВСЕГДА
+        // (if(!this._topWin) ниже) — одна неудачная первая сборка портит экран на весь сеанс,
+        // даже когда шрифт потом догружается. Ждём document.fonts.ready ПЕРЕД первой сборкой —
+        // безопасный no-op там, где Font Loading API недоступен (попап просто строится сразу).
+        // ⚠️ Строка проверки ОБЯЗАНА совпадать с РЕАЛЬНО зарегистрированным в fonts.css именем
+        // (см. STYLE_NICK выше) — проверка несуществующего имени шрифта никогда не станет true,
+        // и document.fonts.ready.then(retry) ниже зациклился бы бесконечно, так и не построив
+        // попап (ровно это и было здесь до второго фикса в этот же день).
+        if(!this._topWin && typeof document !== 'undefined' && document.fonts && typeof document.fonts.check === 'function'
+            && !document.fonts.check("18px 'Bebas Neue Pro Middle'")){
+            console.log('[game2048._openGame2048TopPopup] шрифт Bebas Neue Pro Middle ещё не готов — жду document.fonts.ready перед первой сборкой попапа');
+            document.fonts.ready.then(() => {
+                console.log('[game2048._openGame2048TopPopup] шрифт готов, строю попап');
+                this._openGame2048TopPopup();
+            });
+            return;
+        }
         if(!this._topWin) this._buildGame2048TopPopup();
         root.layer2_mc.addChild(this._topWin);
         this._fetchGame2048Top();
@@ -94,8 +139,8 @@ export function attachGame2048TopPopup(proto){
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  () => { exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', () => this._closeGame2048TopPopup());
         win.addChild(exitBtn);
 
@@ -104,19 +149,20 @@ export function attachGame2048TopPopup(proto){
         top1Avatar.x = 900; top1Avatar.y = 110;
         win.addChild(top1Avatar);
 
-        // 27.10.2026 (по прямому указанию, координаты редактора позиций): x:777,y:363,
-        // scale:1.076 — для никнейма топ-1.
+        // 28.10.2026 (по прямому указанию, повторный снимок хитбокса редактора позиций):
+        // x:770,y:362, scale:1.106 — для никнейма топ-1 (было 775,363,1.105).
         const top1Nick = new PIXI.Text('', STYLE_NICK);
         top1Nick.anchor.set(0.5, 0.5);
-        top1Nick.x = 777; top1Nick.y = 363;
-        top1Nick.scale.set(1.076);
+        top1Nick.x = 860; top1Nick.y = 374;
+        top1Nick.scale.set(1.106);
         win.addChild(top1Nick);
 
-        // x:729,y:411,scale:1.682 — для количества сыгранных партий топ-1.
+        // 28.10.2026 (по прямому указанию, повторный снимок хитбокса редактора позиций):
+        // x:727,y:411, scale:1.699 — для количества сыгранных партий топ-1 (было 731,413,1.676).
         const top1Games = new PIXI.Text('', STYLE_GAMES_BIG);
         top1Games.anchor.set(0.5, 0.5);
-        top1Games.x = 729; top1Games.y = 411;
-        top1Games.scale.set(1.682);
+        top1Games.x = 857; top1Games.y = 426;
+        top1Games.scale.set(1.699);
         win.addChild(top1Games);
 
         const lifetimeTxts = {};
@@ -143,13 +189,15 @@ export function attachGame2048TopPopup(proto){
         // x:433,y:236; партии x:635,y:236. Y у placeTxt/avatar/nameTxt/gamesTxt заметно не
         // совпадают (225 vs 236) — это сохранено как индивидуальный delta на весь список, не
         // усреднено до единого Y.
-        const ROW2_Y = 236, PLACE_Y_DELTA = 225 - 236;
+        // 28.10.2026 (по прямому указанию — "опусти все места игроков вниз на 9px"): -11 → -2.
+        const ROW2_Y = 236, PLACE_Y_DELTA = 225 - 236 + 9;
         const rows = [];
         for(let i = 0; i < 9; i++){
             const rowY = ROW2_Y + i * ROW_H;
             const placeTxt = new PIXI.Text('', STYLE_ROW_PLACE);
             placeTxt.anchor.set(0.5, 0.5);
-            placeTxt.x = 336; placeTxt.y = rowY + PLACE_Y_DELTA;
+            // 28.10.2026 (по прямому указанию — "места 2,3,4...10 сдвинь вправо на 20px"): 336→356.
+            placeTxt.x = 336 + 20; placeTxt.y = rowY + PLACE_Y_DELTA;
             win.addChild(placeTxt);
 
             const avatar = new PIXI.Sprite(PIXI.Texture.from(IMG + '2048 аватар заглушка.png'));
@@ -191,8 +239,12 @@ export function attachGame2048TopPopup(proto){
             this._top1Games.text = String(top1.gamesCompleted);
             const lt = top1.lifetime || {};
             const keyMap = { coins: 'coins', gun: 'guns', auto: 'autos', cig: 'cig', exp: 'exp' };
+            // 28.10.2026 (по прямому указанию — "если цифра перевалит за 1000 вместо X1000
+            // писалось бы X1K, за 1 000 000 — X1КК"): переиспользуем formatAchNum — тот же
+            // к/кк-формат, что уже используется для достижений (interface-achievements.js) и
+            // попапа результата боя (boss_result.js), единый источник, не задублировано.
             Object.keys(this._top1LifetimeTxts).forEach((type) => {
-                this._top1LifetimeTxts[type].text = 'X' + (intval(lt[keyMap[type]]) || 0);
+                this._top1LifetimeTxts[type].text = 'X' + formatAchNum(intval(lt[keyMap[type]]) || 0);
             });
         }
 

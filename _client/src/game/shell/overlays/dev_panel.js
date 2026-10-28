@@ -783,18 +783,33 @@ export function attachDevPanel(proto){
             {label:'ОТКРЫТЬ', color:T, action:()=>{
                 this._closeDevPanel();
                 if(!window.game2048) return;
-                if(!game2048._topWin) game2048._buildGame2048TopPopup();
-                root.layer2_mc.addChild(game2048._topWin);
-                const myUid = parseInt((window.vk_params && vk_params['vk_user_id']) || 0, 10) || 1;
-                game2048._renderGame2048Top({
-                    top1: {
-                        id: myUid, nick: 'Тестер 1', gamesCompleted: 42,
-                        lifetime: { coins: 100, guns: 50, autos: 20, cig: 300, exp: 900, fragments: 12 },
-                    },
-                    rest: Array.from({length: 9}, (_, i) => ({
-                        id: 900000000 + i, nick: 'Тестер ' + (i + 2), gamesCompleted: 30 - i * 2,
-                    })),
-                });
+                const run = () => {
+                    if(!game2048._topWin) game2048._buildGame2048TopPopup();
+                    root.layer2_mc.addChild(game2048._topWin);
+                    const myUid = parseInt((window.vk_params && vk_params['vk_user_id']) || 0, 10) || 1;
+                    game2048._renderGame2048Top({
+                        top1: {
+                            id: myUid, nick: 'Тестер 1', gamesCompleted: 42,
+                            lifetime: { coins: 100, guns: 50, autos: 20, cig: 300, exp: 900, fragments: 12 },
+                        },
+                        rest: Array.from({length: 9}, (_, i) => ({
+                            id: 900000000 + i, nick: 'Тестер ' + (i + 2), gamesCompleted: 30 - i * 2,
+                        })),
+                    });
+                };
+                // 28.10.2026 (баг найден по прямому указанию — "никнейм/кол-во партий топ-1 не в
+                // хитбоксах"): тот же фикс гонки шрифта, что в
+                // game2048-top-popup.js._openGame2048TopPopup — этот мок строит попап НАПРЯМУЮ
+                // через _buildGame2048TopPopup(), в обход того гейта, нужен свой же.
+                // ⚠️ Имя шрифта в проверке ОБЯЗАНО совпадать с реально зарегистрированным в
+                // fonts.css ('Bebas Neue Pro Middle', не 'Bebas Neue Pro' — см. тот же файл
+                // для разбора, почему несуществующее имя зациклило бы document.fonts.ready).
+                if(!game2048._topWin && typeof document !== 'undefined' && document.fonts
+                    && typeof document.fonts.check === 'function' && !document.fonts.check("18px 'Bebas Neue Pro Middle'")){
+                    document.fonts.ready.then(run);
+                    return;
+                }
+                run();
             }},
         ]);
         _row('Прогресс крафта (мок 45/90)', [

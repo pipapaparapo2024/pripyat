@@ -30,11 +30,23 @@ class ZanachkiModel {
 
     const MAX_WISHLIST = 7;
 
-    // Плоская награда за набор — одинакова для всех 15 коллекций (по прямому указанию
-    // 26.10.2026: старый zone_config.json со значениями 50/70/80 относится к ДРУГОЙ, уже
-    // брошенной схеме коллекций по зонам, не используется здесь — см. AGENTS.md).
+    // 28.10.2026 (по прямому указанию, 2-й скрин старого ТЗ — "первые 3 коллекции дают +50 опыта
+    // и сухарей, последние три +80, все остальные +70"): раньше была одна плоская награда для
+    // всех 15 коллекций (COLLECTION_CIG_REWARD/EXP_REWARD=50, оставлены ниже как fallback-
+    // документация диапазона, сам расчёт теперь через collectionReward()). Совпадение чисел
+    // 50/70/80 со старым zone_config.json (другая, брошенная схема коллекций по зонам, см.
+    // AGENTS.md) — случайное, значения НЕ читаются оттуда, захардкожены здесь по новому ТЗ.
     const COLLECTION_CIG_REWARD = 50;
     const COLLECTION_EXP_REWARD = 50;
+
+    // Одно и то же число — и для сухарей, и для опыта (см. тот же расчёт на клиенте,
+    // svod-zanachki.js:rewardAmountForCol() — держать в синхроне при правке любой из сторон).
+    static function collectionReward($col){
+        $col = intval($col);
+        if($col <= 3) return 50;
+        if($col >= 13) return 80;
+        return 70;
+    }
 
     static function isValidCard($col, $pos){
         $col = intval($col); $pos = intval($pos);
@@ -122,8 +134,9 @@ class ZanachkiModel {
         }
         $user['stash_data'] = json_encode($stashData, JSON_UNESCAPED_UNICODE);
 
-        $ops->add($user, 'cigarettes', self::COLLECTION_CIG_REWARD);
-        $ops->add($user, 'exp', self::COLLECTION_EXP_REWARD);
+        $amt = self::collectionReward($col);
+        $ops->add($user, 'cigarettes', $amt);
+        $ops->add($user, 'exp', $amt);
 
         $claimed = self::getClaimedMap($ops, $user);
         $claimed[$colKey] = true;

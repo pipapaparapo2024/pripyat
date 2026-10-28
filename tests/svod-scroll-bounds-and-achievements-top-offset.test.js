@@ -35,16 +35,22 @@ const achSrc     = readSrc('_client/src/game/svod/svod-achievements.js');
 
 console.log('\nTest 1: svod-scroll.js — диапазон движения бегунка считается от track.y/track.height, не от viewY/viewH');
 {
-    assert(/let trackTop = track\.y, trackBottom = track\.y \+ track\.height - thumb\.height;/.test(scrollSrc),
-        'начальная инициализация trackTop/trackBottom — от размеров реального спрайта трека');
+    // 28.10.2026 (по прямому указанию — калибровка бегунка заначек, редактор позиций):
+    // добавлены необязательные overrides thumbTravelTop/thumbTravelBottom (та же схема, что уже
+    // была у trackY/arrowUpY/thumbXAdjust) — без них поведение для ДЕФОЛТНОГО случая (топы/
+    // достижения, этот тест) НЕ меняется, по-прежнему track.y/track.height.
+    assert(/let trackTop = \(cfg\.thumbTravelTop !== undefined\) \? cfg\.thumbTravelTop : track\.y;/.test(scrollSrc),
+        'trackTop — от track.y, если thumbTravelTop не передан (дефолт для топов/достижений)');
+    assert(/let trackBottom = \(cfg\.thumbTravelBottom !== undefined\) \? cfg\.thumbTravelBottom : track\.y \+ track\.height - thumb\.height;/.test(scrollSrc),
+        'начальная инициализация trackBottom — от размеров реального спрайта трека, если override не передан');
     assert(!/let trackTop = viewY, trackBottom = viewY \+ viewH - thumb\.height;/.test(scrollSrc),
         'старая (баговая) формула от viewY/viewH не осталась');
 
     const refreshStart = scrollSrc.indexOf('const refresh = () => {');
     const refreshEnd   = scrollSrc.indexOf('\n        };', refreshStart);
     const refreshBody  = scrollSrc.slice(refreshStart, refreshEnd);
-    assert(/trackBottom = track\.y \+ track\.height - thumb\.height;/.test(refreshBody),
-        'refresh() тоже пересчитывает trackBottom от track.y/track.height (не от viewY/viewH)');
+    assert(/trackBottom = \(cfg\.thumbTravelBottom !== undefined\) \? cfg\.thumbTravelBottom : track\.y \+ track\.height - thumb\.height;/.test(refreshBody),
+        'refresh() тоже пересчитывает trackBottom от track.y/track.height, если override не передан (не от viewY/viewH)');
 }
 
 console.log('\nTest 2: sanity — трек "шкала скрола.png" физически меньше (242px), чем viewH вкладки "Мои достижения" — именно это и вызывало баг, фикс (trackTop/trackBottom от track.y/height) остаётся актуальным');

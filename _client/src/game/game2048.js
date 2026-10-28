@@ -14,7 +14,11 @@ import { attachGame2048TopPopup } from './game2048/game2048-top-popup.js';
 // этом экране, где x/y даны точно). Ниже — визуальная прикидка по скриншоту фона "2048
 // игра.png", тот же класс допущения, что game/home.js (_leftForearmSpr и т.п.) — требует
 // подтверждения/уточнения через универсальный редактор позиций. См. финальный список вопросов.
-const FONT_STAT = 'Bebas Neue Pro';
+// 28.10.2026 (найдено при аудите "шрифты не успевают загрузиться" — см. game2048-top-popup.js):
+// 'Bebas Neue Pro' (без суффикса) никогда не был зарегистрирован в fonts.css, только
+// 'Bebas Neue Pro Middle'/'Bebas Neue Pro Bold'. С момента создания фичи 26.10.2026 весь
+// статус-блок 2048 рисовался системным fallback-шрифтом без единой ошибки в консоли.
+const FONT_STAT = 'Bebas Neue Pro Middle';
 const FONT_RESOURCE = 'Arial Narrow';
 const COLOR_STAT = '#e3d0bb';       // изображение 4 из диктовки 26.10.2026
 const COLOR_GAMES_COUNT = '#f4b960'; // изображение 5
@@ -39,15 +43,29 @@ const STYLE_RESOURCE = {
 
 const STYLE_FRAGMENTS = Object.assign({}, STYLE_STAT, { dropShadowBlur: 0 });
 
-// Поле 4×4 — углы продиктованы пользователем 26.10.2026: левый верх (390,200), правый верх
-// (599,202), правый низ (597,403), левый низ (390,403). Ячейки считаются равномерной сеткой
-// внутри этого прямоугольника (среднее по лёгкой асимметрии углов — не идеальный прямоугольник
-// в исходных числах, разница 1-2px, не принципиальна).
-const BOARD = { x0: 390, y0: 201, x1: 598, y1: 403 };
-function cellCenter(r, c){
-    const w = (BOARD.x1 - BOARD.x0) / 4, h = (BOARD.y1 - BOARD.y0) / 4;
-    return { x: BOARD.x0 + w * (c + 0.5), y: BOARD.y0 + h * (r + 0.5), w, h };
-}
+// 28.10.2026 (по прямому указанию — редактор позиций, 16 точек построчно 1-1..4-4,
+// подтверждено явно: "это 16 координат для расположения на самой доске... сделай так, как я
+// тебе скинул координаты"): заменяет прежнюю формулу равномерной сетки (BOARD/cellCenter) —
+// теперь у каждой из 16 ячеек СВОЙ абсолютный центр из таблицы, не вычисляемый. Входные числа
+// от редактора — top-left+w/h (w:67,h:68 — нативный размер плитки, тот же приём перевода в
+// центр, что у statPositions ниже: center = x+w/2, y+h/2).
+//
+// 28.10.2026 (повторное указание тем же днём — "редактор позиций показывал 0 и 0 вместо
+// координат относительно экрана"): корень — координаты раньше стояли на ОБЁРТКЕ-Container
+// (cont.x/y), а не на самом Sprite, который реально находит редактор по клику (см. фикс в
+// цикле построения поля ниже — теперь x/y стоят на spr, как у всех остальных спрайтов проекта).
+// Из-за этого же редактор показывал локальные (0,0) обёртки, а не экранные координаты — именно
+// поэтому прошлые числа "16 точек" ушли не туда, куда ожидалось. Пользователь компенсировал
+// координатами доски СНОВА, уже с поправкой: вправо на 383px, вниз на 125px — добавлено прямо
+// к каждой точке ниже (видна исходная раскладка + смещение, не просто готовые числа).
+// 28.10.2026 (ещё одно указание тем же днём — "опусти все файлы доски вниз на 68px"): +68
+// добавлен поверх уже применённого +125.
+const CELL_POS = [
+    { x: 6 + 33.5 + 383,   y: 7 + 34 + 125 + 68   }, { x: 77 + 33.5 + 383,  y: 8 + 34 + 125 + 68   }, { x: 147 + 33.5 + 383, y: 9 + 34 + 125 + 68   }, { x: 217 + 33.5 + 383, y: 9 + 34 + 125 + 68   },
+    { x: 7 + 33.5 + 383,   y: 76 + 34 + 125 + 68  }, { x: 77 + 33.5 + 383,  y: 76 + 34 + 125 + 68  }, { x: 147 + 33.5 + 383, y: 76 + 34 + 125 + 68  }, { x: 216 + 33.5 + 383, y: 76 + 34 + 125 + 68  },
+    { x: 8 + 33.5 + 383,   y: 142 + 34 + 125 + 68 }, { x: 78 + 33.5 + 383,  y: 142 + 34 + 125 + 68 }, { x: 147 + 33.5 + 383, y: 141 + 34 + 125 + 68 }, { x: 215 + 33.5 + 383, y: 141 + 34 + 125 + 68 },
+    { x: 8 + 33.5 + 383,   y: 210 + 34 + 125 + 68 }, { x: 77 + 33.5 + 383,  y: 209 + 34 + 125 + 68 }, { x: 146 + 33.5 + 383, y: 210 + 34 + 125 + 68 }, { x: 215 + 33.5 + 383, y: 209 + 34 + 125 + 68 },
+];
 
 // Награды текущей партии — ряд из 6 иконок УЖЕ нарисован в самом фоне "2048 игра.png"
 // (коин/пистолет/автомат/СУХАРИ/XP/фрагмент) — здесь только текст "xN" поверх каждой, шаг 58px
@@ -256,23 +274,27 @@ export default class Game2048{
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  () => { exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', () => this.close());
         win.addChild(exitBtn);
 
-        // Поле 4×4
+        // Поле 4×4 — 16 готовых центров из CELL_POS (см. докблок константы выше). Позиция стоит
+        // на spr (не на cont-обёртке) — редактор позиций находит по клику именно спрайт, и
+        // только его this.x/this.y считаются "координатами относительно экрана" (см. докблок
+        // CELL_POS выше про баг с 0,0).
         for(let r = 0; r < 4; r++){
             for(let c = 0; c < 4; c++){
-                const cell = cellCenter(r, c);
+                const cell = CELL_POS[r * 4 + c];
                 const cont = new PIXI.Container();
-                cont.x = cell.x; cont.y = cell.y;
                 cont.visible = false;
                 const spr = new PIXI.Sprite(PIXI.Texture.EMPTY);
                 spr.anchor.set(0.5);
+                spr.x = cell.x; spr.y = cell.y;
                 cont.addChild(spr);
                 cont._spr = spr;
                 cont._fallbackTxt = null;
+                cont._cellX = cell.x; cont._cellY = cell.y;
                 win.addChild(cont);
                 this._tileSprs[r * 4 + c] = cont;
             }
@@ -338,8 +360,8 @@ export default class Game2048{
         if(window.isMobile) helper.touchPad(topBtn);
         topBtn.x = 764; topBtn.y = 107;
         topBtn.interactive = true; topBtn.buttonMode = true;
-        topBtn.on('pointerover', () => { topBtn.alpha = 0.75; });
-        topBtn.on('pointerout',  () => { topBtn.alpha = 1; });
+        // 28.10.2026 (по прямому указанию — "только хавер эффект увеличения scale без
+        // прозрачности"): alpha-дымка убрана, остаётся только _hoverScale ниже.
         topBtn.on('pointerdown', () => this._openTopPopup());
         _hoverScale(topBtn, 1.05);
         win.addChild(topBtn);
@@ -395,11 +417,13 @@ export default class Game2048{
         //   type:     x:933,y:286,w:76,h:31 → центр 971,301.5
         //   attempts: x:705,y:288,w:76,h:31 → центр 743,303.5
         //   nextCost: x:807,y:287,w:27,h:31 → центр 820.5,302.5
+        // 28.10.2026 (по прямому указанию — "текст для попыток сегодня подними вверх на 2px"):
+        // attempts.y 303.5 → 301.5.
         const statPositions = {
             score:       { x: 738,   y: 235.5 },
             maxTile:     { x: 824,   y: 235.5 },
             stew:        { x: 974,   y: 235.5 },
-            attempts:    { x: 743,   y: 303.5 },
+            attempts:    { x: 743,   y: 301.5 },
             nextCost:    { x: 820.5, y: 302.5 },
             type:        { x: 971,   y: 301.5 },
         };
@@ -429,8 +453,14 @@ export default class Game2048{
 
         const daily = s.daily || { used: 0, limit: 6 };
         const atLimit = intval(daily.used) >= intval(daily.limit);
-        this._buyBtn.visible = !session && !atLimit;
-        this._buyBtnInactive.visible = !session && atLimit;
+        // 28.10.2026 (по прямому указанию — "не должен отображаться, пока доступны бесплатные
+        // игры; должен выводиться, когда следующая игра платная"): freeLeft — те же 3
+        // бесплатные попытки, что считает nextPaidIdx ниже (daily.used<3 → следующая партия
+        // бесплатна). Инактив-кнопка показывает именно это состояние, активная — когда
+        // бесплатные исчерпаны, но дневной лимит (6) ещё не достигнут целиком.
+        const freeLeft = intval(daily.used) < 3;
+        this._buyBtn.visible = !session && !atLimit && !freeLeft;
+        this._buyBtnInactive.visible = !session && !atLimit && freeLeft;
 
         this._statTxts.attempts.text = daily.used + '/' + daily.limit;
         this._statTxts.type.text = session ? (session.type === 'paid' ? 'Платная' : 'Бесплатная') : '—';
@@ -472,17 +502,18 @@ export default class Game2048{
             cont._spr.visible = true;
             // 27.10.2026 (баг найден по прямому указанию — "бери прозрачный отступ по бокам и
             // выводи в натуральном размере"): файлы плиток (2..16384) у alpha-канала НЕ имеют
-            // прозрачных полей (проверено PIL getbbox() — bbox = весь canvas у всех 14 файлов),
-            // так что обрезать нечего — реальный баг был в самой отрисовке: старый код ставил
-            // ТОЛЬКО cont._spr.width (clamp до размера ячейки минус 6px), не трогая .height —
-            // PIXI.Sprite.width меняет ТОЛЬКО scale.x, поэтому картинка растягивалась по
-            // горизонтали и выходила за пределы ячейки по вертикали (эффект "неестественного"
-            // размера/пропорций, который и увидел пользователь). Теперь — единый множитель
-            // масштаба на оба измерения (сохраняет реальные пропорции файла, "в натуральном
-            // размере, в котором они есть", просто вписанные в ячейку).
-            const cellSize = (BOARD.x1 - BOARD.x0) / 4 - 6;
-            const scale = Math.min(1, cellSize / tex.width, cellSize / tex.height);
-            cont._spr.scale.set(scale);
+            // прозрачных полей (проверено PIL getbbox() — bbox = весь canvas у всех 14 файлов).
+            //
+            // 28.10.2026 (повторный репорт — "всё ещё маленькие, сделай 62×62", затем, после
+            // объяснения про cellSize=46 — "выводи их, как они должны быть, БЕЗ СКЕЙЛА ВООБЩЕ"):
+            // промежуточная версия вписывала текстуру в cellSize=46 (BOARD 208px/4 колонки-6px
+            // зазор) через Math.min(1, cellSize/tex.width, cellSize/tex.height) — визуально
+            // корректно (без искажения пропорций), но игрок явно потребовал БЕЗ какого-либо
+            // масштабирования. scale всегда 1 — плитка рендерится в точности в своём нативном
+            // пиксельном размере (66-71px по сторонам, см. docblock теста game2048.js), даже
+            // если это немного перекрывает соседние ячейки доски (BOARD-сетка рассчитана на
+            // ~46px) — осознанный выбор по прямому указанию, не упущенный краевой случай.
+            cont._spr.scale.set(1);
             if(cont._fallbackTxt) cont._fallbackTxt.visible = false;
         } else {
             // Нет готового арта для значения (>16384, за пределами присланных файлов 2..16384)
@@ -491,6 +522,9 @@ export default class Game2048{
             if(!cont._fallbackTxt){
                 cont._fallbackTxt = new PIXI.Text('', STYLE_STAT);
                 cont._fallbackTxt.anchor.set(0.5);
+                // cont сам стоит на (0,0) — позиция теперь на spr (см. докблок CELL_POS), фолбэк
+                // нужно позиционировать явно той же точкой, иначе уедет в левый верхний угол.
+                cont._fallbackTxt.x = cont._cellX; cont._fallbackTxt.y = cont._cellY;
                 cont.addChild(cont._fallbackTxt);
             }
             cont._fallbackTxt.text = String(value);

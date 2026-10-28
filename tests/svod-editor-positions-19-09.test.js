@@ -31,17 +31,24 @@ const svodSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', '
 const leaderSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'svod', 'svod-leaderboard.js'), 'utf-8');
 const profileSrc    = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js'), 'utf-8');
 
-console.log('\nTest 1: svod.js — точечные поправки по Y для активного/пассивного состояния главных вкладок');
+console.log('\nTest 1: svod.js — главные вкладки (28.10.2026: единые x/y/scale на оба состояния, без activeDy/passiveDy)');
 {
-    assert(/key:'respect',[\s\S]*?activeDy:-2/.test(svodSrc), "'respect' (топ по авторитету): activeDy:-2 (поднять активную на 2px)");
-    assert(/key:'damage', [\s\S]*?activeDy:-4/.test(svodSrc), "'damage' (топ по урону): activeDy:-4 (поднять активную на 4px)");
-    assert(/key:'ach',[\s\S]*?activeDy:-10, passiveDy:-9/.test(svodSrc),
-        "'ach' (топ по достижениям): activeDy:-10 и passiveDy:-9 (разные поправки для двух состояний)");
+    // 28.10.2026 (по прямому указанию — редактор позиций, "тоже самое и для файла не
+    // актив/актив"): точечные activeDy/passiveDy поправки (19.09.2026) убраны целиком — теперь
+    // ОДНА точка x/y/scale на обе текстуры каждой вкладки, переключение состояния меняет только
+    // texture, не y.
+    assert(!/activeDy:|passiveDy:|t\.activeDy|t\.passiveDy/.test(svodSrc), 'activeDy/passiveDy больше не используются в коде (объяснение в докблоке — не код, не считается)');
+    assert(/key:'respect',[\s\S]*?x:212, y:186, scale:1\.020/.test(svodSrc), "'respect' (топ по авторитету): x:212,y:186,scale:1.020");
+    assert(/key:'damage', [\s\S]*?x:208, y:254, scale:0\.987/.test(svodSrc), "'damage' (топ по урону): x:208,y:254,scale:0.987");
+    assert(/key:'ach',[\s\S]*?x:209, y:325, scale:1\.000/.test(svodSrc), "'ach' (топ по достижениям): x:209,y:325,scale:1.000");
+    assert(/key:'zanachki',[\s\S]*?x:208, y:393, scale:0\.960/.test(svodSrc), "'zanachki': x:208,y:393,scale:0.960");
+    assert(/key:'skills', [\s\S]*?x:210, y:461, scale:0\.953/.test(svodSrc), "'skills': x:210,y:461,scale:0.953");
 
     const selectMatch = svodSrc.match(/_selectMainTab\(key\)\{([\s\S]*?)\n    \}/);
     assert(!!selectMatch, '_selectMainTab найден');
-    assert(/spr\.y = t\.y \+ \(isActive \? \(t\.activeDy \|\| 0\) : \(t\.passiveDy \|\| 0\)\);/.test(selectMatch[1]),
-        '_selectMainTab пересчитывает y при каждом переключении состояния (активна/пассивна)');
+    assert(/spr\.texture = PIXI\.Texture\.from\('\.\/images\/' \+ \(isActive \? t\.activeImg : t\.passiveImg\)\);/.test(selectMatch[1]),
+        '_selectMainTab меняет ТОЛЬКО texture при переключении состояния, y не трогает');
+    assert(!/spr\.y = t\.y \+/.test(selectMatch[1]), 'y больше не пересчитывается при переключении состояния');
 }
 
 console.log('\nTest 2: player_profile.js — statsTxt (дублирующая надпись уровень/авторитет/боссов убито) убрана целиком (21.09.2026)');

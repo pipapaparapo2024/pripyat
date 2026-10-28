@@ -43,9 +43,13 @@ console.log('\nTest 1: главные вкладки — anchor(0.5,0.5) + це�
     const start = svodSrc.indexOf('const MAIN_TABS = [');
     const end   = svodSrc.indexOf('const tabSprites = {};');
     const body  = svodSrc.slice(start, end);
-    assert(/x:200,\s*y:206/.test(body), 'news: центр (200, 206) — вычислен из старого top-left + половина размера актив.png');
-    assert(/x:197\.5,\s*y:337/.test(body), 'damage: центр (197.5, 337)');
-    assert(/x:201,\s*y:414/.test(body), 'ach: центр (201, 414)');
+    // 28.10.2026 (по прямому указанию, редактор позиций — "тоже самое и для файла не
+    // актив/актив"): координаты всех главных вкладок переставлены заново, старая позиция
+    // "news" (200,206, давно переиспользована под "zanachki") и прежние damage/ach — больше не
+    // актуальны, см. свежие значения в svod-editor-positions-19-09.test.js (эталон теперь там).
+    assert(/key:'zanachki',[\s\S]*?x:208, y:393/.test(body), "zanachki: центр (208, 393)");
+    assert(/key:'damage', [\s\S]*?x:208, y:254/.test(body), 'damage: центр (208, 254)');
+    assert(/key:'ach',[\s\S]*?x:209, y:325/.test(body), 'ach: центр (209, 325)');
 
     const loopStart = svodSrc.indexOf('MAIN_TABS.forEach(t => {');
     const loopEnd   = svodSrc.indexOf('this._svodTabSprites = tabSprites;');

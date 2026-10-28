@@ -186,8 +186,8 @@ export function attachCurrencyPurchase(proto){
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  () => { exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', () => this._closeCurrencyPurchasePopup());
         win.addChild(exitBtn);
 

@@ -122,8 +122,8 @@ export function attachBossesSkills(proto){
         exitBtn.scale.set(0.5); exitBtn.x = 1171; exitBtn.y = 98;
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
-        exitBtn.on('pointerout', ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
+        exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this._closeBossesSkillsScreen());
         win.addChild(exitBtn);
 

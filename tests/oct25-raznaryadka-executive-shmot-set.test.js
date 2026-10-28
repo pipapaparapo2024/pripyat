@@ -119,8 +119,12 @@ console.log('\nTest 2c (27.10.2026, по прямому указанию — р�
     // 27.10.2026 (повторное уточнение тем же днём, редактор позиций x:225,y:931,scale:0.169,
     // w:131,h:107): база ячейки cx+77=229,cy+98=973 выведена из исходной (пред-твик) калибровки
     // x:224,y:941 → cellDx:-5,cellDy:-32 выше. Новые cellDx/cellDy = 225-229=-4, 931-973=-42.
-    assert(/\{id:117,[^}]*cellDx:-4, cellDy:-42, cellScale:0\.169, cellRot:10,/.test(shmotJsSrc),
-        'id117: cellDx:-4, cellDy:-42, cellScale:0.169, cellRot:10 записаны в каталог');
+    // 27.10.2026 (по прямому указанию, повторный редактор позиций — "x:220,y:930,scale:0.169,
+    // rot:10°,w:130,h:107"): cellDx/cellDy пересчитаны той же формулой (17-й cat:6 предмет,
+    // idx=16 → cx=157,cy=860 → cellDx=220-157-77=-14, cellDy=930-860-98=-28); cellScale →
+    // явные cellWidth/cellHeight (конвенция w/h из редактора позиций).
+    assert(/\{id:117,[^}]*cellDx:-14, cellDy:-28, cellWidth:130, cellHeight:107, cellRot:10,/.test(shmotJsSrc),
+        'id117: cellDx:-14, cellDy:-28, cellWidth:130, cellHeight:107, cellRot:10 записаны в каталог');
 
     const shopSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), 'utf-8');
     assert(/if\(item\.cellRot\) img\.rotation = item\.cellRot \* Math\.PI \/ 180;/.test(shopSrc),

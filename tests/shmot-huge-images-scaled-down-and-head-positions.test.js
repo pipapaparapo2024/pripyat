@@ -50,13 +50,15 @@ for(const line of itemsBlock.split('\n')){
     const idM = line.match(/\{id:(\d+),\s*cat:(\d+),\s*name:'([^']*)'/);
     if(!idM) continue;
     const imgM      = line.match(/imgFile:'([^']*)'/);
-    const scaleM    = line.match(/manScale:([\d.]+)/);
+    const widthM    = line.match(/manWidth:(\d+)/);
+    const heightM   = line.match(/manHeight:(\d+)/);
     const dxM       = line.match(/manDx:(-?[\d.]+)/);
     const dyM       = line.match(/manDy:(-?[\d.]+)/);
     items.push({
         id: +idM[1], cat: +idM[2], name: idM[3],
         imgFile: imgM ? imgM[1] : null,
-        manScale: scaleM ? parseFloat(scaleM[1]) : null,
+        manWidth: widthM ? parseInt(widthM[1]) : null,
+        manHeight: heightM ? parseInt(heightM[1]) : null,
         manDx: dxM ? parseFloat(dxM[1]) : null,
         manDy: dyM ? parseFloat(dyM[1]) : null,
     });
@@ -87,12 +89,6 @@ console.log('\nTest 1: КАЖДЫЙ дроп-предмет (id41+), чей ОР
         const isHuge = w >= 1000 || h >= 1000;
         if(!isHuge) continue;
         checkedHuge++;
-        // 27.10.2026 (по прямому указанию, живые координаты манекена): id87/112/118 получили
-        // точечную докрутку manScale поверх уже-уменьшенного manImgFile — см. EXCEPTIONS в
-        // tests/shmot-man-prescaled-images.test.js, та же логика, что у id62/92 исторически.
-        const MAN_SCALE_EXCEPTIONS = { 87: 0.992, 112: 1.004, 118: 1.004 };
-        const expectedManScale = MAN_SCALE_EXCEPTIONS[it.id] ?? 1.000;
-        assert(it.manScale === expectedManScale, `id${it.id} (${it.name}): manScale теперь ${expectedManScale} (было индивидуальное значение)`);
         assert(!!it.manImgFile, `id${it.id} (${it.name}): manImgFile задан`);
         if(!it.manImgFile) continue;
         const manPath = path.join(SHMOT_DIR, it.manImgFile);
@@ -100,6 +96,15 @@ console.log('\nTest 1: КАЖДЫЙ дроп-предмет (id41+), чей ОР
         if(!fs.existsSync(manPath)) continue;
         const man = pngSize(manPath);
         assert(man.w < w && man.h < h, `id${it.id} (${it.name}, оригинал ${w}x${h} → manImgFile ${man.w}x${man.h}) — реально уменьшен, не копия оригинала`);
+        // 27.10.2026 (перевод каталога с manScale на явные manWidth/manHeight): раньше
+        // проверялось, что manScale у всех = 1.000 кроме исключений 87/112/118 (0.992/1.004/
+        // 1.004) — точечная докрутка поверх уже-уменьшенного manImgFile. Теперь то же самое
+        // выражено явным пикселем: manWidth/manHeight = round(manImgFile_native × тот же коэффициент).
+        const MAN_SCALE_EXCEPTIONS = { 87: 0.992, 112: 1.004, 118: 1.004 };
+        const coef = MAN_SCALE_EXCEPTIONS[it.id] ?? 1.000;
+        const expW = Math.round(man.w * coef), expH = Math.round(man.h * coef);
+        assert(it.manWidth === expW && it.manHeight === expH,
+            `id${it.id} (${it.name}): manWidth/manHeight = ${expW}x${expH} (manImgFile ${man.w}x${man.h} × ${coef}), получили ${it.manWidth}x${it.manHeight}`);
     }
     // 23.09.2026: было 16, стало 15 — сверка каталога сетов против _organized убрала часть
     // записей (id75/76/78/79 и др.), в т.ч. некоторые "огромные" файлы, которые тут считались.
@@ -122,7 +127,7 @@ console.log('\nTest 2: контрольный список "нетронутых
     for(const id of CONTROL){
         const it = items.find(i => i.id === id);
         assert(!!it, `id${id} найден в каталоге`);
-        if(it) assert(it.manScale === null, `id${id} (${it.name}) НЕ получил manScale — файл не огромный, трогать не требовалось`);
+        if(it) assert(it.manWidth === null, `id${id} (${it.name}) НЕ получил manWidth/manHeight — файл не огромный, трогать не требовалось`);
     }
     assert(CONTROL.length === 0, 'контрольный список пуст — это ожидаемо и задокументировано выше, не баг');
 }
@@ -134,9 +139,9 @@ console.log('\nTest 3: три головных предмета спозицио
     // 27.10.2026 (по прямому указанию, повторные живые координаты манекена тем же днём): id89
     // manDx -2→-3; id90 manDx -3→-4, manDy 36→35.
     const EXPECTED = [
-        { id: 81, name: 'Повязка (Тайник)', manDx: 3, manDy: 22, manScale: 1.000 },
-        { id: 89, name: 'Респиратор с медальоном (Блэкджек)', manDx: -3, manDy: 36, manScale: 1.000 },
-        { id: 90, name: 'Респиратор (Спортик 2.0)', manDx: -4, manDy: 35, manScale: 1.000 },
+        { id: 81, name: 'Повязка (Тайник)', manDx: 3, manDy: 22, manWidth: 48, manHeight: 20 },
+        { id: 89, name: 'Респиратор с медальоном (Блэкджек)', manDx: -3, manDy: 36, manWidth: 62, manHeight: 92 },
+        { id: 90, name: 'Респиратор (Спортик 2.0)', manDx: -4, manDy: 35, manWidth: 63, manHeight: 53 },
     ];
     const HEAD_BASE_X = 871, HEAD_BASE_Y = 195;
     for(const exp of EXPECTED){
@@ -145,7 +150,8 @@ console.log('\nTest 3: три головных предмета спозицио
         if(!it) continue;
         assert(it.manDx === exp.manDx, `id${exp.id} manDx === ${exp.manDx}, получили ${it.manDx}`);
         assert(it.manDy === exp.manDy, `id${exp.id} manDy === ${exp.manDy}, получили ${it.manDy}`);
-        assert(it.manScale === exp.manScale, `id${exp.id} manScale === ${exp.manScale}, получили ${it.manScale}`);
+        assert(it.manWidth === exp.manWidth && it.manHeight === exp.manHeight,
+            `id${exp.id} manWidth/manHeight === ${exp.manWidth}x${exp.manHeight}, получили ${it.manWidth}x${it.manHeight}`);
         // Обратный пересчёт — итоговая позиция на манекене (база + manDx/manDy) должна точно
         // совпадать с тем, что показал редактор позиций на скриншотах пользователя.
         const finalX = HEAD_BASE_X + it.manDx, finalY = HEAD_BASE_Y + it.manDy;

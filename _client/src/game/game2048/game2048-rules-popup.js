@@ -35,8 +35,8 @@ export function attachGame2048RulesPopup(proto){
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = 944; exitBtn.y = 102;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  () => { exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(1.08); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(1); });
         exitBtn.on('pointerdown', () => this._closeGame2048RulesPopup());
         win.addChild(exitBtn);
 

@@ -66,8 +66,8 @@ export function attachSidorovich(proto){
 		exitBtn.y = TOP_HUD + 32;
 		exitBtn.interactive = true;
 		exitBtn.buttonMode = true;
-		exitBtn.on('pointerover', ()=>{ _sa(exitBtn, 0.75); exitBtn.scale.set(0.54); });
-		exitBtn.on('pointerout', ()=>{ _sa(exitBtn, 1); exitBtn.scale.set(0.5); });
+		exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
+		exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
 		// 25.09.2026 (баг найден по прямому указанию — "открыл ящик у Сидоровича, вернулся к
 		// Сидоровичу, закрыл крестиком — оба ХУДа пропали"): раньше выход вручную перекидывал
 		// this.up/this.down в root.layer1_mc — единственное место во всём проекте, которое

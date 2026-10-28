@@ -58,14 +58,16 @@ console.log('\nTest 1: левое предплечье — новая позиц
 
 console.log('\nTest 4: индивидуальные позиции штанов/трико, снятые редактором позиций');
 {
-    assert(/\{id:43, cat:2, name:'Шорты \(Ястреб\)',.*?manDx:-22, manDy:20, manScale:1\.000,/.test(shmotSrc),
-        'id:43 Шорты (Ястреб) — manDx:-22 manDy:20 manScale:1.000');
-    assert(/\{id:52, cat:2, name:'Трико \(Крыс\)',.*?manDx:-27, manDy:-17, manScale:1\.000,/.test(shmotSrc),
-        'id:52 Трико (Крыс) — manDx:-27 manDy:-17 manScale:1.000 (впервые получил собственную позицию)');
-    assert(/\{id:65, cat:2, name:'Шорты \(Зарики\)',.*?manDx:-20, manDy:21, manScale:1\.000,/.test(shmotSrc),
-        'id:65 Шорты (Зарики) — manDx:-20 manDy:21 manScale:1.000 (scale не менялся)');
-    assert(/\{id:88, cat:2, name:'Шорты \(Тинейджер\)',.*?manDx:-26, manDy:19, manScale:1\.000,/.test(shmotSrc),
-        'id:88 Шорты (Тинейджер) — manDx:-26 manDy:19 manScale:1.000');
+    // 27.10.2026: manScale:1.000 у всего каталога переведён на явные manWidth/manHeight
+    // (round(native × 1.000) = native) — та же картинка, другая форма записи.
+    assert(/\{id:43, cat:2, name:'Шорты \(Ястреб\)',.*?manDx:-22, manDy:20, manWidth:215, manHeight:95,/.test(shmotSrc),
+        'id:43 Шорты (Ястреб) — manDx:-22 manDy:20 manWidth:215 manHeight:95');
+    assert(/\{id:52, cat:2, name:'Трико \(Крыс\)',.*?manDx:-27, manDy:-17, manWidth:285, manHeight:204,/.test(shmotSrc),
+        'id:52 Трико (Крыс) — manDx:-27 manDy:-17 manWidth:285 manHeight:204 (впервые получил собственную позицию)');
+    assert(/\{id:65, cat:2, name:'Шорты \(Зарики\)',.*?manDx:-20, manDy:21, manWidth:214, manHeight:164,/.test(shmotSrc),
+        'id:65 Шорты (Зарики) — manDx:-20 manDy:21 manWidth:214 manHeight:164 (scale не менялся)');
+    assert(/\{id:88, cat:2, name:'Шорты \(Тинейджер\)',.*?manDx:-26, manDy:19, manWidth:288, manHeight:118,/.test(shmotSrc),
+        'id:88 Шорты (Тинейджер) — manDx:-26 manDy:19 manWidth:288 manHeight:118');
 }
 
 console.log('\nTest 5: Тапочки (Соло Крыс, id:53) — новый файл арта');
@@ -74,11 +76,11 @@ console.log('\nTest 5: Тапочки (Соло Крыс, id:53) — новый 
         'id:53 указывает на новый файл "шмот тапочки мастер крыс.png" (было "...соло крыс.png")');
     assert(!/'шмот тапочки мастер соло крыс\.png'/.test(shmotSrc), 'старое имя файла нигде в каталоге не осталось');
     // 25.09.2026 (регресс найден тестовым прогоном): файл 1081×354px — "огромный" по конвенции
-    // проекта (см. shmot-huge-images-scaled-down-and-head-positions.test.js), без manScale
-    // рисовался бы в нативном размере. Добавлен manScale:1.000 (та же величина, что у соседних
-    // предметов категории "Обувь" схожего размера файла).
-    assert(/\{id:53, cat:3, name:'Тапочки \(Соло Крыс\)',.*?manScale:1\.000,/.test(shmotSrc),
-        'id:53 — manScale:1.000 (файл 1081×354px, без масштаба рисовался бы в полный рост)');
+    // проекта (см. shmot-huge-images-scaled-down-and-head-positions.test.js), без уменьшения
+    // рисовался бы в нативном размере. manImgFile — заранее уменьшенная копия (246×81px),
+    // manScale:1.000 на ней (27.10.2026: переведён на manWidth:246,manHeight:81 — тот же размер).
+    assert(/\{id:53, cat:3, name:'Тапочки \(Соло Крыс\)',.*?manWidth:246, manHeight:81,/.test(shmotSrc),
+        'id:53 — manWidth:246 manHeight:81 (manImgFile уже уменьшен под этот размер)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

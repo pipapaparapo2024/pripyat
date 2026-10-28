@@ -66,10 +66,14 @@ console.log('\nTest 4: buy_key_popup.js — все интерактивные к
         'buyBtn pointerover: alpha=0.85 И scale=1.08');
     assert(/buyBtn\.on\('pointerout',  \(\) => \{ _sa\(buyBtn, 1\); _ss\(buyBtn, 1\); \}\);/.test(buyKeyPopupSrc),
         'buyBtn pointerout: alpha=1 И scale возвращается к 1 (не остаётся увеличенной)');
-    assert(/exitBtn\.on\('pointerover', \(\) => \{ _sa\(exitBtn, 0\.75\); _ss\(exitBtn, 1\.08\); \}\);/.test(buyKeyPopupSrc),
-        'exitBtn pointerover: alpha=0.75 И scale=1.08');
-    assert(/exitBtn\.on\('pointerout',  \(\) => \{ _sa\(exitBtn, 1\); _ss\(exitBtn, 1\); \}\);/.test(buyKeyPopupSrc),
-        'exitBtn pointerout: alpha=1 И scale возвращается к 1');
+    // 28.10.2026 (по прямому указанию — "для всех кнопок выхода только hover scale, убери
+    // прозрачность"): exitBtn (в отличие от buyBtn выше) больше НЕ меняет alpha на hover — только
+    // scale через _ss.
+    assert(/exitBtn\.on\('pointerover', \(\) => \{ _ss\(exitBtn, 1\.08\); \}\);/.test(buyKeyPopupSrc),
+        'exitBtn pointerover: только scale=1.08, без alpha');
+    assert(/exitBtn\.on\('pointerout',  \(\) => \{ _ss\(exitBtn, 1\); \}\);/.test(buyKeyPopupSrc),
+        'exitBtn pointerout: только scale возвращается к 1, без alpha');
+    assert(!/_sa\(exitBtn/.test(buyKeyPopupSrc), 'exitBtn больше не использует _sa() нигде в файле');
 }
 
 console.log('\nTest 5: weapon_reload_popup.js — все интерактивные кнопки (rushBtn/exitBtn) получили hover-scale 1.08 в дополнение к alpha (через _sa/_ss)');
@@ -78,10 +82,12 @@ console.log('\nTest 5: weapon_reload_popup.js — все интерактивн�
         'rushBtn pointerover: alpha=0.85 И scale=1.08');
     assert(/rushBtn\.on\('pointerout',  \(\) => \{ _sa\(rushBtn, 1\); _ss\(rushBtn, 1\); \}\);/.test(weaponPopupSrc),
         'rushBtn pointerout: alpha=1 И scale возвращается к 1');
-    assert(/exitBtn\.on\('pointerover', \(\) => \{ _sa\(exitBtn, 0\.75\); _ss\(exitBtn, 1\.08\); \}\);/.test(weaponPopupSrc),
-        'exitBtn pointerover: alpha=0.75 И scale=1.08');
-    assert(/exitBtn\.on\('pointerout',  \(\) => \{ _sa\(exitBtn, 1\); _ss\(exitBtn, 1\); \}\);/.test(weaponPopupSrc),
-        'exitBtn pointerout: alpha=1 И scale возвращается к 1');
+    // 28.10.2026 (по прямому указанию — та же правка, что в buy_key_popup.js выше).
+    assert(/exitBtn\.on\('pointerover', \(\) => \{ _ss\(exitBtn, 1\.08\); \}\);/.test(weaponPopupSrc),
+        'exitBtn pointerover: только scale=1.08, без alpha');
+    assert(/exitBtn\.on\('pointerout',  \(\) => \{ _ss\(exitBtn, 1\); \}\);/.test(weaponPopupSrc),
+        'exitBtn pointerout: только scale возвращается к 1, без alpha');
+    assert(!/_sa\(exitBtn/.test(weaponPopupSrc), 'exitBtn больше не использует _sa() нигде в файле');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

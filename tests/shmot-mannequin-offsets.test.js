@@ -62,11 +62,11 @@ console.log('\nTest 3/4/5: base-shop generic-asset предметы (обувь_
     }
 }
 
-// ── Test 6: shmot_shop.js реально применяет manScale (раньше было жёстко 1) ───
-console.log('\nTest 6: _updateManSprites применяет spr.scale.set(eq.manScale || 1)');
+// ── Test 6: shmot_shop.js реально применяет размер предмета (раньше было жёстко scale:1) ───
+console.log('\nTest 6: _updateManSprites применяет spr.width/height = eq.manWidth/manHeight (27.10.2026: было eq.manScale||1)');
 {
-    assert(/spr\.scale\.set\(eq\.manScale \|\| 1\);/.test(shopSrc),
-        '_updateManSprites использует eq.manScale || 1 вместо жёсткой 1');
+    assert(/spr\.width\s*=\s*eq\.manWidth/.test(shopSrc) && /spr\.height\s*=\s*eq\.manHeight/.test(shopSrc),
+        '_updateManSprites использует eq.manWidth/manHeight вместо manScale');
     assert(!/spr\.scale\.set\(1\);\s*\n\s*\} else \{/.test(shopSrc),
         'старая жёстко закодированная spr.scale.set(1) в ветке "надето" убрана');
 }

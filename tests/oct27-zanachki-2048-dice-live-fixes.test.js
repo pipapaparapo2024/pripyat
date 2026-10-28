@@ -50,7 +50,10 @@ console.log('\nTest 1: svod.js — Сводка больше не открыва
 console.log('\nTest 2: svod-zanachki.js — свой выход экрана + репозиция фона/кнопки друзей');
 {
     assert(/const EXIT_X = 1170, EXIT_Y = 113, EXIT_SCALE = 0\.79;/.test(zanachkiSrc), 'координаты своего выхода (1170,113,scale 0.79)');
-    assert(/zanachkiExitBtn\.on\('pointerdown', \(\)=>this\.close\(\)\);/.test(zanachkiSrc), 'свой выход закрывает весь Свод (this.close())');
+    // 28.10.2026 (по прямому указанию — "при закрытии вкладки заначек закрывается сама Сводка,
+    // такого быть не должно"): больше НЕ закрывает весь Свод, переключает на дефолтную вкладку.
+    assert(/zanachkiExitBtn\.on\('pointerdown', \(\)=>this\._selectMainTab\('respect'\)\);/.test(zanachkiSrc),
+        'свой выход переключает на вкладку respect, не закрывает весь Свод');
     assert(/const BG_X = 39, BG_Y = 92;/.test(zanachkiSrc), 'фон экрана переставлен на x:39,y:92');
     assert(/const FRIEND_REQ_X = 695, FRIEND_REQ_Y = 108;/.test(zanachkiSrc), 'кнопка запроса у друзей — y:108 (было 106)');
     assert(/const VIEW_X = 53, VIEW_W = 1127, VIEW_H = 377;/.test(zanachkiSrc), 'viewport-блок списка — x:53,y:184(VIEW_Y),w:1127,h:377');
@@ -77,10 +80,15 @@ console.log('\nTest 4: svod-zanachki.js — репозиция блока наг
     assert(/const sukhariIcon = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'боевка награда сухари\.png'\)\);/.test(zanachkiSrc), 'новая иконка "боевка награда сухари.png" добавлена');
     assert(/sukhariIcon\.width = SUKHARI_ICON_W; sukhariIcon\.height = SUKHARI_ICON_H;/.test(zanachkiSrc), 'иконка сухарей — заданная ширина/пропорциональная высота');
     assert(/const SUKHARI_ICON_W = 25, SUKHARI_ICON_H = Math\.round\(SUKHARI_ICON_W \* 77 \/ 68\);/.test(zanachkiSrc), 'ширина 25px, высота пропорциональна исходнику (68×77)');
-    assert(/const sukhariRewardTxt = new PIXI\.Text\('\+50 сухарей', \{/.test(zanachkiSrc), '"+50 сухарей" — отдельный текст');
-    assert(/const expRewardTxt = new PIXI\.Text\('\+50 опыта', \{/.test(zanachkiSrc), '"+50 опыта" — отдельный текст');
-    assert(/expRewardTxt\.x = STAR_X \+ starIcon\.width \+ 6; expRewardTxt\.y = starIcon\.y;/.test(zanachkiSrc), '"+50 опыта" стоит правее файла звезды');
-    assert(/sukhariRewardTxt\.x = STAR_X \+ 30; sukhariRewardTxt\.y = rowY \+ STAR_Y_OFF \+ 2 - 20;/.test(zanachkiSrc), '"+50 сухарей" поднята на 20px');
+    // 28.10.2026 (по прямому указанию — награда теперь РАЗНАЯ по коллекциям: 50/70/80, см.
+    // rewardAmountForCol(); также репозиция по редактору позиций для 1-й коллекции и фикс
+    // обрезки знака "+" через padding в TextStyle).
+    assert(/const sukhariRewardTxt = new PIXI\.Text\('\+' \+ amt \+ ' сухарей', \{/.test(zanachkiSrc), '"+N сухарей" — отдельный текст с динамической суммой');
+    assert(/const expRewardTxt = new PIXI\.Text\('\+' \+ amt \+ ' опыта', \{/.test(zanachkiSrc), '"+N опыта" — отдельный текст с динамической суммой');
+    assert(/expRewardTxt\.x = STAR_X \+ starIcon\.width \+ 6; expRewardTxt\.y = rowY \+ STAR_Y_OFF \+ 5;/.test(zanachkiSrc), '"+опыта" — новая Y-формула (редактор позиций, 1-я коллекция даёт y:69)');
+    assert(/sukhariRewardTxt\.x = STAR_X \+ 30; sukhariRewardTxt\.y = rowY \+ STAR_Y_OFF - 26;/.test(zanachkiSrc), '"+сухарей" — новая Y-формула (редактор позиций, 1-я коллекция даёт y:38)');
+    assert(/function rewardAmountForCol\(col\)\{/.test(zanachkiSrc), 'rewardAmountForCol() определена');
+    assert(/stroke: '#000000', strokeThickness: 2, padding: 4,/.test(zanachkiSrc), 'padding:4 добавлен на текстах со stroke (фикс обрезки знака "+")');
 }
 
 console.log('\nTest 5: svod-zanachki.js — hover-скейл на кнопке «Запросить», сброс при смене текстуры');
@@ -141,11 +149,15 @@ console.log('\nTest 8: dvor.js — «2048 ящик.png» перестал быт
     assert(/spr\.on\('pointerdown', \(\)=>\{ if\(window\.game2048\) game2048\.open\(\); \}\);/.test(pressBlock), '"нажать на игру" по-прежнему открывает игру');
 }
 
-console.log('\nTest 9: game2048.js — плитки масштабируются единым коэффициентом (не ломают пропорции)');
+console.log('\nTest 9: game2048.js — плитки БЕЗ какого-либо масштабирования (натуральный пиксельный размер)');
 {
+    // 28.10.2026 (по прямому указанию, повторный репорт — "выводи как они должны быть, без
+    // скейла вообще"): промежуточный Math.min(1, cellSize/tex.width, cellSize/tex.height)
+    // (вписывал в ячейку доски с сохранением пропорций) заменён на безусловный scale=1.
     assert(!/cont\._spr\.width = Math\.min\(cont\._spr\.width \|\| 48,/.test(game2048Src), 'старый баг (меняли ТОЛЬКО .width, не .height) убран');
-    assert(/const scale = Math\.min\(1, cellSize \/ tex\.width, cellSize \/ tex\.height\);/.test(game2048Src), 'единый масштаб считается от обоих измерений текстуры');
-    assert(/cont\._spr\.scale\.set\(scale\);/.test(game2048Src), 'масштаб применяется через .scale.set() (сохраняет пропорции)');
+    // Ищем именно ИСПОЛНЯЕМУЮ строку (не упоминание формулы в поясняющем комментарии выше по файлу).
+    assert(!/const scale = Math\.min\(1, cellSize/.test(game2048Src), 'клапан "вписать в ячейку" (Math.min по cellSize) убран из кода');
+    assert(/cont\._spr\.scale\.set\(1\);/.test(game2048Src), 'плитка рендерится с scale=1 — натуральный пиксельный размер, без вписывания в ячейку');
 }
 
 console.log('\nTest 10: game2048.js — динамические надписи сдвинуты +20x/+23y (26.10) + точечные докрутки 27.10');
@@ -197,8 +209,13 @@ console.log('\nTest 15: game2048.js/game2048-top-popup.js — "x" заменён
     assert(/this\._rewardTxts\[type\]\.text = 'X' \+ earned\[type\];/.test(game2048Src), 'game2048.js: обновление награды через "X" + число');
     assert(!/'x' \+ earned\[type\]/.test(game2048Src), 'game2048.js: строчный "x" для наград партии не остался нигде');
     assert(/const t = new PIXI\.Text\('X0', STYLE_LIFETIME\);/.test(topPopupSrc), 'game2048-top-popup.js: начальный текст лайфтайм-награды "X0"');
-    assert(/this\._top1LifetimeTxts\[type\]\.text = 'X' \+ \(intval\(lt\[keyMap\[type\]\]\) \|\| 0\);/.test(topPopupSrc),
-        'game2048-top-popup.js: обновление лайфтайм-награды через "X" + число');
+    // 28.10.2026 (по прямому указанию — "если цифра перевалит за 1000, вместо X1000 писалось бы
+    // X1K, за 1 000 000 — X1КК"): переиспользован formatAchNum (modules/achievement-tiers.js,
+    // тот же к/кк-формат, что у достижений и попапа результата боя), не задублирован инлайн.
+    assert(/import \{ formatAchNum \} from '\.\.\/\.\.\/modules\/achievement-tiers\.js';/.test(topPopupSrc),
+        'game2048-top-popup.js: импортирует общий formatAchNum');
+    assert(/this\._top1LifetimeTxts\[type\]\.text = 'X' \+ formatAchNum\(intval\(lt\[keyMap\[type\]\]\) \|\| 0\);/.test(topPopupSrc),
+        'game2048-top-popup.js: обновление лайфтайм-награды через "X" + formatAchNum(число) — сокращается после 1000/1000000');
 }
 
 console.log('\nTest 16: game2048.js — dev-панель кнопка сброса дневного лимита попыток (реальный серверный permit)');
@@ -212,19 +229,32 @@ console.log('\nTest 16: game2048.js — dev-панель кнопка сброс
         'dev_panel.js вызывает реальный серверный permit, а не клиентский мок');
 }
 
-console.log('\nTest 17: game2048.js — карточки плиток 61×61px');
+console.log('\nTest 17: game2048.js — карточки плиток в натуральном (неискажённом) размере, без форс-ресайза');
 {
-    const { execFileSync } = require('child_process');
+    // 28.10.2026 (по прямому указанию, 2 захода подряд): 1) "эти файлы должны быть 62×62... но
+    // у них нет прозрачных отступов по бокам, выводи в натуральном размере" — форс-ресайз до
+    // квадрата 62×62 убран (PIL getbbox() подтвердил: альфа-канал без отступов у всех 14 файлов,
+    // обрезать нечего, а форс-ресайз до идеального квадрата только искажал пропорции оригиналов,
+    // 64-71px разброс по сторонам); 2) после объяснения, что cellSize доски физически 46px и
+    // поэтому ЛЮБОЙ исходник ≥46px визуально "схлопывался" отрисовкой — "выводи их, как они
+    // должны быть, БЕЗ СКЕЙЛА ВООБЩЕ". Теперь исходники — натурального размера (этот тест) И
+    // отрисовка больше НЕ вписывает их в ячейку (см. game2048.js._renderTile() —
+    // cont._spr.scale.set(1) безусловно, проверено в Test 9 выше).
     const IMG_DIR = path.join(root, '_client', 'development', 'images');
-    const tileFiles = ['2 ','4 ','8 ','16 ','32 ','64 ','128 ','256 ','512 ','1024 ','2048 ','4096 ','8192 ','16384 ']
-        .map(v => '2048 ' + v.trim() + '.png');
+    const NATURAL_SIZES = {
+        2: [67,68], 4: [66,65], 8: [67,64], 16: [67,65], 32: [66,64], 64: [67,65],
+        128: [67,68], 256: [66,68], 512: [67,68], 1024: [66,71], 2048: [67,71],
+        4096: [67,69], 8192: [66,71], 16384: [68,71],
+    };
     // Чисто размерная проверка через заголовок PNG (IHDR, байты 16-23) — без зависимости от PIL/Python в tests/.
-    for(const f of tileFiles){
+    for(const v of Object.keys(NATURAL_SIZES)){
+        const f = `2048 ${v}.png`;
         const full = path.join(IMG_DIR, f);
         assert(fs.existsSync(full), `файл плитки существует: ${f}`);
         const buf = fs.readFileSync(full);
         const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
-        assert(w === 61 && h === 61, `${f} имеет размер 61×61, получено ${w}×${h}`);
+        const [ew, eh] = NATURAL_SIZES[v];
+        assert(w === ew && h === eh, `${f} в натуральном размере ${ew}×${eh}, получено ${w}×${h}`);
     }
 }
 
@@ -251,6 +281,181 @@ console.log('\nTest 14: новые файлы-ассеты реально сущ
         assert(fs.existsSync(path.join(IMAGES_DIR, f)), `файл существует: ${f}`);
         assert(fs.existsSync(path.join(IMAGES_DIR, f + '.webp')), `webp-пара существует: ${f}.webp`);
     }
+}
+
+console.log('\nTest 15: game2048.js — доска 4×4 теперь 16 готовых центров (CELL_POS), BOARD/cellCenter убраны (28.10.2026, редактор позиций, подтверждено явно: "сделай так, как я тебе скинул координаты")');
+{
+    assert(!/const BOARD = \{/.test(game2048Src), 'формула BOARD убрана целиком');
+    assert(!/function cellCenter\(/.test(game2048Src), 'функция cellCenter() убрана целиком');
+    assert(/const CELL_POS = \[/.test(game2048Src), 'CELL_POS — новый фиксированный массив 16 центров');
+    assert(/const cell = CELL_POS\[r \* 4 \+ c\];/.test(game2048Src), 'цикл построения поля берёт центр из CELL_POS по индексу r*4+c');
+    // Первая (1-1, x:6,y:7) и последняя (4-4, x:215,y:209) точки — top-left+w/h(67,68) из
+    // редактора, переведённые в центр (x+33.5, y+34). 28.10.2026 (повторное указание тем же
+    // днём — "редактор показывал 0 и 0 вместо координат относительно экрана", доска
+    // скомпенсирована смещением +383x/+125y поверх исходных чисел, см. докблок CELL_POS).
+    assert(/\{ x: 6 \+ 33\.5 \+ 383,   y: 7 \+ 34 \+ 125 \+ 68   \}/.test(game2048Src), 'ячейка 1-1: x=6+33.5+383, y=7+34+125+68 (как продиктовано)');
+    assert(/\{ x: 215 \+ 33\.5 \+ 383, y: 209 \+ 34 \+ 125 \+ 68 \}/.test(game2048Src), 'ячейка 4-4: x=215+33.5+383, y=209+34+125+68 (как продиктовано)');
+    const cellPosMatch = game2048Src.match(/const CELL_POS = \[([\s\S]*?)\];/);
+    assert(!!cellPosMatch, 'CELL_POS найден целиком');
+    if(cellPosMatch){
+        const count = (cellPosMatch[1].match(/\{ x:/g) || []).length;
+        assert(count === 16, `CELL_POS содержит ровно 16 точек (нашлось ${count})`);
+    }
+}
+
+console.log('\nTest 20: game2048.js — позиция плитки стоит на spr (не на cont-обёртке), чтобы редактор позиций находил реальные экранные координаты, а не локальные 0,0 (28.10.2026, по живому репорту)');
+{
+    const loopStart = game2048Src.indexOf('for(let r = 0; r < 4; r++){');
+    const loopEnd = game2048Src.indexOf('this._win = win;');
+    const loopBody = game2048Src.slice(loopStart, loopEnd);
+    assert(!/cont\.x = cell\.x; cont\.y = cell\.y;/.test(loopBody), 'cont (обёртка) больше НЕ несёт позицию — иначе редактор находит Sprite с локальными 0,0');
+    assert(/spr\.x = cell\.x; spr\.y = cell\.y;/.test(loopBody), 'spr (реальный видимый/кликабельный объект) несёт позицию напрямую — как у всех остальных спрайтов проекта');
+    assert(/cont\._cellX = cell\.x; cont\._cellY = cell\.y;/.test(loopBody), 'координаты ячейки сохранены на cont для фолбэк-текста (значения >16384)');
+
+    const renderStart = game2048Src.indexOf('_renderTile(cont, value){');
+    const renderEnd = game2048Src.indexOf('\n    }', renderStart);
+    const renderBody = game2048Src.slice(renderStart, renderEnd);
+    assert(/cont\._fallbackTxt\.x = cont\._cellX; cont\._fallbackTxt\.y = cont\._cellY;/.test(renderBody),
+        'фолбэк-текст (нет арта для значения) позиционируется явно той же точкой — cont сам стоит на (0,0)');
+}
+
+console.log('\nTest 16: game2048.js — "купить попытку"/инактив переключаются по наличию бесплатных попыток, не только по atLimit (28.10.2026, по прямому указанию)');
+{
+    assert(/const freeLeft = intval\(daily\.used\) < 3;/.test(game2048Src), 'freeLeft — те же 3 бесплатные попытки, что считает nextPaidIdx');
+    assert(/this\._buyBtn\.visible = !session && !atLimit && !freeLeft;/.test(game2048Src),
+        'активная кнопка покупки показывается только когда бесплатные ИСЧЕРПАНЫ (следующая партия платная)');
+    assert(/this\._buyBtnInactive\.visible = !session && !atLimit && freeLeft;/.test(game2048Src),
+        'инактив-кнопка показывается, ПОКА доступны бесплатные партии');
+}
+
+console.log('\nTest 17: game2048.js/game2048-top-popup.js — "2048 ТОП" только scale-hover, хитбоксы топ-1, расстояние между строками -9px, места +20px (28.10.2026)');
+{
+    const topBtnStart = game2048Src.indexOf("'2048 ТОП.png'");
+    const topBtnEnd = game2048Src.indexOf('win.addChild(topBtn);', topBtnStart);
+    const topBtnBody = game2048Src.slice(topBtnStart, topBtnEnd);
+    assert(!/topBtn\.alpha/.test(topBtnBody), '"2048 ТОП" больше не трогает alpha при наведении');
+    assert(/_hoverScale\(topBtn, 1\.05\);/.test(game2048Src), '"2048 ТОП" сохраняет scale-only hover через общий _hoverScale');
+
+    // 28.10.2026: повторный снимок хитбокса редактора позиций (775,363,1.105 → 770,362,1.106 и
+    // 731,413,1.676 → 727,411,1.699).
+    //
+    // 28.10.2026 (повторная правка тем же днём — по прямому указанию, после фикса реального
+    // шрифта на Bebas Neue Pro Middle): "никнейм сдвинь вправо на 90px и опусти вниз на 12px",
+    // "кол-во партий сдвинь вправо на 130px и опусти вниз на 15px, уменьши font size до 16" —
+    // 770→860, 362→374 (ник); 727→857, 411→426, fontSize 30→16 (кол-во партий).
+    assert(/top1Nick\.x = 860; top1Nick\.y = 374;/.test(topPopupSrc), 'top1Nick — новый хитбокс x:860,y:374');
+    assert(/top1Nick\.scale\.set\(1\.106\);/.test(topPopupSrc), 'top1Nick — scale:1.106');
+    assert(/top1Games\.x = 857; top1Games\.y = 426;/.test(topPopupSrc), 'top1Games — новый хитбокс x:857,y:426');
+    assert(/top1Games\.scale\.set\(1\.699\);/.test(topPopupSrc), 'top1Games — scale:1.699');
+    assert(/const STYLE_GAMES_BIG = \{ fontFamily: 'Bebas Neue Pro Middle', fontSize: 16,/.test(topPopupSrc),
+        'STYLE_GAMES_BIG.fontSize уменьшен до 16');
+    // 28.10.2026 (повторное указание тем же днём — "увеличь расстояние между никнеймами/кол-вом
+    // партий/местами на 1px"): 37 → 38 (одна общая строка-шаг на все три колонки).
+    assert(/const ROW_H = 46 - 9 \+ 1 - 1 - 0\.5;/.test(topPopupSrc), 'расстояние между строками списка: 46-9+1-1-0.5=36.5');
+    assert(/placeTxt\.x = 336 \+ 20;/.test(topPopupSrc), 'места 2..10 сдвинуты вправо на 20px');
+}
+
+console.log('\nTest 18: svod-zanachki.js — кнопка «Забрать» получила scale-hover, запрос «у друзей» передаёт myOwnedCounts (28.10.2026, по прямому указанию)');
+{
+    const claimStart = zanachkiSrc.indexOf("'заначки кнопка забрать.png'");
+    const claimEnd = zanachkiSrc.indexOf('content.addChild(claimBtn);', claimStart);
+    const claimBody = zanachkiSrc.slice(claimStart, claimEnd);
+    assert(/claimBtn\.on\('pointerover', \(\)=>\{ if\(claimBtn\.interactive\) claimBtn\.scale\.set\(1\.08\); \}\);/.test(claimBody),
+        '«Забрать» растёт при наведении, только пока активна (коллекция собрана)');
+    assert(/claimBtn\.on\('pointerout',  \(\)=>\{ claimBtn\.scale\.set\(1\); \}\);/.test(claimBody),
+        '«Забрать» возвращается к scale 1 при уходе курсора');
+
+    const reqBtnStart = zanachkiSrc.indexOf("reqBtn.on('pointerdown'");
+    const reqBtnEnd = zanachkiSrc.indexOf('win.addChild(reqBtn);', reqBtnStart);
+    const reqBtnBody = zanachkiSrc.slice(reqBtnStart, reqBtnEnd);
+    assert(/myOwnedCounts\[col \+ '_' \+ pos\] = Number\(stashData\[col\]\[pos\]\) \|\| 0;/.test(reqBtnBody),
+        'кнопка «ЗАПРОС У ДРУЗЕЙ» строит myOwnedCounts из актуального stashData перед открытием своего списка');
+    assert(/this\._buildZanachkiWishlistPopup\(\(this\._zanachkiState && this\._zanachkiState\.wishlist\) \|\| \[\], 'own', \{ myOwnedCounts \}\);/.test(reqBtnBody),
+        'myOwnedCounts реально передаётся в попап (режим own)');
+}
+
+console.log('\nTest 19: svod-zanachki-wishlist.js — под каждой карточкой запроса пишется кол-во копий, которые уже есть у игрока (28.10.2026, подтверждено явно через вопрос пользователю)');
+{
+    assert(/const owned = Number\(\(ctx\.myOwnedCounts && ctx\.myOwnedCounts\[key\]\) \|\| 0\);/.test(wishlistSrc),
+        'owned считается из ctx.myOwnedCounts по ключу col_pos — общий для обоих режимов (own/friend)');
+    const countTxtStart = wishlistSrc.indexOf('const countTxt = new PIXI.Text(String(owned)');
+    assert(countTxtStart !== -1, 'countTxt создаётся с текстом owned');
+    const countTxtEnd = wishlistSrc.indexOf('win.addChild(countTxt);', countTxtStart);
+    const countTxtBody = wishlistSrc.slice(countTxtStart, countTxtEnd);
+    assert(/strokeThickness: 1,/.test(countTxtBody), 'шрифт числа тоньше, чем у остальных подписей попапа (strokeThickness:1, не 2) — по прямому указанию');
+    assert(/countTxt\.y = card\.y \+ card\.height \+ 4;/.test(countTxtBody), 'число выводится под карточкой');
+    // Один и тот же countTxt должен строиться ДО ветвления own/friend — переиспользуется в обоих.
+    const branchIdx = wishlistSrc.indexOf("if(mode === 'own'){");
+    assert(countTxtStart < branchIdx, 'countTxt строится до ветвления own/friend — общий для обоих режимов');
+}
+
+console.log('\nTest 21: game2048-top-popup.js — места игроков (2..10) дополнительно опущены на 9px (28.10.2026, по прямому указанию)');
+{
+    assert(/const ROW2_Y = 236, PLACE_Y_DELTA = 225 - 236 \+ 9;/.test(topPopupSrc),
+        'PLACE_Y_DELTA = 225-236+9 (было -11, стало -2) — места опущены на 9px относительно остального ряда');
+}
+
+console.log('\nTest 22: game2048.js — доска дополнительно опущена на 68px поверх уже применённого сдвига (28.10.2026, по прямому указанию)');
+{
+    assert(/\{ x: 6 \+ 33\.5 \+ 383,   y: 7 \+ 34 \+ 125 \+ 68   \}/.test(game2048Src), 'ячейка 1-1: +68 добавлен к Y поверх +125');
+    assert(/\{ x: 215 \+ 33\.5 \+ 383, y: 209 \+ 34 \+ 125 \+ 68 \}/.test(game2048Src), 'ячейка 4-4: +68 добавлен к Y поверх +125');
+}
+
+console.log('\nTest 23: game2048-top-popup.js — никнейм топ-1 был невидим (чёрный на тёмной плашке), найдено и исправлено на белый (28.10.2026, по живому репорту "никнейм криво стоит")');
+{
+    // Корень не в позиции (x/y/scale топ1-ника были корректны) — fill:#000000 на тёмном фоне
+    // плашки рендерился, но был практически невидим. emptyTopTxt УЖЕ переопределял fill на
+    // белый поверх этого же базового стиля — верный намёк, что базовый чёрный был ошибкой,
+    // не осознанным выбором.
+    assert(/const STYLE_NICK = \{ fontFamily: 'Bebas Neue Pro Middle', fontSize: 18, fontWeight: '400', fill: '#ffffff' \};/.test(topPopupSrc),
+        'STYLE_NICK.fill — белый (#ffffff), не чёрный');
+    assert(!/fill: '#000000'/.test(topPopupSrc), 'чёрной заливки (#000000) в этом файле больше нигде не осталось');
+}
+
+console.log('\nTest 24: game2048-top-popup.js/dev_panel.js — ждём document.fonts.ready перед ПЕРВОЙ сборкой попапа топа 2048 (28.10.2026, по живому репорту "никнейм/партии не в хитбоксах, хотя координаты верные")');
+{
+    // Тот же класс гонки, что уже чинился 20.10.2026 в interface-currency-purchase.js: PIXI
+    // печёт canvas текста сразу, не дожидаясь реальной загрузки @font-face "Bebas Neue Pro Middle" —
+    // если попап строится раньше, браузер молча подставляет fallback-шрифт с другими
+    // пропорциями, а _topWin кешируется НАВСЕГДА (if(!this._topWin)), так что один неудачный
+    // первый рендер портит экран на весь сеанс.
+    const openStart = topPopupSrc.indexOf('proto._openGame2048TopPopup = function(){');
+    const openEnd = topPopupSrc.indexOf('\n    };', openStart);
+    const openBody = topPopupSrc.slice(openStart, openEnd);
+    assert(/document\.fonts\.check\("18px 'Bebas Neue Pro Middle'"\)/.test(openBody), '_openGame2048TopPopup проверяет готовность Bebas Neue Pro Middle');
+    assert(/document\.fonts\.ready\.then\(\(\) => \{/.test(openBody), '_openGame2048TopPopup откладывает сборку до document.fonts.ready');
+    assert(/if\(!this\._topWin\) this\._buildGame2048TopPopup\(\);/.test(openBody), 'после готовности шрифта (или если _topWin уже есть) — обычная сборка');
+
+    // Дев-панель строит попап НАПРЯМУЮ через _buildGame2048TopPopup(), в обход
+    // _openGame2048TopPopup — нужен свой такой же гейт, иначе фикс не действует именно там,
+    // где пользователь реально тестирует (мок "Топ (мок)" — тот самый путь из репорта, см.
+    // точное совпадение тестовых данных "Тестер 1"/42/100/50/20/300/900 со скриншотом).
+    const mockStart = devPanelSrc.indexOf("_row('Топ (мок)'");
+    const mockEnd = devPanelSrc.indexOf("_row('Прогресс крафта", mockStart);
+    const mockBody = devPanelSrc.slice(mockStart, mockEnd);
+    assert(/document\.fonts\.check\("18px 'Bebas Neue Pro Middle'"\)/.test(mockBody), 'дев-панель мок тоже проверяет готовность Bebas Neue Pro Middle перед первой сборкой');
+    assert(/document\.fonts\.ready\.then\(run\);/.test(mockBody), 'дев-панель мок откладывает run() (сборка+рендер) до document.fonts.ready');
+}
+
+console.log('\nTest 25: game2048.js/game2048-top-popup.js/dev_panel.js — имя шрифта "Bebas Neue Pro" (без суффикса) нигде не используется (28.10.2026, по прямому указанию — аудит "шрифты не успевают загрузиться" вскрыл вторую, более глубокую причину)');
+{
+    // Корень: 'Bebas Neue Pro' НИКОГДА не был объявлен в fonts.css (@font-face) — только
+    // 'Bebas Neue Pro Middle' и 'Bebas Neue Pro Bold'. Это не гонка загрузки, а опечатка в
+    // имени семейства с момента создания фичи 26.10.2026 — document.fonts.check для
+    // несуществующего имени никогда не станет true, и Test 24's document.fonts.ready.then(retry)
+    // зациклился бы НАВСЕГДА, так и не построив попап (хуже прежнего молчаливого fallback-рендера).
+    // См. tests/font-family-registration-consistency.test.js — общий проход по всему проекту,
+    // подтвердивший, что это ЕДИНСТВЕННОЕ такое место во всём src/.
+    assert(!/fontFamily:\s*'Bebas Neue Pro'(?!\s*Middle|\s*Bold)/.test(game2048Src),
+        'game2048.js (FONT_STAT) не ссылается на незарегистрированное имя "Bebas Neue Pro"');
+    assert(/const FONT_STAT = 'Bebas Neue Pro Middle';/.test(game2048Src),
+        'FONT_STAT использует реально зарегистрированный "Bebas Neue Pro Middle"');
+    assert(!/fontFamily:\s*'Bebas Neue Pro'(?!\s*Middle|\s*Bold)/.test(topPopupSrc),
+        'game2048-top-popup.js не ссылается на незарегистрированное имя "Bebas Neue Pro"');
+    assert(!/document\.fonts\.check\("18px 'Bebas Neue Pro'"\)/.test(topPopupSrc),
+        'проверка готовности шрифта в game2048-top-popup.js указывает на реально существующее имя, не на "Bebas Neue Pro" без суффикса');
+    assert(!/document\.fonts\.check\("18px 'Bebas Neue Pro'"\)/.test(devPanelSrc),
+        'проверка готовности шрифта в dev_panel.js (мок) указывает на реально существующее имя, не на "Bebas Neue Pro" без суффикса');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

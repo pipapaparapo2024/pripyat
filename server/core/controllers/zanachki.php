@@ -78,7 +78,7 @@
 
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
 
-            error_log('[Zanachki.claimCollection] uid=' . abs(intval($this->registry['uid'])) . ' коллекция ' . $col . ' забрана, +' . ZanachkiModel::COLLECTION_CIG_REWARD . ' сухарей +' . ZanachkiModel::COLLECTION_EXP_REWARD . ' опыта');
+            error_log('[Zanachki.claimCollection] uid=' . abs(intval($this->registry['uid'])) . ' коллекция ' . $col . ' забрана, +' . ZanachkiModel::collectionReward($col) . ' сухарей/опыта');
 
             $this->ops->ok([
                 'patch'   => $this->ops->patchCurrencies($user, ['cigarettes', 'exp', 'stash_claims', 'stash_data']),

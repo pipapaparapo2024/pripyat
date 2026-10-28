@@ -1,14 +1,18 @@
 /**
- * Test: 17.10.2026, по прямому указанию (уточнено в диалоге через AskUserQuestion):
+ * Test: 17.10.2026 (по прямому указанию) → ОТМЕНЕНО/унифицировано 28.10.2026.
  *
- *  1) Окно списка «Топ по авторитету» (Общий топ/Друзья) и «Топ по достижениям → Общий топ»
- *     расширено до x:356,y:236,w:669,h:286 (x/y/w уже совпадали с ROW_X/LIST_TOP/ROW_W —
- *     менялась только высота, 242→286). «Топ по урону» — пользователь явно подтвердил НЕ
- *     трогать, остаётся 242.
- *  2) «Топ по урону»: пользователь настаивал, что трек/бегунок/стрелки реально стоят в других
- *     пикселях, чем у авторитета/достижений (несмотря на общую функцию/координаты) — по его
- *     прямому указанию сдвинуты на 2px влево (trackX/arrowX 1035/1034 → 1033/1032), только
- *     для cat===0 (урон), авторитет/достижения не тронуты.
+ * Было (17.10.2026): «Топ по авторитету»/«Топ по достижениям» получили расширенное окно списка
+ * (h:286, через tabCfg.listH), «Топ по урону» остался на 242 и отдельно получил трек/стрелку
+ * скролла со сдвигом -2px по X (DAMAGE_SCROLL_TRACK_X/ARROW_X) — то есть «урон» был НАМЕРЕННО
+ * особым случаем, а не образцом.
+ *
+ * 28.10.2026 (по прямому указанию — унификация скролла Сводки, подтверждено явно: "беру точные
+ * координаты у Топ по урону... ставлю те же самые у Топ по авторитету/Топ по достижениям/Мои
+ * достижения"): расхождение признано багом визуального несовпадения между вкладками, а не
+ * фичей — роли поменялись местами. Теперь «урон» — ЭТАЛОН: единое окно списка
+ * x:354,y:238,w:669,h:263 и единый trackX/arrowX:1033/1032 для ВСЕХ трёх вкладок топа (плюс
+ * аккордеона «Мои достижения» в svod-achievements.js). tabCfg.listH и DAMAGE_SCROLL_TRACK_X/
+ * ARROW_X убраны из кода целиком.
  *
  * Run: node tests/svod-leaderboard-window-expand-and-damage-scroll-nudge.test.js
  */
@@ -25,35 +29,29 @@ const root = path.join(__dirname, '..');
 const lbSrc   = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'svod', 'svod-leaderboard.js'), 'utf-8');
 const svodSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'svod.js'), 'utf-8');
 
-console.log('\nTest 1: svod-leaderboard.js — LIST_H_EXPANDED=286, viewH берёт tabCfg.listH с фолбэком на дефолт (242)');
+console.log('\nTest 1: svod-leaderboard.js — ЕДИНОЕ окно списка (354,238,669,263) для всех вкладок, LIST_H_EXPANDED/tabCfg.listH убраны');
 {
-    assert(/const LIST_H_EXPANDED = 286;/.test(lbSrc), 'LIST_H_EXPANDED = 286 объявлена');
-    assert(/viewH: tabCfg\.listH \|\| LIST_H,/.test(lbSrc), 'viewH = tabCfg.listH || LIST_H — без override остаётся прежним (242)');
+    assert(!/const LIST_H_EXPANDED/.test(lbSrc), 'LIST_H_EXPANDED больше не объявляется — расхождение высот убрано');
+    assert(!/viewH:\s*tabCfg\.listH/.test(lbSrc), 'viewH больше не читает tabCfg.listH — один LIST_H на всех');
+    assert(/const ROW_X = 354;/.test(lbSrc), 'ROW_X = 354 (единое значение)');
+    assert(/const LIST_TOP = 238;/.test(lbSrc), 'LIST_TOP = 238 (единое значение)');
+    assert(/const LIST_H = 263;/.test(lbSrc), 'LIST_H = 263 (единое значение, заменяет 242/286)');
+    assert(/viewH: LIST_H,/.test(lbSrc), 'viewH всегда = LIST_H, без условного override');
 }
 
-console.log('\nTest 2: svod.js — respect (авторитет) и ach (cat:5, достижения) передают listH:286, damage (урон) — НЕ передаёт');
+console.log('\nTest 2: svod.js — respect/ach больше НЕ передают listH (параметр убран как мёртвый вместе с унификацией)');
 {
-    const respectStart = svodSrc.indexOf("key === 'respect'");
-    const respectEnd   = svodSrc.indexOf("key === 'damage'");
-    assert(/listH: 286,/.test(svodSrc.slice(respectStart, respectEnd)), 'respect передаёт listH:286');
-
-    const damageStart = svodSrc.indexOf("key === 'damage'");
-    const damageEnd   = svodSrc.indexOf("key === 'ach'");
-    assert(!/listH:/.test(svodSrc.slice(damageStart, damageEnd)), 'damage (урон) НЕ передаёт listH — остаётся дефолтным 242');
-
-    const achStart = svodSrc.indexOf("cat: 5, bg:");
-    const achBlock = svodSrc.slice(achStart, achStart + 400);
-    assert(/listH: 286,/.test(achBlock), 'ach (cat:5, достижения → Общий топ) передаёт listH:286');
+    assert(!/listH: 286,/.test(svodSrc), 'listH:286 нигде не передаётся — высота теперь одна для всех вкладок');
 }
 
-console.log('\nTest 3: svod-leaderboard.js — «Топ по урону» (cat===0) получает трек/стрелку на -2px по X, остальные — дефолт');
+console.log('\nTest 3: svod-leaderboard.js — «Топ по урону» больше НЕ особый случай: единый trackX/arrowX для всех вкладок (эталон — бывшие значения «урона», 1033/1032)');
 {
-    assert(/const DAMAGE_SCROLL_TRACK_X = SCROLL_TRACK_X - 2, DAMAGE_SCROLL_ARROW_X = SCROLL_ARROW_X - 2;/.test(lbSrc),
-        'DAMAGE_SCROLL_TRACK_X/ARROW_X = SCROLL_TRACK_X/ARROW_X - 2');
-    assert(/trackX: tabCfg\.cat === 0 \? DAMAGE_SCROLL_TRACK_X : SCROLL_TRACK_X,/.test(lbSrc),
-        'trackX условный — DAMAGE_SCROLL_TRACK_X только для cat===0 (урон)');
-    assert(/arrowX: tabCfg\.cat === 0 \? DAMAGE_SCROLL_ARROW_X : SCROLL_ARROW_X,/.test(lbSrc),
-        'arrowX условный — DAMAGE_SCROLL_ARROW_X только для cat===0 (урон)');
+    assert(!/DAMAGE_SCROLL_TRACK_X/.test(lbSrc), 'DAMAGE_SCROLL_TRACK_X убрана — расхождение по X устранено');
+    assert(!/DAMAGE_SCROLL_ARROW_X/.test(lbSrc), 'DAMAGE_SCROLL_ARROW_X убрана');
+    assert(/const SCROLL_TRACK_X = 1033, SCROLL_ARROW_X = 1032;/.test(lbSrc),
+        'единый trackX/arrowX = 1033/1032 (бывшие "урон"-only значения, теперь эталон для всех)');
+    assert(/trackX: SCROLL_TRACK_X,/.test(lbSrc), 'trackX передаётся без условия по tabCfg.cat');
+    assert(/arrowX: SCROLL_ARROW_X,/.test(lbSrc), 'arrowX передаётся без условия по tabCfg.cat');
 }
 
 console.log('\nTest 4: svod.js — damage (урон, cat:0) конфиг не менялся сверх необходимого (secondScope/bg/cat как раньше)');

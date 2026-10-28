@@ -69,16 +69,18 @@ console.log('\nTest 3: Бита (id117) и Худи коричневая (id119)
     assert(baseIdx6 !== -1, 'база MAN_SLOTS cat:6 всё ещё {x:856,y:418} (иначе пересчёт ниже неверен)');
     const bitaManDx = 745 - 856, bitaManDy = 358 - 418;
     assert(bitaManDx === -111 && bitaManDy === -60, 'арифметика пересчёта manDx/manDy биты даёт -111/-60');
-    assert(/\{id:117,[^}]*manDx:-111, manDy:-60, manScale:1\.000,/.test(shmotSrc),
-        'id117: manDx:-111, manDy:-60, manScale:1.000 записаны в каталог');
+    // 27.10.2026: manScale:1.000 переведён на manWidth/manHeight (round(native×1.000) — тот же
+    // видимый размер, см. AGENTS.md про перевод всего каталога).
+    assert(/\{id:117,[^}]*manDx:-111, manDy:-60, manWidth:162, manHeight:133,/.test(shmotSrc),
+        'id117: manDx:-111, manDy:-60, manWidth:162, manHeight:133 записаны в каталог');
 
     // Худи коричневая: присланы x:713,y:245,scale:0.223 на манекене — база cat:1 {x:804,y:258}.
     const baseIdx1 = shopSrc.indexOf('{ cat: 1, x: 804, y: 258');
     assert(baseIdx1 !== -1, 'база MAN_SLOTS cat:1 всё ещё {x:804,y:258} (иначе пересчёт ниже неверен)');
     const hoodieManDx = 713 - 804, hoodieManDy = 245 - 258;
     assert(hoodieManDx === -91 && hoodieManDy === -13, 'арифметика пересчёта manDx/manDy худи коричневой даёт -91/-13');
-    assert(/\{id:119,[^}]*manDx:-91, manDy:-13, manScale:1\.000,/.test(shmotSrc),
-        'id119: manDx:-91, manDy:-13, manScale:1.000 записаны в каталог');
+    assert(/\{id:119,[^}]*manDx:-91, manDy:-13, manWidth:254, manHeight:235,/.test(shmotSrc),
+        'id119: manDx:-91, manDy:-13, manWidth:254, manHeight:235 записаны в каталог');
 
     // Ячейка гардероба худи коричневой: присланы x:228,y:938 — GRID cellW:145,gap:12,cols:3,
     // 17-й cat:1-предмет в каталоге (idx=16, 0-based) → col=1,row=5 → cx:157,cy:860.
@@ -104,8 +106,10 @@ console.log('\nTest 5: Худи белая (id118) — манекен + ячей
     assert(hoodieManDx === -67 && hoodieManDy === -16, 'арифметика пересчёта manDx/manDy худи белой даёт -67/-16');
     // 27.10.2026 (по прямому указанию, повторные живые координаты манекена): manScale
     // 1.000→1.004 (x/y манекена не изменились — см. арифметику выше, они уже совпадали).
-    assert(/\{id:118,[^}]*manDx:-67, manDy:-16, manScale:1\.004,/.test(shmotSrc),
-        'id118: manDx:-67, manDy:-16, manScale:1.004 записаны в каталог');
+    // Тем же днём отдельно manScale у ВСЕГО каталога переведён на manWidth/manHeight —
+    // 1.004 × native(225×192... round) даёт 225×193.
+    assert(/\{id:118,[^}]*manDx:-67, manDy:-16, manWidth:225, manHeight:193,/.test(shmotSrc),
+        'id118: manDx:-67, manDy:-16, manWidth:225, manHeight:193 записаны в каталог');
 
     const m118 = shmotSrc.match(/\{id:118,[^}]*\}/);
     const m119 = shmotSrc.match(/\{id:119,[^}]*\}/);

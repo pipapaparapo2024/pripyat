@@ -75,8 +75,9 @@ console.log('\nTest 3: координаты карточки «Мои дости
     assert(/const LIST_TOP = 242, LIST_H = 286;/.test(svodAchSrc),
         'LIST_TOP = 242, LIST_H = 286 (было 243/298 — явные значения из редактора позиций, не формула)');
 
-    assert(/const ROW_X = 356;/.test(leaderSrc), 'ROW_X = 356 (точное значение)');
-    assert(/const LIST_TOP = 236;/.test(leaderSrc), 'LIST_TOP = 236 — позиция первой ячейки (точное значение)');
+    // 28.10.2026 (по прямому указанию — унификация окна списка игроков): 356/236 → 354/238.
+    assert(/const ROW_X = 354;/.test(leaderSrc), 'ROW_X = 354 (точное значение, редактор позиций 28.10.2026)');
+    assert(/const LIST_TOP = 238;/.test(leaderSrc), 'LIST_TOP = 238 — позиция первой ячейки (точное значение, редактор позиций 28.10.2026)');
     // 19.09.2026: зазор поднят с 3 до 6px по прямому указанию пользователя, см.
     // svod-achievements-bg-and-weapon-tier-damage.test.js — здесь просто синхронизируем значение.
     assert(/const ROW_W = 669, CELL_H = 36, ROW_GAP = 6 - 7;/.test(leaderSrc), 'высота ячейки 36px и зазор заданы явно (17.10.2026: зазор 6-7=-1, было 6)');

@@ -721,8 +721,8 @@ export function attachBossResultPopup(proto){
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 83;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.alpha = 0.75; });
-        exitBtn.on('pointerout',  () => { exitBtn.alpha = 1; });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', () => {
             this._closeBossResultPopup();
             if(opts.onClose) opts.onClose();

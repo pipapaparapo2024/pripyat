@@ -72,36 +72,43 @@ console.log('\nTest 4: svod-scroll.js — регресс-гвард, что drag
         'sanity: _buildSvodScroll всё ещё регистрирует drag-move/up через parent (как фолбэк dragRoot), не на thumb/stage');
 }
 
-console.log('\nTest 5: svod-achievements.js — arrowX унифицирован с leaderboard (1034, было 1033)');
+console.log('\nTest 5: svod-achievements.js — 28.10.2026 (унификация скролла Сводки): trackX/arrowX/trackY/arrowUpY теперь ТОЧНО равны эталону «урон», thumbXAdjust убран');
 {
     const start = achSrc.indexOf('this._buildSvodScroll({');
     const end   = achSrc.indexOf('});', start);
     const body  = achSrc.slice(start, end);
-    // 17.10.2026: trackY:236, arrowUpY:204 добавлены между arrowX и arrowDownY — унификация
-    // пошла дальше (теперь и трек/стрелка вверх совпадают с Общим топом, не только X).
-    // 17.10.2026 (повторный репорт тем же днём — "шкала скролла вправо на 1px, скролл влево на
-    // 1px", ТОЛЬКО для этой вкладки): trackX 1035→1036, добавлен thumbXAdjust:-2 (см.
-    // svod-scroll.js — компенсирует +1 от trackX и добавляет собственный -1 бегунку).
-    assert(/trackX: 1036, arrowX: 1034, trackY: 236, arrowUpY: 204, arrowDownY: 480,\s*\n\s*thumbXAdjust: -2,/.test(body),
-        'КРИТИЧНО: trackX:1036 (было 1035) + thumbXAdjust:-2 — трек вправо на 1px, бегунок влево на 1px, независимо друг от друга');
+    // 28.10.2026 (по прямому указанию — "беру точные координаты у Топ по урону... ставлю те же
+    // самые у... аккордеона Мои достижения"): прежние самостоятельные 1036/1034/236/204/-2
+    // (накопленные точечными правками 17.10.2026, см. история выше) заменены на ТОЧНЫЕ значения
+    // эталона (1033/1032/238/206), thumbXAdjust убран целиком — больше не нужен компенсировать
+    // собственный сдвиг trackX, т.к. trackX теперь = эталону.
+    assert(/trackX: 1033, arrowX: 1032, trackY: 238, arrowUpY: 206, arrowDownY: 480,/.test(body),
+        'КРИТИЧНО: trackX/arrowX/trackY/arrowUpY достижений теперь побитово совпадают с эталоном «урон»');
+    assert(!/thumbXAdjust/.test(body), 'thumbXAdjust больше не передаётся — trackX уже равен эталону, компенсировать нечего');
 }
 
-console.log('\nTest 6: sanity — svod-leaderboard.js по-прежнему на arrowX:1034 по умолчанию (эталон для respect/ach; 17.10.2026 — «урон» отдельно сдвинут на -2, см. DAMAGE_SCROLL_ARROW_X)');
+console.log('\nTest 6: sanity — svod-leaderboard.js SCROLL_TRACK_X/ARROW_X = 1033/1032 (28.10.2026: бывшее значение «урона» стало ЕДИНЫМ эталоном для всех вкладок, DAMAGE_SCROLL_* убраны)');
 {
-    assert(/const SCROLL_TRACK_X = 1035, SCROLL_ARROW_X = 1034;/.test(lbSrc), 'leaderboard остаётся эталонной точкой сверки (дефолтные константы)');
+    assert(/const SCROLL_TRACK_X = 1033, SCROLL_ARROW_X = 1032;/.test(lbSrc), 'leaderboard — единая точка сверки для всех вкладок (бывшие "урон"-only значения)');
+    assert(!/DAMAGE_SCROLL_TRACK_X|DAMAGE_SCROLL_ARROW_X/.test(lbSrc), 'отдельных DAMAGE_SCROLL_* констант больше нет — расхождение убрано');
 }
 
-console.log('\nTest 7: svod-scroll.js — thumbXAdjust независимо двигает бегунок, не влияя на trackX других caller\'ов');
+console.log('\nTest 7: svod-scroll.js — механизм thumbXAdjust остаётся в коде (общая функция), но 28.10.2026 им никто больше не пользуется (унификация убрала саму причину для него)');
 {
     // 27.10.2026: за thumbXAdjust в деструктуризации добавлены ещё 4 текстурных override —
     // thumbXAdjust больше не последний в списке, проверяем просто его наличие где-то в cfg.
-    assert(/thumbXAdjust,?\s*(trackImg, thumbImg, arrowUpImg, arrowDownImg\s*)?\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust читается из cfg вместе с остальными overrides');
+    assert(/thumbXAdjust,?\s*(trackImg, thumbImg, arrowUpImg, arrowDownImg\s*)?\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust по-прежнему читается из cfg (общий механизм не удалён, просто не вызывается с ним)');
     assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1 \+ \(thumbXAdjust \|\| 0\);/.test(scrollSrc),
-        'формула бегунка добавляет (thumbXAdjust || 0) — без override (leaderboard.js, не передаёт этот параметр) поведение не меняется (0 — no-op)');
+        'формула бегунка по-прежнему добавляет (thumbXAdjust || 0) — без override (теперь оба caller\'а) поведение не меняется (0 — no-op)');
     const lbCallStart = lbSrc.indexOf('this._buildSvodScroll({');
     const lbCallEnd   = lbSrc.indexOf('});', lbCallStart);
     const lbCallBody  = lbSrc.slice(lbCallStart, lbCallEnd);
-    assert(!/thumbXAdjust/.test(lbCallBody), 'svod-leaderboard.js не передаёт thumbXAdjust — его бегунок не затронут этой правкой');
+    assert(!/thumbXAdjust/.test(lbCallBody), 'svod-leaderboard.js не передаёт thumbXAdjust');
+
+    const achStart = achSrc.indexOf('this._buildSvodScroll({');
+    const achEnd   = achSrc.indexOf('});', achStart);
+    const achBody  = achSrc.slice(achStart, achEnd);
+    assert(!/thumbXAdjust/.test(achBody), 'svod-achievements.js тоже больше не передаёт thumbXAdjust (28.10.2026 — trackX уже равен эталону)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

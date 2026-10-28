@@ -146,8 +146,8 @@ export function attachWeaponReloadPopup(proto){
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(BASE + 'выход попап покупки ключей и кд оружия.png'));
         exitBtn.x = 861; exitBtn.y = 196;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { _sa(exitBtn, 0.75); _ss(exitBtn, 1.08); });
-        exitBtn.on('pointerout',  () => { _sa(exitBtn, 1); _ss(exitBtn, 1); });
+        exitBtn.on('pointerover', () => { _ss(exitBtn, 1.08); });
+        exitBtn.on('pointerout',  () => { _ss(exitBtn, 1); });
         exitBtn.on('pointerdown', () => { this._closeWeaponReloadPopup(); });
         win.addChild(exitBtn);
 
