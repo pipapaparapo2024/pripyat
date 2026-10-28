@@ -194,9 +194,16 @@ console.log('\nTest 3c: id105/110/115 (cat:6) — cellDx/cellDy/cellScale/manDx/
         // сверху 6px и снизу 6px, ширину не трогай"): симметричное сжатие вокруг текущего
         // центра — anchor(0.5,0.5), поэтому cellDy НЕ меняется, меняется только cellHeight
         // (86 → 74). cellWidth нетронут по прямому указанию.
-        103: {cat: 2, expected: 'cellDx:-6, cellDy:-50, cellWidth:128, cellHeight:74, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
+        // 28.10.2026 (четвёртое указание, новый снимок редактора — "x:69,y:721,w:128,h:185"
+        // (бродяга) / "x:385,y:727,w:129,h:185" (следопыт), явно "на прод", применить и на
+        // тест, и на прод): та же формула (cx/cy ячейки не меняются — тот же idx в каталоге,
+        // row4: бродяга cx:0,cy:688; следопыт cx:314,cy:688). Бродяга: cellDx=69-77-0=-8,
+        // cellDy=721-98-688=-65. Следопыт: cellDx=385-77-314=-6, cellDy=727-98-688=-59.
+        // cellHeight вырос почти втрое (74→185) — иконка штанов теперь заметно крупнее в
+        // ячейке гардероба, по прямому указанию пользователя.
+        103: {cat: 2, expected: 'cellDx:-8, cellDy:-65, cellWidth:128, cellHeight:185, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
         108: {cat: 2, expected: 'cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manWidth:300, manHeight:202,'},
-        113: {cat: 2, expected: 'cellDx:-6, cellDy:-50, cellWidth:129, cellHeight:74, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
+        113: {cat: 2, expected: 'cellDx:-6, cellDy:-59, cellWidth:129, cellHeight:185, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
     };
     for(const [id, {cat, expected}] of Object.entries(CONFIRMED)){
         const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:${cat}, [^\\n]*`));
