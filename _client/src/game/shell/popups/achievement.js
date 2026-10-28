@@ -3,6 +3,8 @@
  * ./images/попап достижения.png (плашка, 457×156), ./images/achievements/*.png (иконки
  * категорий), ./images/stashes/*.png (иконки заначек).
  */
+import { formatAchNum } from '../../../modules/achievement-tiers.js';
+
 export function attachAchievementPopup(proto){
     const AI = './images/achievements/';
     const SI = './images/stashes/';
@@ -251,7 +253,9 @@ export function attachAchievementPopup(proto){
         win.addChild(scoreTxt);
 
         // Общий счёт очков достижений игрока (звезда, зашитая в саму плашку справа).
-        const totalTxt = new PIXI.Text(String(this.getTotalStars()), {
+        // 28.10.2026 (по прямому указанию — "числа за 1000 сокращать до К/КК"): сумма по всем
+        // 331 достижениям достигает 4455 очков, реально достижимо задолго до 100% прогресса.
+        const totalTxt = new PIXI.Text(formatAchNum(this.getTotalStars(), true), {
             fontFamily:'Southbank LT', fontSize:20, fill:ACH_FONT_COLOR, fontWeight:'bold',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1,
         });

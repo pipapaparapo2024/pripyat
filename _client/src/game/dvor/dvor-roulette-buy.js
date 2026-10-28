@@ -1,5 +1,6 @@
 import { applyPatch } from '../../modules/patch.js';
 import buyPointsPackages from '../../data/buy_points_packages.json';
+import { formatAchNum } from '../../modules/achievement-tiers.js';
 
 /** Рулетка — экраны покупки поинтов и кейса. */
 export function attachRouletteBuy(proto){
@@ -39,7 +40,9 @@ export function attachRouletteBuy(proto){
         });
         win.addChild(exitBtn);
 
-        const ptsTxt = new PIXI.Text(String(parseInt(udata['blue_points'] || 0)), {
+        // 28.10.2026 (по прямому указанию — "числа за 1000 сокращать до К/КК"): два пакета
+        // по 550 (buy_points_packages.json) уже дают 1100, плюс награды за спины сверху.
+        const ptsTxt = new PIXI.Text(formatAchNum(parseInt(udata['blue_points'] || 0), true), {
             fontFamily:'Southbank LT', fontSize:22, fill:'#7fb8ff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
@@ -164,7 +167,9 @@ export function attachRouletteBuy(proto){
         });
         win.addChild(exitBtn);
 
-        const spTxt = new PIXI.Text('Спичек: ' + parseInt(udata['roulette_spichki']||0), {
+        // 28.10.2026 (по прямому указанию): джекпот-слот (amt:3000) делает это реальным после
+        // одной удачной прокрутки.
+        const spTxt = new PIXI.Text('Спичек: ' + formatAchNum(parseInt(udata['roulette_spichki']||0), true), {
             fontFamily:'Southbank LT', fontSize:20, fill:'#cc88ff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });

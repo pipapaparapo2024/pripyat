@@ -1,5 +1,6 @@
 import { applyPatch } from '../../modules/patch.js';
 import { buildShmotTooltipCard } from '../shell/shmot-tooltip.js';
+import { formatAchNum } from '../../modules/achievement-tiers.js';
 
 /** Покер — экран сумки (покупка и открытие). */
 export function attachPokerBag(proto){
@@ -45,7 +46,10 @@ export function attachPokerBag(proto){
         // решение пересмотрено — обе валюты ОБЪЕДИНЕНЫ, канонический столбец roulette_spichki
         // (см. poker.php.openBag()), poker_spichki больше нигде не пишется.
         const spichkiCount = parseInt(udata['roulette_spichki']||0);
-        const spTxt = new PIXI.Text(String(spichkiCount), {
+        // 28.10.2026 (по прямому указанию — "в магазинах/наградах числа за 1000 сокращать до
+        // К/КК"): джекпот-слот рулетки (SLOTS, amt:3000) делает это реальным после одной удачной
+        // прокрутки, не теоретическим краем.
+        const spTxt = new PIXI.Text(formatAchNum(spichkiCount, true), {
             fontFamily:'Southbank LT', fontSize:29, fill:'#88ccff',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
@@ -188,8 +192,10 @@ export function attachPokerBag(proto){
         };
         // 18.10.2026: новые координаты сняты редактором позиций (scale 1.250 — уже заложен
         // в _addAmt/tatu ниже через t.scale.set(1.25), не трогаем отдельно).
-        _addAmt('+' + exp,   635, 242);
-        _addAmt('+' + cig,   449, 387);
+        // 28.10.2026 (по прямому указанию — "числа за 1000 сокращать до К/КК"): exp гарантированно
+        // ≥1000 (poker.php.openBag(): mt_rand(1000,2000)) КАЖДЫЙ раз, cig доходит до 1000.
+        _addAmt('+' + formatAchNum(exp, true),   635, 242);
+        _addAmt('+' + formatAchNum(cig, true),   449, 387);
         _addAmt('+' + stash, 630, 439);
         _addAmt('+' + coins, 795, 257);
         // 18.10.2026 (по прямому указанию — "уменьши фонт сайз на 2px"): у остальных карточек

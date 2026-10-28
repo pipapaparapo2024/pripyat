@@ -79,8 +79,11 @@ console.log('\nTest 3: popups/reward.js — наведение на карточ
 console.log('\nTest 4: interface-currency-purchase.js — countTxt включает название валюты, titleTxt сдвинут');
 {
     assert(/unitWord: \(n\) => 'руб',/.test(purchaseSrc), 'вкладка "рубли" — короткая неизменяемая подпись "руб"');
-    assert(/const countTxt = new PIXI\.Text\(count \+ ' ' \+ def\.unitWord\(count\), TXT_STYLE_COUNT\);/.test(purchaseSrc),
-        'countTxt включает unitWord (напр. "1600 сухарей")');
+    // 28.10.2026 (по прямому указанию — "в магазине покупки пиши не 1000 а 1К"): count теперь
+    // сокращается через formatAchNum(count, true) ("1.6К"), unitWord(count) по-прежнему
+    // склоняется от РЕАЛЬНОГО числа.
+    assert(/const countTxt = new PIXI\.Text\(formatAchNum\(count, true\) \+ ' ' \+ def\.unitWord\(count\), TXT_STYLE_COUNT\);/.test(purchaseSrc),
+        'countTxt сокращает число через formatAchNum(count, true), unitWord включает склонение (напр. "1.6К сухарей")');
     assert(/wordWrap: true, wordWrapWidth: 130/.test(purchaseSrc), 'TXT_STYLE_COUNT переносит длинную подпись по ширине карты');
     assert(/titleTxt\.x = 652; titleTxt\.y = 122;/.test(purchaseSrc), 'titleTxt сдвинут влево: x 717→652');
 }

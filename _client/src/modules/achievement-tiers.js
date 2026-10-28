@@ -120,14 +120,20 @@ export function getStatValue(s, statPath){
 // Сокращение крупных чисел в игровом стиле — "к" за тысячи, "кк" за миллионы (та же логика,
 // что и в id самих достижений: dmg_5kk, auto_1k). Единый источник для описаний достижений
 // (interface-achievements.js) и прогресс-баров тиров (svod-achievements.js).
-export function formatAchNum(n){
+//
+// 28.10.2026 (по прямому указанию — "в магазине покупки... пиши не 1000 а 1К, не 1 000 000 а
+// 1КК, такое должно быть везде в игре"): добавлен параметр upper — тот же счёт, те же пороги,
+// только заглавные "К"/"КК" вместо строчных "к"/"кк" (по умолчанию false — не трогает уже
+// задействованные места с "к"/"кк", вроде лайфтайм-наград топа 2048).
+export function formatAchNum(n, upper = false){
+    const K = upper ? 'К' : 'к', KK = upper ? 'КК' : 'кк';
     if(n >= 1000000){
         const v = n / 1000000;
-        return (v % 1 === 0 ? v : v.toFixed(1)) + 'кк';
+        return (v % 1 === 0 ? v : v.toFixed(1)) + KK;
     }
     if(n >= 1000){
         const v = n / 1000;
-        return (v % 1 === 0 ? v : v.toFixed(1)) + 'к';
+        return (v % 1 === 0 ? v : v.toFixed(1)) + K;
     }
     return String(n);
 }

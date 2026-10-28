@@ -57,8 +57,10 @@ console.log('\nTest 3: текст "ПОЛУЧЕНО ОЧКОВ: X ИЗ Y" — X/
 
 console.log('\nTest 4: общий счёт очков (звезда) — это getTotalStars(), не сегментный счёт');
 {
-    assert(/totalTxt = new PIXI\.Text\(String\(this\.getTotalStars\(\)\)/.test(popupSrc),
-        'число на звезде — общий счёт достижений игрока (achievement_stars), не сегментный');
+    // 28.10.2026 (по прямому указанию — "числа за 1000 сокращать до К/КК"): до 4455 очков по
+    // 331 достижению, formatAchNum(n, true) вместо голого String().
+    assert(/totalTxt = new PIXI\.Text\(formatAchNum\(this\.getTotalStars\(\), true\)/.test(popupSrc),
+        'число на звезде — общий счёт достижений игрока (achievement_stars), не сегментный, сокращён через formatAchNum');
 }
 
 // 17.09.2026 (позже этого батча, отдельное прямое указание): если за один _checkAll()

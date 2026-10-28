@@ -1,5 +1,6 @@
 import { startPurchase } from '../../modules/iap.js';
 import { isOk } from '../../modules/platform.js';
+import { formatAchNum } from '../../modules/achievement-tiers.js';
 
 /** Попап покупки валюты — консервы(тушёнка)/рубли/сухари, 3 вкладки в одном окне.
  *
@@ -296,7 +297,12 @@ export function attachCurrencyPurchase(proto){
                 // ФИКСИРОВАННУЮ высокую плотность растеризации прямо на объекте (стандартный
                 // приём PixiJS для мелкого текста) — текст печётся резким сразу, независимо от
                 // текущего реального масштаба экрана.
-                const countTxt = new PIXI.Text(count + ' ' + def.unitWord(count), TXT_STYLE_COUNT);
+                // 28.10.2026 (по прямому указанию — "если цифра выходит за 1000, пиши не 1000
+                // а 1К, аналогично миллиону — 1КК"): formatAchNum(count, true) сокращает
+                // ТОЛЬКО отображаемое число, def.unitWord(count) по-прежнему считает
+                // склонение ("сухарей"/"сухаря") от РЕАЛЬНОГО count — склонение не должно
+                // зависеть от того, как число сократили на экране.
+                const countTxt = new PIXI.Text(formatAchNum(count, true) + ' ' + def.unitWord(count), TXT_STYLE_COUNT);
                 countTxt.resolution = 4;
                 countTxt.anchor.set(0.5, 0);
                 countTxt.x = slot.x + SLOT_W / 2; countTxt.y = slot.y + 25;

@@ -64,7 +64,9 @@ console.log('\nTest 2: achievement-tiers.js — familyMembers(), getStatValue(),
 {
     assert(/export function familyMembers\(list, familyKey\)/.test(tiersSrc), 'familyMembers() экспортирована');
     assert(/export function getStatValue\(s, statPath\)/.test(tiersSrc), 'getStatValue() экспортирована');
-    assert(/export function formatAchNum\(n\)/.test(tiersSrc), 'formatAchNum() экспортирована (единый источник для interface-achievements.js и svod-achievements.js)');
+    // 28.10.2026: добавлен необязательный параметр upper (заглавные "К"/"КК" для магазина
+    // покупки валюты) — по умолчанию false, старое строчное поведение не меняется.
+    assert(/export function formatAchNum\(n, upper = false\)/.test(tiersSrc), 'formatAchNum() экспортирована (единый источник для interface-achievements.js и svod-achievements.js)');
 
     function achievementThreshold(a){ return a.threshold; }
     function achievementFamilyKey(a){ return a.cat === 'kill' ? a.id : a.cat; }

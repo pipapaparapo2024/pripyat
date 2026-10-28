@@ -1,5 +1,6 @@
 import { applyPatch } from '../../modules/patch.js';
 import buyPointsPackages from '../../data/buy_points_packages.json';
+import { formatAchNum } from '../../modules/achievement-tiers.js';
 
 /** Зарики — построение нового экрана и экран покупки поинтов. */
 export function attachDiceScreen(proto){
@@ -306,7 +307,9 @@ export function attachDiceScreen(proto){
         });
         win.addChild(exitBtn);
 
-        const ptsTxt = new PIXI.Text(String(parseInt(udata['dice_points']||0)), {
+        // 28.10.2026 (по прямому указанию — "числа за 1000 сокращать до К/КК"): два пакета по
+        // 550 (buy_points_packages.json) уже дают 1100.
+        const ptsTxt = new PIXI.Text(formatAchNum(parseInt(udata['dice_points']||0), true), {
             fontFamily:'Southbank LT', fontSize:22, fill:'#ff2222',
             dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
         });
