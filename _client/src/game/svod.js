@@ -81,13 +81,17 @@ export default class Svod{
         // 28.10.2026 (по прямому указанию, редактор позиций — "тоже самое и для файла не
         // актив/актив", т.е. ОДНА точка x/y/scale на обе текстуры каждой вкладки, без отдельных
         // activeDy/passiveDy поправок, как было раньше).
+        // 28.10.2026 (по прямому указанию — случайный супер деплой вынес Заначки на прод раньше
+        // срока): вкладка скрывается на pripyat-game.ru через window.hide_unreleased_features
+        // (index.js, тот же паттерн, что window.debug_mode) — фильтр ПЕРЕД рендером кнопок, не
+        // отдельная проверка внутри цикла, иначе остаётся дырка в сетке на месте кнопки.
         const MAIN_TABS = [
             { key:'zanachki',activeImg:'заначки актив.png',               passiveImg:'заначки пассив.png',                x:208, y:393, scale:0.960 },
             { key:'respect',activeImg:'кнопка топ по авторитету актив.png',passiveImg:'кнопка топ по авторитету пассив.png',x:212, y:186, scale:1.020 },
             { key:'damage', activeImg:'кнопка топ по урону актив.png',     passiveImg:'кнопка топ по урону пассив.png',     x:208, y:254, scale:0.987 },
             { key:'ach',    activeImg:'кнопка топ по достижениям актив.png',passiveImg:'кнопка топ по достижения пассив.png',x:209, y:325, scale:1.000 },
             { key:'skills', activeImg:'скиллы актив.png',                 passiveImg:'скиллы пассив.png',                 x:210, y:461, scale:0.953 },
-        ];
+        ].filter(t => t.key !== 'zanachki' || !window.hide_unreleased_features);
 
         const tabSprites = {};
         MAIN_TABS.forEach(t => {

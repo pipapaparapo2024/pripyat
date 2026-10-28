@@ -347,22 +347,28 @@ export function attachInterfacePanels(proto){
         // hover.png", тот же размер (236×57), что и соседние кнопки этой панели. Временный
         // Graphics+Text плейсхолдер (стоял здесь до этого момента) заменён на настоящие
         // спрайты, тот же hover-паттерн norm/hov/hit, что у rightCfg.forEach выше.
-        const raznYOff = rightCfg.length * (BTN_H_R + GAP_R);
-        const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания.png'));
-        const raznHov  = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания hover.png'));
-        raznNorm.y = raznHov.y = raznYOff;
-        raznHov.visible = false;
-        const raznHit = new PIXI.Graphics();
-        raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, raznYOff, BTN_W_R, BTN_H_R); raznHit.endFill();
-        raznHit.interactive = true; raznHit.buttonMode = true;
-        if(window.isMobile) helper.touchPad(raznHit);
-        raznHit.on('pointerover', () => { raznNorm.visible = false; raznHov.visible = true; });
-        raznHit.on('pointerout',  () => { raznHov.visible = false; raznNorm.visible = true; });
-        raznHit.on('pointerdown', () => {
-            console.log('[PNG right tab] clicked: raznaryadka | _openModuleName:', this._openModuleName);
-            this.openModule('raznaryadka');
-        });
-        rightPanel.addChild(raznNorm, raznHov, raznHit);
+        // 28.10.2026 (по прямому указанию — случайный супер деплой вынес Разнарядку на прод
+        // раньше срока): кнопка скрывается на pripyat-game.ru через window.hide_unreleased_features
+        // (index.js, тот же паттерн, что window.debug_mode) — остальные кнопки правой панели
+        // (rightCfg.forEach выше) не зависят от этого блока по позиции, их layout не съезжает.
+        if(!window.hide_unreleased_features){
+            const raznYOff = rightCfg.length * (BTN_H_R + GAP_R);
+            const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания.png'));
+            const raznHov  = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания hover.png'));
+            raznNorm.y = raznHov.y = raznYOff;
+            raznHov.visible = false;
+            const raznHit = new PIXI.Graphics();
+            raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, raznYOff, BTN_W_R, BTN_H_R); raznHit.endFill();
+            raznHit.interactive = true; raznHit.buttonMode = true;
+            if(window.isMobile) helper.touchPad(raznHit);
+            raznHit.on('pointerover', () => { raznNorm.visible = false; raznHov.visible = true; });
+            raznHit.on('pointerout',  () => { raznHov.visible = false; raznNorm.visible = true; });
+            raznHit.on('pointerdown', () => {
+                console.log('[PNG right tab] clicked: raznaryadka | _openModuleName:', this._openModuleName);
+                this.openModule('raznaryadka');
+            });
+            rightPanel.addChild(raznNorm, raznHov, raznHit);
+        }
 
         root.layer1_mc.addChild(rightPanel);
         this._pngRightPanel = rightPanel;
