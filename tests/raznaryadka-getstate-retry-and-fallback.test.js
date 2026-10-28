@@ -82,6 +82,12 @@ console.log('Test 4: клик по fallback-тексту скрывает его
     };
     let applyPatchCalls = 0;
     function applyPatch(){ applyPatchCalls++; }
+    // 28.10.2026 (тест найден сломанным при прогоне — _build() теперь зовёт scheduleFontRedraw()
+    // (см. modules/font-ready.js), а import срезается regex'ом на строке 48 без замены на мок —
+    // "ReferenceError: scheduleFontRedraw is not defined" при реальном исполнении): no-op мок,
+    // тот же приём, что applyPatch чуть выше — тест не проверяет логику редрава шрифтов (для
+    // этого есть отдельный tests/font-ready-redraw-race-fix.test.js), здесь важно не падать.
+    function scheduleFontRedraw(){}
     let notifyCalls = [];
     const notify = { showResult(opts){ notifyCalls.push(opts); } };
     let scheduled = [];
@@ -90,7 +96,7 @@ console.log('Test 4: клик по fallback-тексту скрывает его
     const helper = { touchPad(){} };
 
     const sandbox = {
-        console, PIXI, TS, applyPatch, notify, helper,
+        console, PIXI, TS, applyPatch, scheduleFontRedraw, notify, helper,
         window: { isMobile: false, notify, iface: null },
         root: root2,
         setTimeout: fakeSetTimeout,

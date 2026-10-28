@@ -23,10 +23,14 @@ function check(cond, msg) {
 const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 
 let src = read('_client/src/game/svod/svod-zanachki.js');
-// vm-контекст не резолвит ES-модули — убираем import (applyPatch здесь не нужен для тестируемых
-// методов, они его не вызывают) и превращаем export function в обычную function, тот же приём,
-// что в boss-rating-audio-regressions.test.js.
-src = src.replace(/^import .*$/m, '').replace('export function attachSvodZanachki', 'function attachSvodZanachki');
+// vm-контекст не резолвит ES-модули — убираем import (applyPatch/scheduleFontRedraw здесь не
+// нужны для тестируемых методов, они их не вызывают) и превращаем export function в обычную
+// function, тот же приём, что в boss-rating-audio-regressions.test.js.
+// 28.10.2026 (тест найден сломанным при прогоне — после того как в файле появился ВТОРОЙ import
+// (scheduleFontRedraw), regex без флага /g вырезал только первую строку import, вторая оставалась
+// в исходнике и падала с "Cannot use import statement outside a module"): добавлен флаг /g —
+// вырезает ЛЮБОЕ число import-строк, не только первую.
+src = src.replace(/^import .*$/gm, '').replace('export function attachSvodZanachki', 'function attachSvodZanachki');
 
 function makeTexture(name){ return { _name: name }; }
 

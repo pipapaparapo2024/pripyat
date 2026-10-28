@@ -1,4 +1,5 @@
 import { applyPatch } from '../../../modules/patch.js';
+import { scheduleFontRedraw } from '../../../modules/font-ready.js';
 
 // 23.10.2026 (по прямому указанию — новая фича "Разнарядка", месячный календарь ежедневных
 // заданий, полная спецификация координат/шрифтов/цветов продиктована голосом + референс-
@@ -126,6 +127,13 @@ export default class Raznaryadka {
         const win = new PIXI.Container();
         win.interactive = true;
 
+        // 28.10.2026 (баг найден по прямому указанию, тот же класс гонки, что уже чинился в
+        // interface-currency-purchase.js/game2048-top-popup.js — см. modules/font-ready.js):
+        // этот экран использует ТРИ кастомных семейства (Bebas Neue Book/Pro Bold/Pro Middle),
+        // ни одно из них нигде здесь не ждёт document.fonts.ready — собираем созданные тексты
+        // по семейству, перерисовываем после реальной загрузки в конце функции.
+        const fontTextsBook = [], fontTextsProBold = [], fontTextsProMiddle = [];
+
         const blocker = new PIXI.Graphics();
         blocker.beginFill(0x000000, 0.001);
         blocker.drawRect(0, 0, 1280, 720);
@@ -155,6 +163,7 @@ export default class Raznaryadka {
         doneHeaderTxt.x = 460; doneHeaderTxt.y = 174;
         win.addChild(doneHeaderTxt);
         this._doneHeaderTxt = doneHeaderTxt;
+        fontTextsProBold.push(doneHeaderTxt);
 
         // "ДЕЛО НА <день> <месяц>" — центрировано по горизонтали на мазке.
         const dateMazok = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка мазок красный.png'));
@@ -169,6 +178,7 @@ export default class Raznaryadka {
         dateTxt.y = dateMazok.y + dateMazok.height / 2;
         win.addChild(dateTxt);
         this._dateTxt = dateTxt;
+        fontTextsBook.push(dateTxt);
 
         // Текст самого задания — на серой плашке.
         const taskPlate = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка плашка серая.png'));
@@ -184,6 +194,7 @@ export default class Raznaryadka {
         taskTxt.y = taskPlate.y + taskPlate.texture.height / 2;
         win.addChild(taskTxt);
         this._taskTxt = taskTxt;
+        fontTextsBook.push(taskTxt);
 
         // Таймер до сброса (00:00 МСК) — тёмная плашка, Southbank LT 36pt чёрный + обводка.
         const timerPlate = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка плашка тёмная.png'));
@@ -285,6 +296,7 @@ export default class Raznaryadka {
                 amtTxt.y = rowBg.y + rowBg.texture.height / 2 + 7 - 4;
             }
             win.addChild(amtTxt);
+            fontTextsProMiddle.push(amtTxt);
             // 24.10.2026 (по прямому указанию — "font size 20 пикселей, и количество заданий
             // тоже 20 пикселей"): было 16 у обеих строк.
             const rowTxt1 = new PIXI.Text('ВЫПОЛНИ', { fontFamily: FONT, fontSize: 20, fill: GOLD, dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1 });
@@ -296,6 +308,7 @@ export default class Raznaryadka {
             rowTxt1.x = centerRowX; rowTxt1.y = rowBg.y + rowBg.texture.height / 2 - 9;
             rowTxt2.x = centerRowX; rowTxt2.y = rowBg.y + rowBg.texture.height / 2 + 11;
             win.addChild(rowTxt1, rowTxt2);
+            fontTextsBook.push(rowTxt1, rowTxt2);
 
             const claimBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка кнопка забрать.png'));
             claimBtn.x = REWARD_ROW_BTN_X; claimBtn.y = row.rowY;
@@ -355,6 +368,10 @@ export default class Raznaryadka {
         win.addChild(fetchFailTxt);
         this._fetchFailTxt = fetchFailTxt;
 
+        scheduleFontRedraw("20px '" + FONT + "'", fontTextsBook);
+        scheduleFontRedraw("27px 'Bebas Neue Pro Bold'", fontTextsProBold);
+        scheduleFontRedraw("24px 'Bebas Neue Pro Middle'", fontTextsProMiddle);
+
         this._win = win;
     }
 
@@ -384,6 +401,9 @@ export default class Raznaryadka {
         const IMG = './images/';
         const win = new PIXI.Container();
         win.interactive = true;
+
+        // 28.10.2026 — тот же фикс гонки шрифта, что в _build() выше (см. modules/font-ready.js).
+        const fontTexts = [];
 
         // 24.10.2026 (по прямому указанию — "задний фон должен затемняться"): было alpha:0.001
         // (невидимый, только блокировал клики) — теперь реально затемняет экран позади попапа.
@@ -419,6 +439,7 @@ export default class Raznaryadka {
         titleTxt.anchor.set(0.5, 0.5);
         titleTxt.x = 660; titleTxt.y = 270;
         win.addChild(titleTxt);
+        fontTexts.push(titleTxt);
 
         // Подзаголовок "Откатить день N за X тушёнки" — Bebas Neue Book 24pt.
         // 24.10.2026 (по прямому указанию — "сдвинь вправо на 40px"): x 620→660.
@@ -430,6 +451,7 @@ export default class Raznaryadka {
         msgTxt.anchor.set(0.5, 0.5);
         msgTxt.x = 660; msgTxt.y = 312;
         win.addChild(msgTxt);
+        fontTexts.push(msgTxt);
 
         // 24.10.2026 (по прямому указанию — "подними на 20 пикселей кнопки отмены и покупки"):
         // было y:352/386.
@@ -463,6 +485,7 @@ export default class Raznaryadka {
             txt.anchor.set(0.5, 0.5);
             txt.x = centerX; txt.y = BTN_CENTER_Y;
             win.addChild(txt);
+            fontTexts.push(txt);
 
             btn.on('pointerover', () => { if(!btn._pressed) btn.alpha = 0.8; });
             btn.on('pointerout',  () => { if(!btn._pressed) btn.alpha = 1; });
@@ -491,6 +514,8 @@ export default class Raznaryadka {
             if(win.parent) win.parent.removeChild(win);
             this._buyoutWin = null;
         });
+
+        scheduleFontRedraw("24px '" + FONT + "'", fontTexts);
 
         this._buyoutWin = win;
         root.layer2_mc.addChild(win);

@@ -1,4 +1,5 @@
 import { applyPatch } from '../../modules/patch.js';
+import { scheduleFontRedraw } from '../../modules/font-ready.js';
 
 /** Вкладка «Заначки» (26.10.2026, по прямому указанию) — восстановление полноценной механики
  * коллекционных карточек (15 коллекций по 7 карточек), урезанной 25.09.2026 ровно потому что
@@ -116,6 +117,13 @@ export function attachSvodZanachki(proto){
         const win = new PIXI.Container();
         win.visible = false;
 
+        // 28.10.2026 (баг найден по прямому указанию — "Собрано коллекций пишется не теми
+        // шрифтами"): FONT ('Bebas Neue Book') использует эта вкладка и Разнарядка — и больше
+        // никто в игре, т.е. это первый экран, который реально просит браузер его загрузить.
+        // Собираем сюда ВСЕ текстовые объекты этого экрана, использующие FONT — см.
+        // scheduleFontRedraw() в конце функции.
+        const fontTexts = [];
+
         const bg = new PIXI.Sprite(PIXI.Texture.from(IMG + 'заначки фон экрана.png'));
         bg.x = BG_X; bg.y = BG_Y;
         win.addChild(bg);
@@ -169,6 +177,7 @@ export function attachSvodZanachki(proto){
         labelTxt.anchor.set(0.5, 0);
         labelTxt.x = 1049; labelTxt.y = 116;
         win.addChild(labelTxt);
+        fontTexts.push(labelTxt);
 
         const countTxt = new PIXI.Text('0 / 15', {
             fontFamily: FONT, fontSize: 36, fill: '#ffffff', fontWeight: 'bold',
@@ -177,6 +186,7 @@ export function attachSvodZanachki(proto){
         countTxt.anchor.set(0.5, 0);
         countTxt.x = 1047; countTxt.y = 135;
         win.addChild(countTxt);
+        fontTexts.push(countTxt);
         this._zanachkiLabelTxt = labelTxt;
         this._zanachkiCountTxt = countTxt;
 
@@ -265,6 +275,7 @@ export function attachSvodZanachki(proto){
                 countTxt.y = card.y + card.height - 18 + 92 - 2;
                 content.addChild(countTxt);
                 countTxts[key] = countTxt;
+                fontTexts.push(countTxt);
 
                 const reqSpr = new PIXI.Sprite(PIXI.Texture.from(IMG + 'заначки кнопка запросить.png'));
                 // 28.10.2026 (БАГ, исправлено тем же днём после живой проверки — "в запросе не
@@ -345,6 +356,7 @@ export function attachSvodZanachki(proto){
             });
             rewardLabelTxt.x = STAR_X; rewardLabelTxt.y = rowY + STAR_Y_OFF - 50;
             content.addChild(rewardLabelTxt);
+            fontTexts.push(rewardLabelTxt);
 
             // 28.10.2026 (по прямому указанию — редактор позиций для 1-й коллекции + "знак +
             // выглядит не так, посмотри и исправь"): "+" — первый символ строки, strokeThickness
@@ -361,6 +373,7 @@ export function attachSvodZanachki(proto){
             });
             sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF - 26;
             content.addChild(sukhariRewardTxt);
+            fontTexts.push(sukhariRewardTxt);
 
             const expRewardTxt = new PIXI.Text('+' + amt + ' опыта', {
                 fontFamily: FONT, fontSize: 15, fill: '#ffffff',
@@ -368,6 +381,7 @@ export function attachSvodZanachki(proto){
             });
             expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = rowY + STAR_Y_OFF + 5;
             content.addChild(expRewardTxt);
+            fontTexts.push(expRewardTxt);
         }
 
         this._zanachkiCardSprites = cardSprites;
@@ -396,6 +410,8 @@ export function attachSvodZanachki(proto){
         this._zanachkiScroll = scroll;
 
         win._svodDefaultScope = () => this._zanachkiFetchState();
+
+        scheduleFontRedraw("16px '" + FONT + "'", fontTexts);
 
         this._zanachkiWin = win;
         return win;
