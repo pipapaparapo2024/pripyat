@@ -41,9 +41,14 @@ const LIFETIME_X_MAP = { coins: 762, gun: 814, auto: 867, cig: 918, exp: 977 };
 
 // 28.10.2026 (баг найден по прямому указанию — "никнейм топ-1 криво стоит / будто пустой"):
 // fill был чёрным на тёмной плашке фона — текст физически рендерился, просто был невидим
-// (та же причина, что уже чинилась для countTxt в svod-zanachki.js 27.10.2026). Белый — тот же
-// цвет, что уже используется для emptyTopTxt (override fill:'#ffffff' поверх этого стиля, см.
-// ниже) и для соседних строк списка (STYLE_ROW_NAME/GAMES/PLACE на этом же экране).
+// (та же причина, что уже чинилась для countTxt в svod-zanachki.js 27.10.2026). Временно был
+// перекрашен в белый.
+//
+// 28.10.2026 (повторное указание тем же днём — "нужно было сделать шрифт чёрный"): возвращён
+// чёрный БЕЗУСЛОВНО, по прямому подтверждению пользователя (явно предупреждён, что это тот же
+// риск невидимости на тёмной плашке, что и был до фикса выше, — решение осознанное).
+// emptyTopTxt ("Пока нет лидера") по-прежнему явно переопределяет fill на белый поверх этого
+// стиля (см. ниже) — её это решение не затрагивает.
 //
 // 28.10.2026 (второй баг, найден при проверке "не гонка ли шрифта"): fontFamily был буквально
 // 'Bebas Neue Pro' — а такого @font-face в fonts.css НЕТ и никогда не было, зарегистрированы
@@ -55,7 +60,7 @@ const LIFETIME_X_MAP = { coins: 762, gun: 814, auto: 867, cig: 918, exp: 977 };
 // зарегистрированный 'Bebas Neue Pro Middle' (тот же файл, что уже используется в верхнем HUD,
 // interface.js/interface-top-currency.js) — он и был, судя по всему, тем шрифтом, который
 // визуально диктовался 26.10.2026.
-const STYLE_NICK = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 18, fontWeight: '400', fill: '#ffffff' };
+const STYLE_NICK = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 18, fontWeight: '400', fill: '#000000' };
 const STYLE_GAMES_BIG = { fontFamily: 'Bebas Neue Pro Middle', fontSize: 16, fontWeight: '400', fill: '#f4b960',
     dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1 };
 const STYLE_ROW_NAME = { fontFamily: 'Arial Narrow', fontWeight: 'bold', fontSize: 16, fill: '#ffffff' };
