@@ -94,11 +94,25 @@ console.log('\nTest 5: raznaryadka.js — _showBuyoutPopup() заменяет if
 console.log('\nTest 6: raznaryadka.js — мелкие правки (иконки +3px, fontSize 20, новая шапка Bebas Neue Pro Bold)');
 {
     const src = norm(path.join(root, '_client/src/game/shell/overlays/raznaryadka.js'));
-    assert(/iconY: 214, icon: 'разнарядка награда рубли\.png'/.test(src), 'рубли: iconY 217->214 (-3px)');
-    assert(/iconY: 279, icon: 'разнарядка награда пистолет\.png'/.test(src), 'пистолет: iconY 282->279 (-3px)');
-    assert(/iconY: 326, icon: 'разнарядка награда автомат\.png'/.test(src), 'автомат: iconY 329->326 (-3px)');
-    assert(/iconY: 388, icon: 'разнарядка награда патроны\.png'/.test(src), 'патроны НЕ трогались (388)');
+    // 28.10.2026 (повторная правка тем же днём — "рубли/стволы/автоматы/патроны опусти вниз на
+    // 4 пикселя"): первые 4 строки +4 (сундук не трогается здесь).
+    // 28.10.2026 (ещё одна правка тем же днём, финальный редактор позиций — "новое расположение
+    // файлов во вкладке заданий"): рубли iconY 218->214, пистолет 283->278, патроны 392->389,
+    // плюс явные iconW/iconH (= нативный размер файлов, scale:1.000). Автомат/сундук не трогались.
+    assert(/iconY: 214, iconW: 53, iconH: 53, icon: 'разнарядка награда рубли\.png'/.test(src), 'рубли: iconY 218->214, явные w:53 h:53');
+    assert(/iconY: 278, iconW: 58, iconH: 52, icon: 'разнарядка награда пистолет\.png'/.test(src), 'пистолет: iconY 283->278, явные w:58 h:52');
+    assert(/iconY: 330, icon: 'разнарядка награда автомат\.png'/.test(src), 'автомат: iconY не трогался (330)');
+    assert(/iconY: 389, iconW: 30, iconH: 54, icon: 'разнарядка награда патроны\.png'/.test(src), 'патроны: iconY 392->389, явные w:30 h:54');
     assert(/iconY: 456, icon: 'разнарядка награда сундук\.png'/.test(src), 'сундук НЕ трогался (456)');
+    assert(/if\(row\.iconW != null\)\{ icon\.width = row\.iconW; icon\.height = row\.iconH; \}/.test(src), 'иконка получает явные width/height, когда они заданы в строке');
+    // 28.10.2026 (по прямому указанию — "для всех задачек их количество опусти вниз на 7
+    // пикселей"): +7 поверх уже применённых правок для ОБЕИХ веток amtTxt (сундук и остальные 4).
+    // 28.10.2026 (повторное указание тем же днём, скриншот — "количество (×30, ×20 и т.д.)
+    // подними вверх на 4 пикселя"): -4 поверх +7 — итого +5 (сундук) / +3 (остальные 4).
+    assert(/amtTxt\.x = icon\.x \+ icon\.width \+ 2; amtTxt\.y = icon\.y \+ icon\.height \/ 2 \+ 2 \+ 7 - 4; \};/.test(src),
+        'amtTxt сундука — итого +5 от прежней базовой позиции (+2+7-4)');
+    assert(/amtTxt\.y = rowBg\.y \+ rowBg\.texture\.height \/ 2 \+ 7 - 4;/.test(src),
+        'amtTxt остальных 4 строк — итого +3 (+7-4)');
     assert(/fontSize: 20, fill: GOLD, dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1 \}\);\n            const rowTxt2/.test(src),
         'rowTxt1 ("ВЫПОЛНИ") — fontSize 20 (было 16)');
     assert((src.match(/fontSize: 20, fill: GOLD, dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1 \}\);/g) || []).length >= 2,

@@ -85,7 +85,9 @@ console.log('\nTest 3: все 8 боссов сопоставлены отдел
     // Портрет — обычный Sprite без принудительных .width/.height (значит рендерится в
     // натуральном размере файла, как и просил пользователь), в отличие от аватарок рейтинга,
     // у которых .width/.height намеренно выставлены под общий квадратный слот.
-    const portraitLine = bossResultSrc.match(/const portrait = _sprite\(portraitFile, PORTRAIT_POS\);/);
+    // 28.10.2026: PORTRAIT_POS → portraitPos (локальная переменная, фолбэк на точные замеры
+    // по каждому боссу в PORTRAIT_POS_BY_IDX) — сам факт отсутствия .width/.height не изменился.
+    const portraitLine = bossResultSrc.match(/const portrait = _sprite\(portraitFile, portraitPos\);/);
     assert(!!portraitLine, 'портрет создаётся через _sprite() (без масштабирования под фиксированный размер)');
 }
 
@@ -187,8 +189,12 @@ console.log('\nTest 12: boss_result.js — 18.09.2026 правки по рефе
 {
     assert(/const NAME_OFFSET = \{ x: 78, y: 33 \};/.test(bossResultSrc),
         'имя босса позиционируется ОТНОСИТЕЛЬНО портрета (плашка вшита в файл портрета) — точный снимок редактора 19.09.2026');
-    assert(/nameTxt\.x = PORTRAIT_POS\.x \+ NAME_OFFSET\.x;/.test(bossResultSrc),
-        'имя босса вычисляется как PORTRAIT_POS + NAME_OFFSET, а не независимая абсолютная константа');
+    // 28.10.2026 (точные замеры по каждому боссу): для боссов из NAME_POS_BY_IDX имя теперь
+    // АБСОЛЮТНАЯ позиция, не offset — старый offset-расчёт остаётся ФОЛБЭКОМ (см. else-ветку)
+    // для боссов без свежего замера (меченный).
+    assert(/nameTxt\.x = portraitPos\.x \+ NAME_OFFSET\.x;/.test(bossResultSrc),
+        'фолбэк: имя босса БЕЗ записи в NAME_POS_BY_IDX по-прежнему считается как portraitPos + NAME_OFFSET');
+    assert(/const NAME_POS_BY_IDX = \{/.test(bossResultSrc), 'добавлена таблица точных абсолютных позиций имени по bossIdx');
     assert(/fill:\s*'#1a1208'/.test(bossResultSrc), 'имя босса — чёрные чернила (тёмный цвет), как на референсе');
 
     assert(/const REWARD_LABEL_POS = \{/.test(bossResultSrc), 'REWARD_LABEL_POS определяет точные координаты подписей сумм наград');

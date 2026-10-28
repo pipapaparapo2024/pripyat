@@ -51,7 +51,7 @@ console.log('\nTest 3: координаты рамки заданы конста
     // Охотника, отдельно для рамки (FRAME_REL_X/Y) и для фото/плейсхолдера (KILLER_CX/CY/W/H).
     assert(/const FRAME_REL_X = 648, FRAME_REL_Y = 8;/.test(src), 'FRAME_REL_X=648 FRAME_REL_Y=8');
     assert(/const KILLER_CX = 722, KILLER_CY = 90;/.test(src), 'KILLER_CX=722 KILLER_CY=90');
-    assert(/const KILLER_W = 106, KILLER_H = 106;/.test(src), 'KILLER_W=106 KILLER_H=106');
+    assert(/const KILLER_W = 110, KILLER_H = 110;/.test(src), 'KILLER_W=110 KILLER_H=110 (28.10.2026, было 106×106)');
 }
 
 // ── Summary ────────────────────────────────────────────────────────────────

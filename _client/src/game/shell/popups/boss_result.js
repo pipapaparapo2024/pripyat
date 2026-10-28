@@ -76,6 +76,28 @@ export function attachBossResultPopup(proto){
     // Значение — точный снимок пользователя через редактор позиций 19.09.2026 (было 36, стало 33).
     const NAME_OFFSET = { x: 78, y: 33 };
 
+    // 28.10.2026 (по прямому указанию — редактор позиций, точные замеры по каждому боссу
+    // отдельно): раньше ОДНА общая PORTRAIT_POS/NAME_OFFSET на все 8 боссов (портреты разной
+    // нативной ширины/пропорций, имя — текст разной длины у каждого). Ключ — bossIdx, тот же
+    // индекс, что и в BOSS_PORTRAITS[bossIdx] выше (0=охотник..7=жгут). Боссы без свежего замера
+    // (меченный — координат не присылали) — фолбэк на общие PORTRAIT_POS/NAME_OFFSET ниже.
+    const PORTRAIT_POS_BY_IDX = {
+        0: { x: 414, y: 226 }, // охотник
+        1: { x: 414, y: 225 }, // счастливчик
+        2: { x: 414, y: 226 }, // ястреб
+    };
+    // NAME_POS_BY_IDX — АБСОЛЮТНЫЕ координаты имени (не offset от портрета, в отличие от
+    // NAME_OFFSET) — измерены вместе с PORTRAIT_POS для каждого босса раздельно.
+    const NAME_POS_BY_IDX = {
+        0: { x: 492, y: 258 }, // охотник
+        1: { x: 492, y: 258 }, // счастливчик
+        2: { x: 492, y: 257 }, // ястреб
+        4: { x: 496, y: 258 }, // крыс
+        5: { x: 492, y: 259 }, // баркут
+        6: { x: 492, y: 259 }, // борода
+        7: { x: 492, y: 259 }, // жгут
+    };
+
     // Точные координаты подписей суммы наград — сняты пользователем через редактор позиций
     // 19.09.2026 (было приблизительно по мокапу, теперь live-координаты каждой подписи).
     const REWARD_LABEL_POS = {
@@ -188,7 +210,9 @@ export function attachBossResultPopup(proto){
         win.addChild(cigIcon);
 
         const portraitFile = BOSS_PORTRAITS[bossIdx] || BOSS_PORTRAITS[0];
-        const portrait = _sprite(portraitFile, PORTRAIT_POS);
+        const portraitPos = PORTRAIT_POS_BY_IDX[bossIdx] || PORTRAIT_POS;
+        const namePos = NAME_POS_BY_IDX[bossIdx] || null; // null → старый offset-расчёт ниже
+        const portrait = _sprite(portraitFile, portraitPos);
         win.addChild(portrait);
 
         // 24.09.2026 (по прямому указанию — "если босс убит, картинка босса должна затемняться,
@@ -200,7 +224,7 @@ export function attachBossResultPopup(proto){
             portraitDark.beginFill(0x000000, 0.55);
             portraitDark.drawRect(0, 0, PORTRAIT_W, PORTRAIT_H);
             portraitDark.endFill();
-            portraitDark.x = PORTRAIT_POS.x; portraitDark.y = PORTRAIT_POS.y;
+            portraitDark.x = portraitPos.x; portraitDark.y = portraitPos.y;
             win.addChild(portraitDark);
         }
 
@@ -213,8 +237,8 @@ export function attachBossResultPopup(proto){
                 dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 2,
             });
             killedStamp.anchor.set(0.5, 0.5);
-            killedStamp.x = PORTRAIT_POS.x + PORTRAIT_W / 2;
-            killedStamp.y = PORTRAIT_POS.y + PORTRAIT_H / 2;
+            killedStamp.x = portraitPos.x + PORTRAIT_W / 2;
+            killedStamp.y = portraitPos.y + PORTRAIT_H / 2;
             killedStamp.rotation = -Math.PI / 4; // поворот на 45° против часовой
             killedStamp.alpha = 0.9;
             win.addChild(killedStamp);
@@ -228,8 +252,12 @@ export function attachBossResultPopup(proto){
             fontFamily: 'Southbank LT', fontSize: 18, fill: '#1a1208', fontWeight: 'bold',
         });
         nameTxt.anchor.set(0.5, 0.5);
-        nameTxt.x = PORTRAIT_POS.x + NAME_OFFSET.x;
-        nameTxt.y = PORTRAIT_POS.y + NAME_OFFSET.y;
+        if(namePos){
+            nameTxt.x = namePos.x; nameTxt.y = namePos.y;
+        } else {
+            nameTxt.x = portraitPos.x + NAME_OFFSET.x;
+            nameTxt.y = portraitPos.y + NAME_OFFSET.y;
+        }
         win.addChild(nameTxt);
 
         if(!isWin){

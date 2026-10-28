@@ -123,6 +123,9 @@ export default class Svod{
             panel = this._buildLeaderboardPanel({
                 cat: 4, bg: 'задний фон топы по авторитету.png', valueLabel: 'АВТОРИТЕТ',
                 secondScope: 'friends', secondBtnActive: 'друзья актив.png', secondBtnPassive: 'друзья неактив.png',
+                // 28.10.2026 (по прямому указанию — "в общем топе Свод скролл бегунок сдвинь
+                // влево на 2 пикселя"): только эта вкладка, урон/достижения не трогать.
+                thumbXAdjust: -2,
             });
         } else if(key === 'damage'){
             panel = this._buildLeaderboardPanel({

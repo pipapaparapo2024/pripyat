@@ -385,3 +385,35 @@ echo "=== Test 18 (27.10.2026, баг репорт — \"форснул на н�
     echo (RaznaryadkaProgress::effectiveDay(['month' => $todayMonth, 'dev_day_offset' => 0]) === $todayDay
         ? "PASS" : "FAIL") . ": effectiveDay() с явным \$data['month']===реальный месяц ведёт себя как раньше (=mskDay()), получено " . RaznaryadkaProgress::effectiveDay(['month' => $todayMonth, 'dev_day_offset' => 0]) . "\n";
 }
+
+echo "=== Test 19 (28.10.2026, по прямому указанию — \"проверь правильно ли показываются дни для шмотки за месяц, ноябрь 30, декабрь 31\"): порог последнего тира (need:-1, шмотка-сундук) = daysInMonthFor(month), не захардкожен ===\n";
+{
+    // Та же формула, что в getState()/claim() (server/core/controllers/raznaryadka.php):
+    // $need = $tier['need'] == -1 ? $daysInMonth : intval($tier['need']);
+    $lastTier = null;
+    foreach($CONFIG['reward_tiers'] as $t){ if($t['need'] == -1) $lastTier = $t; }
+    echo ($lastTier !== null ? "PASS" : "FAIL") . ": в CONFIG есть тир need:-1 (шмотка за весь месяц)\n";
+
+    $cases = [
+        '2026-11' => 30, // ноябрь — всегда 30
+        '2026-12' => 31, // декабрь — всегда 31
+        '2026-02' => 28, // 2026 не високосный
+        '2028-02' => 29, // 2028 високосный
+    ];
+    foreach($cases as $month => $expectedDays){
+        $dim  = RaznaryadkaProgress::daysInMonthFor($month);
+        $need = $lastTier['need'] == -1 ? $dim : intval($lastTier['need']);
+        echo ($dim === $expectedDays
+            ? "PASS" : "FAIL") . ": daysInMonthFor('$month') = $expectedDays, получено $dim\n";
+        echo ($need === $expectedDays
+            ? "PASS" : "FAIL") . ": порог шмотки (need:-1) для $month = $expectedDays заданий, получено $need (НЕ захардкожено на 31)\n";
+    }
+
+    // Регресс-гвард по исходному тексту: формула должна остаться динамической в ОБОИХ местах
+    // (getState использует переменную $tier, claim() — $t), не превратиться обратно в хардкод "31".
+    $controllerSrc = file_get_contents(__DIR__ . '/../../server/core/controllers/raznaryadka.php');
+    $inGetState = strpos($controllerSrc, "\$tier['need'] == -1 ? \$daysInMonth : intval(\$tier['need'])") !== false;
+    $inClaim    = strpos($controllerSrc, "\$t['need'] == -1 ? \$daysInMonth : intval(\$t['need'])") !== false;
+    echo ($inGetState ? "PASS" : "FAIL") . ": динамическая формула need на месте в getState() (переменная \$tier)\n";
+    echo ($inClaim ? "PASS" : "FAIL") . ": динамическая формула need на месте в claim() (переменная \$t)\n";
+}

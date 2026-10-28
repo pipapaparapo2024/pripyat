@@ -35,11 +35,19 @@ function dayTilePos(day){
 // (продиктовано пользователем 23.10.2026).
 // 24.10.2026 (по прямому указанию — "подними вверх на 3 пикселя рубли/пистолет/автомат"):
 // iconY уменьшен на 3 у этих трёх (патроны и сундук не трогались).
+// 28.10.2026 (по прямому указанию — "рубли/стволы/автоматы/патроны опусти вниз на 4 пикселя"):
+// rowY/iconY первых 4 строк +4 (фон/подпись/иконка остаются выровнены друг с другом); сундук
+// (5-я строка) не трогается здесь — у него отдельная правка только для amtTxt, см. ниже.
+// 28.10.2026 (повторное указание тем же днём, редактор позиций — "новое расположение файлов во
+// вкладке заданий": рубли x:751,y:214,w:53,h:53; пистолет x:749,y:278,w:58,h:52; патроны
+// x:759,y:389,w:30,h:54, все scale:1.000): X у всех трёх совпал с уже заданным — менялся только
+// Y (рубли 218→214, пистолет 283→278, патроны 392→389). w/h равны нативному размеру файлов
+// (проверено) — выставлены явно согласно конвенции "явные w/h вместо scale" (AGENTS.md).
 const REWARD_ROWS = [
-    { rowY: 212, iconX: 751, iconY: 214, icon: 'разнарядка награда рубли.png' },
-    { rowY: 273, iconX: 749, iconY: 279, icon: 'разнарядка награда пистолет.png' },
-    { rowY: 332, iconX: 746, iconY: 326, icon: 'разнарядка награда автомат.png' },
-    { rowY: 390, iconX: 759, iconY: 388, icon: 'разнарядка награда патроны.png' },
+    { rowY: 216, iconX: 751, iconY: 214, iconW: 53, iconH: 53, icon: 'разнарядка награда рубли.png' },
+    { rowY: 277, iconX: 749, iconY: 278, iconW: 58, iconH: 52, icon: 'разнарядка награда пистолет.png' },
+    { rowY: 336, iconX: 746, iconY: 330, icon: 'разнарядка награда автомат.png' },
+    { rowY: 394, iconX: 759, iconY: 389, iconW: 30, iconH: 54, icon: 'разнарядка награда патроны.png' },
     { rowY: 450, iconX: 733, iconY: 456, icon: 'разнарядка награда сундук.png' },
 ];
 const REWARD_ROW_BTN_X = 859;
@@ -77,23 +85,40 @@ export default class Raznaryadka {
         if(this._win && this._win.parent) this._win.parent.removeChild(this._win);
     }
 
-    _fetchState(){
-        console.log('[raznaryadka._fetchState] → сервер: raznaryadka.getState');
+    // 28.10.2026 (баг найден по прямому указанию — "пропадают надписи наград при форсировании
+    // ноября"): isRetry=true — это ВТОРАЯ (повторная) попытка, после которой уже не повторяем
+    // молча, а показываем видимый fallback в самом попапе (_showFetchFailText) вместо вечной
+    // пустоты. Полный текст ответа/ошибки сервера логируется в обоих случаях — если баг
+    // повторится, этого будет достаточно, чтобы наконец поймать причину отказа.
+    _fetchState(isRetry){
+        console.log('[raznaryadka._fetchState] → сервер: raznaryadka.getState' + (isRetry ? ' (повтор после сбоя)' : ''));
         TS.php('raznaryadka.getState', {}, (e) => {
             console.log('[raznaryadka._fetchState] ← ответ сервера:', JSON.stringify(e));
             if(!e || !e.patch){
                 console.error('[raznaryadka._fetchState] некорректный ответ сервера (нет patch):', JSON.stringify(e));
-                if(window.notify) notify.showResult({text: 'Не удалось загрузить разнарядку'}, 0);
+                this._onFetchStateFail(isRetry);
                 return;
             }
+            this._hideFetchFailText();
             applyPatch(e.patch);
             this._state = e;
             this._render();
             this._startTimer();
         }, (err) => {
-            console.error('[raznaryadka._fetchState] ← ошибка сервера:', JSON.stringify(err));
-            if(window.notify) notify.showResult({text: 'Раздел временно недоступен'}, 0);
+            console.error('[raznaryadka._fetchState] ← ошибка сервера:', JSON.stringify(err), '| isRetry:', !!isRetry);
+            this._onFetchStateFail(isRetry);
         });
+    }
+
+    _onFetchStateFail(isRetry){
+        if(!isRetry){
+            console.log('[raznaryadka._onFetchStateFail] первая попытка не удалась, повтор через 1.5с');
+            setTimeout(() => { if(this._win) this._fetchState(true); }, 1500);
+            return;
+        }
+        console.error('[raznaryadka._onFetchStateFail] повтор тоже не удался, показываю fallback-текст');
+        if(window.notify) notify.showResult({text: 'Раздел временно недоступен'}, 0);
+        this._showFetchFailText();
     }
 
     _build(){
@@ -215,6 +240,7 @@ export default class Raznaryadka {
         REWARD_ROWS.forEach((row, i) => {
             const icon = new PIXI.Sprite(PIXI.Texture.from(IMG + row.icon));
             icon.x = row.iconX; icon.y = row.iconY;
+            if(row.iconW != null){ icon.width = row.iconW; icon.height = row.iconH; }
             win.addChild(icon);
 
             const rowBg = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка строка награды фон.png'));
@@ -241,13 +267,22 @@ export default class Raznaryadka {
                 fontFamily: 'Bebas Neue Pro Middle', fontSize: 24, fill: '#000000',
             });
             amtTxt.anchor.set(0, 0.5);
+            // 28.10.2026 (по прямому указанию — "для всех задачек их количество опусти вниз на
+            // 7 пикселей"): +7 поверх уже применённых правок для ОБЕИХ веток (последняя/сундук и
+            // остальные 4), а не только одной из них.
+            // 28.10.2026 (повторное указание тем же днём, скриншот — "количество (×30, ×20 и
+            // т.д.) подними вверх на 4 пикселя"): -4 поверх уже применённой +7 — итого +3/+5
+            // (см. ниже), для ВСЕХ 5 строк.
             if(last){
                 // "справа от него через 12 пикселей" — от правого края иконки (сундук).
-                const setAmtPos = () => { amtTxt.x = icon.x + icon.width + 12; amtTxt.y = icon.y + icon.height / 2; };
+                // 28.10.2026 (по прямому указанию — "количество последней награды сдвинь влево
+                // на 10 пикселей и опусти вниз на 2 пикселя"): -10 по X (было +12 от края иконки,
+                // стало +2), +2 по Y. Плюс ещё +7, потом -4 (см. комментарии выше) — итого +5.
+                const setAmtPos = () => { amtTxt.x = icon.x + icon.width + 2; amtTxt.y = icon.y + icon.height / 2 + 2 + 7 - 4; };
                 if(icon.texture.width > 1) setAmtPos(); else icon.texture.once('update', setAmtPos);
             } else {
                 amtTxt.x = REWARD_AMT_X;
-                amtTxt.y = rowBg.y + rowBg.texture.height / 2;
+                amtTxt.y = rowBg.y + rowBg.texture.height / 2 + 7 - 4;
             }
             win.addChild(amtTxt);
             // 24.10.2026 (по прямому указанию — "font size 20 пикселей, и количество заданий
@@ -278,18 +313,57 @@ export default class Raznaryadka {
             this._rewardRowEls.push({ amtTxt, rowBg, rowTxt1, rowTxt2, claimBtn, claimedBtn });
         });
 
-        // Стандартная кнопка выхода (см. AGENTS.md — "Паттерн нового PIXI-экрана").
+        // 28.10.2026 (по прямому указанию, редактор позиций — "новое расположение кнопки
+        // «Выйти» для вкладки «Задачи»"): x:1194,y:117,scale:0.790,w:49,h:46 (было 1240,83,
+        // scale:0.5, стандартная позиция из AGENTS.md). Явные w/h вместо scale — конвенция для
+        // новых UI-правок (см. AGENTS.md).
+        // 28.10.2026 (баг найден по прямому указанию — "везде сделай hover-эффект увеличения
+        // скейла более плавным"): это был ЕДИНСТВЕННЫЙ exitBtn в проекте, где hover менял
+        // width/height напрямую вместо scale.set() — общий патч EventEmitter.prototype.on в
+        // ui_kit.js плавно анимирует именно scale.set() (перехватывает его на время pointerover/
+        // pointerout), на .width/.height он не реагирует, поэтому только здесь скачок был
+        // мгновенным. 0.790 — тот же базовый масштаб, что и раньше (49/0.790≈62, 46/0.790≈58 —
+        // совпадает с нативным размером файла "выход.png", см. AGENTS.md "Стандартная кнопка
+        // выхода"), просто выражен через scale, а не явные width/height.
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
-        exitBtn.scale.set(0.5);
+        exitBtn.scale.set(0.790);
         if(window.isMobile) helper.touchPad(exitBtn);
-        exitBtn.x = 1240; exitBtn.y = 83;
+        exitBtn.x = 1194; exitBtn.y = 117;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
-        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
-        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
+        exitBtn.on('pointerover', () => { exitBtn.scale.set(0.790 * 1.08); });
+        exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.790); });
         exitBtn.on('pointerdown', () => this.close());
         win.addChild(exitBtn);
 
+        // 28.10.2026 (баг найден по прямому указанию — "пропадают надписи наград при форсировании
+        // ноября"): статичный попап (всё выше) строится независимо от сервера, а суммы/подписи
+        // наград заполняются ТОЛЬКО в _render(), который вызывается из успешного колбэка
+        // _fetchState() — если getState не ответит/ответит ошибкой, игрок видел пустой попап без
+        // единой подсказки, что что-то пошло не так. Корень самого отказа сервера поймать по
+        // присланным логам не удалось (см. _onFetchStateFail) — это видимый fallback на крайний
+        // случай + точка для повторной диагностики, если баг повторится.
+        const fetchFailTxt = new PIXI.Text('Не удалось загрузить разнарядку\nНажмите, чтобы повторить', {
+            fontFamily: 'Southbank LT', fontSize: 20, fill: '#ffffff', align: 'center',
+            dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 2,
+        });
+        fetchFailTxt.anchor.set(0.5, 0.5);
+        fetchFailTxt.x = 640; fetchFailTxt.y = 360;
+        fetchFailTxt.visible = false;
+        fetchFailTxt.interactive = false;
+        fetchFailTxt.buttonMode = true;
+        fetchFailTxt.on('pointerdown', () => { this._hideFetchFailText(); this._fetchState(); });
+        win.addChild(fetchFailTxt);
+        this._fetchFailTxt = fetchFailTxt;
+
         this._win = win;
+    }
+
+    _showFetchFailText(){
+        if(this._fetchFailTxt){ this._fetchFailTxt.visible = true; this._fetchFailTxt.interactive = true; }
+    }
+
+    _hideFetchFailText(){
+        if(this._fetchFailTxt){ this._fetchFailTxt.visible = false; this._fetchFailTxt.interactive = false; }
     }
 
     _onDayClick(day){

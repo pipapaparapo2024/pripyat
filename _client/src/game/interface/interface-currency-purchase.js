@@ -312,7 +312,9 @@ export function attachCurrencyPurchase(proto){
                 const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), TXT_STYLE_PRICE);
                 priceTxt.resolution = 4;
                 priceTxt.anchor.set(0.5, 1);
-                priceTxt.x = slot.x + SLOT_W / 2; priceTxt.y = slot.y + 170;
+                // 28.10.2026 (по прямому указанию — "опусти кол-во голосов, которое нужно для
+                // покупки, вниз на 2px"): +170 → +172.
+                priceTxt.x = slot.x + SLOT_W / 2; priceTxt.y = slot.y + 172;
                 gridCont.addChild(priceTxt);
 
                 slot.on('pointerdown', () => {

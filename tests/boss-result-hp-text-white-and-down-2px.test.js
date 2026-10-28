@@ -39,7 +39,12 @@ console.log('\nTest 1: поражение (isWin:false) — hpTxt белым, к
 
 console.log('\nTest 2: победа (isWin:true) — hpBarTxt остаётся белым, те же координаты x:494,y:419');
 {
-    const idx = content.indexOf('} else {');
+    // 28.10.2026: indexOf('} else {') искал ПЕРВОЕ вхождение во ВСЁМ файле — после добавления
+    // другого if/else (позиция имени босса, см. NAME_POS_BY_IDX) раньше по файлу появился СВОЙ
+    // "} else {", и слайс стал промахиваться мимо реального блока hpBarTxt. Якорим от того же
+    // "if(!isWin){", что и Test 1 — ищем "} else {" СТРОГО ПОСЛЕ него, не от начала файла.
+    const ifIdx = content.indexOf('if(!isWin){');
+    const idx = content.indexOf('} else {', ifIdx);
     const block = content.slice(idx, idx + 1200);
     assert(/fill: '#ffffff'/.test(block), 'hpBarTxt — fill белый (не менялся, уже был белым)');
     assert(/hpBarTxt\.x = 494; hpBarTxt\.y = 419;/.test(block),

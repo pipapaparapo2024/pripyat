@@ -3,14 +3,16 @@
  *  - mode:'own'    — мой собственный список запросов, открывается кнопкой "ЗАПРОС ЗАНАЧЕК
  *    У ДРУЗЕЙ" на экране Заначки (svod-zanachki.js). Каждый слот — карточка + "УБРАТЬ".
  *  - mode:'friend'  — список запросов ДРУГОГО игрока, открывается кнопкой "ПРОСЬБА ЗАНАЧЕК"
- *    на визитке друга (player_profile.js). Каждый слот — карточка + "ДАТЬ" (активна только
+ *    на визитке друга (player_profile.js). Каждый слот — карточка + "ОТПРАВИТЬ" (активна только
  *    если у меня есть хотя бы 1 копия этой карточки — ctx.myOwnedCounts).
  *
- * ⚠️ Нет отдельного ассета под "ДАТЬ" (только "заначки кнопка убрать.png" с вшитым текстом
- * "УБРАТЬ") — по прямому указанию 26.10.2026 временно переиспользуем ту же плашку, накладывая
- * свой PIXI.Text "ДАТЬ" поверх вшитого текста. Пользователь пришлёт отдельный файл позже —
- * тогда заменить giveBtnFile на новую текстуру и убрать текстовую накладку.
+ * 28.10.2026 (по прямому указанию — файл "отправить.png" прислан): реальный ассет с вшитым
+ * текстом "ОТПРАВИТЬ" (переименован в "заначки кнопка отправить.png" во избежание коллизии с
+ * универсальным именем, см. ПРАВИЛО про коллизии ассетов в AGENTS.md) заменил временную плашку
+ * "заначки кнопка убрать.png" + PIXI.Text "ДАТЬ" поверх — текстовая накладка больше не нужна.
  */
+import { applyPatch } from '../../modules/patch.js';
+
 const FONT = 'Bebas Neue Book';
 
 const THEMES = {
@@ -92,25 +94,68 @@ export function attachSvodZanachkiWishlist(proto){
             card.x = cardX; card.y = ITEM_Y0;
             win.addChild(card);
 
+            const actionX = ACTION_X0 + idx * ITEM_PITCH;
+            // 28.10.2026 (по прямому указанию): mode:'friend' теперь использует реальный ассет
+            // "заначки кнопка отправить.png" (вшитый текст "ОТПРАВИТЬ"), не переиспользует
+            // "убрать.png" — см. докблок файла.
+            const actionBtnFile = mode === 'own' ? 'заначки кнопка убрать.png' : 'заначки кнопка отправить.png';
+            const actionBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + actionBtnFile));
+            actionBtn.x = actionX; actionBtn.y = ACTION_Y0;
+            win.addChild(actionBtn);
+
             // 28.10.2026 (по прямому указанию — "пиши также их количество снизу, как у
             // остальных карточек прописаны цифры", подтверждено: показывать кол-во копий,
             // которые есть у МЕНЯ сейчас, тот же мехнизм/стиль, что countTxt в основной сетке
             // svod-zanachki.js, строка тоньше — strokeThickness 1 вместо 2 по прямому указанию).
             const key = col + '_' + pos;
             const owned = Number((ctx.myOwnedCounts && ctx.myOwnedCounts[key]) || 0);
+            // 28.10.2026 (баг найден по прямому указанию, тем же днём — "не видно количество"):
+            // исходная позиция (card.y + card.height + 4) оказалась ВНУТРИ actionBtn — карточка
+            // "заначка ...png" высотой 93px при ITEM_Y0=254 кончается на y=347, а actionBtn
+            // начинается на ACTION_Y0=349 (зазор всего 2px, текста там физически не поместить),
+            // и т.к. actionBtn добавлялся в `win` РАНЬШЕ countTxt, число рисовалось под кнопкой и
+            // было полностью перекрыто её спрайтом. Перенесено НИЖЕ кнопки.
+            // 28.10.2026 (повторное указание тем же днём, по скриншоту референса — "дай ему те же
+            // характеристики текста, что у количества значек которые есть у меня: fontSize 18,
+            // чёрный шрифт, Southbank LT; подними на 47px"): шрифт/цвет сменены на запрошенные
+            // (были Bebas Neue Book 14 белый), позиция поднята на 47px от варианта "под кнопкой"
+            // — садится у нижнего края самой карточки. Применяется к обоим режимам (own/friend),
+            // как и попросили явно.
             const countTxt = new PIXI.Text(String(owned), {
-                fontFamily: FONT, fontSize: 14, fill: '#000000',
-                stroke: '#000000', strokeThickness: 1, padding: 4,
+                fontFamily: 'Southbank LT', fontSize: 18, fill: '#000000',
+                stroke: '#000000', strokeThickness: 2, padding: 4,
             });
             countTxt.anchor.set(0.5, 0);
-            countTxt.x = cardX + card.width / 2;
-            countTxt.y = card.y + card.height + 4;
             win.addChild(countTxt);
-
-            const actionX = ACTION_X0 + idx * ITEM_PITCH;
-            const actionBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'заначки кнопка убрать.png'));
-            actionBtn.x = actionX; actionBtn.y = ACTION_Y0;
-            win.addChild(actionBtn);
+            // 28.10.2026 (баг найден по прямому указанию — "зашёл первый раз, цифры стояли
+            // правильно, вышел, зашёл снова — опустились вниз", повторно пойман тем же днём уже
+            // как "после нажатия на убрать/отправить цифры съезжают вниз"): позиция зависела от
+            // actionBtn.height В МОМЕНТ построения попапа, а "заначки кнопка убрать/отправить.png"
+            // нигде не прелоадятся (ПРАВИЛО №11) — при первой загрузке текстура ещё не готова,
+            // sprite.height читается как placeholder (~1px), после кэширования (происходит как
+            // раз к моменту пересборки попапа после клика убрать/отправить — сервер успевает
+            // ответить позже, чем догружается картинка) — как реальная высота кнопки (27-29px).
+            // Один и тот же код давал РАЗНЫЙ результат в зависимости от того, успела ли картинка
+            // закэшироваться: на лёгкой заглушке (~1px) число попадало на светлый низ карточки
+            // (видно), на реальной высоте (27-29px) — ниже, на тёмный фон попапа/поверх кнопки
+            // (чёрная заливка+чёрная обводка текста там практически не видна — тот же стиль, что
+            // и у countTxt основной сетки, см. svod-zanachki.js, там это не баг, потому что число
+            // там всегда остаётся на светлой карточке).
+            // Фикс в ДВЕ части:
+            //  1) формула больше НЕ зависит от результата гонки — тот же паттерн, что уже применён
+            //     для reqSpr в svod-zanachki.js (_centerZanachkiReqSpr): пересчитывать позицию,
+            //     когда текстура реально готова, не полагаться на синхронное чтение .height сразу;
+            //  2) own и friend ВОЗВРАЩЕНЫ на ОДНУ общую формулу (попытка развести их по режимам
+            //     раньше этим же днём была ошибкой диагностики — визуальная разница между
+            //     скриншотами была следствием гонки текстуры, а не разного желаемого места для
+            //     двух режимов; общая формула означает один-единственный набор чисел, который
+            //     нужно крутить, а не два расходящихся — отдельный источник путаницы, на который
+            //     прямо указал пользователь).
+            const applyCountPos = () => {
+                countTxt.x = cardX + card.width / 2 + 1;
+                countTxt.y = actionBtn.y + actionBtn.height + 1 - 47 - 3;
+            };
+            if(actionBtn.texture.width > 1) applyCountPos(); else actionBtn.texture.once('update', applyCountPos);
 
             if(mode === 'own'){
                 actionBtn.interactive = true; actionBtn.buttonMode = true;
@@ -125,28 +170,28 @@ export function attachSvodZanachkiWishlist(proto){
                     });
                 });
             } else {
-                // mode === 'friend' — "ДАТЬ" вместо "УБРАТЬ" (см. докблок файла про
-                // отсутствующий ассет): PIXI.Text поверх той же плашки.
-                const giveLbl = new PIXI.Text('ДАТЬ', {
-                    fontFamily: FONT, fontSize: 15, fill: '#ffffff',
-                    stroke: '#000000', strokeThickness: 2,
-                });
-                giveLbl.anchor.set(0.5, 0.5);
-                giveLbl.x = actionX + actionBtn.width / 2;
-                giveLbl.y = ACTION_Y0 + actionBtn.height / 2;
-                win.addChild(giveLbl);
-
-                // key/owned уже посчитаны выше (для countTxt) — переиспользуются здесь как есть.
+                // mode === 'friend' — "ОТПРАВИТЬ" (key/owned уже посчитаны выше для countTxt,
+                // переиспользуются здесь как есть).
                 if(owned > 0){
                     actionBtn.interactive = true; actionBtn.buttonMode = true;
                     actionBtn.on('pointerover', ()=>{ actionBtn.alpha = 0.8; });
                     actionBtn.on('pointerout',  ()=>{ actionBtn.alpha = 1; });
                     actionBtn.on('pointerdown', ()=>{
+                        // 28.10.2026 (баг найден по прямому указанию — "нажимаем ОТПРАВИТЬ, ничего
+                        // не происходит, потом экран заначек зависает"): здесь не передавался 4-й
+                        // (error) колбэк TS.php — при fail-ответе сервера (карточку уже кто-то забрал
+                        // первым, 98; у меня её больше нет, 97; и т.п.) игрок не видел НИЧЕГО, кнопка
+                        // выглядела сломанной. Плюс critical — applyPatch(e.patch) выше падал
+                        // ReferenceError (функция не была импортирована в этом файле, см. import
+                        // наверху), что и давало ощущение "зависания" — необработанное исключение
+                        // внутри pointerdown-хендлера PIXI.
                         TS.php('zanachki.giveCard', {target_id: ctx.targetId, collection_id: col, position: pos}, (e) => {
                             if(!e || !e.patch) return;
                             applyPatch(e.patch);
                             const remaining = (items || []).filter(it => !(Number(it.col) === col && Number(it.pos) === pos));
                             this._buildZanachkiWishlistPopup(remaining, 'friend', ctx);
+                        }, () => {
+                            if(window.notify) notify.showResult({text:'Не удалось отправить заначку. Попробуйте ещё раз'}, 0);
                         });
                     });
                 } else {

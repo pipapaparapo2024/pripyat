@@ -34,11 +34,14 @@ const devPanelSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game'
 const imagesModSrc    = fs.readFileSync(path.join(root, '_client', 'src', 'modules', 'boss-shmot-images.js'), 'utf-8');
 const gameBootSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'game-boot.js'), 'utf-8');
 
-console.log('\nTest 1: modules/boss-shmot-images.js — общий каталог id->картинка, рамка/оверлей, id96 намеренно отсутствует');
+console.log('\nTest 1: modules/boss-shmot-images.js — общий каталог id->картинка, рамка/оверлей');
 {
     assert(/export const BOSS_SHMOT_REWARD_IMAGE = \{/.test(imagesModSrc), 'BOSS_SHMOT_REWARD_IMAGE экспортирован');
     assert(/41: 'награда панама ссср охотник\.png',/.test(imagesModSrc), 'id41 замаплен на реальный файл');
-    assert(!/^\s*96:/m.test(imagesModSrc.split('export const BOSS_SHMOT_REWARD_FRAME')[0]), 'id96 отсутствует в карте (для него нет готового файла)');
+    // 28.10.2026 (по прямому указанию, после репорта — "не выводится файл 'награда голова зумер
+    // борода.png'"): id96 больше НЕ отсутствует — файл нашёлся в исходной папке художника под
+    // именем "голова" (не "панама"), добавлена запись в карту (см. тест ниже).
+    assert(/96: 'награда голова зумер борода\.png',/m.test(imagesModSrc.split('export const BOSS_SHMOT_REWARD_FRAME')[0]), 'id96 теперь замаплен на реальный файл');
     assert(/export const BOSS_SHMOT_REWARD_FRAME = 'награда рамка\.png';/.test(imagesModSrc), 'BOSS_SHMOT_REWARD_FRAME экспортирован');
     assert(/export const BOSS_SHMOT_NOT_OBTAINED = 'награда не получено\.png';/.test(imagesModSrc), 'BOSS_SHMOT_NOT_OBTAINED экспортирован');
 }

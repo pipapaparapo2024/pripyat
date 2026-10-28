@@ -14,7 +14,8 @@ export function attachZoneScreen(proto){
 	// функций scope, тот же приём, что уже применён для WPN_KEYS в weapons.js/bosses_fight.js.
 	const RESPECT_FRAME_REL_X = 728, RESPECT_FRAME_REL_Y = 18;
 	const RESPECT_FRAME_W = 150, RESPECT_FRAME_H = 167;
-	const RESPECT_PHOTO_W = 112, RESPECT_PHOTO_H = 112;
+	// 28.10.2026 (по прямому указанию — "размером 115 на 115 пикселей"): было 112×112.
+	const RESPECT_PHOTO_W = 115, RESPECT_PHOTO_H = 115;
 	const RESPECT_PHOTO_REL_X = 78, RESPECT_PHOTO_REL_Y = 86;
 	const RESPECT_PHOTO_ROTATION_DEG = -2;
 	const RESPECT_AMOUNT_REL_Y = 138;
@@ -448,6 +449,20 @@ export function attachZoneScreen(proto){
 						photoSpr.y = frameSpr.y + RESPECT_PHOTO_REL_Y;
 						photoSpr.rotation = RESPECT_PHOTO_ROTATION_DEG * Math.PI / 180;
 						photoSpr._uDraggable = true;
+						// 28.10.2026 (по прямому указанию — "самодельный текстурный блок искажает
+						// фото по сравнению с честной рамкой-визиткой"): раньше обрезка держалась
+						// только на порядке addChild под декоративной рамкой — у повёрнутого
+						// квадратного фото углы физически торчали за пределы окна рамки. Честная
+						// PIXI-маска (как в player_profile.js avatarMask) — НЕ повёрнута (окно
+						// рамки само не крутится), только фото внутри неё остаётся наклонённым.
+						const photoMask = new PIXI.Graphics();
+						photoMask.beginFill(0xffffff);
+						photoMask.drawRect(-RESPECT_PHOTO_W / 2, -RESPECT_PHOTO_H / 2, RESPECT_PHOTO_W, RESPECT_PHOTO_H);
+						photoMask.endFill();
+						photoMask.x = photoSpr.x; photoMask.y = photoSpr.y;
+						photoSpr.mask = photoMask;
+						g.group.addChild(photoMask);
+						this._zoneRespectPhotos.push({ spr: photoMask, locIdx: l.loc });
 						// 18.09.2026 (по прямому указанию): клик по фото рекордсмена уважения
 						// открывает его публичный профиль.
 						photoSpr.interactive = true; photoSpr.buttonMode = true;

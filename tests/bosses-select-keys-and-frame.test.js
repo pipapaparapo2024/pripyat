@@ -62,7 +62,7 @@ console.log('\nTest 4: новые координаты рамки "особо о
 console.log('\nTest 5: новые координаты/размер/поворот фото "убившего"');
 {
     assert(/const KILLER_CX = 722, KILLER_CY = 90;/.test(src), 'KILLER_CX=722 KILLER_CY=90');
-    assert(/const KILLER_W = 106, KILLER_H = 106;/.test(src), 'KILLER_W=106 KILLER_H=106 (квадрат, было 90×74)');
+    assert(/const KILLER_W = 110, KILLER_H = 110;/.test(src), 'KILLER_W=110 KILLER_H=110 (28.10.2026, было 106×106)');
     assert(/const KILLER_ROTATION = -3 \* Math\.PI \/ 180;/.test(src), 'KILLER_ROTATION = -3°');
     assert(/spr\.rotation = KILLER_ROTATION;/.test(src), 'rotation применяется к спрайту/плейсхолдеру фото');
 }

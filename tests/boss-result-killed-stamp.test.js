@@ -22,14 +22,16 @@ const src = fs.readFileSync(
 
 console.log('\nTest 1: штамп "УБИТ" создаётся только при isWin, поверх портрета');
 {
-    const start = src.indexOf('const portrait = _sprite(portraitFile, PORTRAIT_POS);');
+    // 28.10.2026: PORTRAIT_POS → portraitPos (локальная переменная с фолбэком на
+    // PORTRAIT_POS_BY_IDX[bossIdx] для боссов с точными замерами) — см. docблок там же.
+    const start = src.indexOf('const portrait = _sprite(portraitFile, portraitPos);');
     const end   = src.indexOf('const banner = _sprite(', start);
     const body  = src.slice(start, end);
     assert(/if\(isWin\)\{/.test(body), 'штамп оборачивается в if(isWin) — на поражении не показывается');
     assert(/new PIXI\.Text\('УБИТ',/.test(body), 'текст штампа — "УБИТ"');
     assert(/killedStamp\.rotation = -Math\.PI \/ 4;/.test(body), 'поворот -45° (против часовой в экранных координатах PIXI)');
-    assert(/killedStamp\.x = PORTRAIT_POS\.x \+ PORTRAIT_W \/ 2;/.test(body), 'X — центр портрета по горизонтали');
-    assert(/killedStamp\.y = PORTRAIT_POS\.y \+ PORTRAIT_H \/ 2;/.test(body), 'Y — центр портрета по вертикали');
+    assert(/killedStamp\.x = portraitPos\.x \+ PORTRAIT_W \/ 2;/.test(body), 'X — центр портрета по горизонтали');
+    assert(/killedStamp\.y = portraitPos\.y \+ PORTRAIT_H \/ 2;/.test(body), 'Y — центр портрета по вертикали');
     assert(/killedStamp\.anchor\.set\(0\.5, 0\.5\);/.test(body), 'якорь по центру текста (поворот вокруг своего центра)');
 }
 

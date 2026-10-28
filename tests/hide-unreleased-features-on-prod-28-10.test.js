@@ -41,7 +41,11 @@ const panelsSrc      = readSrc('_client/src/game/interface/interface-panels.js')
 
 console.log('\nTest 1: window.hide_unreleased_features определён в index.js, тот же паттерн, что window.debug_mode');
 {
-    assert(/window\.hide_unreleased_features = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'\);/.test(indexSrc),
+    // 28.10.2026 (повторное указание тем же днём — "хочу всё заранее проверить"): флаг теперь
+    // ТАКЖЕ исключает dev-аккаунт (vk_user_id=382448269), иначе предпросмотр прода не показал бы
+    // самому разработчику Заначки/Разнарядку/2048, которые были предметом сессии. Объявление
+    // переехало ниже по файлу (после парсинга userDataVk) — см. Test 1b ниже.
+    assert(/window\.hide_unreleased_features = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'$/m.test(indexSrc),
         'флаг true именно на pripyat-game.ru (реальный хостинг прода и VK/ОК-iframe одновременно)');
     // Флаг должен быть объявлен ПОСЛЕ window.debug_mode (та же область файла, та же логика) —
     // не строго обязательно по порядку, но так же читаемо/рядом, как и было задумано.
@@ -49,17 +53,39 @@ console.log('\nTest 1: window.hide_unreleased_features определён в ind
         'флаг объявлен рядом с debug_mode, тем же паттерном');
 }
 
-console.log('\nTest 2: dvor.js — точки входа в 2048 ("ящик"/"нажать на игру") не добавляются в сцену, если hide_unreleased_features=true');
+console.log('\nTest 1b: window.hide_unreleased_features — dev-аккаунт (vk_user_id=382448269) исключён, объявлен после парсинга userDataVk');
 {
-    const start = dvorSrc.indexOf("if(!this._game2048YashikSpr){");
-    assert(start > -1, 'блок создания спрайтов 2048 найден');
-    const guardStart = dvorSrc.lastIndexOf('if(!window.hide_unreleased_features){', start);
-    assert(guardStart > -1 && guardStart < start, 'блок обёрнут в if(!window.hide_unreleased_features)');
-    // addChild обоих спрайтов должен физически лежать МЕЖДУ guard и его закрывающей скобкой —
-    // проверяем, что addChild('_game2048PressSpr') встречается раньше следующего подобного же
-    // guard-блока ниже (грубая, но достаточная проверка вложенности без полного AST-парсера).
-    assert(/w\.addChild\(this\._game2048PressSpr\);\s*\n\s*\}/.test(dvorSrc),
-        'addChild обеих 2048-кнопок закрывается внутри guard-блока');
+    assert(/&& String\(userDataVk\['vk_user_id'\]\) !== '382448269'\);/.test(indexSrc),
+        'флаг исключает dev-аккаунт vk_user_id=382448269 — тот же ID, что у __maintenanceGateActive');
+    assert(indexSrc.indexOf('window.hide_unreleased_features =') < indexSrc.indexOf('window.__maintenanceGateActive ='),
+        'hide_unreleased_features объявлен рядом с __maintenanceGateActive (оба после парсинга userDataVk)');
+    assert(indexSrc.indexOf("partsData[i].split('=')") < indexSrc.indexOf('window.hide_unreleased_features ='),
+        'объявление флага идёт ПОСЛЕ разбора query-строки в userDataVk (иначе vk_user_id ещё не существовал бы)');
+}
+
+console.log('\nTest 2: dvor.js — картинки 2048 ("ящик"/"нажать на игру") ВСЕГДА в сцене (тест и прод), кликабельна только "нажать на игру", и только когда hide_unreleased_features=false');
+{
+    // 28.10.2026 (повторное указание тем же днём — "верни картинки на прод, но сделай
+    // некликабельными"): раньше ОБА спрайта вообще не добавлялись в сцену на проде. Теперь
+    // видимость безусловна — скрывается только интерактивность "нажать на игру" (единственного
+    // по-настоящему кликабельного элемента, "ящик" и так чисто декоративный).
+    const yashikStart = dvorSrc.indexOf("if(!this._game2048YashikSpr){");
+    assert(yashikStart > -1, 'блок создания "ящика" найден');
+    const yashikAddChildIdx = dvorSrc.indexOf('w.addChild(this._game2048YashikSpr);', yashikStart);
+    assert(yashikAddChildIdx > -1, '"ящик" добавляется в сцену');
+    const yashikBlock = dvorSrc.slice(yashikStart, yashikAddChildIdx);
+    assert(!/hide_unreleased_features/.test(yashikBlock),
+        '"ящик" (создание + addChild) НЕ находится внутри hide_unreleased_features guard — виден всегда');
+
+    const pressStart = dvorSrc.indexOf("if(!this._game2048PressSpr){");
+    assert(pressStart > -1, 'блок создания "нажать на игру" найден');
+    const pressAddChildIdx = dvorSrc.indexOf('w.addChild(this._game2048PressSpr);', pressStart);
+    assert(pressAddChildIdx > -1, '"нажать на игру" добавляется в сцену');
+    const pressBody = dvorSrc.slice(pressStart, pressAddChildIdx);
+    assert(/if\(!window\.hide_unreleased_features\)\{/.test(pressBody),
+        'интерактивность "нажать на игру" обёрнута в guard — скрыта на pripyat-game.ru');
+    assert(/spr\.interactive = true; spr\.buttonMode = true;/.test(pressBody),
+        'на тесте (флаг=false) "нажать на игру" остаётся интерактивной');
 }
 
 console.log('\nTest 3: svod.js — вкладка "Заначки" убирается из MAIN_TABS, если hide_unreleased_features=true');

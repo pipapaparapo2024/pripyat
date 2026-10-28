@@ -100,10 +100,16 @@ console.log('\nTest 7: svod-scroll.js — механизм thumbXAdjust оста
     assert(/thumbXAdjust,?\s*(trackImg, thumbImg, arrowUpImg, arrowDownImg\s*)?\}\s*=\s*cfg;/.test(scrollSrc), 'thumbXAdjust по-прежнему читается из cfg (общий механизм не удалён, просто не вызывается с ним)');
     assert(/thumb\.x = trackX - Math\.round\(\(thumb\.width - track\.width\) \/ 2\) \+ 1 \+ \(thumbXAdjust \|\| 0\);/.test(scrollSrc),
         'формула бегунка по-прежнему добавляет (thumbXAdjust || 0) — без override (теперь оба caller\'а) поведение не меняется (0 — no-op)');
+    // 28.10.2026 (повторная правка тем же днём, по прямому указанию — "во вкладке Топ авторитету
+    // в общем топе бегунок сдвинь влево на 2 пикселя"): thumbXAdjust вернулся в leaderboard-вызов,
+    // но теперь это ПЕР-ТАБ override из tabCfg (0 по умолчанию для урона/достижений, -2 только
+    // для respect через svod.js) — не противоречит унификации trackX/arrowX выше, это другая,
+    // более мелкая точечная правка ОДНОЙ конкретной вкладки.
     const lbCallStart = lbSrc.indexOf('this._buildSvodScroll({');
     const lbCallEnd   = lbSrc.indexOf('});', lbCallStart);
     const lbCallBody  = lbSrc.slice(lbCallStart, lbCallEnd);
-    assert(!/thumbXAdjust/.test(lbCallBody), 'svod-leaderboard.js не передаёт thumbXAdjust');
+    assert(/thumbXAdjust: tabCfg\.thumbXAdjust \|\| 0,/.test(lbCallBody),
+        'svod-leaderboard.js передаёт thumbXAdjust из tabCfg (per-tab override, не блок-правка унификации)');
 
     const achStart = achSrc.indexOf('this._buildSvodScroll({');
     const achEnd   = achSrc.indexOf('});', achStart);

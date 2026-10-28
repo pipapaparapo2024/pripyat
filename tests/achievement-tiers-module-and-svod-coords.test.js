@@ -50,7 +50,11 @@ console.log('\nTest 2: achievements._checkAll() схлопывает попап�
     const end   = achSrc.indexOf('getTotalStars()');
     const body  = achSrc.slice(start, end);
 
-    assert(/if\(changed\) this\._syncWithServer\(\);/.test(body), 'при пересечении порога локальный пре-чек зовёт сервер, не пишет очки сам');
+    // 28.10.2026: переменная переименована changed → hasNewlyMet при фиксе гонки
+    // _syncInFlight (см. batch-28-10-achievements-sync-race-and-currency-price-and-habar-
+    // counter.test.js) — сам факт вызова _syncWithServer() только при найденном новом
+    // условии не изменился, имя флага больше не значимо для этой проверки.
+    assert(/if\(hasNewlyMet\) this\._syncWithServer\(\);/.test(body), 'при пересечении порога локальный пре-чек зовёт сервер, не пишет очки сам');
     assert(!/udata\['achievement_stars'\]/.test(body), 'achievements.js больше не пишет achievement_stars напрямую (это теперь делает сервер)');
 
     const engineSrc = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'models', 'achievementengine.php'), 'utf-8');

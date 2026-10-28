@@ -95,8 +95,10 @@ console.log('\nTest 3: achievements.js — flushPlayerSave вызывается 
     const start = achSrc.indexOf('_checkAll(){');
     const end   = achSrc.indexOf('\n\tgetTotalStars(){', start);
     const body  = achSrc.slice(start, end);
-    assert(/if\(changed\) this\._syncWithServer\(\);/.test(body),
-        '_checkAll зовёт _syncWithServer ТОЛЬКО когда changed=true (реально пересечён порог)');
+    // 28.10.2026: переменная переименована changed → hasNewlyMet (фикс гонки _syncInFlight,
+    // см. batch-28-10-achievements-sync-race-and-currency-price-and-habar-counter.test.js).
+    assert(/if\(hasNewlyMet\) this\._syncWithServer\(\);/.test(body),
+        '_checkAll зовёт _syncWithServer ТОЛЬКО когда hasNewlyMet=true (реально пересечён порог)');
     assert(/flushPlayerSave\('achievement_earned', \(\) => \{/.test(body),
         '_syncWithServer флашит автосейв ПЕРЕД запросом к серверу (свежие счётчики должны долететь до БД первыми)');
     assert(/TS\.php\('achievements\.sync', \{\}, \(res\) => \{/.test(body),

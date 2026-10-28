@@ -402,9 +402,6 @@ export function attachPlayerProfile(proto){
         card.x = CARD_X; card.y = CARD_Y;
         card.rotation = CARD_ROTATION_DEG * Math.PI / 180;
 
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/визитка у игрока.png'));
-        card.addChild(bg);
-
         // Аватарка (квадратик слева, 19.09.2026 по прямому указанию) — фото ЦЕЛЕВОГО игрока
         // через тот же bosses._resolveVkUsers(), что уже используют топы/рейтинги для аватарок
         // (VK не отдаёт photo_50 для чужих id напрямую, только батчем через users.get).
@@ -431,6 +428,18 @@ export function attachPlayerProfile(proto){
         });
         card.addChild(avatarSpr);
         card.addChild(avatarMask);
+
+        // 28.10.2026 (по прямому указанию — "иконку игрока сделай по z-index меньше чем файл
+        // визитка у игрока.png, чтобы иконка было под этим файлом"): bg раньше добавлялся ДО
+        // avatarSpr/avatarMask, то есть рендерился ПЕРВЫМ (значит avatarSpr оказывался СВЕРХУ,
+        // см. порядок addChild в PIXI — позже добавленный ребёнок рисуется поверх раньше
+        // добавленного) — фото игрока визуально вылезало НАД декоративной рамкой "визитка у
+        // игрока.png" вместо того, чтобы прятаться под ней. Теперь bg добавляется ПОСЛЕДНИМ из
+        // этих трёх — рамка рисуется поверх аватарки, её непрозрачные края аккуратно перекрывают
+        // края фото (avatarMask по-прежнему ограничивает видимую область самой аватарки).
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/визитка у игрока.png'));
+        card.addChild(bg);
+
         let nickTxt = null;
         if(window.bosses && typeof bosses._resolveVkUsers === 'function'){
             bosses._resolveVkUsers([profile.id], (users) => {

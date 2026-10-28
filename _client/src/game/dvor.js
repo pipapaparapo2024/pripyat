@@ -387,31 +387,37 @@ export default class Dvor{
         // интерактивен наравне с подписью — убран hover/click целиком, картинка чисто
         // декоративная, вход в игру теперь только через "2048 нажать на игру.png".
         // 28.10.2026 (по прямому указанию — случайный супер деплой вынес 2048 на прод раньше
-        // срока): вход в игру скрыт на pripyat-game.ru через window.hide_unreleased_features
-        // (index.js, тот же паттерн, что window.debug_mode) — один и тот же бандл на тест и
-        // прод, сам код/картинки остаются в сборке, просто не добавляются в сцену для прод-домена.
-        if(!window.hide_unreleased_features){
-            if(!this._game2048YashikSpr){
-                const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 ящик.png'));
-                spr.anchor.set(0.5);
-                spr.x = 913; spr.y = 377;
-                this._game2048YashikSpr = spr;
-            }
-            w.addChild(this._game2048YashikSpr);
+        // срока): вход в игру был скрыт на pripyat-game.ru через window.hide_unreleased_features
+        // — сами спрайты вообще не добавлялись в сцену для прод-домена.
+        // 28.10.2026 (повторное указание тем же днём — "верни картинки на прод, но сделай их
+        // некликабельными"): теперь обе картинки ВСЕГДА добавляются в сцену (тест и прод
+        // одинаково) — игрок видит анонс игры. Флагом на pripyat-game.ru скрывается только
+        // ИНТЕРАКТИВНОСТЬ "нажать на игру" (единственного реально кликабельного элемента —
+        // "ящик" и так чисто декоративный, см. 27.10.2026 выше), чтобы нельзя было провалиться
+        // в игру раньше релиза. Явные w/h вместо scale — редактор позиций измерил w:254/h:157 и
+        // w:121/h:105 при scale:1.000, конвенция для новых UI-правок (см. AGENTS.md).
+        if(!this._game2048YashikSpr){
+            const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 ящик.png'));
+            spr.anchor.set(0.5);
+            spr.x = 913; spr.y = 377; spr.width = 254; spr.height = 157;
+            this._game2048YashikSpr = spr;
+        }
+        w.addChild(this._game2048YashikSpr);
 
-            if(!this._game2048PressSpr){
-                const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 нажать на игру.png'));
-                spr.anchor.set(0.5);
-                spr.x = 999; spr.y = 284;
+        if(!this._game2048PressSpr){
+            const spr = new PIXI.Sprite(PIXI.Texture.from('./images/2048 нажать на игру.png'));
+            spr.anchor.set(0.5);
+            spr.x = 999; spr.y = 284; spr.width = 121; spr.height = 105;
+            if(!window.hide_unreleased_features){
                 spr.interactive = true; spr.buttonMode = true;
                 if(window.isMobile) helper.touchPad(spr);
                 spr.on('pointerover', ()=>{ _ss(spr, 1.08); });
                 spr.on('pointerout', ()=>{ _ss(spr, 1.0); });
                 spr.on('pointerdown', ()=>{ if(window.game2048) game2048.open(); });
-                this._game2048PressSpr = spr;
             }
-            w.addChild(this._game2048PressSpr);
+            this._game2048PressSpr = spr;
         }
+        w.addChild(this._game2048PressSpr);
 
         this._lobbyWin = w;
     }

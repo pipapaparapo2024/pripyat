@@ -83,14 +83,22 @@
         }
 
         function getState(){
+            // 28.10.2026 (баг найден по прямому указанию — "пропадают надписи наград при
+            // форсировании ноября"): до этой правки НИ ОДНА fail-ветка/исключение в этом методе
+            // не логировались — по серверным логам было невозможно понять, почему конкретный
+            // запрос getState не прошёл (ПРАВИЛО №8). try/catch вокруг всего тела (БЕЗ вынесения
+            // в отдельный метод — он бы разорвал текстовый поиск "внутри getState()" в нескольких
+            // уже существующих тестах) — последняя линия защиты (ловит и фатальные Throwable, не
+            // только явные fail()), чтобы при следующей репродукции бага в логе осталась причина.
+            try {
             $user = $this->ops->loadUser();
-            if(!$user) return $this->ops->fail(99);
+            if(!$user){ error_log('[Raznaryadka.getState] FAIL 99 (loadUser) uid=' . abs(intval($this->registry['uid'] ?? 0))); return $this->ops->fail(99); }
 
             list($data, $config) = RaznaryadkaProgress::loadAndRollover($this->ops, $user);
             // loadAndRollover() могла начислить автосбор прошлого месяца (_grantTier) — сохраняем
             // ДО построения ответа, чтобы patch ниже отражал актуальный баланс.
             $user['raznaryadka_data'] = json_encode($data, JSON_UNESCAPED_UNICODE);
-            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            if(!$this->ops->saveUser($user)){ error_log('[Raznaryadka.getState] FAIL 99 (saveUser) uid=' . abs(intval($this->registry['uid'] ?? 0))); return $this->ops->fail(99); }
 
             // 24.10.2026: effectiveDay() = mskDay() + dev-only смещение (см. докблок в
             // raznaryadkaprogress.php) — везде, где раньше было "сегодня" для Разнарядки.
@@ -191,6 +199,10 @@
                 // него клиент показывает статичную дату старта (01.11.2026).
                 'pre_launch'    => $isPreLaunch,
             ]);
+            } catch (\Throwable $e) {
+                error_log('[Raznaryadka.getState] EXCEPTION uid=' . abs(intval($this->registry['uid'] ?? 0)) . ' | ' . get_class($e) . ': ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
+                return $this->ops->fail(99);
+            }
         }
 
         function claim(){

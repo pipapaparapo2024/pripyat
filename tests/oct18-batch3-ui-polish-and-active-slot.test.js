@@ -116,7 +116,8 @@ console.log('\n5) interface-currency-purchase.js — активный слот +
     // количество вверх на 31px"): новые упрощённые абсолютные значения — см.
     // oct19-batch-....test.js за полным покрытием этой правки.
     assert(/countTxt\.y = slot\.y \+ 25;/.test(currPurchSrc), 'количество (countTxt) — slot.y+25 (19.10.2026, было +56)');
-    assert(/priceTxt\.y = slot\.y \+ 170;/.test(currPurchSrc), 'цена (priceTxt) — slot.y+170 (19.10.2026, было +137)');
+    // 28.10.2026 (по прямому указанию — "опусти кол-во голосов вниз на 2px"): +170 → +172.
+    assert(/priceTxt\.y = slot\.y \+ 172;/.test(currPurchSrc), 'цена (priceTxt) — slot.y+172 (28.10.2026, было +170)');
     // 20.10.2026: TXT_STYLE_COUNT/PRICE больше не отдельные литералы с плоским белым fill —
     // переведены на общий TXT_STYLE_BASE (перенос стиля слоя из Photoshop: градиент/обводка/
     // тень, см. tests/currency-purchase-text-style-photoshop-transfer.test.js за полной

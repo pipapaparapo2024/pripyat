@@ -29,12 +29,14 @@ const root = path.join(__dirname, '..');
 const lbSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'svod', 'svod-leaderboard.js'), 'utf-8');
 const IMAGES_DIR = path.join(root, '_client', 'development', 'images');
 
+// 28.10.2026 (по прямому указанию — все 5 блоков опущены на 2px, сдвинуты влево на 1px, см.
+// комментарий в svod-leaderboard.js): absX -1, absY +2 относительно прежних чисел.
 const BLOCKS = [
-    { key: 'icon',  file: 'блок под иконку игрока.png',  absX: 452, absY: 238, w: 31,  h: 30 },
-    { key: 'place', file: 'блок под место игрока.png',   absX: 372, absY: 239, w: 47,  h: 25 },
-    { key: 'name',  file: 'блок под никнейм игрока.png', absX: 504, absY: 242, w: 106, h: 22 },
-    { key: 'level', file: 'блок под уровень.png',        absX: 774, absY: 243, w: 51,  h: 20 },
-    { key: 'value', file: 'блок под урон авторитет.png', absX: 859, absY: 244, w: 137, h: 18 },
+    { key: 'icon',  file: 'блок под иконку игрока.png',  absX: 451, absY: 240, w: 31,  h: 30 },
+    { key: 'place', file: 'блок под место игрока.png',   absX: 371, absY: 241, w: 47,  h: 25 },
+    { key: 'name',  file: 'блок под никнейм игрока.png', absX: 503, absY: 244, w: 106, h: 22 },
+    { key: 'level', file: 'блок под уровень.png',        absX: 773, absY: 245, w: 51,  h: 20 },
+    { key: 'value', file: 'блок под урон авторитет.png', absX: 858, absY: 246, w: 137, h: 18 },
 ];
 // 28.10.2026: ROW_X/LIST_TOP в исходнике изменились (354/238, унификация окна списка) — эти
 // локальные копии влияют только на текст сообщения в assert ниже (relX/relY), не на сам regex
@@ -109,6 +111,29 @@ console.log('\nTest 6: рантайм-проверка формулы centerX н
         const expected = (b.absX - ROW_X) + b.w / 2;
         assert(centerX(block) === expected, `centerX('${b.key}') = ${expected}`);
     }
+}
+
+console.log('\nTest 7: полоска-фон ряда (cell) компенсирует сдвиг ROW_X/LIST_TOP от унификации скролла 28.10.2026 — абсолютная позиция совпадает с прод-версией (356,236), по прямому указанию ("исправь на тесте чтоб было как на проде")');
+{
+    // 28.10.2026 (баг найден по прямому указанию — скриншоты прод vs тест, "блоки съехали
+    // относительно друг друга"): CELL_BLOCKS (плашки под текст) считаются формулой
+    // "абсолютная_цель − ROW_X/LIST_TOP" и поэтому самокомпенсируются при смене ROW_X/LIST_TOP —
+    // их абсолютная позиция ОДИНАКОВА что на проде (ROW_X=356,LIST_TOP=236 — дорефакторный код),
+    // что на тесте (ROW_X=354,LIST_TOP=238 — после унификации скролла). А вот cell (сама полоска
+    // фона) до этой правки сидела в row-локальных (0,0) БЕЗ компенсации — физически сдвигалась
+    // вместе с ROW_X/LIST_TOP, из-за чего плашки и полоска разъехались на 2px по каждой оси между
+    // прод и тест. Пользователь подтвердил: верно — как на проде. Полоска возвращена на прод-
+    // абсолютную позицию (356,236) явным компенсирующим сдвигом, ROW_X/LIST_TOP не тронуты
+    // (чтобы не откатывать саму унификацию скролла).
+    const cellIdx = lbSrc.indexOf("const cell = new PIXI.Sprite(PIXI.Texture.from(IMG + 'свод топ ячейка.png'));");
+    const addIdx  = lbSrc.indexOf('row.addChild(cell);', cellIdx);
+    assert(cellIdx !== -1 && addIdx !== -1, 'cell создаётся и добавляется в row');
+    const cellBody = lbSrc.slice(cellIdx, addIdx);
+    assert(/cell\.x = 356 - ROW_X; cell\.y = 236 - LIST_TOP;/.test(cellBody),
+        'cell.x/y = компенсирующий сдвиг к прод-абсолюту (356,236), не захардкожены числом напрямую');
+    const cellAbsX = (356 - ROW_X) + ROW_X;
+    const cellAbsY = (236 - LIST_TOP) + LIST_TOP;
+    assert(cellAbsX === 356 && cellAbsY === 236, `итоговая абсолютная позиция полоски = (356,236), как на проде (получено ${cellAbsX},${cellAbsY})`);
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -109,7 +109,13 @@ window.debug_mode = (typeof location !== 'undefined' && location.hostname === 't
 // не будет отдельного явного решения их запустить. Тот же паттерн, что window.debug_mode выше —
 // один и тот же бандл на тест и прод (см. AGENTS.md "побайтово идентичны"), флаг только
 // переключает видимость/доступность точек входа в сцене, сам код фич остаётся в сборке.
-window.hide_unreleased_features = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru');
+// 28.10.2026 (повторное указание тем же днём, см. __maintenanceGateActive ниже): dev-аккаунт
+// исключён и из ЭТОГО флага тоже — иначе предпросмотр прода перед полным открытием не показал
+// бы ему же самому Заначки/Разнарядку/2048, которые и были предметом всей сессии. Безопасно —
+// пока активен __maintenanceGateActive, реальные игроки не видят ВООБЩЕ ничего (полноэкранная
+// заглушка перехватывает всё), так что это исключение не раскрывает недоделанные фичи никому,
+// кроме самого разработчика. Поэтому объявление перенесено НИЖЕ (после парсинга userDataVk
+// из query-строки, см. ниже), а не осталось здесь константой по одному hostname.
 
 // 09.10.2026: live-логи ОК подтверждали v585, но в них не было ни bank, ни iap. Причина
 // оказалась не в обработчиках: production ниже намеренно заглушает ВСЕ console.*. Оставляем
@@ -203,6 +209,44 @@ installPlayerPersistence();
 installAppLifecyclePause();
 
 window.vk_params = userDataVk;
+
+// 28.10.2026 (см. докблок у объявления выше, рядом с debug_mode): dev-аккаунт видит
+// Заначки/Разнарядку/2048 на проде и во время действия __maintenanceGateActive — остальным
+// эти точки входа по-прежнему скрыты (а пока активен сам гейт, остальным вообще ничего не видно).
+window.hide_unreleased_features = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru'
+    && String(userDataVk['vk_user_id']) !== '382448269');
+
+// 28.10.2026 (по прямому указанию — "перед супер деплоем хочу всё проверить заранее, чтобы
+// игра не грузилась ни у кого кроме меня"): на проде (pripyat-game.ru) для ВСЕХ, кроме одного
+// dev-аккаунта (vk_user_id сверяется с жёстко заданным ID), поверх всей страницы ставится
+// непрозрачная заглушка "идут технические работы" — тот же текст/стиль, что maintenance.html
+// в корне проекта, но внедрённый прямо в бандл: тот же hostname-паттерн, что window.debug_mode/
+// window.hide_unreleased_features выше (один и тот же файл на тест и прод, флаг переключает
+// поведение только по домену) — плюс сравнение vk_user_id для единственного исключения.
+// Заглушка перехватывает ВСЕ клики (pointer-events) и перекрывает канвас на весь экран
+// (z-index максимальный) — сама игра по-прежнему грузится в фоне (это не блокирует сетевые
+// запросы/прелоадер), но заблокированный игрок физически не может её увидеть или нажать что-
+// либо. Временная мера для дев-предпросмотра перед реальным открытием — снимается правкой
+// ALLOWED_DEV_VK_UID/условия ниже и пересборкой, когда прод готов к показу всем.
+window.__maintenanceGateActive = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru'
+    && String(userDataVk['vk_user_id']) !== '382448269');
+if(window.__maintenanceGateActive){
+    const gateOverlay = document.createElement('div');
+    gateOverlay.id = '__maintenance_gate_overlay';
+    gateOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;'
+        + 'background:#14120f;display:flex;align-items:center;justify-content:center;'
+        + 'font-family:Arial,sans-serif;color:#e8d9bf;text-align:center;';
+    gateOverlay.innerHTML =
+        '<div style="max-width:560px;padding:40px 32px;">'
+        + '<div style="font-size:64px;line-height:1;margin-bottom:18px;">&#9762;</div>'
+        + '<h1 style="margin:0 0 14px;font-size:26px;letter-spacing:1px;text-transform:uppercase;color:#e6a028;">Идут технические работы</h1>'
+        + '<p style="margin:0 0 8px;font-size:16px;color:#cbbfa6;">Зона временно закрыта на обслуживание.</p>'
+        + '<p style="margin:0;font-size:16px;color:#cbbfa6;">Скоро всё снова заработает — попробуйте зайти чуть позже.</p>'
+        + '</div>';
+    const _attachGateOverlay = () => { if(document.body) document.body.appendChild(gateOverlay); };
+    if(document.body) _attachGateOverlay(); else document.addEventListener('DOMContentLoaded', _attachGateOverlay);
+}
+
 window.VK_token = vk_params['access_token'];
 window.VK_version = '5.132';
 

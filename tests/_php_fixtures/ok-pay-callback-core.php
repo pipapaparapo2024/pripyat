@@ -64,23 +64,29 @@ echo "=== Test 4: transKey() — префикс ok_ отличает transaction
     assertTrue(OkPayCallback::transKey('555') !== '555', 'префиксованный ключ НЕ совпадает с голым числом — не столкнётся с VK order_id=555 в той же колонке tid');
 }
 
-echo "=== Test 5: priceCatalog() — та же индексация productCode, что у itemCatalog(), но отдаёт ожидаемую цену (price/7) ===\n";
+echo "=== Test 5: priceCatalog() — та же индексация productCode, что у itemCatalog(), отдаёт ожидаемую цену из price_ok (НЕ price/7) ===\n";
 {
+    // 28.10.2026 (БАГ найден по репорту "плачу в ОК — ничего не начисляется", исправлено): раньше
+    // priceCatalog() считала price/7 — price_ok ниже НАРОЧНО отличается от price/7, чтобы тест
+    // реально ловил регресс на старую (сломанную) формулу, а не просто совпадал с ней случайно.
     $prices = [
-        'stew'       => ['default' => [4, 12, 24, 80, 200, 400, 2000, 4000],
-                          'price'   => [28, 84, 168, 560, 1400, 2800, 14000, 28000]],
-        'coins'      => ['default' => [16, 36, 56, 100, 600, 2000, 10000, 20000],
-                          'price'   => [35, 70, 105, 175, 700, 1750, 7000, 14000]],
-        'cigarettes' => ['default' => [1600, 3600, 6000, 8000, 11000, 22000, 125000, 300000],
-                          'price'   => [21, 35, 56, 70, 98, 196, 980, 2100]],
+        'stew'       => ['default'  => [4, 12, 24, 80, 200, 400, 2000, 4000],
+                          'price'    => [28, 84, 168, 560, 1400, 2800, 14000, 28000],
+                          'price_ok' => [7, 20, 42, 140, 350, 700, 3500, 7000]],
+        'coins'      => ['default'  => [16, 36, 56, 100, 600, 2000, 10000, 20000],
+                          'price'    => [35, 70, 105, 175, 700, 1750, 7000, 14000],
+                          'price_ok' => [7, 14, 20, 35, 210, 700, 3500, 7000]],
+        'cigarettes' => ['default'  => [1600, 3600, 6000, 8000, 11000, 22000, 125000, 300000],
+                          'price'    => [21, 35, 56, 70, 98, 196, 980, 2100],
+                          'price_ok' => [7, 14, 20, 28, 35, 70, 350, 700]],
     ];
     $priceCatalog = OkPayCallback::priceCatalog($prices);
 
-    assertEq($priceCatalog[0], 4, 'item0 — 28/7 = 4 ОК (та же пачка тушёнки, что item0 в itemCatalog())');
-    assertEq($priceCatalog[8], 5, 'item8 — первая пачка монет (35/7), offset согласован с itemCatalog()');
-    assertEq($priceCatalog[16], 3, 'item16 — первая пачка сигарет (21/7), offset согласован с itemCatalog()');
-    assertEq($priceCatalog[100], 3, 'item100 — энергия 50, цена 3 ОК (тот же голос-прайс, что у universal_pay.php)');
-    assertEq($priceCatalog[107], 120, 'item107 — энергия 3500, цена 120 ОК');
+    assertEq($priceCatalog[0], 7, 'item0 — price_ok[0]=7 (НЕ price/7=4 — та же пачка тушёнки, что item0 в itemCatalog())');
+    assertEq($priceCatalog[8], 7, 'item8 — первая пачка монет, price_ok[0]=7 (НЕ price/7=5), offset согласован с itemCatalog()');
+    assertEq($priceCatalog[16], 7, 'item16 — первая пачка сигарет, price_ok[0]=7 (НЕ price/7=3), offset согласован с itemCatalog()');
+    assertEq($priceCatalog[100], 20, 'item100 — энергия 50, цена 20 ОК (_client/src/data/energy_packs.json.price_ok[0], НЕ VK-голос 3)');
+    assertEq($priceCatalog[107], 840, 'item107 — энергия 3500, цена 840 ОК (price_ok[7], НЕ VK-голос 120)');
 }
 
 echo "=== Test 6: amountMatches() — допуск на округление, но не произвольное занижение суммы ===\n";

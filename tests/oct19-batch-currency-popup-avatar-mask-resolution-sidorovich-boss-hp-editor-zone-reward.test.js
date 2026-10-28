@@ -49,7 +49,8 @@ console.log('\n=== 1. Попап покупки валюты ===');
     assert(/const TXT_STYLE_TITLE = Object\.assign\(\{\}, TXT_STYLE_BASE\);/.test(src),
         'заголовок использует тот же общий стиль, что count/price (Southbank LT/18/градиент от белого)');
     assert(/countTxt\.y = slot\.y \+ 25;/.test(src), 'countTxt (количество товара) — новая позиция slot.y+25 (было +56, подняли на 31px)');
-    assert(/priceTxt\.y = slot\.y \+ 170;/.test(src), 'priceTxt (цена в голосах) — новая позиция slot.y+170 (было +137, опустили на 33px)');
+    // 28.10.2026 (по прямому указанию — "опусти кол-во голосов вниз на 2px"): +170 → +172.
+    assert(/priceTxt\.y = slot\.y \+ 172;/.test(src), 'priceTxt (цена в голосах) — новая позиция slot.y+172 (28.10.2026, было +170)');
     assert(/fixedW: 89, fixedH: 89,/.test(src), 'вкладка "рубли" получила fixedW/fixedH 89×89');
     assert(/if\(t\.fixedW && t\.fixedH\)\{ spr\.width = t\.fixedW; spr\.height = t\.fixedH; \}/.test(src),
         'иконка вкладки использует fixedW/fixedH вместо scale, когда они заданы');

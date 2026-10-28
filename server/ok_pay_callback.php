@@ -65,31 +65,41 @@
         // 26.10.2026 (ответ модерации ОК — "разработчик обязан проверять соответствие товара и
         // его цены, передаваемых в параметрах product_code и amount", apiok.ru/dev/methods/rest/
         // callbacks/callbacks.payment): та же индексация productCode, что у itemCatalog() выше
-        // (ОБЯЗАНА совпадать с ней один-в-один — тот же порядок offset-ов), но вместо [поле,
-        // количество] отдаёт ожидаемую цену в ОКах — тем же расчётом (price/7), что уже использует
-        // universal_pay.php.loadResponses() для голосов ВК (см. докблок файла — тот же числовой
-        // 'price', который get_item отдаёт площадке, одинаково трактуется и как голоса, и как ОКи).
-        // Без этой проверки злоумышленник мог бы прислать поддельный amount на любой productCode.
+        // (ОБЯЗАНА совпадать с ней один-в-один — тот же порядок offset-ов), отдаёт ожидаемую цену
+        // в ОКах. Без этой проверки злоумышленник мог бы прислать поддельный amount на любой
+        // productCode.
+        //
+        // 28.10.2026 (БАГ, найден по репорту "плачу в ОК — ничего не начисляется"): первая версия
+        // считала ожидаемую цену как price/7 (для товаров) или как захардкоженные VK-голоса за
+        // энергию — предполагалось, что "ОК" и голос ВК числятся одинаково (см. старый
+        // комментарий). Это неверно: клиент (bank.js/energy_buy.js/interface-currency-purchase.js)
+        // реально списывает через FAPI.UI.showPayment() число из ОТДЕЛЬНОГО поля `price_ok`
+        // (donuts.json/energy_packs.json) — которое НЕ равно price/7 (например, тушёнка слот 1:
+        // price/7=3, price_ok=20 — разница в разы). Допуск amountMatches() всего ±1, поэтому
+        // ЛЮБАЯ покупка в ОК отклонялась этой проверкой с ошибкой 1003, даже честная — деньги у
+        // игрока списаны площадкой, начисление сервер отказывался делать. Теперь сверяемся
+        // напрямую с price_ok — тем же числом, что реально ушло в FAPI.UI.showPayment().
         static function priceCatalog($prices){
             $donats = [];
 
             for($i = 0; $i < count($prices['stew']['default']); $i++){
-                $donats[$i] = $prices['stew']['price'][$i] / 7;
+                $donats[$i] = $prices['stew']['price_ok'][$i];
             }
             $coinsOff = count($prices['stew']['default']);
             for($i = 0; $i < count($prices['coins']['default']); $i++){
-                $donats[$coinsOff + $i] = $prices['coins']['price'][$i] / 7;
+                $donats[$coinsOff + $i] = $prices['coins']['price_ok'][$i];
             }
             $cigOff = $coinsOff + count($prices['coins']['default']);
             for($i = 0; $i < count($prices['cigarettes']['default']); $i++){
-                $donats[$cigOff + $i] = $prices['cigarettes']['price'][$i] / 7;
+                $donats[$cigOff + $i] = $prices['cigarettes']['price_ok'][$i];
             }
 
-            // Тот же порядок/значения голосов за энергию, что в universal_pay.php.loadResponses()
-            // ($energy_items[*]['votes']) — держать синхронно при правке одного из двух файлов.
-            $energyVotes = [3, 7, 10, 20, 40, 60, 85, 120];
-            foreach($energyVotes as $idx => $votes){
-                $donats[100 + $idx] = $votes;
+            // Те же числа, что в _client/src/data/energy_packs.json.price_ok — держать синхронно
+            // при правке одного из двух файлов (сервер не имеет доступа к клиентскому JSON напрямую,
+            // поэтому список продублирован, как и было с $energyVotes раньше).
+            $energyPriceOk = [20, 49, 70, 140, 280, 420, 595, 840];
+            foreach($energyPriceOk as $idx => $priceOk){
+                $donats[100 + $idx] = $priceOk;
             }
 
             return $donats;

@@ -146,7 +146,8 @@ export function attachBossesSelect(proto){
 		// рамки (не как смещение от неё): x=722 y=94 (cardY=4 → относительно карточки y=90),
 		// w=106 h=106 (квадрат, было 90×74), rot=-3°.
 		const KILLER_CX = 722, KILLER_CY = 90;
-		const KILLER_W = 106, KILLER_H = 106;
+		// 28.10.2026 (по прямому указанию — "сделай эти иконки размером 110 на 110 пикселей"): было 106×106.
+		const KILLER_W = 110, KILLER_H = 110;
 		const KILLER_ROTATION = -3 * Math.PI / 180;
 		// Все подписи привязаны к левому верхнему углу карточки. Значения сняты
 		// пользователем с карточки Баркута и применяются к каждому боссу одинаково.
@@ -444,6 +445,20 @@ export function attachBossesSelect(proto){
 						spr.x = KILLER_CX; spr.y = cardY + KILLER_CY;
 						spr.rotation = KILLER_ROTATION;
 						spr._uRotatable = true; // доступно вращение Q/E в редакторе позиций
+						// 28.10.2026 (по прямому указанию — "самодельный текстурный блок искажает
+						// фото"): раньше обрезка держалась только на addChildAt ПОД рамкой — у
+						// повёрнутого квадратного фото углы торчали за пределы окна рамки. Честная
+						// PIXI-маска (как avatarMask в player_profile.js), НЕ повёрнутая — окно
+						// рамки само не крутится, наклонено только фото внутри него. Добавляется в
+						// тот же cardsContainer (та же система координат, что и spr — иначе съедет
+						// при скролле списка), на тот же X/Y, что и spr (центр, т.к. anchor 0.5,0.5).
+						const killerMask = new PIXI.Graphics();
+						killerMask.beginFill(0xffffff);
+						killerMask.drawRect(-KILLER_W / 2, -KILLER_H / 2, KILLER_W, KILLER_H);
+						killerMask.endFill();
+						killerMask.x = spr.x; killerMask.y = spr.y;
+						spr.mask = killerMask;
+						cardsContainer.addChild(killerMask);
 						// 18.09.2026 (по прямому указанию): клик по фото убившего открывает его
 						// публичный профиль (персонаж с надетыми шмотками), как и везде в рамках.
 						// 28.09.2026 (адаптив): onTap вместо pointerdown — фото лежит внутри

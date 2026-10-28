@@ -161,23 +161,30 @@
             $targetId = intval($this->registry['user_params']['target_id'] ?? -1);
             $col = intval($this->registry['user_params']['collection_id'] ?? -1);
             $pos = intval($this->registry['user_params']['position'] ?? -1);
-            if($targetId <= 0) return $this->ops->fail(54);
-            if($targetId === $uid) return $this->ops->fail(93);
+            // 28.10.2026 (баг найден по прямому указанию — "нажимаем ОТПРАВИТЬ, ничего не
+            // происходит"): раньше ни одна fail-ветка этого метода не логировалась (только
+            // успех, см. error_log ниже) — по логам сервера было невозможно понять, ПОЧЕМУ
+            // конкретная попытка отправки не прошла (ПРАВИЛО №8).
+            if($targetId <= 0){ error_log('[Zanachki.giveCard] FAIL 54 (targetId<=0) uid=' . abs($uid)); return $this->ops->fail(54); }
+            if($targetId === $uid){ error_log('[Zanachki.giveCard] FAIL 93 (targetId===uid) uid=' . abs($uid)); return $this->ops->fail(93); }
 
             $result = $this->_withTwoUserLock($uid, $targetId, function() use ($uid, $targetId, $col, $pos){
                 $giver = $this->ops->loadUser();
-                if(!$giver) return $this->ops->fail(99);
+                if(!$giver){ error_log('[Zanachki.giveCard] FAIL 99 (loadUser giver) uid=' . abs($uid)); return $this->ops->fail(99); }
 
                 $targetRow = $this->registry['udb']->getData(
                     $this->registry['utb'], ['id', 'nick', 'stash_data', 'stash_wishlist'], 'id=' . $targetId
                 );
-                if(isset($targetRow['error']) && $targetRow['error']) return $this->ops->fail(91);
+                if(isset($targetRow['error']) && $targetRow['error']){ error_log('[Zanachki.giveCard] FAIL 91 (getData target) uid=' . abs($uid) . ' target_id=' . abs($targetId)); return $this->ops->fail(91); }
                 $target = $targetRow;
 
                 $giveResult = ZanachkiModel::giveCard($this->ops, $giver, $target, $col, $pos);
-                if($giveResult !== true) return $this->ops->fail($giveResult);
+                if($giveResult !== true){
+                    error_log('[Zanachki.giveCard] FAIL ' . $giveResult . ' (ZanachkiModel::giveCard) uid=' . abs($uid) . ' target_id=' . abs($targetId) . ' col=' . $col . ' pos=' . $pos);
+                    return $this->ops->fail($giveResult);
+                }
 
-                if(!$this->ops->saveUser($giver)) return $this->ops->fail(99);
+                if(!$this->ops->saveUser($giver)){ error_log('[Zanachki.giveCard] FAIL 99 (saveUser giver) uid=' . abs($uid)); return $this->ops->fail(99); }
                 $this->registry['udb']->saveData($this->registry['utb'], [
                     'id'             => $targetId,
                     'stash_data'     => $target['stash_data'],

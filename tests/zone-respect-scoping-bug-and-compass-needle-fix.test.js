@@ -54,7 +54,7 @@ console.log('\n1) zone_screen.js — RESPECT_* константы видны о�
     const outerChunk = src.slice(attachIdx, openIdx);
     assert(/const RESPECT_FRAME_REL_X = 728, RESPECT_FRAME_REL_Y = 18;/.test(outerChunk),
         'RESPECT_FRAME_REL_X/Y объявлены на уровне attachZoneScreen (ДО _openZoneScreen)');
-    assert(/const RESPECT_PHOTO_W = 112, RESPECT_PHOTO_H = 112;/.test(outerChunk),
+    assert(/const RESPECT_PHOTO_W = 115, RESPECT_PHOTO_H = 115;/.test(outerChunk),
         'RESPECT_PHOTO_W/H объявлены на уровне attachZoneScreen — именно эта пара отсутствовала (см. ReferenceError в логе)');
     assert(/const RESPECT_AMOUNT_REL_Y = 138;/.test(outerChunk), 'RESPECT_AMOUNT_REL_Y тоже вынесен');
 

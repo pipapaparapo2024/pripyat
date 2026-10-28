@@ -57,18 +57,53 @@ console.log('\nTest 2: svod-zanachki.js — свой выход экрана + �
     assert(/const BG_X = 39, BG_Y = 92;/.test(zanachkiSrc), 'фон экрана переставлен на x:39,y:92');
     assert(/const FRIEND_REQ_X = 695, FRIEND_REQ_Y = 108;/.test(zanachkiSrc), 'кнопка запроса у друзей — y:108 (было 106)');
     assert(/const VIEW_X = 53, VIEW_W = 1127, VIEW_H = 377;/.test(zanachkiSrc), 'viewport-блок списка — x:53,y:184(VIEW_Y),w:1127,h:377');
-    assert(/const ROW_H = 125;/.test(zanachkiSrc), 'шаг между рядами коллекций увеличен на 10px (115→125)');
+    // 28.10.2026 (повторная правка тем же днём): шаг между рядами увеличен ещё на 5px (125→130),
+    // плюс новый отступ ROW_Y0=10 перед первым рядом.
+    // 28.10.2026 (ещё одна правка тем же днём — "расстояние между заначки фон ряда коллекции.png
+    // сделай в 13px, отступ сверху от первого файла тоже 13px"): фон ряда высотой 115px, значит
+    // ROW_H = 115 + 13 = 128 (зазор между рядами 13px, было 15px при ROW_H=130); ROW_Y0 = 13.
+    assert(/const ROW_H = 128;/.test(zanachkiSrc), 'шаг между рядами коллекций — 115(высота фона)+13px зазор=128');
+    assert(/const ROW_Y0 = 13;/.test(zanachkiSrc), 'отступ перед первым рядом — 13px');
+    // 28.10.2026 (по прямому указанию — "для самой первой коллекции подними фон ряда выше на
+    // 5px"): точечная поправка ТОЛЬКО для фона строки первой коллекции, не для карточек/кнопок.
+    assert(/rowBg\.y = rowY - \(rowIdx === 0 \? 5 : 0\);/.test(zanachkiSrc), 'фон первого ряда поднят на 5px (только фон, не контент ряда)');
 }
 
 console.log('\nTest 3: svod-zanachki.js — компенсация VIEW_X в X-константах ряда (иначе клип справа маской скролла)');
 {
     // Критично: mask-прямоугольник в _buildSvodScroll клиппит И по ширине (drawRect(0,0,viewW,viewH)),
-    // а contentContainer.x обязан равняться VIEW_X — если X-константы ряда (ROW_X/CARD_X0/REQ_X0/
+    // а contentContainer.x обязан равняться VIEW_X — если X-константы ряда (ROW_X/CARD_X0/
     // CLAIM_X/STAR_X) не уменьшить на тот же VIEW_X, правый край каждого ряда (фон 1096px) вылезал
-    // бы за маску на (VIEW_X) пикселей и обрезался.
+    // бы за маску на (VIEW_X) пикселей и обрезался. (REQ_X0 убран 28.10.2026 — reqSpr теперь
+    // центрируется относительно card, не завязан на VIEW_X напрямую, card.x уже компенсирован.)
     assert(/const ROW_X = 77 - VIEW_X;/.test(zanachkiSrc), 'ROW_X компенсирован (77 - VIEW_X)');
     assert(/const CARD_X0 = 145 - VIEW_X, CARD_PITCH = 112;/.test(zanachkiSrc), 'CARD_X0 компенсирован (145 - VIEW_X)');
-    assert(/const REQ_X0 = 132 - VIEW_X, REQ_Y_OFF = 288 - VIEW_Y;/.test(zanachkiSrc), 'REQ_X0 компенсирован (132 - VIEW_X)');
+    // 28.10.2026 (по прямому указанию, после живой проверки — "ты поднял количество и кнопку
+    // «Запросить», но не поднял сами карточки заначек, подними карточки тоже"): CARD_Y_OFF
+    // забыли поднять на 7px синхронно с REQ_Y_OFF при первом проходе — исправлено.
+    assert(/const CARD_Y_OFF = 197 - VIEW_Y - 7;/.test(zanachkiSrc), 'CARD_Y_OFF поднят на 7px синхронно с REQ_Y_OFF');
+    // 28.10.2026 (повторное указание тем же днём — "кнопки запросить/в запросе подними вверх
+    // на 7px"): REQ_Y_OFF уменьшен на 7.
+    assert(/const REQ_Y_OFF = 288 - VIEW_Y - 7;/.test(zanachkiSrc), 'REQ_Y_OFF поднят на 7px');
+    // 28.10.2026 (ещё одно указание тем же днём — "поставь запросить/в запросе центрированно
+    // относительно файла самой заначки"): фиксированный REQ_X0 (ручной сдвиг +4px) убран целиком
+    // — X теперь считается динамически по центру card/reqSpr.
+    assert(!/const REQ_X0/.test(zanachkiSrc), 'REQ_X0-константа убрана — центрирование больше не зависит от ручного сдвига');
+    // 28.10.2026 (БАГ, исправлено тем же днём — "в запросе не центрировано, хотя запросить вроде
+    // центрировано"): ни карточки, ни файлы запросить/в запросе не в прелоаде — синхронный расчёт
+    // card.width/reqSpr.width сразу после создания читал бы заглушку (1px), а не реальный размер.
+    // Заменено на _centerZanachkiReqSpr() с отложенным пересчётом по текстуре (как в
+    // raznaryadka.js), вызывается и при создании, и при смене текстуры (own/friend статус).
+    assert(/this\._centerZanachkiReqSpr\(reqSpr, card\);/.test(zanachkiSrc), 'reqSpr центрируется через общий хелпер (создание)');
+    assert(/proto\._centerZanachkiReqSpr = function\(spr, card\)\{/.test(zanachkiSrc), '_centerZanachkiReqSpr определён как proto-метод');
+    const centerFnStart = zanachkiSrc.indexOf('proto._centerZanachkiReqSpr = function(spr, card){');
+    const centerFnEnd = zanachkiSrc.indexOf('\n    };', centerFnStart);
+    const centerFnBody = zanachkiSrc.slice(centerFnStart, centerFnEnd);
+    assert(/if\(card\.texture\.width > 1\) apply\(\); else card\.texture\.once\('update', apply\);/.test(centerFnBody),
+        'ждёт загрузки текстуры card, если ещё не готова (width<=1)');
+    assert(/if\(spr\.texture\.width > 1\) apply\(\); else spr\.texture\.once\('update', apply\);/.test(centerFnBody),
+        'ждёт загрузки текстуры spr, если ещё не готова (width<=1)');
+    assert(/this\._centerZanachkiReqSpr\(spr, card\);/.test(zanachkiSrc), 'reqSpr пересчитывается через тот же хелпер при смене текстуры (own/friend статус)');
     assert(/const CLAIM_X = 987 - VIEW_X, CLAIM_Y_OFF = 273 - VIEW_Y;/.test(zanachkiSrc), 'CLAIM_X компенсирован (987 - VIEW_X)');
     assert(/const STAR_X = 1000 - VIEW_X, STAR_Y_OFF = 248 - VIEW_Y;/.test(zanachkiSrc), 'STAR_X компенсирован (1000 - VIEW_X)');
 }
@@ -380,13 +415,48 @@ console.log('\nTest 19: svod-zanachki-wishlist.js — под каждой кар
         'owned считается из ctx.myOwnedCounts по ключу col_pos — общий для обоих режимов (own/friend)');
     const countTxtStart = wishlistSrc.indexOf('const countTxt = new PIXI.Text(String(owned)');
     assert(countTxtStart !== -1, 'countTxt создаётся с текстом owned');
-    const countTxtEnd = wishlistSrc.indexOf('win.addChild(countTxt);', countTxtStart);
-    const countTxtBody = wishlistSrc.slice(countTxtStart, countTxtEnd);
-    assert(/strokeThickness: 1,/.test(countTxtBody), 'шрифт числа тоньше, чем у остальных подписей попапа (strokeThickness:1, не 2) — по прямому указанию');
-    assert(/countTxt\.y = card\.y \+ card\.height \+ 4;/.test(countTxtBody), 'число выводится под карточкой');
-    // Один и тот же countTxt должен строиться ДО ветвления own/friend — переиспользуется в обоих.
+    const applyEnd = wishlistSrc.indexOf('};', wishlistSrc.indexOf('const applyCountPos = () => {', countTxtStart)) + 2;
+    const countTxtBody = wishlistSrc.slice(countTxtStart, applyEnd);
+    // 28.10.2026 (баг найден тем же днём — "не видно количество"): исходная позиция (card.y +
+    // card.height + 4) попадала ВНУТРЬ actionBtn (зазор карточка→кнопка всего 2px) и пряталась
+    // под её спрайтом (actionBtn добавлялся раньше countTxt). Перенесено под кнопку.
+    // 28.10.2026 (повторное указание тем же днём, по скриншоту референса — "те же характеристики,
+    // что у количества значек которые есть у меня: fontSize 18, чёрный, Southbank LT; подними на
+    // 47px"): шрифт/цвет сменены (были Bebas Neue Book 14 белый), позиция поднята на 47px от
+    // варианта "под кнопкой".
+    assert(/fontFamily: 'Southbank LT', fontSize: 18, fill: '#000000',/.test(countTxtBody), 'Southbank LT, fontSize 18, чёрный — как у количества на основной сетке заначек');
+    // 28.10.2026 (баг найден по прямому указанию — "первый раз правильно, второй раз опустились
+    // вниз"): actionBtn.height читался СИНХРОННО при построении попапа, а кнопки убрать/отправить
+    // нигде не прелоадятся — до загрузки текстуры height ~1px, после — реальные 27-29px, один и
+    // тот же код давал разный результат в зависимости от кэша. Фикс — пересчёт через
+    // applyCountPos(), вызываемый сразу (если текстура уже готова) либо по 'update' (тот же
+    // паттерн, что и _centerZanachkiReqSpr в svod-zanachki.js), плюс обе кнопки добавлены в
+    // прелоад (game-boot.js) по ПРАВИЛУ №11.
+    assert(/const applyCountPos = \(\) => \{/.test(countTxtBody), 'позиция считается в отложенной функции applyCountPos, не синхронно при создании');
+    assert(/if\(actionBtn\.texture\.width > 1\) applyCountPos\(\); else actionBtn\.texture\.once\('update', applyCountPos\);/.test(wishlistSrc),
+        'applyCountPos вызывается сразу, если текстура кнопки уже загружена, иначе — по событию update (как reqSpr)');
+    // 28.10.2026 (повторное указание — "после нажатия убрать/отправить цифры съезжают вниз" —
+    // разделение own/friend на РАЗНЫЕ формулы несколькими сообщениями раньше оказалось ошибкой
+    // диагностики: видимая разница между скриншотами была следствием гонки текстуры (см. выше),
+    // а не разным желаемым местом для двух режимов. own и friend ВОЗВРАЩЕНЫ на одну общую
+    // формулу — один набор чисел крутить, не два расходящихся).
+    assert(/countTxt\.x = cardX \+ card\.width \/ 2 \+ 1;\s*\n\s*countTxt\.y = actionBtn\.y \+ actionBtn\.height \+ 1 - 47 - 3;/.test(countTxtBody),
+        'общая формула (own и friend): X -1px влево, Y -25px вверх относительно старой +25 версии');
+    assert(!/if\(mode === 'own'\)\{\s*\n\s*countTxt\.x/.test(wishlistSrc), 'позиция countTxt больше НЕ ветвится по mode — один общий расчёт на оба режима');
+    // countTxt строится ПОСЛЕ actionBtn (нужен actionBtn.height для позиционирования), но
+    // ДО ветвления own/friend (которое теперь относится только к обработчику кнопки, не к позиции).
+    const actionBtnIdx = wishlistSrc.indexOf('win.addChild(actionBtn);');
     const branchIdx = wishlistSrc.indexOf("if(mode === 'own'){");
-    assert(countTxtStart < branchIdx, 'countTxt строится до ветвления own/friend — общий для обоих режимов');
+    assert(actionBtnIdx !== -1 && actionBtnIdx < countTxtStart, 'actionBtn создаётся до countTxt (нужна его высота)');
+    assert(countTxtStart < branchIdx, 'countTxt строится до ветвления own/friend — применяется к обоим режимам');
+}
+
+console.log('\nTest 19b: game-boot.js — кнопки запроса заначек «убрать»/«отправить» добавлены в прелоад (28.10.2026, ПРАВИЛО №11, корень гонки текстуры из Test 19)');
+{
+    const gameBootPath = path.join(__dirname, '..', '_client', 'src', 'game', 'game-boot.js');
+    const gameBootSrc = fs.readFileSync(gameBootPath, 'utf8');
+    assert(gameBootSrc.includes("'заначки кнопка убрать.png'"), 'заначки кнопка убрать.png — в прелоаде');
+    assert(gameBootSrc.includes("'заначки кнопка отправить.png'"), 'заначки кнопка отправить.png — в прелоаде');
 }
 
 console.log('\nTest 21: game2048-top-popup.js — места игроков (2..10) дополнительно опущены на 9px (28.10.2026, по прямому указанию)');
@@ -455,6 +525,37 @@ console.log('\nTest 25: game2048.js/game2048-top-popup.js/dev_panel.js — им�
         'проверка готовности шрифта в game2048-top-popup.js указывает на реально существующее имя, не на "Bebas Neue Pro" без суффикса');
     assert(!/document\.fonts\.check\("18px 'Bebas Neue Pro'"\)/.test(devPanelSrc),
         'проверка готовности шрифта в dev_panel.js (мок) указывает на реально существующее имя, не на "Bebas Neue Pro" без суффикса');
+}
+
+console.log('\nTest 26: svod-zanachki.js — счётчик карточки пишет "0" вместо пустой строки, когда у игрока нет копий (28.10.2026, по прямому указанию — "а то сейчас просто пусто, ничего не понятно")');
+{
+    const applyCountsStart = zanachkiSrc.indexOf('proto._zanachkiApplyCounts = function');
+    const applyCountsEnd = zanachkiSrc.indexOf('\n    };', applyCountsStart);
+    const applyCountsBody = zanachkiSrc.slice(applyCountsStart, applyCountsEnd);
+    assert(/if\(txt\) txt\.text = String\(count\);/.test(applyCountsBody), 'текст всегда String(count), включая 0 — не прячется в пустую строку');
+    assert(!/count > 0 \? String\(count\) : ''/.test(applyCountsBody), 'старая условная логика (пусто при 0) убрана');
+}
+
+console.log('\nTest 27: svod-zanachki.js — счётчик карточки больше НЕ задвоен с подъёмом card.y (28.10.2026, по прямому указанию — "ты высоко задёрнул текст, опусти на 7px")');
+{
+    // card.y уже включает -7 (через CARD_Y_OFF) — countTxt.y строится ОТ card.y, значит эта "-7"
+    // унаследуется автоматически. Если формула countTxt СВЕРХУ добавляет ещё свою "-7" — итоговый
+    // подъём относительно card задваивается (14px вместо 7).
+    assert(/countTxt\.y = card\.y \+ card\.height - 18 \+ 92 - 2;/.test(zanachkiSrc),
+        'countTxt.y без лишней -7 — сдвиг относительно card даёт только унаследованный CARD_Y_OFF');
+    assert(!/countTxt\.y = card\.y \+ card\.height - 18 \+ 92 - 2 - 7;/.test(zanachkiSrc),
+        'задвоенная формула (с собственной -7 поверх унаследованной) не осталась');
+}
+
+console.log('\nTest 28: svod-zanachki-wishlist.js — счётчик "у меня" опущен ещё на 25px (28.10.2026, по прямому указанию, скриншот "ЗАПРОС ДРУГА В ЗАНАЧКАХ") — ПОЗЖЕ В ТОТ ЖЕ ДЕНЬ отменено, см. Test 19');
+{
+    // Эта +25 правка опиралась на скриншот, снятый во время гонки текстуры (actionBtn.height
+    // читался как placeholder) — визуально выглядела нужной, но после фикса гонки (Test 19)
+    // оказалась лишней: с реальной высотой кнопки она уводила число на тёмный фон/кнопку.
+    // Отменена тем же днём вместе с разделением own/friend — обе правки держались на одном и
+    // том же ошибочном наблюдении. Формула +25 в файле больше НЕ встречается.
+    assert(!/countTxt\.y = actionBtn\.y \+ actionBtn\.height \+ 1 - 47 - 3 \+ 25;/.test(wishlistSrc),
+        '+25 правка отменена — не осталась в файле после унификации формулы (см. Test 19)');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -26,23 +26,30 @@ function assert(ok, message){ if(!ok) throw new Error(message); console.log('  �
 const habarSrc = read('_client/src/game/habar.js');
 const usersSrc = read('server/core/controllers/users.php');
 
-console.log('\nПозиция таймера — уточнена редактором позиций 20.10.2026 (x:1013 y:507 для купленного слота Элитный)');
-assert(/const TIMER_OFFSET_X = 68, TIMER_OFFSET_Y = 18;/.test(habarSrc), 'новое смещение +68/+18 от BTN_X[i]/BTN_Y[i] (даёт 1013/507 для слота 3, было +26/+17)');
-assert(/timer\.x = BTN_X\[i\] \+ TIMER_OFFSET_X;/.test(habarSrc), 'X таймера использует новую константу смещения');
-assert(/timer\.y = BTN_Y\[i\] \+ TIMER_OFFSET_Y;/.test(habarSrc), 'Y таймера использует новую константу смещения');
+console.log('\nПозиция таймера — 28.10.2026 заменена на 4 индивидуальных значения x (по одному на плашку), вместо единой формулы BTN_X[i]+offset');
+assert(/const TIMER_X = \[279, 524, 769, 1014\];/.test(habarSrc), 'x для 4 плашек (Обычный/Пацанский/Авторитетный/Элитный)');
+assert(/const TIMER_Y = 508;/.test(habarSrc), 'общий Y для всех 4 плашек');
+// 28.10.2026 (БАГ, исправлено тем же днём): x/y из редактора для anchor(0.5,0.5)-объекта — уже
+// готовые object.x/y, без доп. +w/2,+h/2 (первая версия правки ошибочно это добавляла).
+assert(/timer\.x = TIMER_X\[i\];/.test(habarSrc), 'X таймера присваивается напрямую, без хитбокс-математики');
+assert(/timer\.y = TIMER_Y;/.test(habarSrc), 'Y таймера присваивается напрямую, без хитбокс-математики');
+assert(!/timer\.x = TIMER_HIT_X/.test(habarSrc), 'старая (ошибочная) формула с TIMER_HIT_X не осталась');
 // 20.10.2026 (редактор позиций, по прямому указанию): fontSize поднят 23→28.
 assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:28,/.test(habarSrc),
     'таймер получил новый fontSize:28 (было 23)');
 assert(!/timer\.scale\.set\(/.test(habarSrc), 'scale.set() для timer больше не вызывается');
 
-console.log('\nСчётчик "N/30" — убран целиком 20.10.2026 (по прямому указанию: "количество сборов можешь записывай, но не выставляй на экран")');
-// 20.10.2026: срок действия хабара перестал зависеть от числа сборов (теперь 30 КАЛЕНДАРНЫХ
-// дней от habar_bought_ts, см. habar-30-days-from-purchase-msk-daily-reset.test.js) — счётчик
-// "N/30" на экране терял смысл и мог вводить в заблуждение (число сборов ≠ оставшиеся дни),
-// поэтому убран из UI целиком. Сервер по-прежнему пишет habar_days_collected (статистика).
-assert(!/this\._habarDaysLabels/.test(habarSrc), 'массив меток дней (daysTxt) больше не существует');
-assert(!/const daysTxt = /.test(habarSrc), 'daysTxt как PIXI.Text больше не создаётся');
-assert(!/\+ '\/30'/.test(habarSrc), 'текст вида "N/30" нигде не формируется');
+console.log('\nСчётчик "N/30" — восстановлен 28.10.2026 (по прямому указанию, "как раньше было"), в той же строке, что и таймер');
+// 20.10.2026: счётчик был убран из UI целиком (как отдельный PIXI.Text daysTxt).
+// 28.10.2026 (по прямому указанию — "верни кол-во собранных хабаров N/30 как раньше было,
+// умести время и количество в одну строку"): возвращён, но НЕ как второй текстовый объект —
+// дописывается в ТОТ ЖЕ timer.text через пробел (см. _updateHabarTimer), поэтому отдельный
+// массив меток daysTxt/_habarDaysLabels по-прежнему не существует.
+assert(!/this\._habarDaysLabels/.test(habarSrc), 'массив меток дней (daysTxt) по-прежнему не существует — счётчик живёт в timer.text, не в отдельном объекте');
+assert(!/const daysTxt = /.test(habarSrc), 'daysTxt как отдельный PIXI.Text по-прежнему не создаётся');
+assert(/\+ '\/30'/.test(habarSrc), 'текст вида "N/30" снова формируется (внутри timer.text)');
+assert(/const collected = parseInt\(udata\['habar_days_collected'\] \|\| 0\);/.test(habarSrc),
+    'habar_days_collected снова читается для отображения');
 
 console.log('\nПерсистентность на сервере — прямой ответ на вопрос пользователя (актуализировано после переноса хабара на сервер)');
 assert(/TS\.php\('habar\.collectDay', \{\}, \(res\) => \{/.test(habarSrc),
