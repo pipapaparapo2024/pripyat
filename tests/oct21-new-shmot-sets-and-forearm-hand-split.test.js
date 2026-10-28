@@ -181,9 +181,18 @@ console.log('\nTest 3c: id105/110/115 (cat:6) — cellDx/cellDy/cellScale/manDx/
         // расчёт верный, но формула НЕ проверялась живым открытием игры (правило №6) — если после
         // деплоя штаны в ячейке гардероба всё же не на месте, скорее всего редактор снимался на
         // вкладке "Мои" (другой порядок/меньше предметов) — тогда нужно переснять cellDx/cellDy.
-        103: {cat: 2, expected: 'cellDx:-6, cellDy:-33, cellWidth:128, cellHeight:86, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
+        // 28.10.2026 (повторное указание тем же днём — "убери прозрачный отступ сверху в
+        // гардеробе"): PNG-файлы проверены через PIL — alpha-bbox впритык с обеих сторон (0px
+        // margin), отступ был НЕ в файле, а в коде — базовая точка центрирования ячейки
+        // (shmot_shop.js: `cy + 98`) смещена на 18px НИЖЕ геометрического центра рамки
+        // (cellH:160/2=80), что было незаметно при почти-заполняющей рамку старой cellHeight
+        // (196/207), но стало заметным верхним зазором после сегодняшнего уменьшения до 86.
+        // cellDy пересчитан так, чтобы верх иконки почти упирался в верх рамки (≈5px запас,
+        // не впритык): cellDy = cellHeight/2 - 98 + 5 = 43 - 98 + 5 = -50 (одинаково для обоих,
+        // т.к. cellHeight теперь одинаковый — формула не зависит от row/col ячейки в сетке).
+        103: {cat: 2, expected: 'cellDx:-6, cellDy:-50, cellWidth:128, cellHeight:86, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
         108: {cat: 2, expected: 'cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manWidth:300, manHeight:202,'},
-        113: {cat: 2, expected: 'cellDx:-6, cellDy:-31, cellWidth:129, cellHeight:86, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
+        113: {cat: 2, expected: 'cellDx:-6, cellDy:-50, cellWidth:129, cellHeight:86, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
     };
     for(const [id, {cat, expected}] of Object.entries(CONFIRMED)){
         const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:${cat}, [^\\n]*`));
