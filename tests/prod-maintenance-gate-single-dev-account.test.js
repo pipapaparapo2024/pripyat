@@ -6,17 +6,15 @@
  * Реализовано тем же hostname-паттерном, что window.debug_mode/window.hide_unreleased_features
  * (см. hide-unreleased-features-on-prod-28-10.test.js) — один и тот же бандл деплоится байтово
  * идентичным на test-pripyat-game.ru и pripyat-game.ru, флаг window.__maintenanceGateActive
- * включается ТОЛЬКО на реальном проде И только если vk_user_id не совпадает с dev-аккаунтом.
- * При активном флаге поверх страницы ставится непрозрачный оверлей "идут технические работы" —
- * тот же текст/стиль, что maintenance.html в корне проекта. Игровой бандл технически продолжает
- * грузиться в фоне (сознательный компромисс — переписывать всю цепочку загрузки index.js прямо
- * перед деплоем на прод было бы рискованнее, чем эта точечная правка), но заблокированный игрок
- * не может ничего увидеть или нажать — оверлей перехватывает все клики и перекрывает канвас
- * целиком, z-index максимальный.
+ * включался ТОЛЬКО на реальном проде И только если vk_user_id не совпадает с dev-аккаунтом. При
+ * активном флаге поверх страницы ставился непрозрачный оверлей "идут технические работы".
  *
- * Это ВРЕМЕННАЯ мера — должна быть снята (удалён блок/значение ALLOWED_DEV_VK_UID), когда прод
- * готов открыться всем. Тест фиксирует ТЕКУЩЕЕ состояние (гейт активен), чтобы не забыть про
- * него и легко найти место правки при снятии.
+ * 28.10.2026 (тем же днём, по прямому указанию — "для всех игроков его отключи"): дев-
+ * предпросмотр завершён, прод открыт всем игрокам. window.__maintenanceGateActive жёстко
+ * = false — hostname/vk_user_id-условие оставлено закомментировано рядом в index.js (не
+ * удалено), чтобы при необходимости снова закрыть прод на предпросмотр не восстанавливать
+ * логику с нуля. Этот тест теперь фиксирует ОБРАТНОЕ — что гейт снят, а защитный код (оверлей/
+ * DOMContentLoaded guard) физически остался в файле на случай отката.
  *
  * Run: node tests/prod-maintenance-gate-single-dev-account.test.js
  */
@@ -32,40 +30,31 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const indexSrc = fs.readFileSync(path.join(root, '_client', 'src', 'index.js'), 'utf-8');
 
-console.log('\nTest 1: window.__maintenanceGateActive — тот же hostname-паттерн, что debug_mode/hide_unreleased_features, плюс сверка vk_user_id с dev-аккаунтом');
+console.log('\nTest 1: window.__maintenanceGateActive жёстко выключен (false) для ВСЕХ игроков на ВСЕХ доменах');
 {
-    assert(/window\.__maintenanceGateActive = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'/.test(indexSrc),
-        'активируется только на реальном hostname прода (pripyat-game.ru), не на тесте');
+    assert(/window\.__maintenanceGateActive = false;/.test(indexSrc),
+        'флаг захардкожен в false — ни hostname, ни vk_user_id больше не влияют на гейт');
+    assert(!/window\.__maintenanceGateActive = \(typeof location/.test(indexSrc),
+        'старое hostname/vk_user_id-условие больше НЕ присваивается напрямую флагу (отключено, не просто дополнено)');
+}
+
+console.log('\nTest 2: старое условие и оверлей оставлены в файле закомментированными/недостижимыми — не удалены, можно быстро откатить');
+{
+    assert(/\/\/ const _maintenanceCondition = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'/.test(indexSrc),
+        'исходное условие сохранено как комментарий рядом с флагом (не потеряно при отключении)');
     assert(/&& String\(userDataVk\['vk_user_id'\]\) !== '382448269'\);/.test(indexSrc),
-        'выключен ТОЛЬКО для одного конкретного vk_user_id (382448269) — исключение единичное, не диапазон/список');
-    assert(indexSrc.indexOf('window.vk_params = userDataVk;') < indexSrc.indexOf('window.__maintenanceGateActive'),
-        'проверка идёт ПОСЛЕ того, как userDataVk уже распарсен из query-параметров страницы');
-}
-
-console.log('\nTest 2: активный гейт рисует полноэкранный непрозрачный оверлей поверх канваса, а не просто текст');
-{
+        'dev-аккаунт в закомментированном условии — тот же ID, что и раньше (382448269)');
     const gateStart = indexSrc.indexOf('if(window.__maintenanceGateActive){');
-    assert(gateStart !== -1, 'блок if(__maintenanceGateActive) найден');
+    assert(gateStart !== -1, 'блок if(__maintenanceGateActive) с оверлеем всё ещё физически в файле (код не удалён, просто недостижим при false)');
     const gateEnd = indexSrc.indexOf('\n}', gateStart);
     const gateBody = indexSrc.slice(gateStart, gateEnd);
-    assert(/position:fixed;top:0;left:0;width:100%;height:100%;/.test(gateBody), 'оверлей — fixed, перекрывает весь вьюпорт (не часть обычного DOM-потока)');
-    assert(/z-index:2147483647;/.test(gateBody), 'z-index максимально возможный (2^31-1) — гарантированно выше канваса и HUD');
-    assert(/Идут технические работы/.test(gateBody), 'тот же текст, что в maintenance.html');
+    assert(/Идут технические работы/.test(gateBody), 'текст оверлея сохранён на случай повторного включения');
 }
 
-console.log('\nTest 3: оверлей добавляется в DOM независимо от момента готовности document.body (defensive guard, как preloader-visual.js)');
+console.log('\nTest 3: hide_unreleased_features (отдельный, более узкий флаг — скрывает только точки входа 2048/Разнарядка/Заначки) этим снятием НЕ тронут');
 {
-    const gateStart = indexSrc.indexOf('if(window.__maintenanceGateActive){');
-    const gateEnd = indexSrc.indexOf('\n}', gateStart);
-    const gateBody = indexSrc.slice(gateStart, gateEnd);
-    assert(/if\(document\.body\) _attachGateOverlay\(\); else document\.addEventListener\('DOMContentLoaded', _attachGateOverlay\);/.test(gateBody),
-        'если document.body ещё не готов — ждём DOMContentLoaded, не падаем на appendChild(null)');
-}
-
-console.log('\nTest 4: гейт не трогает тестовый домен — на test-pripyat-game.ru поведение не меняется ни для кого');
-{
-    assert(!/location\.hostname === 'test-pripyat-game\.ru'[\s\S]{0,80}__maintenanceGateActive/.test(indexSrc),
-        'флаг не завязан на test-hostname — активируется только на реальном проде');
+    assert(/window\.hide_unreleased_features = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'/.test(indexSrc),
+        'hide_unreleased_features по-прежнему завязан на hostname/vk_user_id — снятие maintenance-гейта не было решением открыть ВСЕ фичи сразу, это отдельный вопрос');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

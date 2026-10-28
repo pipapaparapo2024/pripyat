@@ -456,6 +456,48 @@ export function setupGameBoot(){
         const _total = _allPngs.length;
         const _completed = new Set();
 
+        // 28.10.2026 (по прямому указанию — "шрифты и вообще любые файлы загружаются в самом
+        // начале когда идёт прелоадер, посмотри что не так"): index.html давно триггерит раннюю
+        // загрузку всех @font-face через скрытые span'ы (font_preload, см. ПРАВИЛО №11
+        // AGENTS.md) — но ничто в этом файле раньше НЕ ЖДАЛО их реальной загрузки перед
+        // _showGame(). Шрифты начинали качаться рано, но игра могла открыться ДО того, как они
+        // догрузились — PIXI печёт canvas текста сразу по запросу (см. modules/font-ready.js),
+        // поэтому текст на САМОМ ПЕРВОМ экране иногда оставался на системном fallback-шрифте
+        // навсегда. Раньше это чинилось точечно на отдельных экранах (game2048-top-popup.js,
+        // interface-currency-purchase.js, raznaryadka.js, svod-zanachki.js) — здесь фикс всего
+        // класса бага сразу: _showGame() теперь ждёт document.fonts.ready НАРАВНЕ с PNG-
+        // текстурами (тем же паттерном, что уже используется для фоновых модулей — оба флага
+        // должны стать true, см. _tryShowGame). Точечные фиксы в отдельных экранах не убраны —
+        // они остаются защитой на случай будущих регрессий (например, если кто-то отключит этот
+        // общий guard) и для динамического текста, который создаётся ПОСЛЕ старта игры, когда
+        // этот прелоадер уже не актуален.
+        let _pngsReady = false;
+        let _fontsReady = false;
+        const _tryShowGame = () => { if(_pngsReady && _fontsReady) _showGame(); };
+
+        if(typeof document !== 'undefined' && document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function'){
+            console.log('[game-boot] жду document.fonts.ready перед показом игры (шрифты уже начали грузиться через font_preload в index.html)');
+            document.fonts.ready.then(() => {
+                console.log('[game-boot] document.fonts.ready выполнен — все шрифты из font_preload загружены');
+                _fontsReady = true;
+                _tryShowGame();
+            }).catch((e) => {
+                console.error('[game-boot] document.fonts.ready отклонён — продолжаем без ожидания шрифтов:', e);
+                _fontsReady = true;
+                _tryShowGame();
+            });
+            // Защита от зависания: если Font Loading API в конкретном браузере/VK-webview не
+            // резолвит ready (баг окружения, не наш код) — не блокировать игру навсегда.
+            setTimeout(() => {
+                if(_fontsReady) return;
+                console.warn('[game-boot] document.fonts.ready не выполнился за 5с — принудительно продолжаю (защита от зависания прелоадера)');
+                _fontsReady = true;
+                _tryShowGame();
+            }, 5000);
+        } else {
+            _fontsReady = true; // Font Loading API недоступен в этом окружении — не блокируем игру
+        }
+
         // Каждый уникальный PNG учитывается только после ответа загрузчика.
         const _markDone = (fname, status) => {
             if(_completed.has(fname)) return;
@@ -465,14 +507,14 @@ export function setupGameBoot(){
             if(status === 'error'){
                 console.error('[game-boot._startPreload] ошибка загрузки PNG:', fname);
             }
-            if(_done >= _total) _showGame();
+            if(_done >= _total){ _pngsReady = true; _tryShowGame(); }
         };
 
         // Ждём пока iface/home не поставят текстуры в PIXI, потом стартуем
         const _startPreload = () => {
             console.log('[game-boot._startPreload] preloading', _total, 'textures into PIXI cache');
             window._simActive = false;
-            if(_total === 0){ _showGame(); return; }
+            if(_total === 0){ _pngsReady = true; _tryShowGame(); return; }
 
             _allPngs.forEach(fname => {
                 const url = './images/' + fname;

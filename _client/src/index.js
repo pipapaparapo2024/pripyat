@@ -228,8 +228,13 @@ window.hide_unreleased_features = (typeof location !== 'undefined' && location.h
 // запросы/прелоадер), но заблокированный игрок физически не может её увидеть или нажать что-
 // либо. Временная мера для дев-предпросмотра перед реальным открытием — снимается правкой
 // ALLOWED_DEV_VK_UID/условия ниже и пересборкой, когда прод готов к показу всем.
-window.__maintenanceGateActive = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru'
-    && String(userDataVk['vk_user_id']) !== '382448269');
+// 28.10.2026 (по прямому указанию — "для всех игроков его отключи"): дев-предпросмотр прода
+// завершён, гейт снят для ВСЕХ игроков. Условие по hostname/vk_user_id оставлено закомментировано
+// рядом (не удалено) — если понадобится снова закрыть прод на предпросмотр, достаточно вернуть
+// её вместо жёсткого false и пересобрать, не восстанавливая логику с нуля.
+// const _maintenanceCondition = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru'
+//     && String(userDataVk['vk_user_id']) !== '382448269');
+window.__maintenanceGateActive = false;
 if(window.__maintenanceGateActive){
     const gateOverlay = document.createElement('div');
     gateOverlay.id = '__maintenance_gate_overlay';
