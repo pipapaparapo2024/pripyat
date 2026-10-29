@@ -37,7 +37,9 @@ console.log('\nTest 1: jsonBlobGuards содержит sanitizer для inventor
 {
     // 09.10.2026: третья запись ('bosses_data' => '_sanitizeBossesData') добавлена позже тем же
     // приёмом — см. tests/users-php-real-exec-sanitize-bosses-data-currency-guard.test.js.
-    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'\];/.test(usersPhp),
+    // 29.10.2026: четвёртая запись ('stash_data' => '_sanitizeStashData', аудит безопасности) —
+    // тот же приём, regex расширен.
+    assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData', 'stash_data' => '_sanitizeStashData'\];/.test(usersPhp),
         "jsonBlobGuards включает 'weapons', 'inventory' и 'bosses_data'");
     assert(/function _sanitizeInventory\(\$currentRaw, \$incomingRaw\)\{/.test(usersPhp), '_sanitizeInventory() определена');
 }

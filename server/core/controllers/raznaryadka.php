@@ -31,10 +31,26 @@
             // devCompleteToday/devFailDay — дев-панель (23.10.2026, по прямому указанию —
             // "хочу проверить, что награда собрана, что можно собрать, что можно откатить
             // тушёнкой"), без них пришлось бы реально фармить задания/ждать 00:00 МСК, чтобы
-            // увидеть каждое состояние экрана. Тот же уровень доступа, что и у остальных
-            // dev_force_*/devGrant*-пермитов в users.php — защищены только отсутствием кнопки
-            // в обычном UI, не отдельной проверкой uid на сервере (см. AGENTS.md про этот класс).
+            // увидеть каждое состояние экрана.
+            // 29.10.2026 (аудит безопасности — найдено, что ВСЕ 7 dev*-пермитов были защищены
+            // ТОЛЬКО отсутствием кнопки в обычном UI, без проверки uid на сервере: любой игрок
+            // мог вызвать devSeedMonth+devSkipDay/devCompleteToday из консоли браузера и получить
+            // полный набор наград месяца без единого реального действия). Теперь каждый dev*-метод
+            // начинается с _requireDevUser() — тот же гейт, что уже есть в bosses.php/
+            // game2048.php/users.php (не вынесен в общий Gameops — там его тоже нет, это
+            // устоявшееся дублирование одной и той же проверки по всему проекту).
             $this->permits = ['getState', 'claim', 'payDay', 'devCompleteToday', 'devFailDay', 'devSeedMonth', 'devSkipDay', 'devResetDaySkip', 'devForceLaunchMonth', 'devRevertToRealMonth'];
+        }
+
+        // 29.10.2026 (аудит безопасности) — тот же гейт, что в bosses.php/game2048.php/users.php.
+        private function _isDevUser(){
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+        }
+
+        private function _requireDevUser(){
+            if($this->_isDevUser()) return true;
+            $this->registry['tools']->error(403);
+            return false;
         }
 
         // Список failed-дней (day < сегодня, status !== 'done'), отсортированный от САМОГО
@@ -287,6 +303,7 @@
         // пришлось бы реально фармить нужное действие, чтобы увидеть кнопку "ЗАБРАТЬ"/попасть
         // в count для порогов наград.
         function devCompleteToday(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -308,6 +325,7 @@
         // Сбрасывает указанный ПРОШЕДШИЙ день обратно в "не выполнено" — чтобы проверить
         // попап отката тушёнкой, не дожидаясь реального провала (00:00 МСК).
         function devFailDay(){
+            if(!$this->_requireDevUser()) return;
             $day = intval($this->registry['user_params']['day'] ?? -1);
             if($day <= 0) return $this->ops->fail(54);
 
@@ -333,6 +351,7 @@
         // для проверки попапа выкупа (ранги 2/4/8/16/32/64 среди проваленных дней) и получения
         // наград за пороги.
         function devSeedMonth(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -366,6 +385,7 @@
         // последний день РЕАЛЬНОГО месяца — переход за его пределы дал бы пустой $dayCfg везде
         // (monthCfg хранит только дни 1..daysInMskMonth этого месяца).
         function devSkipDay(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -390,6 +410,7 @@
 
         // Возвращает Разнарядку на РЕАЛЬНЫЙ сегодняшний день — отменяет накопленные devSkipDay().
         function devResetDaySkip(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -408,6 +429,7 @@
         // логикой, что обычная граница календарного месяца, см. RaznaryadkaProgress::
         // devForceLaunchMonth(). Не трогает реальные системные часы сервера.
         function devForceLaunchMonth(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -425,6 +447,7 @@
         // Разнарядку на реальный текущий МСК-месяц с чистого состояния (см.
         // RaznaryadkaProgress::devRevertToRealMonth()).
         function devRevertToRealMonth(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 

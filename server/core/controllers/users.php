@@ -623,17 +623,21 @@
             // (см. ._onDefeat() — "Синхронизируем... с тем, что сервер только что сохранил") —
             // поэтому для честного клиента incoming всегда совпадает с уже сохранённым в БД,
             // строгое сравнение ничего легитимного не ломает. См. _sanitizeBossesData() ниже.
-            $jsonBlobGuards  = ['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'];
+            // 29.10.2026 (аудит безопасности — stash_data был в whitelist БЕЗ guard'а: читер мог
+            // одним users.save подделать полные коллекции "Заначек" и бесконечно гонять
+            // zanachki.claimCollection на фальшивых данных — см. _sanitizeStashData() ниже).
+            $jsonBlobGuards  = ['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData', 'stash_data' => '_sanitizeStashData'];
 
-            // Текущие значения оружия/патронов/инвентаря/данных боссов нужны ТОЛЬКО если клиент
-            // вообще пытается их записать в этом запросе — не гонять лишний SELECT на каждый
-            // обычный autosave.
+            // Текущие значения оружия/патронов/инвентаря/данных боссов/заначек нужны ТОЛЬКО если
+            // клиент вообще пытается их записать в этом запросе — не гонять лишний SELECT на
+            // каждый обычный autosave.
             $current = null;
             if(isset($incoming['weapons']) || isset($incoming['inventory']) || isset($incoming['bosses_data'])
+                || isset($incoming['stash_data'])
                 || isset($incoming['ammo_auto']) || isset($incoming['ammo_gun']) || isset($incoming['ammo_machete'])){
                 $current = $this->registry['udb']->getData(
                     $this->registry['utb'],
-                    ['weapons', 'inventory', 'bosses_data', 'ammo_auto', 'ammo_gun', 'ammo_machete'],
+                    ['weapons', 'inventory', 'bosses_data', 'stash_data', 'ammo_auto', 'ammo_gun', 'ammo_machete'],
                     'id=' . $this->registry['uid']
                 );
                 if(isset($current['error']) && $current['error']) $current = [];
@@ -1231,6 +1235,31 @@
                 $maxLen = max(count($curArr), count($newArr));
                 for($i = 0; $i < $maxLen; $i++){
                     if(intval($newArr[$i] ?? 0) !== intval($curArr[$i] ?? 0)) return null;
+                }
+            }
+            return $incoming;
+        }
+
+        // 29.10.2026 (аудит безопасности — см. комментарий у $jsonBlobGuards выше). Формат —
+        // ZanachkiModel::getStashData(): {"1":{"1":N,...,"7":N}, ..., "15":{...}} (коллекция
+        // "1".."15" → позиция "1".."7" → количество копий карточки). Легитимно поле пишет
+        // ТОЛЬКО сам сервер (ZanachkiModel::grantRandomCards/claimCollectionReward/giveCard,
+        // через Gameops::saveUser(), не через этот whitelist-путь вообще) — но, как и у
+        // остальных JSON-блобов выше, запрещаем именно РОСТ любого count относительно уже
+        // сохранённого в БД (не блоб целиком), чтобы idempotent-повтор того же значения не ломал
+        // честный автосейв.
+        function _sanitizeStashData($currentRaw, $incomingRaw){
+            $current = is_array($currentRaw) ? $currentRaw : (is_string($currentRaw) && $currentRaw !== '' ? json_decode($currentRaw, true) : []);
+            if(!is_array($current)) $current = [];
+            $incoming = is_array($incomingRaw) ? $incomingRaw : json_decode($incomingRaw, true);
+            if(!is_array($incoming)) return null;
+
+            foreach($incoming as $col => $positions){
+                if(!is_array($positions)) return null;
+                $curCol = isset($current[$col]) && is_array($current[$col]) ? $current[$col] : [];
+                foreach($positions as $pos => $count){
+                    if(!is_numeric($count)) return null;
+                    if(intval($count) > intval($curCol[$pos] ?? 0)) return null;
                 }
             }
             return $incoming;

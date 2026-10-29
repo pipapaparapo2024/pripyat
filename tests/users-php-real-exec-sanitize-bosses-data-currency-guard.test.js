@@ -54,11 +54,14 @@ function assert(cond, msg) {
     if (cond) { console.log('  ✅', msg); passed++; }
     else       { console.error('  ❌ FAIL:', msg); failed++; }
 }
-assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData'\];/.test(usersSrc),
+// 29.10.2026 (аудит безопасности — добавлен 4-й guard, 'stash_data' => '_sanitizeStashData',
+// тот же конвейер): regex расширен под новую строку, сам факт проверки (bosses_data подключена,
+// не мёртвый код) не изменился.
+assert(/\$jsonBlobGuards\s*=\s*\['weapons' => '_sanitizeWeapons', 'inventory' => '_sanitizeInventory', 'bosses_data' => '_sanitizeBossesData', 'stash_data' => '_sanitizeStashData'\];/.test(usersSrc),
     "'bosses_data' => '_sanitizeBossesData' зарегистрирован в \$jsonBlobGuards — не просто написанная, но неподключённая функция");
-assert(/isset\(\$incoming\['weapons'\]\) \|\| isset\(\$incoming\['inventory'\]\) \|\| isset\(\$incoming\['bosses_data'\]\)/.test(usersSrc),
+assert(/isset\(\$incoming\['weapons'\]\) \|\| isset\(\$incoming\['inventory'\]\) \|\| isset\(\$incoming\['bosses_data'\]\)\s*\n\s*\|\| isset\(\$incoming\['stash_data'\]\)/.test(usersSrc),
     "SELECT текущего состояния выполняется, когда клиент присылает bosses_data (иначе guard сравнивал бы с пустым \$current и пропускал бы ЛЮБОЕ значение keys как 'новое')");
-assert(/\['weapons', 'inventory', 'bosses_data', 'ammo_auto', 'ammo_gun', 'ammo_machete'\]/.test(usersSrc),
+assert(/\['weapons', 'inventory', 'bosses_data', 'stash_data', 'ammo_auto', 'ammo_gun', 'ammo_machete'\]/.test(usersSrc),
     "bosses_data реально включена в список колонок SELECT");
 
 console.log(`\n${'─'.repeat(50)}`);

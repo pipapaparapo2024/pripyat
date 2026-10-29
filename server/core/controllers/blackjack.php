@@ -44,6 +44,35 @@
             return $this->ops->catalog('blackjack_config');
         }
 
+        // 29.10.2026 (аудит безопасности — найдено, что deal()/swap()/resolve() читают-мутируют-
+        // пишут blackjack_session обычным Gameops::loadUser()/saveUser() без лока: два почти
+        // одновременных resolve() на уже выигрышной руке оба читают одну и ту же активную
+        // раздачу ДО того, как первый успевает её обнулить — оба проходят проверку и оба
+        // начисляют награду, то же самое с лимитом swapsAllowed на swap()). Тот же приём, что
+        // poker.php._withUserLock()/zone.php._withUserLock() — GET_LOCK на ОТДЕЛЬНОМ соединении
+        // сериализует все мутации blackjack_session ОДНОГО игрока.
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
+        }
+
+        private function _withUserLock(callable $fn){
+            $link = $this->_rawLink();
+            if(!$link) return $fn();
+
+            $lockName = 'blackjack_user_' . intval($this->registry['uid']);
+            $escaped = $link->real_escape_string($lockName);
+            $link->query("SELECT GET_LOCK('{$escaped}', 5)");
+            try {
+                return $fn();
+            } finally {
+                $link->query("SELECT RELEASE_LOCK('{$escaped}')");
+                $link->close();
+            }
+        }
+
         private function _loadSession($user, $catalog){
             $raw = $this->ops->j($user, 'blackjack_session', null);
             $data = is_array($raw) ? $raw : [];
@@ -176,6 +205,7 @@
         // (форсирует гарантированную пару, если порог выбит), раздаёт честную пару. Активная
         // раздача сохраняется в blackjack_session.
         function deal(){
+            $this->_withUserLock(function(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -318,6 +348,7 @@
             $this->ops->ok(['patch' => $patch, 'hand' => $hand, 'swapsAllowed' => $swapsAllowed, 'swapsUsed' => 0,
                 'isFree' => $isFree, 'serverNow' => $dailyState['serverNow'],
                 'nextFreeAt' => $dailyState['nextFreeAt'], 'debug' => $debug]);
+            });
         }
 
         // Честная замена одной карты (idx 2 или 3 — только они формируют пару, слоты 0/1
@@ -330,6 +361,7 @@
             $idx = intval($this->registry['user_params']['idx'] ?? -1);
             if($idx !== 2 && $idx !== 3) return $this->ops->fail(54);
 
+            $this->_withUserLock(function() use ($idx){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -417,6 +449,7 @@
                 'swapsLeft' => intval($active['swapsAllowed']) - intval($active['swapsUsed']),
                 'debug'     => $debug,
             ]);
+            });
         }
 
         // Итог — честно проверяет РЕАЛЬНУЮ пару на столе (замены могли увести итог от
@@ -425,6 +458,7 @@
         // награды — даже если игрок сам сломал гарантированную пару неудачной сменой и не
         // получил награду, диапазон всё равно сбрасывается (та же логика, что в клиенте была).
         function resolve(){
+            $this->_withUserLock(function(){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -541,6 +575,7 @@
                 'qq' => intval($session['qq']), 'qq_t' => intval($session['qq_t']),
                 'debug'        => $debug,
             ]);
+            });
         }
     }
 ?>

@@ -19,6 +19,19 @@
             $this->permits = ['getState', 'claimCollection', 'requestCard', 'cancelRequest', 'getFriendWishlist', 'giveCard', 'devGrantAll'];
         }
 
+        // 29.10.2026 (аудит безопасности — devGrantAll был открыт любому игроку, без проверки
+        // uid: один вызов из консоли давал +100 всех 105 карточек во всех 15 коллекциях). Тот
+        // же гейт, что в bosses.php/game2048.php/users.php/raznaryadka.php.
+        private function _isDevUser(){
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+        }
+
+        private function _requireDevUser(){
+            if($this->_isDevUser()) return true;
+            $this->registry['tools']->error(403);
+            return false;
+        }
+
         private function _rawLink(){
             $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
             if($link->connect_error) return null;
@@ -207,6 +220,7 @@
         // Тот же уровень доступа, что у остальных dev_force_*/devGrant*-пермитов в проекте —
         // защищён только отсутствием кнопки в обычном UI, см. AGENTS.md.
         function devGrantAll(){
+            if(!$this->_requireDevUser()) return;
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
