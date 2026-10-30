@@ -60,7 +60,7 @@
         // гейт, что уже есть в users.php._isDevUser()/_requireDevUser() (не вынесен в общий
         // Gameops — там его тоже нет, дублирование те же 2 проверки, что и в users.php).
         private function _isDevUser(){
-            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
         }
 
         private function _requireDevUser(){

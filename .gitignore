@@ -37,6 +37,7 @@ server/php_errors.log
 # Одноразовые операции выполняются по SSH/CLI и не должны быть доступны как URL PHP-файлы.
 server/migrate*.php
 server/dev_*.php
+!server/dev_energy.php
 server/reset_*.php
 
 # Локальные архивы истории, рабочие заметки и диагностические выгрузки.

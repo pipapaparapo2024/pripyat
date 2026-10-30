@@ -44,7 +44,7 @@
 
         // 29.10.2026 (аудит безопасности) — тот же гейт, что в bosses.php/game2048.php/users.php.
         private function _isDevUser(){
-            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
         }
 
         private function _requireDevUser(){

@@ -29,6 +29,8 @@ let _watchdog = null;
 // myGen и, прежде чем продвинуть плейлист, сверяются, что их поколение всё ещё актуально —
 // устаревший вызов молча игнорируется вместо порчи состояния.
 let _gen = 0;
+let _suspended = false;
+let _deferredPlayback = null;
 
 export function startBackgroundMusic(){
     if(_playing){
@@ -57,6 +59,7 @@ export function startBackgroundMusic(){
 // отключает этот таймер на время сворачивания и перевзводит его заново (с полным запасом) при
 // разворачивании, не давая ему сработать вхолостую, пока звук реально не играет.
 export function pauseBackgroundMusicWatchdog(){
+    _suspended = true;
     if(!_watchdog) return;
     console.log('[background-music.pauseBackgroundMusicWatchdog] приложение свёрнуто — отключаю сторож-таймер трека на время паузы');
     clearTimeout(_watchdog);
@@ -114,6 +117,12 @@ function _stopStrayTracks(activeIdx){
 }
 
 export function resumeBackgroundMusicWatchdog(){
+    _suspended = false;
+    if(_deferredPlayback){
+        const resume = _deferredPlayback;
+        _deferredPlayback = null;
+        resume();
+    }
     if(!_playing || !_instance) return;
     const idx   = _trackIdx % TRACKS.length;
     const alias = 'bg_music_' + idx;
@@ -141,6 +150,7 @@ export function stopBackgroundMusic(){
     }
     console.log('[background-music.stopBackgroundMusic] остановка глобальной музыки | текущий трек:', (_trackIdx % TRACKS.length) + 1);
     _playing = false;
+    _deferredPlayback = null;
     clearTimeout(_watchdog);
     if(_instance && typeof _instance.stop === 'function'){
         try{
@@ -174,6 +184,7 @@ function _playNextTrack(){
             console.log('[background-music._playNextTrack] устаревший _advance (gen', myGen, '≠ текущий', _gen + ') — трек уже продвинут другим путём, игнорирую');
             return;
         }
+        if(_suspended){ _deferredPlayback = _advance; return; }
         _trackIdx = idx + 1;
         _playNextTrack();
     };
@@ -183,8 +194,15 @@ function _playNextTrack(){
             console.log('[background-music._playNextTrack] музыка остановлена или трек устарел, пока', idx + 1, 'грузился — воспроизведение отменено');
             return;
         }
+        if(_suspended){ _deferredPlayback = _startPlayback; return; }
         try{
             applyAudioVolumes();
+            // A watchdog may switch BEFORE the old sound completes, including a
+            // paused sound whose isPlaying flag is false. Stop every other alias.
+            TRACKS.forEach((_, i) => {
+                const previous = 'bg_music_' + i;
+                if(previous !== alias && PIXI.sound.exists(previous)) PIXI.sound.stop(previous);
+            });
             // 26.10.2026 (по прямому указанию — музыка всё ещё двоится после фиксов 06.10/17.10):
             // этот трек мог успеть доиграть сетевую ЗАГРУЗКУ (PIXI.sound.add({loaded: ...})) уже
             // ПОКА вкладка была скрыта — pauseAll() в _pauseApp() не может поставить на паузу то,

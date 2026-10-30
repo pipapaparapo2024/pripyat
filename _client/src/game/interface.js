@@ -254,7 +254,7 @@ export default class Interface{
 		// index.js из данных VK launch params, подделать его без валидной VK-сессии нельзя.
 		// Dev-инструменты доступны только тестовому аккаунту Николай Сиденко / fleeeexim
 		// (оба переданных VK URL указывают на uid 1113977365).
-		const DEV_UIDS = ['1113977365', '382448269'];
+		const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
 		const _isAdminUid = !!(window.vk_params && DEV_UIDS.includes(String(vk_params['vk_user_id'])));
 		console.log('[interface.initInterfaceUp] проверка админ-доступа к DEV-панели | vk_user_id:', window.vk_params && vk_params['vk_user_id'], '| допущен:', _isAdminUid);
 		if(_isAdminUid){

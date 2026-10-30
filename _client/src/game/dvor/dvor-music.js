@@ -41,6 +41,7 @@ export function attachDvorMusic(proto){
     // мы в фоне, запуская второй трек поверх первого. app-lifecycle.js отключает этот таймер на
     // время сворачивания и перевзводит заново при разворачивании.
     proto._pauseDvorMusicWatchdog = function(){
+        this._dvorMusicSuspended = true;
         if(!this._dvorMusicWatchdog) return;
         console.log('[dvor-music._pauseDvorMusicWatchdog] приложение свёрнуто — отключаю сторож-таймер трека Двора на время паузы');
         clearTimeout(this._dvorMusicWatchdog);
@@ -66,6 +67,12 @@ export function attachDvorMusic(proto){
     };
 
     proto._resumeDvorMusicWatchdog = function(){
+        this._dvorMusicSuspended = false;
+        if(this._dvorDeferredPlayback){
+            const resume = this._dvorDeferredPlayback;
+            this._dvorDeferredPlayback = null;
+            resume();
+        }
         if(!this._dvorMusicPlaying || !this._dvorMusicInstance) return;
         const idx   = this._dvorMusicTrackIdx % TRACKS.length;
         const alias = 'dvor_music_' + idx;
@@ -93,6 +100,7 @@ export function attachDvorMusic(proto){
         }
         console.log('[dvor-music._stopDvorMusic] остановка музыки Двора | текущий трек:', (this._dvorMusicTrackIdx % TRACKS.length) + 1);
         this._dvorMusicPlaying = false;
+        this._dvorDeferredPlayback = null;
         clearTimeout(this._dvorMusicWatchdog);
         if(this._dvorMusicInstance && typeof this._dvorMusicInstance.stop === 'function'){
             try{
@@ -131,6 +139,7 @@ export function attachDvorMusic(proto){
                 console.log('[dvor-music._playNextDvorTrack] устаревший _advance (gen', myGen, '≠ текущий', this._dvorMusicGen + ') — трек уже продвинут другим путём, игнорирую');
                 return;
             }
+            if(this._dvorMusicSuspended){ this._dvorDeferredPlayback = _advance; return; }
             this._dvorMusicTrackIdx = idx + 1;
             this._playNextDvorTrack();
         };
@@ -140,8 +149,13 @@ export function attachDvorMusic(proto){
                 console.log('[dvor-music._playNextDvorTrack] Двор закрыт или трек устарел, пока', idx + 1, 'грузился — воспроизведение отменено');
                 return;
             }
+            if(this._dvorMusicSuspended){ this._dvorDeferredPlayback = _startPlayback; return; }
             try{
                 applyAudioVolumes();
+                TRACKS.forEach((_, i) => {
+                    const previous = 'dvor_music_' + i;
+                    if(PIXI.sound.exists(previous)) PIXI.sound.stop(previous);
+                });
                 this._dvorMusicInstance = PIXI.sound.play(alias, {
                     volume: 1,
                     complete: () => {

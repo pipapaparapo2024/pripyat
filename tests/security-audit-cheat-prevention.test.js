@@ -58,7 +58,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 console.log('\nTest 1: security.getToken() снова проверяет VK-подпись (защита от чужого uid)');
 {
     const src = readSrc('server/core/controllers/security.php');
-    assert(/if\(\$sign !== \$generate_sign\)return \$this->registry\['tools'\]->error\(0\);/.test(src),
+    assert(src.includes('!hash_equals($generate_sign, $sign)'),
         'проверка подписи включена (раньше строка была закомментирована)');
     assert(!/\/\/\s*if\(\$sign !== \$generate_sign\)/.test(src),
         'закомментированной версии проверки не осталось');

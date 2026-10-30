@@ -27,11 +27,11 @@ const apply = roulette.indexOf('applyPatch(res.patch);');
 if(anim < 0 || apply < anim) throw new Error('патч награды рулетки должен применяться после остановки колеса');
 
 const iface = read('_client/src/game/interface.js');
-must(iface, "const DEV_UIDS = ['1113977365', '382448269']", 'клиентский список DEV UID');
+must(iface, "const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040']", 'клиентский список DEV UID');
 const panel = read('_client/src/game/shell/overlays/dev_panel.js');
 must(panel, "DEV_UIDS.includes(String(vk_params['vk_user_id']))", 'защита открытия панели на клиенте');
 const users = read('server/core/controllers/users.php');
-must(users, "['1113977365', '382448269']", 'серверный список DEV UID');
+must(users, "['1113977365', '382448269', '438953352', '184138040']", 'серверный список DEV UID');
 ['devGrantWeapons','devGrantShmot','devGrantCurrency','setDevFlag','setDevCombo','toggleDevKeyring','resetAllPlayers'].forEach(name => {
   const p = users.indexOf('function ' + name + '(){');
   if(p < 0 || users.indexOf('if(!$this->_requireDevUser()) return;', p) < p || users.indexOf('if(!$this->_requireDevUser()) return;', p) > p + 180) {

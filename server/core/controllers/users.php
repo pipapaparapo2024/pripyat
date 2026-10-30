@@ -5,7 +5,7 @@
         // Разрешённые тестовые аккаунты dev-панели. Проверка серверная:
         // скрытие кнопки в клиенте не защищает от ручного TS.php-вызова.
         private function _isDevUser(){
-            return in_array(strval($this->registry['uid']), ['1113977365', '382448269'], true);
+            return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
         }
 
         private function _requireDevUser(){
@@ -327,7 +327,7 @@
                 // (spend_stew) иногда откатываются назад". users.get()/patch по-прежнему отдают
                 // клиенту актуальное значение — whitelist влияет только на save().
                 'bosses_data','zone_income_time','dvor_daily',
-                'natisk_event_id','natisk_free_attempts','natisk_paid_attempts','natisk_kills',
+                // Event counters and results are server-owned.
                 'natisk_seen_event_id',
                 // 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"):
                 // 'skills_data' УБРАНО отсюда. Реальная прокачка переехала в server-only

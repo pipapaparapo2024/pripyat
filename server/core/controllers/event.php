@@ -74,55 +74,8 @@ Class Event {
 
     // Потратить попытку + сохранить килы
     function save(){
-        $params = $this->registry['user_params'];
-        $uid = $this->registry['uid'];
-        $kills = intval($params['kills'] ?? 0);
-        $use_paid = isset($params['use_paid']) && $params['use_paid'];
-
-        $link = new mysqli(
-            $this->registry['server'], $this->registry['user'],
-            $this->registry['pass'], $this->registry['db'], 3306
-        );
-        if($link->connect_error) return $this->registry['tools']->error(99);
-        $link->set_charset('utf8mb4');
-
-        $settings = $this->_getSettings($link);
-        $user = $this->registry['udb']->getData($this->registry['utb'],
-            ['natisk_event_id','natisk_free_attempts','natisk_paid_attempts','natisk_kills','stew'],
-            'id='.$uid);
-
-        if(isset($user['error'])) { $link->close(); return $this->registry['tools']->error(99); }
-
-        // Проверка что событие активно и event_id совпадает
-        if($settings['event_active'] !== '1' || $user['natisk_event_id'] !== $settings['event_id']){
-            $link->close();
-            return $this->registry['tools']->error(44);
-        }
-
-        $free = intval($user['natisk_free_attempts']);
-        $paid = intval($user['natisk_paid_attempts']);
-
-        if($use_paid){
-            if($paid <= 0){ $link->close(); return $this->registry['tools']->error(45); }
-            // Цена: 3я попытка=3, 2я=5, 1я=7 тушёнки
-            $price = [7,5,3][$paid - 1] ?? 3;
-            $stew = intval($user['stew']);
-            if($stew < $price){ $link->close(); return $this->registry['tools']->error(46); }
-            $link->query("UPDATE `{$this->registry['utb']}` SET
-                `natisk_paid_attempts`=$paid-1,
-                `natisk_kills`=$kills,
-                `stew`=$stew-$price
-                WHERE `id`=$uid");
-        } else {
-            if($free <= 0){ $link->close(); return $this->registry['tools']->error(45); }
-            $link->query("UPDATE `{$this->registry['utb']}` SET
-                `natisk_free_attempts`=$free-1,
-                `natisk_kills`=$kills
-                WHERE `id`=$uid");
-        }
-
-        $link->close();
-        $this->registry['tools']->output(['ok'=>true]);
+        // No trusted combat producer exists for this legacy event. Fail closed.
+        return $this->registry['tools']->error(44);
     }
 
     // Активировать событие (только admin)

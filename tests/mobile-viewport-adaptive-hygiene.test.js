@@ -79,7 +79,9 @@ console.log('\nTest 2: index.js — размеры канваса из моду�
     assert(!/if\(\/iPhone\|iPad\|iPod\|Android\/i\.test\(navigator\.userAgent\)\)/.test(index),
         'старая UA-проверка isMobile убрана из index.js (переехала в модуль)');
 
-    assert(/const vp = viewportMetrics\(\);/.test(index), 'resize() берёт метрики из viewportMetrics()');
+    assert(/const physicalViewport = viewportMetrics\(\);/.test(index)
+        && /const vp = okBannerViewport\(physicalViewport, \{ enabled: isOk\(\), mobile: window.isMobile \}\);/.test(index),
+        'resize() получает физические метрики и применяет резерв баннеров только в ОК');
     // 03.10.2026: w/h теперь объявляются один раз (`let w, h;`) выше ветвления needsRotate
     // (форс-ландшафт/обычный letterbox, см. modules/forced-landscape.js) — присвоение `w = vp.w;`
     // осталось только в обычной (неповёрнутой) ветке.

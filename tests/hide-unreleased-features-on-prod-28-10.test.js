@@ -1,5 +1,5 @@
 /**
- * Test: 28.10.2026, по прямому указанию пользователя после живого инцидента.
+ * Test: 30.10.2026 — выпуск 2048, ежедневных заданий и Заначек для всех игроков.
  *
  * Случайный полный супер деплой (v691) вынес на прод три недоделанные фичи — "2048",
  * "Разнарядка" (ежедневные задания), "Заначки" — хотя ранее в этой же сессии было явное
@@ -7,14 +7,9 @@
  * pripyat-game.ru увидели 404 на недостающих картинках (заначки/2048/разнарядка никогда не
  * заливались в images/ прода) и получили доступ к фичам, которые ещё не готовы к запуску.
  *
- * Фикс — тот же hostname-паттерн, что уже используется для window.debug_mode/window.my_server
- * (см. my-server-hostname-gated-no-cross-origin-cors.test.js): один и тот же бандл деплоится
- * байтово идентичным на test-pripyat-game.ru и pripyat-game.ru (см. AGENTS.md, "супер деплой"),
- * новый флаг window.hide_unreleased_features только переключает ВИДИМОСТЬ точек входа трёх
- * фич в зависимости от домена — сам код/картинки остаются в сборке, ничего не удалено, значит
- * на тесте (и в самой VK/ОК площадке, где hostname реального прод-хостинга тоже pripyat-game.ru
- * согласно boss_result.js — ВАЖНО: это значит флаг равен true и для настоящих игроков тоже,
- * что и требуется) поведение для каждой фичи переключается централизованно одним флагом.
+ * Временное ограничение снято: флаг window.hide_unreleased_features должен быть false для
+ * любого домена и любого VK ID. Сами точки входа сохраняют общий guard, но при false он
+ * всегда пропускает игрока к функции.
  *
  * Картинки отсутствующих файлов (271 шт.) уже СКОПИРОВАНЫ на прод вручную (server-side copy,
  * см. чат) как отдельная, более быстрая мера против 404 — этот тест её не проверяет (не часть
@@ -39,31 +34,15 @@ const dvorSrc        = readSrc('_client/src/game/dvor.js');
 const svodSrc        = readSrc('_client/src/game/svod.js');
 const panelsSrc      = readSrc('_client/src/game/interface/interface-panels.js');
 
-console.log('\nTest 1: window.hide_unreleased_features определён в index.js, тот же паттерн, что window.debug_mode');
+console.log('\nTest 1: window.hide_unreleased_features выключен для всех игроков');
 {
-    // 28.10.2026 (повторное указание тем же днём — "хочу всё заранее проверить"): флаг теперь
-    // ТАКЖЕ исключает dev-аккаунт (vk_user_id=382448269), иначе предпросмотр прода не показал бы
-    // самому разработчику Заначки/Разнарядку/2048, которые были предметом сессии. Объявление
-    // переехало ниже по файлу (после парсинга userDataVk) — см. Test 1b ниже.
-    assert(/window\.hide_unreleased_features = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'$/m.test(indexSrc),
-        'флаг true именно на pripyat-game.ru (реальный хостинг прода и VK/ОК-iframe одновременно)');
-    // Флаг должен быть объявлен ПОСЛЕ window.debug_mode (та же область файла, та же логика) —
-    // не строго обязательно по порядку, но так же читаемо/рядом, как и было задумано.
-    assert(indexSrc.indexOf('window.debug_mode') < indexSrc.indexOf('window.hide_unreleased_features'),
-        'флаг объявлен рядом с debug_mode, тем же паттерном');
+    assert(/window\.hide_unreleased_features = false;/.test(indexSrc),
+        'флаг выключен: 2048, Разнарядка и Заначки доступны на проде всем игрокам');
+    assert(!/hide_unreleased_features\s*=\s*\([\s\S]*?382448269/.test(indexSrc),
+        'видимость функций больше не зависит от VK ID разработчика');
 }
 
-console.log('\nTest 1b: window.hide_unreleased_features — dev-аккаунт (vk_user_id=382448269) исключён, объявлен после парсинга userDataVk');
-{
-    assert(/&& String\(userDataVk\['vk_user_id'\]\) !== '382448269'\);/.test(indexSrc),
-        'флаг исключает dev-аккаунт vk_user_id=382448269 — тот же ID, что у __maintenanceGateActive');
-    assert(indexSrc.indexOf('window.hide_unreleased_features =') < indexSrc.indexOf('window.__maintenanceGateActive ='),
-        'hide_unreleased_features объявлен рядом с __maintenanceGateActive (оба после парсинга userDataVk)');
-    assert(indexSrc.indexOf("partsData[i].split('=')") < indexSrc.indexOf('window.hide_unreleased_features ='),
-        'объявление флага идёт ПОСЛЕ разбора query-строки в userDataVk (иначе vk_user_id ещё не существовал бы)');
-}
-
-console.log('\nTest 2: dvor.js — картинки 2048 ("ящик"/"нажать на игру") ВСЕГДА в сцене (тест и прод), кликабельна только "нажать на игру", и только когда hide_unreleased_features=false');
+console.log('\nTest 2: вход в 2048 доступен всем при выключенном флаге');
 {
     // 28.10.2026 (повторное указание тем же днём — "верни картинки на прод, но сделай
     // некликабельными"): раньше ОБА спрайта вообще не добавлялись в сцену на проде. Теперь
@@ -83,21 +62,21 @@ console.log('\nTest 2: dvor.js — картинки 2048 ("ящик"/"нажат
     assert(pressAddChildIdx > -1, '"нажать на игру" добавляется в сцену');
     const pressBody = dvorSrc.slice(pressStart, pressAddChildIdx);
     assert(/if\(!window\.hide_unreleased_features\)\{/.test(pressBody),
-        'интерактивность "нажать на игру" обёрнута в guard — скрыта на pripyat-game.ru');
+        'интерактивность использует единый флаг, который теперь выключен для всех');
     assert(/spr\.interactive = true; spr\.buttonMode = true;/.test(pressBody),
-        'на тесте (флаг=false) "нажать на игру" остаётся интерактивной');
+        '"нажать на игру" становится интерактивной при флаге=false');
 }
 
-console.log('\nTest 3: svod.js — вкладка "Заначки" убирается из MAIN_TABS, если hide_unreleased_features=true');
+console.log('\nTest 3: вкладка "Заначки" отображается всем при выключенном флаге');
 {
     assert(/\]\.filter\(t => t\.key !== 'zanachki' \|\| !window\.hide_unreleased_features\);/.test(svodSrc),
-        'MAIN_TABS отфильтрован по zanachki+hide_unreleased_features ПЕРЕД циклом рендера кнопок (не дыра в сетке)');
+        'MAIN_TABS использует единый флаг, который теперь выключен для всех');
     // Дефолтная вкладка при первом открытии — 'respect', не 'zanachki' (баг 27.10.2026, см.
     // соседний коммент в svod.js) — значит скрытие zanachki не ломает open() по умолчанию.
     assert(/this\._selectMainTab\('respect'\);/.test(svodSrc), 'дефолтная вкладка остаётся respect, не zanachki');
 }
 
-console.log('\nTest 4: interface-panels.js — кнопка "Разнарядка" не добавляется в правую панель, если hide_unreleased_features=true');
+console.log('\nTest 4: кнопка "Разнарядка" отображается всем при выключенном флаге');
 {
     const start = panelsSrc.indexOf("const raznYOff = rightCfg.length");
     assert(start > -1, 'блок создания кнопки Разнарядки найден');

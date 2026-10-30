@@ -28,6 +28,10 @@ $tools = new FakeTools();
 $registry = ['udb' => $udb, 'utb' => 'users', 'uid' => 777, 'tools' => $tools, 'user_params' => []];
 
 $exploitPayload = [
+    'natisk_event_id' => 'forged-event',
+    'natisk_free_attempts' => '999',
+    'natisk_paid_attempts' => '999',
+    'natisk_kills' => '999999',
     'zone' => json_encode(['0' => ['cps' => [5,5,5,5,5,5], 'biz' => [10,10,10], 'cleared' => 999]]),
     'base_buildings' => json_encode([['level'=>10,'xp'=>0,'xp_next'=>1,'upgrade_cost'=>['coins'=>0]]]),
     'base_stats' => json_encode([['level'=>50,'xp'=>0,'xp_next'=>1]]),
@@ -44,7 +48,7 @@ $users->save();
 $update = $udb->lastSaveUpdate;
 echo "=== Test 1: эксплойт-поля НЕ попали в реальный UPDATE (не текст файла — настоящий перехваченный \$update) ===\n";
 echo ($update !== null ? "PASS" : "FAIL") . ": saveData() реально был вызван\n";
-foreach(['zone', 'base_buildings', 'base_stats', 'gang_id', 'zone_collect_0', 'zone_collect_1', 'zone_collect_2', 'zone_collect_3', 'zone_collect_4'] as $key){
+foreach(['natisk_event_id', 'natisk_free_attempts', 'natisk_paid_attempts', 'natisk_kills', 'zone', 'base_buildings', 'base_stats', 'gang_id', 'zone_collect_0', 'zone_collect_1', 'zone_collect_2', 'zone_collect_3', 'zone_collect_4'] as $key){
     echo (!isset($update[$key]) ? "PASS" : "FAIL") . ": '$key' отсутствует в реальном UPDATE (эксплойт отклонён), получено " . var_export($update[$key] ?? null, true) . "\n";
 }
 

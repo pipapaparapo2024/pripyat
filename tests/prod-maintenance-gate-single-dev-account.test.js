@@ -51,10 +51,10 @@ console.log('\nTest 2: старое условие и оверлей остав�
     assert(/Идут технические работы/.test(gateBody), 'текст оверлея сохранён на случай повторного включения');
 }
 
-console.log('\nTest 3: hide_unreleased_features (отдельный, более узкий флаг — скрывает только точки входа 2048/Разнарядка/Заначки) этим снятием НЕ тронут');
+console.log('\nTest 3: hide_unreleased_features выключен — 2048, Разнарядка и Заначки открыты всем игрокам');
 {
-    assert(/window\.hide_unreleased_features = \(typeof location !== 'undefined' && location\.hostname === 'pripyat-game\.ru'/.test(indexSrc),
-        'hide_unreleased_features по-прежнему завязан на hostname/vk_user_id — снятие maintenance-гейта не было решением открыть ВСЕ фичи сразу, это отдельный вопрос');
+    assert(/window\.hide_unreleased_features = false;/.test(indexSrc),
+        'скрытие функций отключено: оно не зависит ни от hostname, ни от VK ID игрока');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

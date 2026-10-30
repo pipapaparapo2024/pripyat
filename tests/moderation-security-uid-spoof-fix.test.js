@@ -33,7 +33,7 @@ const errorsJson   = JSON.parse(read('server/json/errors.json'));
 
 console.log('\nTest 1: getToken() сверяет $registry[\'uid\'] с подписанным vk_user_id ПОСЛЕ проверки подписи, ДО записи токена в secure');
 {
-    const signCheckIdx  = securityPhp.indexOf("if($sign !== $generate_sign)return $this->registry['tools']->error(0);");
+    const signCheckIdx  = securityPhp.indexOf('!hash_equals($generate_sign, $sign)');
     const uidCheckIdx   = securityPhp.indexOf('$signedVkUserId = intval(');
     const saveDataIdx   = securityPhp.indexOf("saveData('secure', \$sec_array)");
 
@@ -55,7 +55,7 @@ console.log('\nTest 2: сверка читает vk_user_id именно из us
 console.log('\nTest 3: несовпадение (или отсутствие подписанного vk_user_id) — отказ, error(7), НЕ error(0)/error(1) (различимый код в логах/для клиента)');
 {
     const start = securityPhp.indexOf('$signedVkUserId = intval(');
-    const end   = securityPhp.indexOf('$my_token = md5(', start);
+    const end   = securityPhp.indexOf('$my_token = bin2hex(', start);
     const body  = securityPhp.slice(start, end);
 
     assert(/if\(\$signedVkUserId <= 0 \|\| \$signedVkUserId !== \$postedUid\)\{/.test(body),

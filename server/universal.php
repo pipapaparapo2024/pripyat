@@ -48,7 +48,8 @@
     execute();
 
     function execute(){
-        $sequreToken = checkToken();
+        setRequestKey(null);
+        $sequreToken = ($_POST['method'] === 'security.getToken') ? [true] : checkToken();
 
         if(!$sequreToken[0] and $_POST['method'] !== 'security.getToken')return $GLOBALS['registry']['tools']->error($sequreToken[1]);
 
@@ -90,7 +91,7 @@
     function checkToken(){
         $secure = $GLOBALS['registry']['udb']->getData('secure', array('*'), 'id='.$GLOBALS['registry']['uid']);
 
-        createReqKey();
+        setRequestKey(null);
 
         // 26.09.2026 (по прямому указанию — "истекло время жизни токена" повторяется без
         // видимой причины, разбор по живой БД в прошлый раз ничего не показал, потому что
@@ -116,6 +117,7 @@
             return [false, 5];
         }
 
+        setRequestKey($secure['req_key']);
         if(time() > $secure['time']+$secure['lifetime']){
             error_log('[universal.checkToken] код 3 (истёк токен) | uid=' . $uid . ' | method=' . $method
                 . ' | now=' . time() . ' | secure.time=' . $secure['time'] . ' | secure.lifetime=' . $secure['lifetime']
@@ -133,12 +135,21 @@
 
         if(intval(date('G')) == 0 && intval(date('i')) < 4)return [false, 6];
 
+        $nextKey = bin2hex(random_bytes(16));
+        if(!$GLOBALS['registry']['udb']->rotateRequestKey($uid, strval($_POST['token']), strval($_POST['req_key']), $nextKey)) return [false, 4];
+        setRequestKey($nextKey);
         return [true];
     }
 
+    // Registry::offsetSet is write-once for non-null values. Replace this one
+    // transient field explicitly so the response key matches the atomic DB update.
+    function setRequestKey($key){
+        unset($GLOBALS['registry']['req_key']);
+        $GLOBALS['registry']['req_key'] = $key;
+    }
+
     function createReqKey(){
-        $GLOBALS['registry']['req_key'] = uniqid();
-        $GLOBALS['registry']['udb']->saveData('secure', array('id'=>$GLOBALS['registry']['uid'], 'req_key'=>$GLOBALS['registry']['req_key']));
+        setRequestKey(bin2hex(random_bytes(16)));
     }
 
     function spec_decode($text){

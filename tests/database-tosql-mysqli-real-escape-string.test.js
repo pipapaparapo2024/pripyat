@@ -36,21 +36,9 @@ if (!toSqlMatch) {
 } else {
     const body = toSqlMatch[0];
 
-    console.log('\nTest 1: значение из ветки "просто сохранить данные" проходит через mysqli_real_escape_string');
-    assert(/mysqli_real_escape_string\(\s*\$this->link\s*,/.test(body), 'toSQL() вызывает mysqli_real_escape_string($this->link, ...)');
-
-    console.log('\nTest 2: регресс-гвард — не осталось голой конкатенации значения в SQL-литерал без экранирования');
-    assert(!/\$sql\s*\.=\s*"`"\.implode\('', \(array\)\$keys\[\$i\]\)\."`='"\.implode\('', \(array\)\$values\[\$i\]\)\."'"/.test(body),
-        'нет старой уязвимой строки "...\'\".implode(\'\', (array)$values[$i])."\'\""');
-
-    console.log('\nTest 3: экранированное значение реально используется при сборке $sql (не просто вычислено и отброшено)');
-    assert(/\$escaped\s*=\s*mysqli_real_escape_string/.test(body) && /\$sql\s*\.=.*\$escaped/.test(body),
-        '$escaped присваивается и используется в конкатенации $sql');
-
-    console.log('\nTest 4: ветка "сырого SQL-выражения" (`col`=`col`+1) осталась НЕ тронута экранированием');
-    const rawExprLine = body.split('\n').find(l => l.includes('gold`=`gold`+1'));
-    assert(!!rawExprLine && !rawExprLine.includes('mysqli_real_escape_string'),
-        'ветка raw-SQL (count(explode("`", $values[$i])) > 1) по-прежнему вставляет $values[$i] напрямую, без экранирования');
+    assert(body.includes("$this->link->real_escape_string("), "Все значения экранируются");
+    assert(!body.includes("count(explode"), "Нет автоматического исполнения SQL из значения");
+    assert(body.includes("Invalid column"), "Имена колонок проверяются");
 }
 
 console.log(`\n${'─'.repeat(50)}`);

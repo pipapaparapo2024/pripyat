@@ -60,7 +60,7 @@ console.log('\nTest 1: interface.js — кнопка DEV возвращена в
     // см. tests/dev-keyring-toggle.test.js). Три независимых файла используют идентичный список
     // — это согласованное, осознанное расширение на обоих разработчиков, а не разъехавшийся
     // рефакторинг (в отличие от keyring-тоггла, где осталась узкая личная проверка).
-    assert(/DEV_UIDS\s*=\s*\['1113977365',\s*'382448269'\]/.test(interfaceJs), 'admin-uid список захардкожен и совпадает с dev_panel.js/users.php._isDevUser()');
+    assert(/DEV_UIDS\s*=\s*\['1113977365',\s*'382448269',\s*'438953352',\s*'184138040'\]/.test(interfaceJs), 'admin-uid список захардкожен и совпадает с dev_panel.js/users.php._isDevUser()');
     assert(/_isAdminUid\s*=\s*!!\(window\.vk_params\s*&&\s*DEV_UIDS\.includes\(String\(vk_params\['vk_user_id'\]\)\)\)/.test(interfaceJs),
         'проверка идёт по window.vk_params (реальные VK launch params, подделать без валидной сессии нельзя)');
     // Кнопка физически внутри if(_isAdminUid){...} — addChild должен идти ПОСЛЕ объявления

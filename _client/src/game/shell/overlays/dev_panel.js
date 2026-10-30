@@ -97,7 +97,7 @@ export function attachDevPanel(proto){
 
 
     proto._openDevPanel = function(){
-        const DEV_UIDS = ['1113977365', '382448269'];
+        const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
         if(!window.vk_params || !DEV_UIDS.includes(String(vk_params['vk_user_id']))) return;
         if(this._devWin && this._devWin.parent){
             this._closeDevPanel();

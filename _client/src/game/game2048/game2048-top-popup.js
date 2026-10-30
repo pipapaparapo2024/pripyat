@@ -226,6 +226,7 @@ export function attachGame2048TopPopup(proto){
         }
 
         this._topWin = win;
+        this._top1Avatar = top1Avatar;
         this._top1Nick = top1Nick;
         this._top1Games = top1Games;
         this._top1LifetimeTxts = lifetimeTxts;
@@ -234,11 +235,13 @@ export function attachGame2048TopPopup(proto){
     };
 
     proto._renderGame2048Top = function(e){
+        const avatarGeneration = this._topAvatarGeneration = (this._topAvatarGeneration || 0) + 1;
         const top1 = e.top1;
         const hasLeader = !!top1;
         this._topEmptyTxt.visible = !hasLeader;
         this._top1Nick.visible = hasLeader;
         this._top1Games.visible = hasLeader;
+        if(this._top1Avatar) this._top1Avatar.visible = hasLeader;
         if(hasLeader){
             this._top1Nick.text = top1.nick || ('id' + top1.id);
             this._top1Games.text = String(top1.gamesCompleted);
@@ -264,6 +267,34 @@ export function attachGame2048TopPopup(proto){
             row.nameTxt.text = r.nick || ('id' + r.id);
             row.gamesTxt.text = r.gamesCompleted + ' партий';
         });
+        const entries = [top1, ...rest.slice(0, this._topRows.length)].filter(Boolean);
+        const fallback = PIXI.Texture.from('./images/2048 аватар заглушка.png');
+        const targets = [];
+        if(top1 && this._top1Avatar) targets.push({id: top1.id, sprite: this._top1Avatar});
+        rest.slice(0, this._topRows.length).forEach((entry, i) => targets.push({id: entry.id, sprite: this._topRows[i].avatar}));
+        targets.forEach(({sprite}) => {
+            if(!sprite._topAvatarSize) sprite._topAvatarSize = {width: sprite.width, height: sprite.height};
+            sprite.texture = fallback;
+            sprite.width = sprite._topAvatarSize.width; sprite.height = sprite._topAvatarSize.height;
+        });
+        if(window.bosses && typeof bosses._resolveVkUsers === 'function'){
+            bosses._resolveVkUsers(entries.map(entry => entry.id), (users) => {
+                if(avatarGeneration !== this._topAvatarGeneration) return;
+                targets.forEach(({id, sprite}) => {
+                    if(sprite.destroyed) return;
+                    const photo = users && users[String(id)] && users[String(id)].photo;
+                    if(!photo) return;
+                    const width = sprite.width, height = sprite.height;
+                    const texture = PIXI.Texture.from(photo);
+                    sprite.texture = texture;
+                    const fit = () => {
+                        if(!sprite.destroyed && sprite.texture === texture){ sprite.width = width; sprite.height = height; }
+                    };
+                    fit();
+                    if(texture.baseTexture && !texture.baseTexture.valid) texture.baseTexture.once('loaded', fit);
+                });
+            });
+        }
     };
 }
 

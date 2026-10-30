@@ -10,6 +10,8 @@ import { installYoFix } from './modules/text-sanitize.js';
 import { installPlayerPersistence } from './modules/player-save.js';
 import { startPreloaderVisual } from './modules/preloader-visual.js';
 import { installMobileViewport, viewportMetrics, onViewportChange } from './modules/mobile-viewport.js';
+import { isOk } from './modules/platform.js';
+import { okBannerViewport } from './modules/ok-banner-viewport.js';
 import { applyRotatedCanvasStyle, clearRotatedCanvasStyle, mapPositionToPointRotated } from './modules/forced-landscape.js';
 import { showRotateHintOnce } from './modules/rotate-hint.js';
 import { installAppLifecyclePause } from './modules/app-lifecycle.js';
@@ -210,11 +212,10 @@ installAppLifecyclePause();
 
 window.vk_params = userDataVk;
 
-// 28.10.2026 (см. докблок у объявления выше, рядом с debug_mode): dev-аккаунт видит
-// Заначки/Разнарядку/2048 на проде и во время действия __maintenanceGateActive — остальным
-// эти точки входа по-прежнему скрыты (а пока активен сам гейт, остальным вообще ничего не видно).
-window.hide_unreleased_features = (typeof location !== 'undefined' && location.hostname === 'pripyat-game.ru'
-    && String(userDataVk['vk_user_id']) !== '382448269');
+// 30.10.2026: 2048, Разнарядка и Заначки выпускаются для всех игроков, включая прод.
+// Остальные экраны уже используют этот единый флаг для своих точек входа, поэтому достаточно
+// снять его здесь: кнопки 2048, Разнарядки и вкладка Заначек становятся доступны всем.
+window.hide_unreleased_features = false;
 
 // 28.10.2026 (по прямому указанию — "перед супер деплоем хочу всё проверить заранее, чтобы
 // игра не грузилась ни у кого кроме меня"): на проде (pripyat-game.ru) для ВСЕХ, кроме одного
@@ -344,7 +345,11 @@ let initPreloader = () => {
 		// (вырез камеры, "бровь", системная полоса жестов): без этого канвас залезал под них
 		// и углы игры (кнопка выхода, HUD) было физически нечем нажать. На устройствах без
 		// вырезов safe-area = 0 и поведение ровно прежнее.
-		const vp = viewportMetrics();
+		const physicalViewport = viewportMetrics();
+		const vp = okBannerViewport(physicalViewport, { enabled: isOk(), mobile: window.isMobile });
+		if(vp !== physicalViewport){
+			console.log('[index.js.resize] ОК: игровая область вне баннеров:', vp.w, vp.h, '| отступы:', vp.bannerInsets);
+		}
 
 		// 28.09.2026 (блокер №1 адаптива, вариант A): на портретном мобильном экране letterbox
 		// 16:9 даёт узкую полосу через весь экран. 03.10.2026 (по прямому указанию — "пусть игра

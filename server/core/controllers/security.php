@@ -33,7 +33,12 @@
             // registry.php — реальные, не заглушки. Без этой проверки любой мог прислать сюда
             // произвольный vk_user_id и получить настоящий токен на ЧУЖОЙ аккаунт — им же потом
             // читать/перезаписывать чужие данные через users.save (см. аудит безопасности).
-            if($sign !== $generate_sign)return $this->registry['tools']->error(0);
+            if(!is_string($sign) || !hash_equals($generate_sign, $sign))return $this->registry['tools']->error(0);
+            $launchTime = $params_sign['vk_ts'] ?? null;
+            if(!is_scalar($launchTime) || !ctype_digit((string)$launchTime)
+                || intval($launchTime) < time() - 86400 || intval($launchTime) > time() + 300){
+                return $this->registry['tools']->error(7);
+            }
 
             // 26.09.2026 (по прямому указанию — аудит перед модерацией VK, пункт "захват чужого
             // аккаунта"): проверка выше подтверждает только подлинность $params_sign (внутри
@@ -53,7 +58,8 @@
                 return $this->registry['tools']->error(7);
             }
 
-            $my_token = md5($generate_sign.uniqid(rand(), true));
+            $my_token = bin2hex(random_bytes(16));
+            $this->registry['req_key'] = bin2hex(random_bytes(16));
 
             // 26.09.2026 (по прямому репорту — "истекло время жизни токена" сразу после входа
             // в игру): раньше output() (отправка token клиенту) стояла ПЕРЕД saveData() —

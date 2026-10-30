@@ -358,7 +358,10 @@ export function attachInterfacePanels(proto){
             raznNorm.y = raznHov.y = raznYOff;
             raznHov.visible = false;
             const raznHit = new PIXI.Graphics();
-            raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, raznYOff, BTN_W_R, BTN_H_R); raznHit.endFill();
+            // Keep drawing local to the button: touchPad() builds a hitArea around
+            // local origin and cannot preserve an offset baked into Graphics bounds.
+            raznHit.y = raznYOff;
+            raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, 0, BTN_W_R, BTN_H_R); raznHit.endFill();
             raznHit.interactive = true; raznHit.buttonMode = true;
             if(window.isMobile) helper.touchPad(raznHit);
             raznHit.on('pointerover', () => { raznNorm.visible = false; raznHov.visible = true; });

@@ -1,6 +1,15 @@
 <?php
 
 	Class Database {
+        function rotateRequestKey($uid, $token, $previous, $next){
+            $stmt = $this->link->prepare('UPDATE secure SET req_key=? WHERE id=? AND token=? AND req_key=? AND time+lifetime>=?');
+            $now = time();
+            $stmt->bind_param('sissi', $next, $uid, $token, $previous, $now);
+            $stmt->execute();
+            $updated = $stmt->affected_rows === 1;
+            $stmt->close();
+            return $updated;
+        }
 		private $link; //коннект к MySQL
 		private $permis;
 		private $results;
@@ -106,15 +115,14 @@
 	    	$values =  array_values($array);
 	    
 	    	for($i = 0; $i < count($keys); $i++){
-	        	if(count(explode("`", $values[$i])) > 1){
-	        		$sql .= "`".implode('', (array)$keys[$i])."`=".$values[$i]; //если делаем что-то вроде `gold`=`gold`+1
-	        	}else{
+                if(!preg_match("/^[a-zA-Z_][a-zA-Z0-9_]*$/D", (string)$keys[$i])) throw new InvalidArgumentException("Invalid column");
+                {
 	        		// mysqli_real_escape_string, а не голая конкатенация: без этого json_encode()
 	        		// (напр. без JSON_UNESCAPED_UNICODE) может записать в литерал буквальный `\`,
 	        		// который MySQL молча отбрасывает при чтении — так пропадали экранированные
 	        		// символы (нашли на кириллице в poker_session/blackjack_session, но баг общий
 	        		// для любого `\`/`'` в значении, не только для JSON_UNESCAPED_UNICODE-кейса).
-	        		$escaped = mysqli_real_escape_string($this->link, implode('', (array)$values[$i]));
+                $escaped = $this->link->real_escape_string(implode('', (array)$values[$i]));
 	        		$sql .= "`".implode('', (array)$keys[$i])."`='".$escaped."'"; //если нужно просто сохранить данные
 	        	}
 	        	if($i < count($keys)-1)$sql.=",";
