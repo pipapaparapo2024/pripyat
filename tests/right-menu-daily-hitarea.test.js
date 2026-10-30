@@ -15,7 +15,9 @@ class Graphics extends Container {
 }
 class Sprite extends Container {constructor(texture){super();this.texture=texture;}}
 class Rectangle {constructor(x,y,width,height){Object.assign(this,{x,y,width,height});}}
-const PIXI={Container,Graphics,Sprite,Rectangle,Texture:{from:file=>({file,orig:{width:236,height:57}})}};
+const PIXI={Container,Graphics,Sprite,Rectangle,Text:Container,SCALE_MODES:{LINEAR:1},MIPMAP_MODES:{ON:1},
+    filters:{ColorMatrixFilter:class {brightness(){}}},
+    Texture:{from:file=>({file,orig:{width:236,height:57},baseTexture:{setStyle(){}}})}};
 for(const mobile of [false,true]){
     const context=vm.createContext({console:{log(){}},PIXI,window:{PIXI,isMobile:mobile,hide_unreleased_features:false},root:{layer1_mc:new Container}});
     const helper=fs.readFileSync(path.join(root,'modules/universal_helper.js'),'utf8')
@@ -37,9 +39,9 @@ for(const mobile of [false,true]){
         assert.strictEqual(hits.length,1,`exactly one hit for ${name}, mobile=${mobile}`);
         hits[0].handlers.pointerdown();assert.strictEqual(opened.pop(),name);
         hits[0].handlers.pointerover();
-        const visibleHover=panel.children.filter(c=>c instanceof Sprite && c.texture.file.includes(' hover.png') && c.visible===true);
+        const visibleHover=panel.children.filter(c=>c instanceof Sprite && (c.texture.file.includes(' hover.png') || (c.texture.file.endsWith('raznaryadka-button.png') && c.alpha===1)) && c.visible===true);
         assert.strictEqual(visibleHover.length,1);
-        assert(visibleHover[0].texture.file.includes(index===4?'задания':index===0?'двор':index===2?'Хабар':'Сводка'));
+        assert(visibleHover[0].texture.file.includes(index===4?'raznaryadka-button':index===0?'двор':index===2?'Хабар':'Сводка'));
         hits[0].handlers.pointerout();
     }
 }

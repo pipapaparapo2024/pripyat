@@ -266,6 +266,13 @@ export function attachInterfacePanels(proto){
     proto.hideCloseBtn = function(){ if(window.globalCloseBtn) window.globalCloseBtn.visible = false; };
 
     proto._closeCurrentModule = function(){
+        const wishlist = window.svod && svod._zanachkiWishlistWin;
+        if(wishlist && wishlist.parent){
+            wishlist.parent.removeChild(wishlist);
+            svod._zanachkiWishlistWin = null;
+            return;
+        }
+        if(this._profileWin && this._profileWin.parent){ this._closePlayerProfile(); return; }
         const modules = ['bosses','zone','weapons','shmot','gangs','vassilich',
                          'dvor','base','habar','leaderboard','svod','zadaniya',
                          'battlepass','hapuga','bot','bank','raznaryadka','game2048'];
@@ -317,7 +324,9 @@ export function attachInterfacePanels(proto){
             norm.y = hov.y = yOff;
             hov.visible = false;
             const hit = new PIXI.Graphics();
-            hit.beginFill(0x000000, 0.001); hit.drawRect(0, yOff, BTN_W_R, BTN_H_R); hit.endFill();
+            hit.y = yOff;
+            hit.hitArea = new PIXI.Rectangle(0, 0, BTN_W_R, BTN_H_R);
+            hit.beginFill(0x000000, 0.001); hit.drawRect(0, 0, BTN_W_R, BTN_H_R); hit.endFill();
             hit.interactive = !b.disabled; hit.buttonMode = !b.disabled;
             if(b.disabled) norm.alpha = 0.45;
             hit.on('pointerover',  ()=>{ norm.visible=false; hov.visible=true;  });
@@ -353,18 +362,22 @@ export function attachInterfacePanels(proto){
         // (rightCfg.forEach выше) не зависят от этого блока по позиции, их layout не съезжает.
         if(!window.hide_unreleased_features){
             const raznYOff = rightCfg.length * (BTN_H_R + GAP_R);
-            const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания.png'));
-            const raznHov  = new PIXI.Sprite(PIXI.Texture.from(IMG + 'задания hover.png'));
+            const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'raznaryadka-button.png'));
+            const raznHov = new PIXI.Sprite(raznNorm.texture);
+            raznNorm.alpha = 0.4;
+            raznHov.alpha = 1;
             raznNorm.y = raznHov.y = raznYOff;
             raznHov.visible = false;
             const raznHit = new PIXI.Graphics();
-            // Keep drawing local to the button: touchPad() builds a hitArea around
-            // local origin and cannot preserve an offset baked into Graphics bounds.
+            // Menu rows are only 57px high with a 4px gap. Generic 72px touchPad
+            // overlaps the preceding row; keep the exact same bounds as its art.
             raznHit.y = raznYOff;
+            raznHit.hitArea = new PIXI.Rectangle(0, 0, BTN_W_R, BTN_H_R);
             raznHit.beginFill(0x000000, 0.001); raznHit.drawRect(0, 0, BTN_W_R, BTN_H_R); raznHit.endFill();
             raznHit.interactive = true; raznHit.buttonMode = true;
-            if(window.isMobile) helper.touchPad(raznHit);
-            raznHit.on('pointerover', () => { raznNorm.visible = false; raznHov.visible = true; });
+            raznHit.on('pointerover', () => {
+                raznNorm.visible = false; raznHov.visible = true;
+            });
             raznHit.on('pointerout',  () => { raznHov.visible = false; raznNorm.visible = true; });
             raznHit.on('pointerdown', () => {
                 console.log('[PNG right tab] clicked: raznaryadka | _openModuleName:', this._openModuleName);

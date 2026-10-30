@@ -630,13 +630,15 @@ export function attachPlayerProfile(proto){
     // эта кнопка вообще может быть нажата (создаётся в module_control.js вместе со всеми
     // остальными window.*-модулями при старте игры).
     proto._openFriendStashWishlist = function(profile){
+        const profileWin = this._profileWin;
         TS.php('zanachki.getFriendWishlist', {target_id: profile.id}, (e) => {
+            if(!profileWin || !profileWin.parent || this._profileWin !== profileWin) return;
             if(!e){
                 if(window.notify) notify.showResult({text: 'Не удалось загрузить список запросов'}, 0);
                 return;
             }
             if(window.svod) svod._buildZanachkiWishlistPopup(e.wishlist || [], 'friend', {
-                targetId: e.targetId, myOwnedCounts: e.myOwnedCounts || {},
+                targetId: e.targetId, myOwnedCounts: e.myOwnedCounts || {}, parentWin: profileWin,
             });
         });
     };
@@ -846,6 +848,11 @@ export function attachPlayerProfile(proto){
     function intval(v){ const n = parseInt(v); return isNaN(n) ? 0 : n; }
 
     proto._closePlayerProfile = function(){
+        const wishlist = window.svod && svod._zanachkiWishlistWin;
+        if(wishlist && wishlist.parent === this._profileWin){
+            wishlist.parent.removeChild(wishlist);
+            svod._zanachkiWishlistWin = null;
+        }
         if(this._profileWin && this._profileWin.parent) this._profileWin.parent.removeChild(this._profileWin);
         this._profileWin = null;
         // 21.10.2026: гасим таймер моргания глаз — без этого он продолжал бы тикать вхолостую

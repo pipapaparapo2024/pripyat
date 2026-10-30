@@ -1,5 +1,6 @@
 import { applyPatch } from '../../modules/patch.js';
 import { scheduleFontRedraw } from '../../modules/font-ready.js';
+import { placeStashCount } from '../../modules/stash-count-layout.js';
 
 /** Вкладка «Заначки» (26.10.2026, по прямому указанию) — восстановление полноценной механики
  * коллекционных карточек (15 коллекций по 7 карточек), урезанной 25.09.2026 ровно потому что
@@ -266,13 +267,13 @@ export function attachSvodZanachki(proto){
                 // итоговый подъём текста относительно карточки задвоился (14px вместо 7).
                 // Убираем дублирующую "-7" — сдвиг на 7px относительно card теперь даёт только
                 // CARD_Y_OFF, как и было изначально задумано для первого запроса.
-                const countTxt = new PIXI.Text('', {
+                const countTxt = new PIXI.Text('0', {
                     fontFamily: FONT, fontSize: 18, fill: '#000000',
-                    stroke: '#000000', strokeThickness: 2, padding: 4,
+                    strokeThickness: 0, padding: 4,
                 });
                 countTxt.anchor.set(0.5, 0);
-                countTxt.x = cardX + card.width / 2 + 35;
-                countTxt.y = card.y + card.height - 18 + 92 - 2;
+                countTxt.resolution = Math.max(2, (window.scene && window.scene.renderer && window.scene.renderer.resolution) || 1);
+                placeStashCount(countTxt, card);
                 content.addChild(countTxt);
                 countTxts[key] = countTxt;
                 fontTexts.push(countTxt);
@@ -330,6 +331,7 @@ export function attachSvodZanachki(proto){
                 TS.php('zanachki.claimCollection', {collection_id: col}, (e) => {
                     if(!e || !e.patch) return;
                     applyPatch(e.patch);
+                    if(window.achievements) achievements._checkAll();
                     this._zanachkiFetchState();
                 });
             });

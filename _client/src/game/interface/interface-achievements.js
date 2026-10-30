@@ -63,7 +63,7 @@ export function attachAchievementDesc(proto){
         strength:     n => `Накопи ${_fmtAchNum(n)} очков силы`,
         pvp:          n => `Победи ${_fmtAchNum(n)} раз в PvP`,
         meta:         n => `Набери ${_fmtAchNum(n)} очков достижений`,
-        stash:        n => `Собери ${_fmtAchNum(n)} карточек этой заначки`,
+        stash:        n => `Обменяй полный набор этой коллекции ${_fmtAchNum(n)} раз`,
         // 04.10.2026 (по прямому указанию, скриншот — "Семерки"/"Восьмерки" (комбинации карт)
         // показывали описание "Достигни 1 уровня в «Сорви куш»" вместо описания комбинации):
         // cards/poker/roulette больше не отдают ОДНУ фразу на весь cat — внутри категории
@@ -83,6 +83,10 @@ export function attachAchievementDesc(proto){
 
     proto._achievementDesc = function(a){
         const n = achievementThreshold(a);
+        if(a.cat === 'stash'){
+            const names = {k_lezv:'По лезвию',k_lyub:'Любитель',k_avto:'Автоматчик',s_yuv:'Ювелир',s_sysh:'Сыщик',s_met:'Металлоискатель',d_umn:'Умник',d_az:'Азартный',d_kost:'Костолом',a_rast:'Растаман',a_kur:'Куряга',a_pozh:'Пожарник',y_koll:'Коллекционер',y_muz:'Музыкант',y_kegl:'Кегля'};
+            return `Собери и обменяй «${names[a.statPath && a.statPath[1]] || 'Коллекция'}» ${_fmtAchNum(n)} раз`;
+        }
 
         if(a.cat === 'zone_clear'){
             // Буква id → индекс локации: k=0,s=1,d=2,a=3,y=4 (см. achievements.js zk_* id).

@@ -29,6 +29,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 const svodSrc          = readSrc('_client/src/game/svod.js');
 const zanachkiSrc       = readSrc('_client/src/game/svod/svod-zanachki.js');
 const wishlistSrc       = readSrc('_client/src/game/svod/svod-zanachki-wishlist.js');
+const countLayoutSrc    = readSrc('_client/src/modules/stash-count-layout.js');
 const zanachkiCtrlSrc   = readSrc('server/core/controllers/zanachki.php');
 const zanachkiModelSrc  = readSrc('server/core/models/zanachkimodel.php');
 const dvorSrc           = readSrc('_client/src/game/dvor.js');
@@ -415,7 +416,7 @@ console.log('\nTest 19: svod-zanachki-wishlist.js — под каждой кар
         'owned считается из ctx.myOwnedCounts по ключу col_pos — общий для обоих режимов (own/friend)');
     const countTxtStart = wishlistSrc.indexOf('const countTxt = new PIXI.Text(String(owned)');
     assert(countTxtStart !== -1, 'countTxt создаётся с текстом owned');
-    const applyEnd = wishlistSrc.indexOf('};', wishlistSrc.indexOf('const applyCountPos = () => {', countTxtStart)) + 2;
+    const applyEnd = wishlistSrc.indexOf("if(mode === 'own')", countTxtStart);
     const countTxtBody = wishlistSrc.slice(countTxtStart, applyEnd);
     // 28.10.2026 (баг найден тем же днём — "не видно количество"): исходная позиция (card.y +
     // card.height + 4) попадала ВНУТРЬ actionBtn (зазор карточка→кнопка всего 2px) и пряталась
@@ -432,16 +433,14 @@ console.log('\nTest 19: svod-zanachki-wishlist.js — под каждой кар
     // applyCountPos(), вызываемый сразу (если текстура уже готова) либо по 'update' (тот же
     // паттерн, что и _centerZanachkiReqSpr в svod-zanachki.js), плюс обе кнопки добавлены в
     // прелоад (game-boot.js) по ПРАВИЛУ №11.
-    assert(/const applyCountPos = \(\) => \{/.test(countTxtBody), 'позиция считается в отложенной функции applyCountPos, не синхронно при создании');
-    assert(/if\(actionBtn\.texture\.width > 1\) applyCountPos\(\); else actionBtn\.texture\.once\('update', applyCountPos\);/.test(wishlistSrc),
-        'applyCountPos вызывается сразу, если текстура кнопки уже загружена, иначе — по событию update (как reqSpr)');
+    assert(countTxtBody.includes("placeStashCount(countTxt, card, actionBtn, mode === 'friend')"), 'общий хелпер ждёт карточку и кнопку');
+    assert(countLayoutSrc.includes("image.texture.once('update', update)"), 'позиция обновляется после загрузки каждой участвующей текстуры');
     // 28.10.2026 (повторное указание — "после нажатия убрать/отправить цифры съезжают вниз" —
     // разделение own/friend на РАЗНЫЕ формулы несколькими сообщениями раньше оказалось ошибкой
     // диагностики: видимая разница между скриншотами была следствием гонки текстуры (см. выше),
     // а не разным желаемым местом для двух режимов. own и friend ВОЗВРАЩЕНЫ на одну общую
     // формулу — один набор чисел крутить, не два расходящихся).
-    assert(/countTxt\.x = cardX \+ card\.width \/ 2 \+ 1;\s*\n\s*countTxt\.y = actionBtn\.y \+ actionBtn\.height \+ 1 - 47 - 3;/.test(countTxtBody),
-        'общая формула (own и friend): X -1px влево, Y -25px вверх относительно старой +25 версии');
+    assert(countLayoutSrc.includes('actionButton.y + actionButton.height + 1 - 47 - 3 - (friend ? 3 : 0)'), 'только у друга количество поднято дополнительно на 3px');
     assert(!/if\(mode === 'own'\)\{\s*\n\s*countTxt\.x/.test(wishlistSrc), 'позиция countTxt больше НЕ ветвится по mode — один общий расчёт на оба режима');
     // countTxt строится ПОСЛЕ actionBtn (нужен actionBtn.height для позиционирования), но
     // ДО ветвления own/friend (которое теперь относится только к обработчику кнопки, не к позиции).
@@ -541,8 +540,8 @@ console.log('\nTest 27: svod-zanachki.js — счётчик карточки б�
     // card.y уже включает -7 (через CARD_Y_OFF) — countTxt.y строится ОТ card.y, значит эта "-7"
     // унаследуется автоматически. Если формула countTxt СВЕРХУ добавляет ещё свою "-7" — итоговый
     // подъём относительно card задваивается (14px вместо 7).
-    assert(/countTxt\.y = card\.y \+ card\.height - 18 \+ 92 - 2;/.test(zanachkiSrc),
-        'countTxt.y без лишней -7 — сдвиг относительно card даёт только унаследованный CARD_Y_OFF');
+    assert(zanachkiSrc.includes('placeStashCount(countTxt, card)') && countLayoutSrc.includes('card.y + card.height - 20'),
+        'позиция считается по реальной карточке без компенсации заглушки 1x1');
     assert(!/countTxt\.y = card\.y \+ card\.height - 18 \+ 92 - 2 - 7;/.test(zanachkiSrc),
         'задвоенная формула (с собственной -7 поверх унаследованной) не осталась');
 }

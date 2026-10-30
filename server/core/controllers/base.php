@@ -128,7 +128,7 @@ Class Base {
         // параллельных клика train() могли оба прочитать energy устаревшей, оба пройти
         // spendEnergy() и списать энергию ЛОКАЛЬНО — лишняя тренировка проходит бесплатно
         // (lost update на energy/base_stats[idx].xp).
-        $lockCols = ['base_stats', 'energy', 'energy_time', 'energy_spent', 'train_count'];
+        $lockCols = ['base_stats', 'train_count'];
         $link = $this->_rawLink();
         $lockedUser = $user;
         if($link){
@@ -146,17 +146,14 @@ Class Base {
             if($link){ $link->rollback(); $link->close(); }
             return $this->ops->fail(52);
         }
-        $energyCost = 3;
+        $energyCost = 0;
         // 28.09.2026: раньше тут был обычный Gameops::deduct('energy') — он сравнивает с
         // СЫРЫМ значением energy из БД, не учитывая регенерацию, накопленную с последнего
         // сохранения (игрок мог визуально иметь полную энергию, но сервер отказал бы, если
         // давно не тратил её через Зону — единственное место, которое раньше "коммитило"
         // регенерацию в БД). spendEnergy() — та же формула с регенерацией и сохранением
         // остатка прогресса, что использует zone.php.fillCheckpoint() (см. gameops.php).
-        if(!$this->ops->spendEnergy($lockedUser, $energyCost)){
-            if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(50);
-        }
+        // No energy charge or regeneration reset for training.
 
         // 23.09.2026 (баг по репорту — "достижения по энергии появляются не сразу, а только
         // при следующем заходе"): energy_spent (статистика для ачивок en_500/en_5k/.../en_1kk
@@ -164,7 +161,6 @@ Class Base {
         // энергию, потраченную на тренировки в Качалке — только zone.php.fillCheckpoint()
         // инкрементировал это поле. Игрок мог тренироваться сколько угодно, но прогресс к
         // этим ачивкам/заданиям не двигался вовсе, пока он отдельно не тратил энергию в Зоне.
-        $lockedUser['energy_spent'] = $this->ops->i($lockedUser, 'energy_spent') + $energyCost;
 
         $lockedUser['train_count'] = $this->ops->i($lockedUser, 'train_count') + 1;
         $s['xp'] = intval($s['xp']) + 40 + mt_rand(0,19);
@@ -186,8 +182,8 @@ Class Base {
             foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
         }
 
-        if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-        if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+        if(!$link && !$this->ops->saveUser(array_intersect_key($lockedUser,array_flip($lockCols)))) return $this->ops->fail(99);
+        foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
         // 24.10.2026 (по прямому указанию, пересмотр решения этим же днём): задание Разнарядки
         // "Потратить N энергии" ОСОЗНАННО считает только энергию, потраченную на прохождение

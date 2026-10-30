@@ -34,8 +34,8 @@ console.log('\nTest 1: base.js._trainStat() проверяет энергию ч
     const start = baseJs.indexOf('_trainStat(idx){');
     const end = baseJs.indexOf('_renderLocations(){', start);
     const body = baseJs.slice(start, end);
-    assert(/const energy = window\.TIMERS \? TIMERS\.getEnergy\(\) : parseInt\(udata\['energy'\]\|\|0\);/.test(body),
-        'использует TIMERS.getEnergy() (регенерированное значение) с фолбэком на udata, как bot.js/dev_panel.js');
+    assert(!/TIMERS\.getEnergy\(\)|energy < s\.energy_cost/.test(body.replace(/\/\/.*$/gm,'')),
+        'тренировка не проверяет баланс энергии и доступна при нуле');
     assert(!/const energy = parseInt\(udata\['energy'\]\|\|0\);/.test(body),
         'больше не читает СЫРОЕ udata[\'energy\'] напрямую, минуя регенерацию');
 }

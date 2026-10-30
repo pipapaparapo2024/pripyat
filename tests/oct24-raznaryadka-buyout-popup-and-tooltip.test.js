@@ -136,7 +136,7 @@ console.log('\nTest 8: game-boot.js — ассеты "Разнарядки" до
 {
     const src = norm(path.join(root, '_client/src/game/game-boot.js'));
     ['разнарядка день 1.png', 'разнарядка день 31.png', 'разнарядка фон.png', 'разнарядка попап рамка.png',
-     'задания.png', 'задания hover.png', 'попап универсальный фон.png', 'попап универсальный кнопка актив.png',
+     'raznaryadka-button.png', 'задания hover.png', 'попап универсальный фон.png', 'попап универсальный кнопка актив.png',
      'попап универсальный кнопка неактив.png'].forEach(f => {
         assert(src.includes("'" + f + "'"), `'${f}' в _allGamePngs`);
     });

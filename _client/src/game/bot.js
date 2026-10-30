@@ -126,7 +126,7 @@ export default class Bot{
 		}
 
 		// Авто-тренировка
-		if(!acted && this.settings[3].enabled && energy >= 3 && window.base){
+		if(!acted && this.settings[3].enabled && window.base){
 			const b = window.base;
 			const statIdx = b.stats.findIndex(s=>s.level < s.max_level);
 			if(statIdx >= 0){

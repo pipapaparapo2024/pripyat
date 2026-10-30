@@ -164,7 +164,7 @@ console.log('\nTest 3: users.php — roulette_winner убран из client-writ
     // коммент там, расследование "Антикризиса") — был в whitelist ДВАЖДЫ и параллельно писался
     // сервером (zone.php/poker.php/roulette.php). 'stash_data' (соседнее, но другое поле —
     // JSON-объект тайника, не счётчик) остаётся не затронутым этим аудитом.
-    assert(/'stash_data',/.test(allowedBlock), "'stash_data' осталось на месте (регресс-гвард)");
+    assert(!/'stash_data',/.test(allowedBlock), "'stash_data' теперь серверное: автосохранение не меняет карточки");
     assert(!/'stash_count',/.test(allowedBlock), "'stash_count' УБРАНО из whitelist (19.10.2026, тот же класс дыры, что у 'exp')");
 }
 

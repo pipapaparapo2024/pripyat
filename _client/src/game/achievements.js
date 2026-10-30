@@ -130,40 +130,40 @@ export default class Achievements {
 			// zone.js) — statPath ["stash", key] этих правил физически нечем заполнить.
 			// achievements.js.onStashCollect() (вызывался ТОЛЬКО отсюда) тоже отключён ниже.
 			// // Заначки Кордон
-			// {id:'st_k_lezv1',  cat:'stash', name:'Первый след',            pts:5,  threshold:1, statPath:["stash","k_lezv"], check:s=>(s.stash['k_lezv']||0)>=1},
-			// {id:'st_k_lezv10', cat:'stash', name:'Любопытный Сталкер',     pts:10, threshold:10, statPath:["stash","k_lezv"], check:s=>(s.stash['k_lezv']||0)>=10},
-			// {id:'st_k_lyub1',  cat:'stash', name:'Сборщик находок',        pts:5,  threshold:1, statPath:["stash","k_lyub"], check:s=>(s.stash['k_lyub']||0)>=1},
-			// {id:'st_k_lyub10', cat:'stash', name:'По следам тайников',      pts:10, threshold:10, statPath:["stash","k_lyub"], check:s=>(s.stash['k_lyub']||0)>=10},
-			// {id:'st_k_avto1',  cat:'stash', name:'Первые реликвии',         pts:5,  threshold:1, statPath:["stash","k_avto"], check:s=>(s.stash['k_avto']||0)>=1},
-			// {id:'st_k_avto10', cat:'stash', name:'Охотник за тайниками',    pts:10, threshold:10, statPath:["stash","k_avto"], check:s=>(s.stash['k_avto']||0)>=10},
+			{id:'st_k_lezv1',  cat:'stash', name:'Первый след',            pts:5,  threshold:1, statPath:["stash","k_lezv"], check:s=>(s.stash['k_lezv']||0)>=1},
+			{id:'st_k_lezv10', cat:'stash', name:'Любопытный Сталкер',     pts:10, threshold:10, statPath:["stash","k_lezv"], check:s=>(s.stash['k_lezv']||0)>=10},
+			{id:'st_k_lyub1',  cat:'stash', name:'Сборщик находок',        pts:5,  threshold:1, statPath:["stash","k_lyub"], check:s=>(s.stash['k_lyub']||0)>=1},
+			{id:'st_k_lyub10', cat:'stash', name:'По следам тайников',      pts:10, threshold:10, statPath:["stash","k_lyub"], check:s=>(s.stash['k_lyub']||0)>=10},
+			{id:'st_k_avto1',  cat:'stash', name:'Первые реликвии',         pts:5,  threshold:1, statPath:["stash","k_avto"], check:s=>(s.stash['k_avto']||0)>=1},
+			{id:'st_k_avto10', cat:'stash', name:'Охотник за тайниками',    pts:10, threshold:10, statPath:["stash","k_avto"], check:s=>(s.stash['k_avto']||0)>=10},
 			// // Заначки Свалка
-			// {id:'st_s_yuv1',   cat:'stash', name:'Следопыт Зоны',          pts:5,  threshold:1, statPath:["stash","s_yuv"], check:s=>(s.stash['s_yuv']||0)>=1},
-			// {id:'st_s_yuv10',  cat:'stash', name:'Знаток укромных мест',    pts:10, threshold:10, statPath:["stash","s_yuv"], check:s=>(s.stash['s_yuv']||0)>=10},
-			// {id:'st_s_sysh1',  cat:'stash', name:'Коллекционер аномалий',   pts:5,  threshold:1, statPath:["stash","s_sysh"], check:s=>(s.stash['s_sysh']||0)>=1},
-			// {id:'st_s_sysh10', cat:'stash', name:'Старьевщик Зоны',         pts:10, threshold:10, statPath:["stash","s_sysh"], check:s=>(s.stash['s_sysh']||0)>=10},
-			// {id:'st_s_met1',   cat:'stash', name:'Хранитель находок',       pts:5,  threshold:1, statPath:["stash","s_met"], check:s=>(s.stash['s_met']||0)>=1},
-			// {id:'st_s_met10',  cat:'stash', name:'Мастер тайников',         pts:10, threshold:10, statPath:["stash","s_met"], check:s=>(s.stash['s_met']||0)>=10},
+			{id:'st_s_yuv1',   cat:'stash', name:'Следопыт Зоны',          pts:5,  threshold:1, statPath:["stash","s_yuv"], check:s=>(s.stash['s_yuv']||0)>=1},
+			{id:'st_s_yuv10',  cat:'stash', name:'Знаток укромных мест',    pts:10, threshold:10, statPath:["stash","s_yuv"], check:s=>(s.stash['s_yuv']||0)>=10},
+			{id:'st_s_sysh1',  cat:'stash', name:'Коллекционер аномалий',   pts:5,  threshold:1, statPath:["stash","s_sysh"], check:s=>(s.stash['s_sysh']||0)>=1},
+			{id:'st_s_sysh10', cat:'stash', name:'Старьевщик Зоны',         pts:10, threshold:10, statPath:["stash","s_sysh"], check:s=>(s.stash['s_sysh']||0)>=10},
+			{id:'st_s_met1',   cat:'stash', name:'Хранитель находок',       pts:5,  threshold:1, statPath:["stash","s_met"], check:s=>(s.stash['s_met']||0)>=1},
+			{id:'st_s_met10',  cat:'stash', name:'Мастер тайников',         pts:10, threshold:10, statPath:["stash","s_met"], check:s=>(s.stash['s_met']||0)>=10},
 			// // Заначки Темная Долина
-			// {id:'st_d_umn1',   cat:'stash', name:'Легенда Сталкерских схронов', pts:5,  threshold:1, statPath:["stash","d_umn"], check:s=>(s.stash['d_umn']||0)>=1},
-			// {id:'st_d_umn10',  cat:'stash', name:'Собиратель Зоны',          pts:10, threshold:10, statPath:["stash","d_umn"], check:s=>(s.stash['d_umn']||0)>=10},
-			// {id:'st_d_az1',    cat:'stash', name:'Архивариус Зоны',          pts:5,  threshold:1, statPath:["stash","d_az"], check:s=>(s.stash['d_az']||0)>=1},
-			// {id:'st_d_az10',   cat:'stash', name:'Хроновед',                 pts:10, threshold:10, statPath:["stash","d_az"], check:s=>(s.stash['d_az']||0)>=10},
-			// {id:'st_d_kost1',  cat:'stash', name:'Охотник за утерянным',     pts:5,  threshold:1, statPath:["stash","d_kost"], check:s=>(s.stash['d_kost']||0)>=1},
-			// {id:'st_d_kost10', cat:'stash', name:'Тайная добыча',            pts:10, threshold:10, statPath:["stash","d_kost"], check:s=>(s.stash['d_kost']||0)>=10},
+			{id:'st_d_umn1',   cat:'stash', name:'Легенда Сталкерских схронов', pts:5,  threshold:1, statPath:["stash","d_umn"], check:s=>(s.stash['d_umn']||0)>=1},
+			{id:'st_d_umn10',  cat:'stash', name:'Собиратель Зоны',          pts:10, threshold:10, statPath:["stash","d_umn"], check:s=>(s.stash['d_umn']||0)>=10},
+			{id:'st_d_az1',    cat:'stash', name:'Архивариус Зоны',          pts:5,  threshold:1, statPath:["stash","d_az"], check:s=>(s.stash['d_az']||0)>=1},
+			{id:'st_d_az10',   cat:'stash', name:'Хроновед',                 pts:10, threshold:10, statPath:["stash","d_az"], check:s=>(s.stash['d_az']||0)>=10},
+			{id:'st_d_kost1',  cat:'stash', name:'Охотник за утерянным',     pts:5,  threshold:1, statPath:["stash","d_kost"], check:s=>(s.stash['d_kost']||0)>=1},
+			{id:'st_d_kost10', cat:'stash', name:'Тайная добыча',            pts:10, threshold:10, statPath:["stash","d_kost"], check:s=>(s.stash['d_kost']||0)>=10},
 			// // Заначки Агропром
-			// {id:'st_a_rast1',  cat:'stash', name:'Хранитель забытых вещей',  pts:5,  threshold:1, statPath:["stash","a_rast"], check:s=>(s.stash['a_rast']||0)>=1},
-			// {id:'st_a_rast10', cat:'stash', name:'Собиратель легенд',        pts:10, threshold:10, statPath:["stash","a_rast"], check:s=>(s.stash['a_rast']||0)>=10},
-			// {id:'st_a_kur1',   cat:'stash', name:'Следы прошлого',           pts:5,  threshold:1, statPath:["stash","a_kur"], check:s=>(s.stash['a_kur']||0)>=1},
-			// {id:'st_a_kur10',  cat:'stash', name:'Зоновский кладоискатель',  pts:10, threshold:10, statPath:["stash","a_kur"], check:s=>(s.stash['a_kur']||0)>=10},
-			// {id:'st_a_pozh1',  cat:'stash', name:'Трофеи Пустоши',           pts:5,  threshold:1, statPath:["stash","a_pozh"], check:s=>(s.stash['a_pozh']||0)>=1},
-			// {id:'st_a_pozh10', cat:'stash', name:'Артефактолог',             pts:10, threshold:10, statPath:["stash","a_pozh"], check:s=>(s.stash['a_pozh']||0)>=10},
+			{id:'st_a_rast1',  cat:'stash', name:'Хранитель забытых вещей',  pts:5,  threshold:1, statPath:["stash","a_rast"], check:s=>(s.stash['a_rast']||0)>=1},
+			{id:'st_a_rast10', cat:'stash', name:'Собиратель легенд',        pts:10, threshold:10, statPath:["stash","a_rast"], check:s=>(s.stash['a_rast']||0)>=10},
+			{id:'st_a_kur1',   cat:'stash', name:'Следы прошлого',           pts:5,  threshold:1, statPath:["stash","a_kur"], check:s=>(s.stash['a_kur']||0)>=1},
+			{id:'st_a_kur10',  cat:'stash', name:'Зоновский кладоискатель',  pts:10, threshold:10, statPath:["stash","a_kur"], check:s=>(s.stash['a_kur']||0)>=10},
+			{id:'st_a_pozh1',  cat:'stash', name:'Трофеи Пустоши',           pts:5,  threshold:1, statPath:["stash","a_pozh"], check:s=>(s.stash['a_pozh']||0)>=1},
+			{id:'st_a_pozh10', cat:'stash', name:'Артефактолог',             pts:10, threshold:10, statPath:["stash","a_pozh"], check:s=>(s.stash['a_pozh']||0)>=10},
 			// // Заначки Янтарь
-			// {id:'st_y_koll1',  cat:'stash', name:'Разгадчик схронов',        pts:5,  threshold:1, statPath:["stash","y_koll"], check:s=>(s.stash['y_koll']||0)>=1},
-			// {id:'st_y_koll10', cat:'stash', name:'Тихий мародер',            pts:10, threshold:10, statPath:["stash","y_koll"], check:s=>(s.stash['y_koll']||0)>=10},
-			// {id:'st_y_muz1',   cat:'stash', name:'Собиратель тайн',          pts:5,  threshold:1, statPath:["stash","y_muz"], check:s=>(s.stash['y_muz']||0)>=1},
-			// {id:'st_y_muz10',  cat:'stash', name:'Пыльные реликвии',         pts:10, threshold:10, statPath:["stash","y_muz"], check:s=>(s.stash['y_muz']||0)>=10},
-			// {id:'st_y_kegl1',  cat:'stash', name:'Секреты под ржавчиной',    pts:5,  threshold:1, statPath:["stash","y_kegl"], check:s=>(s.stash['y_kegl']||0)>=1},
-			// {id:'st_y_kegl10', cat:'stash', name:'Поиск без конца',          pts:10, threshold:10, statPath:["stash","y_kegl"], check:s=>(s.stash['y_kegl']||0)>=10},
+			{id:'st_y_koll1',  cat:'stash', name:'Разгадчик схронов',        pts:5,  threshold:1, statPath:["stash","y_koll"], check:s=>(s.stash['y_koll']||0)>=1},
+			{id:'st_y_koll10', cat:'stash', name:'Тихий мародер',            pts:10, threshold:10, statPath:["stash","y_koll"], check:s=>(s.stash['y_koll']||0)>=10},
+			{id:'st_y_muz1',   cat:'stash', name:'Собиратель тайн',          pts:5,  threshold:1, statPath:["stash","y_muz"], check:s=>(s.stash['y_muz']||0)>=1},
+			{id:'st_y_muz10',  cat:'stash', name:'Пыльные реликвии',         pts:10, threshold:10, statPath:["stash","y_muz"], check:s=>(s.stash['y_muz']||0)>=10},
+			{id:'st_y_kegl1',  cat:'stash', name:'Секреты под ржавчиной',    pts:5,  threshold:1, statPath:["stash","y_kegl"], check:s=>(s.stash['y_kegl']||0)>=1},
+			{id:'st_y_kegl10', cat:'stash', name:'Поиск без конца',          pts:10, threshold:10, statPath:["stash","y_kegl"], check:s=>(s.stash['y_kegl']||0)>=10},
 			// Потраченная энергия
 			{id:'en_50',    cat:'energy', name:'Первые искры',         pts:1,  threshold:50, statPath:["energy"], check:s=>s.energy>=50},
 			{id:'en_500',   cat:'energy', name:'Разогрев',              pts:1,  threshold:500, statPath:["energy"], check:s=>s.energy>=500},
@@ -445,7 +445,9 @@ export default class Achievements {
 
 		// Заначки
 		let stash = {};
-		stash = helper.safeParseJSON(udata['stash_data'], {});
+		const claims = helper.safeParseJSON(udata['stash_claims'], {});
+		const stashKeys = ['k_lezv','k_lyub','k_avto','s_yuv','s_sysh','s_met','d_umn','d_az','d_kost','a_rast','a_kur','a_pozh','y_koll','y_muz','y_kegl'];
+		stashKeys.forEach((key,index)=>{ stash[key] = Number(claims[String(index+1)]) || 0; });
 
 		// Уровни двора: 1 игра = 1 XP, 10 XP = 1 уровень (карты/рулетка)
 		// Покер: нелинейная прогрессия, но для проверки ачивок достаточно счетчика игр
@@ -545,7 +547,9 @@ export default class Achievements {
 	// пер-типовыми достижениями (см. секцию 'stash' выше в this.list), когда появится арт.
 	onStashCollect(stashKey){
 		// let stash = {};
-		// stash = helper.safeParseJSON(udata['stash_data'], {});
+		// const claims = helper.safeParseJSON(udata['stash_claims'], {});
+		const stashKeys = ['k_lezv','k_lyub','k_avto','s_yuv','s_sysh','s_met','d_umn','d_az','d_kost','a_rast','a_kur','a_pozh','y_koll','y_muz','y_kegl'];
+		stashKeys.forEach((key,index)=>{ stash[key] = Number(claims[String(index+1)]) || 0; });
 		// stash[stashKey] = (stash[stashKey] || 0) + 1;
 		// udata['stash_data'] = JSON.stringify(stash);
 		// this._checkAll();

@@ -51,15 +51,13 @@ console.log('\nTest 1: base.php.train() инкрементирует energy_spen
     const end   = basePhp.indexOf('\n    }', basePhp.indexOf('patchCurrencies($user)', start));
     const body  = basePhp.slice(start, end);
 
-    assert(/\$energyCost = 3;/.test(body), 'energyCost вынесен в переменную (было захардкожено в deduct)');
+    assert(/\$energyCost = 0;/.test(body), 'стоимость тренировки в энергии равна нулю');
     // 28.09.2026 (фикс собственного теста после централизации списания энергии в
     // Gameops::spendEnergy() — сохраняет остаток прогресса регенерации, deduct() этого не умел):
     // 05.10.2026 (стале-пин, не регрессия — блокировка строки в base.php.train(), см.
     // tests/base-server-authoritative-upgrade-and-train.test.js): $lockedUser вместо $user.
-    assert(/if\(!\$this->ops->spendEnergy\(\$lockedUser, \$energyCost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(body),
-        'spendEnergy() использует ту же переменную energyCost');
-    assert(/\$lockedUser\['energy_spent'\] = \$this->ops->i\(\$lockedUser, 'energy_spent'\) \+ \$energyCost;/.test(body),
-        'energy_spent увеличивается на energyCost при каждой тренировке (раньше не трогался вовсе)');
+    assert(!/spendEnergy\(/.test(body.replace(/\/\/.*$/gm,'')), 'тренировка не списывает энергию');
+    assert(!/\$lockedUser\['energy_spent'\]\s*=/.test(body), 'тренировка не увеличивает статистику трат энергии');
 }
 
 console.log('\nTest 2: Gameops::patchCurrencies() дефолтный список ключей включает energy_spent');

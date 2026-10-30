@@ -171,13 +171,13 @@ console.log('\nTest 7: HUD-кнопка — настоящие PNG-спрайт�
     // 23.10.2026: временный Graphics+Text плейсхолдер заменён на настоящие спрайты
     // "задания.png"/"задания hover.png" (присланы пользователем), тот же hover-паттерн
     // norm/hov/hit, что у остальных кнопок этой панели.
-    assert(/raznNorm = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'задания\.png'\)\);/.test(panelsSrc),
+    assert(/raznNorm = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'raznaryadka-button\.png'\)\);/.test(panelsSrc),
         'raznNorm — спрайт из "задания.png"');
-    assert(/raznHov\s*=\s*new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'задания hover\.png'\)\);/.test(panelsSrc),
+    assert(/raznHov\s*=\s*new PIXI\.Sprite\(raznNorm\.texture\);/.test(panelsSrc),
         'raznHov — спрайт из "задания hover.png"');
     assert(/raznHit\.on\('pointerdown', \(\) => \{/.test(panelsSrc) && /this\.openModule\('raznaryadka'\);/.test(panelsSrc),
         'кнопка "задания" открывает модуль через openModule(\'raznaryadka\')');
-    assert(/raznHit\.on\('pointerover', \(\) => \{ raznNorm\.visible = false; raznHov\.visible = true; \}\);/.test(panelsSrc),
+    assert(/raznHit\.on\('pointerover', \(\) => \{\s*raznNorm\.visible = false; raznHov\.visible = true;\s*\}\);/.test(panelsSrc),
         'hover-эффект — переключение norm/hov (тот же паттерн, что у рюкзака/остальных кнопок панели)');
     assert(/if\(window\.raznaryadka && typeof raznaryadka\.close === 'function' && raznaryadka\._win && raznaryadka\._win\.parent\) raznaryadka\.close\(\);/.test(panelsSrc),
         '_closeAllPanels() закрывает раздел при переключении вкладки (тот же паттерн, что hata/habar/svod)');

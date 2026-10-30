@@ -12,6 +12,8 @@
  * "заначки кнопка убрать.png" + PIXI.Text "ДАТЬ" поверх — текстовая накладка больше не нужна.
  */
 import { applyPatch } from '../../modules/patch.js';
+import { placeStashCount } from '../../modules/stash-count-layout.js';
+import { scheduleFontRedraw } from '../../modules/font-ready.js';
 
 const FONT = 'Bebas Neue Book';
 
@@ -48,12 +50,14 @@ export function attachSvodZanachkiWishlist(proto){
     // ctx: для 'friend' — { targetId, myOwnedCounts: {"col_pos": count} }
     proto._buildZanachkiWishlistPopup = function(items, mode, ctx){
         ctx = ctx || {};
+        if(mode === 'friend' && ctx.parentWin && !ctx.parentWin.parent) return null;
         if(this._zanachkiWishlistWin && this._zanachkiWishlistWin.parent){
             this._zanachkiWishlistWin.parent.removeChild(this._zanachkiWishlistWin);
         }
 
         const win = new PIXI.Container();
         win.interactive = true;
+        const countTexts = [];
 
         const blocker = new PIXI.Graphics();
         blocker.beginFill(0x000000, 0.001);
@@ -77,7 +81,8 @@ export function attachSvodZanachkiWishlist(proto){
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(WISHLIST_EXIT_SCALE * 1.08); });
         exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(WISHLIST_EXIT_SCALE); });
-        exitBtn.on('pointerdown', ()=>{
+        exitBtn.on('pointerdown', (event)=>{
+            if(event && event.stopPropagation) event.stopPropagation();
             if(win.parent) win.parent.removeChild(win);
             if(this._zanachkiWishlistWin === win) this._zanachkiWishlistWin = null;
         });
@@ -123,9 +128,11 @@ export function attachSvodZanachkiWishlist(proto){
             // как и попросили явно.
             const countTxt = new PIXI.Text(String(owned), {
                 fontFamily: 'Southbank LT', fontSize: 18, fill: '#000000',
-                stroke: '#000000', strokeThickness: 2, padding: 4,
+                strokeThickness: 0, padding: 4,
             });
             countTxt.anchor.set(0.5, 0);
+            countTxt.resolution = Math.max(2, (window.scene && window.scene.renderer && window.scene.renderer.resolution) || 1);
+            countTexts.push(countTxt);
             win.addChild(countTxt);
             // 28.10.2026 (баг найден по прямому указанию — "зашёл первый раз, цифры стояли
             // правильно, вышел, зашёл снова — опустились вниз", повторно пойман тем же днём уже
@@ -151,11 +158,7 @@ export function attachSvodZanachkiWishlist(proto){
             //     двух режимов; общая формула означает один-единственный набор чисел, который
             //     нужно крутить, а не два расходящихся — отдельный источник путаницы, на который
             //     прямо указал пользователь).
-            const applyCountPos = () => {
-                countTxt.x = cardX + card.width / 2 + 1;
-                countTxt.y = actionBtn.y + actionBtn.height + 1 - 47 - 3;
-            };
-            if(actionBtn.texture.width > 1) applyCountPos(); else actionBtn.texture.once('update', applyCountPos);
+            placeStashCount(countTxt, card, actionBtn, mode === 'friend');
 
             if(mode === 'own'){
                 actionBtn.interactive = true; actionBtn.buttonMode = true;
@@ -190,8 +193,9 @@ export function attachSvodZanachkiWishlist(proto){
                             applyPatch(e.patch);
                             const remaining = (items || []).filter(it => !(Number(it.col) === col && Number(it.pos) === pos));
                             this._buildZanachkiWishlistPopup(remaining, 'friend', ctx);
-                        }, () => {
-                            if(window.notify) notify.showResult({text:'Не удалось отправить заначку. Попробуйте ещё раз'}, 0);
+                        }, (err) => {
+                            const text = err && err.code === 101 ? 'Этому другу можно отправить не больше 10 заначек в сутки' : 'Не удалось отправить заначку. Попробуйте ещё раз';
+                            if(window.notify) notify.showResult({text}, 0);
                         });
                     });
                 } else {
@@ -201,7 +205,8 @@ export function attachSvodZanachkiWishlist(proto){
         });
 
         this._zanachkiWishlistWin = win;
-        root.layer2_mc.addChild(win);
+        if(countTexts.length) scheduleFontRedraw("18px 'Southbank LT'", countTexts);
+        (mode === 'friend' && ctx.parentWin ? ctx.parentWin : root.layer2_mc).addChild(win);
         return win;
     };
 }

@@ -45,7 +45,7 @@
         // что zone.php._withUserLock(), обобщённый на пару имён.
         private function _withTwoUserLock($uidA, $uidB, callable $fn){
             $link = $this->_rawLink();
-            if(!$link) return $fn();
+            if(!$link) return $this->ops->fail(99);
 
             $lo = min($uidA, $uidB); $hi = max($uidA, $uidB);
             $lockLo = $link->real_escape_string('zanachki_user_' . $lo);
@@ -53,7 +53,7 @@
             $link->query("SELECT GET_LOCK('{$lockLo}', 5)");
             $link->query("SELECT GET_LOCK('{$lockHi}', 5)");
             try {
-                return $fn();
+                return $fn($link);
             } finally {
                 $link->query("SELECT RELEASE_LOCK('{$lockHi}')");
                 $link->query("SELECT RELEASE_LOCK('{$lockLo}')");
@@ -72,7 +72,7 @@
             $wishlist  = ZanachkiModel::getWishlist($this->ops, $user);
 
             $this->ops->ok([
-                'patch'          => $this->ops->patchCurrencies($user, ['cigarettes', 'exp', 'stash_count']),
+                'patch'          => $this->ops->patchCurrencies($user, ['cigarettes', 'exp', 'stash_count', 'stash_claims']),
                 'stashData'      => $stashData,
                 'claimed'        => $claimed,
                 'wishlist'       => $wishlist,
@@ -82,14 +82,22 @@
 
         function claimCollection(){
             $col = intval($this->registry['user_params']['collection_id'] ?? -1);
-
-            $user = $this->ops->loadUser();
-            if(!$user) return $this->ops->fail(99);
-
-            $result = ZanachkiModel::claimCollectionReward($this->ops, $user, $col);
-            if($result !== true) return $this->ops->fail($result);
-
-            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+            $uid = intval($this->registry['uid']);
+            $link = $this->_rawLink();
+            if(!$link) return $this->ops->fail(99);
+            $link->begin_transaction();
+            try {
+                $row = $link->query("SELECT * FROM `{$this->registry['utb']}` WHERE id=$uid FOR UPDATE");
+                $user = $row ? $row->fetch_assoc() : null;
+                if(!$user){ $link->rollback(); return $this->ops->fail(99); }
+                $result = ZanachkiModel::claimCollectionReward($this->ops, $user, $col);
+                if($result !== true){ $link->rollback(); return $this->ops->fail($result); }
+                $level = max(0,(int)floor((-1+sqrt(1+intval($user['exp'])/5))/2));
+                $q=$link->prepare("UPDATE `{$this->registry['utb']}` SET stash_data=?,stash_claims=?,cigarettes=?,exp=?,level=? WHERE id=?");
+                $q->bind_param('ssssii',$user['stash_data'],$user['stash_claims'],$user['cigarettes'],$user['exp'],$level,$uid);
+                $q->execute();$link->commit();
+            } catch(Throwable $e){ $link->rollback(); throw $e; }
+            finally { $link->close(); }
 
             error_log('[Zanachki.claimCollection] uid=' . abs(intval($this->registry['uid'])) . ' коллекция ' . $col . ' забрана, +' . ZanachkiModel::collectionReward($col) . ' сухарей/опыта');
 
@@ -181,11 +189,17 @@
             if($targetId <= 0){ error_log('[Zanachki.giveCard] FAIL 54 (targetId<=0) uid=' . abs($uid)); return $this->ops->fail(54); }
             if($targetId === $uid){ error_log('[Zanachki.giveCard] FAIL 93 (targetId===uid) uid=' . abs($uid)); return $this->ops->fail(93); }
 
-            $result = $this->_withTwoUserLock($uid, $targetId, function() use ($uid, $targetId, $col, $pos){
-                $giver = $this->ops->loadUser();
+            $result = $this->_withTwoUserLock($uid, $targetId, function($link) use ($uid, $targetId, $col, $pos){
+                if($link){
+                    $link->begin_transaction();
+                    $rows = $link->query("SELECT * FROM `{$this->registry['utb']}` WHERE id IN ($uid,$targetId) ORDER BY id FOR UPDATE");
+                    $locked = [];
+                    while($row = $rows->fetch_assoc()) $locked[intval($row['id'])] = $row;
+                    $giver = $locked[$uid] ?? null;
+                } else $giver = $this->ops->loadUser();
                 if(!$giver){ error_log('[Zanachki.giveCard] FAIL 99 (loadUser giver) uid=' . abs($uid)); return $this->ops->fail(99); }
 
-                $targetRow = $this->registry['udb']->getData(
+                $targetRow = $link ? ($locked[$targetId] ?? ['error'=>true]) : $this->registry['udb']->getData(
                     $this->registry['utb'], ['id', 'nick', 'stash_data', 'stash_wishlist'], 'id=' . $targetId
                 );
                 if(isset($targetRow['error']) && $targetRow['error']){ error_log('[Zanachki.giveCard] FAIL 91 (getData target) uid=' . abs($uid) . ' target_id=' . abs($targetId)); return $this->ops->fail(91); }
@@ -193,16 +207,25 @@
 
                 $giveResult = ZanachkiModel::giveCard($this->ops, $giver, $target, $col, $pos);
                 if($giveResult !== true){
+                    if($link) $link->rollback();
                     error_log('[Zanachki.giveCard] FAIL ' . $giveResult . ' (ZanachkiModel::giveCard) uid=' . abs($uid) . ' target_id=' . abs($targetId) . ' col=' . $col . ' pos=' . $pos);
                     return $this->ops->fail($giveResult);
                 }
 
+                if($link){
+                    $q=$link->prepare("UPDATE `{$this->registry['utb']}` SET stash_data=?,stash_claims=? WHERE id=?");
+                    $q->bind_param('ssi',$giver['stash_data'],$giver['stash_claims'],$uid);$q->execute();
+                    $q=$link->prepare("UPDATE `{$this->registry['utb']}` SET stash_data=?,stash_wishlist=? WHERE id=?");
+                    $q->bind_param('ssi',$target['stash_data'],$target['stash_wishlist'],$targetId);$q->execute();
+                    $link->commit();
+                } else {
                 if(!$this->ops->saveUser($giver)){ error_log('[Zanachki.giveCard] FAIL 99 (saveUser giver) uid=' . abs($uid)); return $this->ops->fail(99); }
                 $this->registry['udb']->saveData($this->registry['utb'], [
                     'id'             => $targetId,
                     'stash_data'     => $target['stash_data'],
                     'stash_wishlist' => $target['stash_wishlist'],
                 ]);
+                }
 
                 error_log('[Zanachki.giveCard] uid=' . abs($uid) . ' → target_id=' . abs($targetId) . ' | col=' . $col . ' pos=' . $pos);
 

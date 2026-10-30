@@ -103,8 +103,8 @@ console.log('\nTest 3: server/core/controllers/base.php — upgrade()/train() о
         'upgrade() списывает stew через Gameops::deduct с проверкой баланса');
     // 28.09.2026 (фикс собственного теста после централизации списания энергии в
     // Gameops::spendEnergy() — сохраняет остаток прогресса регенерации, deduct() этого не умел):
-    assert(/\$energyCost = 3;/.test(phpSrc) && /if\(!\$this->ops->spendEnergy\(\$lockedUser, \$energyCost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(phpSrc),
-        'train() списывает фиксированные 3 энергии через Gameops::spendEnergy() с проверкой баланса (не сырой deduct)');
+    assert(!/spendEnergy\(/.test(phpSrc.replace(/\/\/.*$/gm,'')),
+        'train() больше не списывает энергию — она тратится только в Зоне');
     assert(!/str_xp_total/.test(phpSrc),
         'подтверждено: base.php вообще не знает о str_xp_total — это поле осознанно остаётся целиком клиент-авторитетным');
     assert(/\$this->ops->ok\(\['patch' => \$this->ops->patchCurrencies\(\$user\)\]\);/.test(phpSrc.slice(phpSrc.indexOf('function upgrade'), phpSrc.indexOf('function relocate'))),

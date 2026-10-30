@@ -29,6 +29,8 @@ class ZanachkiModel {
     ];
 
     const MAX_WISHLIST = 7;
+    const DAILY_GIFTS_PER_FRIEND = 10;
+    const ACHIEVEMENT_KEYS = ['k_lezv','k_lyub','k_avto','s_yuv','s_sysh','s_met','d_umn','d_az','d_kost','a_rast','a_kur','a_pozh','y_koll','y_muz','y_kegl'];
 
     // 28.10.2026 (по прямому указанию, 2-й скрин старого ТЗ — "первые 3 коллекции дают +50 опыта
     // и сухарей, последние три +80, все остальные +70"): раньше была одна плоская награда для
@@ -71,7 +73,25 @@ class ZanachkiModel {
 
     static function getClaimedMap($ops, $user){
         $raw = $ops->j($user, 'stash_claims', []);
-        return is_array($raw) ? $raw : [];
+        $out = [];
+        foreach(self::COLLECTIONS as $col => $_){
+            $count = max(0, intval($raw[strval($col)] ?? 0));
+            if($count > 0) $out[strval($col)] = $count;
+        }
+        return $out;
+    }
+
+    static function achievementCounts($ops, $user){
+        $claimed = self::getClaimedMap($ops, $user); $out = [];
+        foreach(self::ACHIEVEMENT_KEYS as $index => $key) $out[$key] = intval($claimed[strval($index+1)] ?? 0);
+        return $out;
+    }
+
+    static function giftCount($ops, $giver, $targetId, $day = null){
+        $day = $day ?? gmdate('Y-m-d', time()+3*3600);
+        $state = $ops->j($giver, 'stash_claims', []);
+        $gifts = $state['_gifts'] ?? [];
+        return ($gifts['day'] ?? '') === $day ? max(0,intval($gifts['to'][strval($targetId)] ?? 0)) : 0;
     }
 
     static function getWishlist($ops, $user){
@@ -138,8 +158,8 @@ class ZanachkiModel {
         $ops->add($user, 'cigarettes', $amt);
         $ops->add($user, 'exp', $amt);
 
-        $claimed = self::getClaimedMap($ops, $user);
-        $claimed[$colKey] = true;
+        $claimed = $ops->j($user, 'stash_claims', []);
+        $claimed[$colKey] = max(0,intval($claimed[$colKey] ?? 0)) + 1;
         $user['stash_claims'] = json_encode($claimed, JSON_UNESCAPED_UNICODE);
         return true;
     }
@@ -202,8 +222,11 @@ class ZanachkiModel {
     // карточка, 97 = у giver'а нет ни одной копии, 98 = target не просил эту карточку). Обе
     // стороны мутируются по ссылке — saveUser() для обеих и блокировка по двум uid — зона
     // ответственности контроллера (см. zanachki.php.giveCard()).
-    static function giveCard($ops, &$giver, &$target, $col, $pos){
+    static function giveCard($ops, &$giver, &$target, $col, $pos, $day = null){
         if(!self::isValidCard($col, $pos)) return 87;
+        $day = $day ?? gmdate('Y-m-d', time()+3*3600);
+        $targetId = strval($target['id'] ?? '');
+        if($targetId !== '' && self::giftCount($ops,$giver,$targetId,$day) >= self::DAILY_GIFTS_PER_FRIEND) return 101;
         $colKey = strval(intval($col)); $posKey = strval(intval($pos));
 
         $giverData = self::getStashData($ops, $giver);
@@ -225,6 +248,13 @@ class ZanachkiModel {
 
         array_splice($targetWishlist, $idx, 1);
         $target['stash_wishlist'] = json_encode(array_values($targetWishlist), JSON_UNESCAPED_UNICODE);
+
+        if($targetId !== ''){
+            $claims = $ops->j($giver, 'stash_claims', []);
+            if(($claims['_gifts']['day'] ?? '') !== $day) $claims['_gifts'] = ['day'=>$day,'to'=>[]];
+            $claims['_gifts']['to'][$targetId] = self::giftCount($ops,$giver,$targetId,$day)+1;
+            $giver['stash_claims'] = json_encode($claims, JSON_UNESCAPED_UNICODE);
+        }
 
         return true;
     }

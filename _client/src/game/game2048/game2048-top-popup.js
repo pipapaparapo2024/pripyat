@@ -152,7 +152,7 @@ export function attachGame2048TopPopup(proto){
         // ── Карточка ТОП-1 (справа) ──
         const top1Avatar = new PIXI.Sprite(PIXI.Texture.from(IMG + '2048 аватар заглушка.png'));
         top1Avatar.x = 900; top1Avatar.y = 110;
-        win.addChild(top1Avatar);
+        top1Avatar.visible = false;
 
         // 28.10.2026 (по прямому указанию, повторный снимок хитбокса редактора позиций):
         // x:770,y:362, scale:1.106 — для никнейма топ-1 (было 775,363,1.105).
@@ -241,7 +241,7 @@ export function attachGame2048TopPopup(proto){
         this._topEmptyTxt.visible = !hasLeader;
         this._top1Nick.visible = hasLeader;
         this._top1Games.visible = hasLeader;
-        if(this._top1Avatar) this._top1Avatar.visible = hasLeader;
+        if(this._top1Avatar) this._top1Avatar.visible = false;
         if(hasLeader){
             this._top1Nick.text = top1.nick || ('id' + top1.id);
             this._top1Games.text = String(top1.gamesCompleted);
@@ -267,17 +267,16 @@ export function attachGame2048TopPopup(proto){
             row.nameTxt.text = r.nick || ('id' + r.id);
             row.gamesTxt.text = r.gamesCompleted + ' партий';
         });
-        const entries = [top1, ...rest.slice(0, this._topRows.length)].filter(Boolean);
+        const entries = rest.slice(0, this._topRows.length);
         const fallback = PIXI.Texture.from('./images/2048 аватар заглушка.png');
         const targets = [];
-        if(top1 && this._top1Avatar) targets.push({id: top1.id, sprite: this._top1Avatar});
         rest.slice(0, this._topRows.length).forEach((entry, i) => targets.push({id: entry.id, sprite: this._topRows[i].avatar}));
         targets.forEach(({sprite}) => {
             if(!sprite._topAvatarSize) sprite._topAvatarSize = {width: sprite.width, height: sprite.height};
             sprite.texture = fallback;
             sprite.width = sprite._topAvatarSize.width; sprite.height = sprite._topAvatarSize.height;
         });
-        if(window.bosses && typeof bosses._resolveVkUsers === 'function'){
+        if(entries.length && window.bosses && typeof bosses._resolveVkUsers === 'function'){
             bosses._resolveVkUsers(entries.map(entry => entry.id), (users) => {
                 if(avatarGeneration !== this._topAvatarGeneration) return;
                 targets.forEach(({id, sprite}) => {

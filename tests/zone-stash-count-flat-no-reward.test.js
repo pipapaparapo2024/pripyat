@@ -92,9 +92,9 @@ console.log('\n5) achievements.js — 14 пар пер-типовых дости
     // Идентификаторы больше не должны встречаться как ЖИВЫЕ (не закомментированные) записи
     // каталога — codeOnly фильтрует строки-комментарии перед проверкой.
     const codeOnly = achSrc.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
-    assert(!/id:'st_k_lezv1'/.test(codeOnly), 'st_k_lezv1 больше не активная запись каталога (только в комментарии)');
-    assert(!/id:'st_y_kegl10'/.test(codeOnly), 'st_y_kegl10 (последняя из 30 записей) больше не активна');
-    assert(!codeOnly.includes("check:s=>(s.stash['k_lezv']||0)>=1"), 'check-функция per-key достижения не выполняется исполняемым кодом');
+    assert(/id:'st_k_lezv1'/.test(codeOnly), 'достижение за первый обмен коллекции восстановлено');
+    assert(/id:'st_y_kegl10'/.test(codeOnly), 'достижение за десятый обмен последней коллекции восстановлено');
+    assert(codeOnly.includes("check:s=>(s.stash['k_lezv']||0)>=1"), 'счётчики коллекций участвуют в достижениях');
     // Но текст ДОЛЖЕН остаться в файле целиком (закомментирован, не удалён).
     assert(achSrc.includes("id:'st_k_lezv1'"), 'запись st_k_lezv1 физически осталась в файле (просто закомментирована)');
     assert(achSrc.includes("id:'st_y_kegl10'"), 'запись st_y_kegl10 физически осталась в файле');
@@ -122,8 +122,8 @@ console.log('\n7) users.php — whitelist и default-user: stash_count УБРА�
     // (zone.php/poker.php/roulette.php через Gameops::add()) — тот же класс дыры, что у exp.
     // Убран из client-writable whitelist целиком, дев-кнопки переведены на devGrantCurrency().
     // 'stash_data' (другое поле — JSON-объект тайника, не счётчик) остаётся не затронутым.
-    assert(/'stash_data',/.test(usersSrc), "'stash_data' остаётся в whitelist (achievements)");
     const allowedBlock = usersSrc.match(/\$allowed = \[[\s\S]*?\n            \];/)[0].replace(/\/\/.*$/gm, '');
+    assert(!/'stash_data'/.test(allowedBlock), "stash_data защищено от перезаписи клиентским автосохранением");
     assert(!/'stash_count'/.test(allowedBlock), "'stash_count' УБРАНО из whitelist (как значение массива, не в комментарии)");
     // Дефолт нового игрока по-прежнему '0' — это НЕ про client-writable whitelist, это начальное
     // значение колонки в БД (тот же дефолт остаётся нужен независимо от whitelist).

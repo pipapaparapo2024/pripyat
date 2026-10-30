@@ -38,7 +38,8 @@ $exploitPayload = [
     'gang_id' => '5', // максимальный боевой бонус (+20% урона) без единого реального вступления
     'zone_collect_0' => '0', 'zone_collect_1' => '0', 'zone_collect_2' => '0',
     'zone_collect_3' => '0', 'zone_collect_4' => '0',
-    'energy' => '30', // легитимное поле — должно пройти как и раньше
+    'energy' => '30', 'energy_time'=>'9999999999', // Server-owned, never accepted from autosave.
+    'health'=>'90',
 ];
 $registry['user_params']['udata_json'] = json_encode($exploitPayload);
 
@@ -53,7 +54,8 @@ foreach(['natisk_event_id', 'natisk_free_attempts', 'natisk_paid_attempts', 'nat
 }
 
 echo "=== Test 2: легитимное поле (energy) всё ещё проходит как обычно ===\n";
-echo (isset($update['energy']) && $update['energy'] === 30 ? "PASS" : "FAIL") . ": 'energy' сохранился (30), получено " . var_export($update['energy'] ?? null, true) . "\n";
+echo (!isset($update['energy']) && !isset($update['energy_time']) ? "PASS" : "FAIL") . ": stale energy autosave ignored\n";
+echo (isset($update['health']) && $update['health'] === 90 ? "PASS" : "FAIL") . ": legitimate health update retained\n";
 
 echo "=== Test 3: запрос не упал целиком (ok, не error) — отклонение отдельных полей не ломает весь save() ===\n";
 echo ($tools->lastOutput !== null && $tools->lastError === null ? "PASS" : "FAIL") . ": save() вернул успех, не ошибку\n";

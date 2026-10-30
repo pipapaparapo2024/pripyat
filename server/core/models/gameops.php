@@ -1,6 +1,8 @@
 <?php
 Class Gameops {
     private $registry;
+    private $loadedEnergy = null;
+    private $loadedStash = [];
 
     function __construct($registry){
         $this->registry = $registry;
@@ -9,6 +11,12 @@ Class Gameops {
     function loadUser($fields = ['*']){
         $user = $this->registry['udb']->getData($this->registry['utb'], $fields, 'id='.$this->registry['uid']);
         if(isset($user['error']) && $user['error']) return null;
+        if(array_key_exists('energy', $user) && array_key_exists('energy_time', $user)){
+            $this->loadedEnergy = [(string)$user['energy'], (string)$user['energy_time']];
+        }
+        foreach(['stash_claims','stash_data','stash_wishlist'] as $key){
+            if(array_key_exists($key,$user)) $this->loadedStash[$key] = $user[$key];
+        }
         return $user;
     }
 
@@ -28,6 +36,16 @@ Class Gameops {
     // добавляем в $update — держит DB level в согласии с exp при любом сохранении, без
     // отдельного вызова в каждом контроллере.
     function saveUser($update){
+        foreach($this->loadedStash as $key => $old){
+            if(array_key_exists($key,$update) && ($update[$key] === $old || $this->sameJsonState($update[$key],$old))) unset($update[$key]);
+        }
+        // Non-energy actions often save the full loaded row. Do not overwrite a newer
+        // checkpoint's energy using an unchanged snapshot from another request.
+        if($this->loadedEnergy !== null
+            && isset($update['energy'], $update['energy_time'])
+            && [(string)$update['energy'], (string)$update['energy_time']] === $this->loadedEnergy){
+            unset($update['energy'], $update['energy_time']);
+        }
         if(isset($update['exp'])){
             $exp = intval($update['exp']);
             $level = max(0, (int)floor((-1 + sqrt(1 + $exp / 5)) / 2));
@@ -303,6 +321,10 @@ Class Gameops {
         $patch = [];
         foreach($keys as $k){
             if(array_key_exists($k, $user)) $patch[$k] = $user[$k];
+        }
+        if($this->loadedEnergy !== null && isset($user['energy'],$user['energy_time'])
+            && [(string)$user['energy'],(string)$user['energy_time']] === $this->loadedEnergy){
+            unset($patch['energy'],$patch['energy_time']);
         }
         return $patch;
     }

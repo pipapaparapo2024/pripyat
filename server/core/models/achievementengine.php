@@ -1,4 +1,5 @@
 <?php
+    require_once __DIR__ . '/zanachkimodel.php';
     // ── SERVER-AUTHORITATIVE ДОСТИЖЕНИЯ (23.09.2026, перенос экономики) ──
     //
     // Раньше ВЕСЬ прогресс достижений (earned-карта, achievement_stars, патроны ящика
@@ -39,7 +40,7 @@
             $zd = $ops->j($user, 'zone', []);
             for($i = 0; $i < 5; $i++) if(isset($zd[$i]['cleared'])) $zoneClear[$i] = intval($zd[$i]['cleared']);
 
-            $stash = $ops->j($user, 'stash_data', []);
+            $stash = ZanachkiModel::achievementCounts($ops, $user);
 
             // «Скиллов» — сумма уровней всех прокачанных скиллов из server-only skills_levels
             // (тот же формат/подсчёт, что users.php.getProfile() уже использует для визитки).

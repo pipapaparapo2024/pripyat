@@ -17,9 +17,9 @@ export default class Base{
 
 		// Физические характеристики (качалка)
 		this.stats = [
-			{id:0, icon:'💪', name:'Сила',        key:'stat_str', bonus:'+1% урон за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:3},
-			{id:1, icon:'🫀', name:'Выносливость', key:'stat_end', bonus:'+2 макс. энергии за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:3},
-			{id:2, icon:'🏃', name:'Ловкость',    key:'stat_agi', bonus:'+1% уклонение за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:3},
+			{id:0, icon:'💪', name:'Сила',        key:'stat_str', bonus:'+1% урон за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:0},
+			{id:1, icon:'🫀', name:'Выносливость', key:'stat_end', bonus:'+2 макс. энергии за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:0},
+			{id:2, icon:'🏃', name:'Ловкость',    key:'stat_agi', bonus:'+1% уклонение за уровень', xp:0, xp_next:200, level:1, max_level:50, energy_cost:0},
 		];
 
 		// Локации (синхронизировано с zone.js)
@@ -245,7 +245,7 @@ export default class Base{
 			c.stat_txt.text  = 'Уровень ' + s.level + ' / ' + s.max_level;
 			c.bonus_txt.text = s.bonus;
 			if(typeof c.setXp === 'function') c.setXp(s.xp, s.xp_next);
-			if(c.cost_txt) c.cost_txt.text = '⚡ -' + s.energy_cost + ' энергии';
+			if(c.cost_txt) c.cost_txt.text = 'Без затрат энергии';
 
 			if(s.level >= s.max_level){
 				if(c.butt_train._txt) c.butt_train._txt.text = 'МАКС';
@@ -288,11 +288,7 @@ export default class Base{
 		// отказывала с "Недостаточно энергии!", посчитав по устаревшему сырому значению.
 		// Тот же приём, что уже используют bot.js/dev_panel.js — TIMERS с фолбэком на udata,
 		// если TIMERS почему-то ещё не создан.
-		const energy = window.TIMERS ? TIMERS.getEnergy() : parseInt(udata['energy']||0);
-		if(energy < s.energy_cost){
-			notify.showResult({text:'Недостаточно энергии! Нужно ' + s.energy_cost}, 0);
-			return;
-		}
+		// Training is free of energy; only Zone checkpoints consume it.
 
 		this._baseTrainInFlight = true;
 		console.log('[base._trainStat] → сервер | stat_id:', idx, '| energy_cost:', s.energy_cost);
@@ -324,13 +320,13 @@ export default class Base{
 
 			if(window.achievements) achievements._checkAll(); // Качалка/Сила/энергия — уже из patch
 			const ns = this.stats[idx];
-			notify.showResult({text: ns.level > prevLevel ? (ns.name + ' прокачана до ' + ns.level + ' уровня!') : (ns.name + ': тренировка завершена! ⚡-' + s.energy_cost)}, 1);
+			notify.showResult({text: ns.level > prevLevel ? (ns.name + ' прокачана до ' + ns.level + ' уровня!') : (ns.name + ': тренировка завершена!')}, 1);
 			this._renderGym();
 		}, (err)=>{
 			this._baseTrainInFlight = false;
 			console.error('[base._trainStat] ← ошибка сервера | stat_id:', idx, '| код:', err && err.code, '| полностью:', JSON.stringify(err));
 			if(window.resumePlayerSave) resumePlayerSave('base_train');
-			notify.showResult({text:'Недостаточно энергии! Нужно ' + s.energy_cost}, 0);
+			notify.showResult({text:'Не удалось завершить тренировку. Попробуйте ещё раз'}, 0);
 		});
 	}
 

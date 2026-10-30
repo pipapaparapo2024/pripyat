@@ -218,7 +218,8 @@
 
             // Белый список разрешённых к сохранению полей
             $allowed = [
-                'energy','energy_time','health',
+                // Energy is server-owned; stale autosaves must never undo zone spending/regeneration.
+                'health',
                 // 19.10.2026 (по прямому указанию — расследование игрока "Антикризис", почему у
                 // него 256к опыта: нашли, что 'exp' оставался client-writable, хотя полностью
                 // server-authoritative через 14+ вызовов Gameops::add($user,'exp',...) в
@@ -391,7 +392,7 @@
                 // влияет только на save(). Клиентское удвоение убрано отдельно (achievements.js).
                 'ammo_auto','ammo_gun','ammo_machete',
                 'base_bg_owned','base_bg_active',
-                'stash_data',
+                // stash_data is granted/exchanged by server actions, never by autosave.
                 // 25.09.2026 (по прямому указанию, живой репорт — "шмотки не сохраняются" +
                 // "урон без шмоток"): 'shmot' УБРАН из whitelist (было здесь раньше). Owned уже
                 // писался только сервером (shmot.php.buy()/боссовые дропы, через

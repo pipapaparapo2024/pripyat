@@ -134,8 +134,8 @@ console.log('\nTest 6: base.php.train() — тратит энергию с уч�
     // 05.10.2026 (стале-пин, не регрессия — блокировка строки в base.php.train(), см.
     // tests/base-server-authoritative-upgrade-and-train.test.js): spendEnergy() теперь зовётся
     // на залоченной копии $lockedUser.
-    assert(/if\(!\$this->ops->spendEnergy\(\$lockedUser, \$energyCost\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(50\);/.test(baseSrc),
-        'train() использует Gameops::spendEnergy() вместо обычного deduct() — учитывает регенерацию с последнего сохранения');
+    assert(!/spendEnergy\(/.test(baseSrc.replace(/\/\/.*$/gm,'')),
+        'тренировка не списывает энергию и не сбрасывает прогресс регенерации');
     assert(!/\$this->ops->deduct\(\$user, 'energy', \$energyCost\)/.test(baseSrc),
         'старый deduct(\'energy\') (сырое значение, без регенерации) убран из train()');
 }

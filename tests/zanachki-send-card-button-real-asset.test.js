@@ -57,7 +57,7 @@ console.log('\nTest 4: БАГ (найден по прямому указанию
     const src = readSrc('_client/src/game/svod/svod-zanachki-wishlist.js');
     assert(/^import \{ applyPatch \} from '\.\.\/\.\.\/modules\/patch\.js';/m.test(src),
         'applyPatch импортирован (раньше использовался БЕЗ импорта — ReferenceError при успешном ответе giveCard)');
-    assert(/TS\.php\('zanachki\.giveCard', \{target_id: ctx\.targetId, collection_id: col, position: pos\}, \(e\) => \{[\s\S]{0,400}\}, \(\) => \{/.test(src),
+    assert(/TS\.php\('zanachki\.giveCard', \{target_id: ctx\.targetId, collection_id: col, position: pos\}, \(e\) => \{[\s\S]{0,400}\}, \(err\) => \{/.test(src),
         'TS.php(zanachki.giveCard, ...) теперь передаёт 4-й (error) колбэк — раньше fail-ответ сервера был не из чего обработать');
 }
 
@@ -113,6 +113,8 @@ console.log('\nTest 5: реальное исполнение (vm) — клик "
         module: { exports: {} },
     };
     vm.createContext(sandbox);
+    sandbox.scheduleFontRedraw = () => {};
+    vm.runInContext(readSrc('_client/src/modules/stash-count-layout.js').replace('export function','function'),sandbox);
     vm.runInContext(src, sandbox);
     const { attachSvodZanachkiWishlist } = sandbox.module.exports;
 

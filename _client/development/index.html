@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Припять</title>
+        <!-- Аудит 16.09.2026: <title> хранил битую кодировку (UTF-8, misinterpreted как
+             CP1251 и заново сохранённый как UTF-8 -- классическое двойное кодирование).
+             Это и была та полукириллица в превью при VKWebAppShare (когда
+             VKWebAppShowWallPostBox недоступен и VK берёт данные превью из og:*/<title>
+             самой страницы). og:title/og:description добавлены явно, чтобы превью не
+             зависело от <title> вообще. -->
+        <meta property="og:title" content="Припять">
+        <meta property="og:description" content="Сталкер-игра ВКонтакте: качай персонажа, зарабатывай ресурсы и побеждай боссов в Зоне.">
+        <meta property="og:url" content="https://pripyat-game.ru/client/ver0_41/index.html">
+        <meta property="og:type" content="website">
+        <!-- 27.09.2026 (адаптив под мобильные): добавлены maximum-scale=1.0,user-scalable=no.
+             Без них двойной тап и pinch масштабировали САМУ СТРАНИЦУ: канвас при этом остаётся
+             прежнего размера, игрок видит обрезанный кусок игры и не может вернуть масштаб,
+             т.к. в игре нет ни одного обычного скроллируемого элемента, за который можно
+             "отъехать" назад. viewport-fit=cover оставлен — отступы безопасной зоны страница
+             считает сама (env(safe-area-inset-*) ниже и modules/mobile-viewport.js). -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+        <link rel="preload" href="fonts/southbank.ttf" as="font" type="font/ttf" crossorigin>
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- 05.10.2026 (платежи ОК через FAPI.UI.showPayment, modules/iap.js) — SDK ОК
+             (apiok.ru/dev/sdk/js/, скрипт загружается ВСЕГДА, безвредно на VK: window.FAPI
+             просто не используется там, iap.js сам проверяет его наличие перед вызовом). -->
+        <script type="text/javascript" src="//api.ok.ru/js/fapi5.js" defer="defer"></script>
+        <!-- 27.09.2026 (адаптив под мобильные). Было: html,body{margin:0;padding:0;overflow:hidden}.
+             Добавленное — базовая мобильная гигиена, которая должна действовать С ПЕРВОГО КАДРА,
+             ещё до загрузки бандла (поэтому здесь, а не в JS):
+             · position:fixed + height:100% на body — iOS игнорирует overflow:hidden при
+               "оттягивании" страницы пальцем (rubber band): игра уезжала вниз вместе с
+               чёрным фоном, канвас при этом не двигался;
+             · overscroll-behavior:none — pull-to-refresh посреди боя перезагружал приложение;
+             · touch-action:none на канвасе — браузер иначе ждёт ~300 мс, не двойной ли это тап,
+               и ровно на столько запаздывает каждое нажатие в игре;
+             · user-select/tap-highlight/touch-callout — долгий тап по канвасу в Android-Chrome
+               рисовал синюю подсветку выделения и открывал меню "сохранить изображение". -->
+        <style>
+            html,body{margin:0;padding:0;overflow:hidden;overscroll-behavior:none}
+            /* 29.09.2026 (по прямому указанию — "чёрные отступы по бокам, наложи на них
+               задний фон"): раньше по бокам игры (когда окно браузера шире канваса 1280px)
+               была голая заливка #000. Теперь позади канваса — картинка "фоновый бэг.png"
+               (2180×721, шире канваса и по высоте совпадает с игрой) на боковых чёрных полосах
+               виден фон, а не пустая чернота; #000 остаётся как fallback-цвет (пока картинка не
+               загрузилась и на экранах шире самой картинки).
+               30.09.2026 (по прямому указанию — нюанс с масштабированием): было без
+               background-size — картинка в натуральную величину, совпадала с канвасом только
+               при zoom=100%. index.js.resize() letterbox-вписывает канвас с сохранением
+               пропорций 16:9, и в самой частой на десктопе ветке (окно шире 16:9) канвас
+               занимает РОВНО 100% высоты body (`h = vp.h`, см. resize() в index.js) — поэтому
+               background-size:auto 100% (высота фона = 100% высоты body, ширина по пропорции
+               картинки) держит фон визуально в одном масштабе с игрой при любом размере окна,
+               а не только при 100% zoom. */
+            body{position:fixed;top:0;left:0;width:100%;height:100%;background:#000
+                 url('./images/side-background-v2.png') center center no-repeat;
+                 background-size:auto 100%;
+                 -webkit-user-select:none;user-select:none;
+                 -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+            canvas#stage{touch-action:none}
+        </style>
+
+
+
+    </head>
+    <body>
+        <div class="font_preload" style="opacity: 0">
+            <span style="font-family: 'Trebuchet MS', Trebuchet MS, normal;"></span>
+            <span style="font-family: 'Trebuchet MS', Trebuchet MS; font-weight:bold"></span>
+            <span style="font-family: 'Shadow', Shadow;"></span>
+            <span style="font-family: 'Sensei Medium', Sensei Medium;"></span>
+            <span style="font-family: 'Hooge 0553 LeS version', 'Hooge 0553 LeS version';"></span>
+            <span style="font-family: 'Franklin Gothic Medium', Franklin Gothic Medium;"></span>
+            <span style="font-family: 'Southbank LT', Southbank LT;"></span>
+            <span style="font-family: 'Adigiana Ultra', Adigiana Ultra;"></span>
+            <span style="font-family: 'ALBOROTO', ALBOROTO;"></span>
+            <span style="font-family: 'Gagalin', Gagalin;"></span>
+            <span style="font-family: 'Maler', Maler;"></span>
+            <span style="font-family: 'MachineC', MachineC;"></span>
+            <span style="font-family: 'AA Bebas Neue', AA Bebas Neue;"></span>
+            <!-- 18.10.2026 (баг найден по прямому указанию — "в верхнем худе дефолтные шрифты
+                 браузера"): шрифт добавлен в fonts.css 18.10.2026, но сюда — в единственный
+                 механизм, который реально ЗАСТАВЛЯЕТ браузер скачать файл шрифта (PixiJS рисует
+                 текст через canvas, а не настоящий DOM-текст — browser сам по себе не видит
+                 повода грузить @font-face, пока его не запросит хоть один реальный DOM-элемент).
+                 Без этой строки @font-face мог никогда не активироваться, и весь верхний HUD
+                 молча падал на дефолтный системный шрифт. -->
+            <span style="font-family: 'Bebas Neue Pro Middle', Bebas Neue Pro Middle;"></span>
+            <span style="font-family: 'Bebas Neue Book', 'Bebas Neue Book';"></span>
+            <span style="font-family: 'Bebas Neue Pro Bold', 'Bebas Neue Pro Bold';"></span>
+            <span style="font-family: 'TT Masters DEMO Birds', TT Masters DEMO Birds;"></span>
+            <span style="font-family: 'Banana Brick', Banana Brick;"></span>
+            <span style="font-family: 'AngryBirds', AngryBirds;"></span>
+            <span style="font-family: 'Nixmat', Nixmat;"></span>
+            <span style="font-family: 'BIP', BIP;"></span>
+            <span style="font-family: 'BIPs', BIPs;"></span>
+            <span style="font-family: 'v_Mouth Breather BB', v_Mouth Breather BB;"></span>
+            <span style="font-family: 'v_CCTheStorySoFar', v_CCTheStorySoFar;"></span>
+            <span style="font-family: 'dorblue', dorblue;"></span>
+            <span style="font-family: 'Alcotton', Alcotton;"></span>
+        </div>
+
+        <script src="./libs/browser.min.js"></script>
+        <script src="./libs/pixi-legacy.min.js"></script>
+        <script src="./libs/md5.js"></script>
+        <script src="./libs/animate.min.js"></script>
+        <script src="./libs/pixi-sound.js"></script>
+        <script src="./libs/gsap.min.js"></script>
+        <script src="./libs/sortOn.js"></script>
+        <!-- 22.09.2026 (баг "задний фон просвечивает во время загрузки, хотя прогресс ещё
+             идёт") — было background:rgba(0,0,0,0.75): iface.init()/home.init() запускаются
+             (game-boot.js._showGame), как только готовы ТОЛЬКО текстуры, ДО того как реально
+             догрузятся все 16 фоновых модулей (_bgModules) — уже отрисованная PIXI-сцена была
+             видна сквозь полупрозрачный оверлей компаса всё это время. Теперь оверлей полностью
+             непрозрачен — сцена не видна вообще, пока не спрячется #_clo (_finishLoading,
+             когда И текстуры, И все фоновые модули реально готовы). -->
+        <!-- 24.09.2026 (по прямому указанию — "убери с загрузки компас, он не нужен"): раньше
+             здесь была картинка компаса со крутящейся стрелкой поверх этого чёрного экрана —
+             убрана целиком. #_clo остаётся плоским чёрным оверлеем (см. большой комментарий
+             выше про "фон просвечивает во время загрузки") — он всё ещё нужен, чтобы скрывать
+             уже отрисованную PIXI-сцену, пока не догрузятся все 16 фоновых модулей; прогресс/
+             подсказки (#_loader_ui ниже) остаются как единственная видимая индикация загрузки. -->
+        <div id="_clo" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;display:none;background:#000;overflow:hidden;pointer-events:all"></div>
+        <!-- 25.09.2026: оверлей загрузки-между-экранами (затемнение + крутящийся компас,
+             показывается при переключении УЖЕ ЗАГРУЖЕННЫХ экранов игры — zone/weapons/yashik/
+             bosses_fight/sidorovich/ryukzak и т.д., не при первом запуске приложения — за это
+             отдельно отвечает #_clo выше) раньше жил ЗДЕСЬ как DOM-элемент (два <img> с CSS
+             transform-origin в процентах — пришлось трижды пересчитывать живыми репортами
+             "криво крутится", последний раз из-за того, что диск и стрелка исходно два НИЧЕМ не
+             выровненных между собой ассета). ЧЕТВЁРТОЕ исправление того же дня (по прямому
+             указанию — "обрежь от прозрачных полей, стрелка крутится вокруг своей середины,
+             сделай редактируемым через dev-панель") переносит компас в PIXI (game/shell/
+             ui_kit.js: _compassShow/_compassHide/_compassWaitTex, root.layer2_mc) — как обычные
+             PIXI.Sprite диска/стрелки, чтобы universal_pos_editor.js подхватывал их
+             автоматически, без отдельной регистрации. DOM-разметка (#_screenLoader,
+             keyframes-анимация _screenLoaderSpin) больше не нужна и убрана отсюда целиком. -->
+        <!-- РџСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂ Р·Р°РіСЂСѓР·РєРё: РїРѕРІРµСЂС… zombie-СЌРєСЂР°РЅР°, СЃРєСЂС‹РІР°РµС‚СЃСЏ РєРѕРіРґР° РёРіСЂР° РіРѕС‚РѕРІР° -->
+        <!-- 27.09.2026 (адаптив): width было жёстко 320px, bottom — 36px. На узких телефонах
+             (360-390 CSS px) полоса занимала почти всю ширину вплотную к краям, а сам блок
+             попадал под системную полосу жестов. Теперь ширина — min(320px,80vw), отступ снизу
+             учитывает безопасную зону. -->
+        <div id="_loader_ui" style="position:fixed;bottom:calc(36px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(320px,80vw);text-align:center;z-index:10000;pointer-events:none">
+            <div id="_prgTip" style="color:#9a8060;font-size:16px;letter-spacing:1.5px;font-family:'Southbank LT',sans-serif;text-transform:uppercase;margin-bottom:12px;text-shadow:0 1px 3px #000"></div>
+            <div style="background:rgba(0,0,0,0.45);border-radius:2px;height:3px;width:100%;overflow:hidden;box-shadow:0 0 6px rgba(0,0,0,0.8)">
+                <div id="_prgBar" style="background:#c8a046;width:0%;height:100%;border-radius:2px"></div>
+            </div>
+            <div id="_prgPct" style="color:#6a5030;font-size:14px;margin-top:6px;font-family:sans-serif;letter-spacing:1px;text-shadow:0 1px 2px #000">0%</div>
+        </div>
+        <script>
+        (function(){
+            var _TIPS=['Изучаем локации Зоны...','Проверяем снаряжение сталкера...','Читаем ориентировки на боссов...','Считаем патроны на складе...','Наводим контакты во дворе...','Запрашиваем данные у Сидоровича...','Сверяем карту аномалий...','Распределяем снаряжение по тайникам...','Ждём пропуска в Припять...','Инициализируем Зону Отчуждения...'];
+            var _ti=0;
+            function _st(){ var e=document.getElementById('_prgTip'); if(e) e.textContent=_TIPS[_ti]; }
+            _st();
+            window._earlyTipInterval=setInterval(function(){ _ti=(_ti+1)%_TIPS.length; _st(); },2500);
+
+            // Процент обновляется game-boot.js по фактической загрузке PNG.
+            window._simActive = false;
+            window._simPct    = 0;
+        })();
+        </script>
+        <script src="./libs/spine-canvas.js"></script>
+        <script src="./libs/preloader.min.js"></script>
+<script src="./libs/index.js?v=725"></script>
+
+    </body>
+</html>
