@@ -1,10 +1,11 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Запуск: Файл → Сценарии → Обзор
 // Экспортирует кнопки с flatMerge (учитывает blend modes)
 
-var outDir = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/_client/development/images/hud/";
+var outDir = projectRoot + "_client/development/images/hud/";
 var log = "=== Flat export ===\n";
 
-var psdFile = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/худ3,0.psd");
+var psdFile = new File(projectRoot + "assets/source/img/psd/худ3,0.psd");
 var doc = app.open(psdFile);
 
 // Показать ВСЕ слои
@@ -68,7 +69,7 @@ for (var i = 0; i < leftBtns.length; i++) {
 
 doc.close(SaveOptions.DONOTSAVECHANGES);
 
-var logFile = new File("C:/Users/HONOR/Desktop/export_flat_log.txt");
+var logFile = new File(projectRoot + "dev_tools/export_flat_log.txt");
 logFile.open("w");
 logFile.write(log);
 logFile.close();

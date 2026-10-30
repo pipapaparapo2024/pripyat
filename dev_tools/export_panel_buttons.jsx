@@ -1,7 +1,8 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Запуск: Файл → Сценарии → Обзор → этот файл
 // Экспортирует кнопки правой и левой панелей, обрезая до границ каждой группы
 
-var outDir = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/_client/development/images/hud/";
+var outDir = projectRoot + "_client/development/images/hud/";
 var folder = new Folder(outDir);
 if (!folder.exists) folder.create();
 
@@ -53,7 +54,7 @@ function exportGroupCropped(doc, groupName, filename) {
 }
 
 // ── Открыть худ3,0.psd ──
-var psdFile = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/худ3,0.psd");
+var psdFile = new File(projectRoot + "assets/source/img/psd/худ3,0.psd");
 if (!psdFile.exists) {
     alert("Файл не найден: худ3,0.psd");
 } else {
@@ -76,7 +77,7 @@ if (!psdFile.exists) {
 }
 
 // Сохранить лог
-var logFile = new File("C:/Users/HONOR/Desktop/export_panels_log.txt");
+var logFile = new File(projectRoot + "dev_tools/export_panels_log.txt");
 logFile.open("w");
 logFile.write(log);
 logFile.close();

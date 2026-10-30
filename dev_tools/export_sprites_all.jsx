@@ -1,7 +1,8 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Запуск: Файл → Сценарии → Обзор → выбрать этот файл
 // Экспортирует все нужные спрайты из ящик.psd, худ3,0.psd, Компас.psd
 
-var outDir = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/_client/development/images/hud/";
+var outDir = projectRoot + "_client/development/images/hud/";
 
 // Создать папку
 var folder = new Folder(outDir);
@@ -72,7 +73,7 @@ var log = "=== Экспорт спрайтов ===\n";
 // ───────────────────────────────────────────────
 // 1. ящик.psd → прогресс-бары и энергия
 // ───────────────────────────────────────────────
-var psd1 = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/ящик.psd");
+var psd1 = new File(projectRoot + "assets/source/img/psd/ящик.psd");
 if (psd1.exists) {
     var doc1 = app.open(psd1);
 
@@ -102,7 +103,7 @@ if (psd1.exists) {
 // ───────────────────────────────────────────────
 // 2. худ3,0.psd → правая и левая панели
 // ───────────────────────────────────────────────
-var psd2 = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/худ3,0.psd");
+var psd2 = new File(projectRoot + "assets/source/img/psd/худ3,0.psd");
 if (psd2.exists) {
     var doc2 = app.open(psd2);
 
@@ -129,7 +130,7 @@ if (psd2.exists) {
 // ───────────────────────────────────────────────
 // 3. Компас.psd → экран загрузки
 // ───────────────────────────────────────────────
-var psd3 = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/Компас.psd");
+var psd3 = new File(projectRoot + "assets/source/img/psd/Компас.psd");
 if (psd3.exists) {
     var doc3 = app.open(psd3);
 
@@ -141,7 +142,7 @@ if (psd3.exists) {
 }
 
 // Сохранить лог
-var logFile = new File("C:/Users/HONOR/Desktop/export_sprites_log.txt");
+var logFile = new File(projectRoot + "dev_tools/export_sprites_log.txt");
 logFile.open("w");
 logFile.write(log);
 logFile.close();

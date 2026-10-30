@@ -13,7 +13,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const image = (...parts) => path.join(root, '_client', 'development', 'images', ...parts);
-const deploy = fs.readFileSync(path.join(root, 'deploy_v527_assets_ui.py'), 'utf8');
+const deploy = fs.readFileSync(path.join(root, 'archive/local/scripts/deploy_v527_assets_ui.py'), 'utf8');
 const sha256 = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 
 let passed = 0;

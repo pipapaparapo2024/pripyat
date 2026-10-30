@@ -1,6 +1,7 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Файл → Сценарии → Обзор → выбрать этот файл
-var psdPath = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/ящик.psd";
-var outDir  = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/png/toolbars/";
+var psdPath = projectRoot + "assets/source/img/psd/ящик.psd";
+var outDir  = projectRoot + "assets/source/img/png/toolbars/";
 
 var folder = new Folder(outDir);
 if (!folder.exists) folder.create();

@@ -74,3 +74,6 @@ save_trace.txt
 # Логи локальных прогонов
 deploy-test-failures.log
 *.log
+
+# Локальные архивы могут содержать приватные исторические скрипты.
+/archive/local/

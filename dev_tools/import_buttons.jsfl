@@ -1,6 +1,7 @@
+var projectRoot = fl.scriptURI.substring(0, fl.scriptURI.lastIndexOf("/dev_tools/") + 1);
 // Animate: Команды → Запустить команду
-var flaPath  = "file:///C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/content/animate/interface_elements/interface_elements.fla";
-var btnDir   = "file:///C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/png/buttons/";
+var flaPath  = projectRoot + "assets/source/content/animate/interface_elements/interface_elements.fla";
+var btnDir   = projectRoot + "assets/source/img/png/buttons/";
 
 var buttons = [
     "butt_bosses",

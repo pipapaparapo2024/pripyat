@@ -1,3 +1,4 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Запуск: Файл → Сценарии → Обзор → выбрать этот файл
 // Выводит список ВСЕХ слоёв и их размеры для диагностики
 
@@ -21,12 +22,12 @@ function inspectLayers(layers, depth) {
 }
 
 var files = [
-    "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/ящик.psd",
-    "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/худ3,0.psd",
-    "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/Компас.psd"
+    projectRoot + "assets/source/img/psd/ящик.psd",
+    projectRoot + "assets/source/img/psd/худ3,0.psd",
+    projectRoot + "assets/source/img/psd/Компас.psd"
 ];
 
-var outPath = "C:/Users/HONOR/Desktop/psd_layers_report.txt";
+var outPath = projectRoot + "dev_tools/psd_layers_report.txt";
 var report = "";
 
 for (var f = 0; f < files.length; f++) {

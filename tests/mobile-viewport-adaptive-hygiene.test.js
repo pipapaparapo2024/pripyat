@@ -210,7 +210,7 @@ console.log('\nTest 5: уменьшенные текстуры — реальн�
         '28.09.2026: REWARD_KEY_SCALE пересчитан под уменьшенный файл (272×362) на новый требуемый размер 71×94 (0.26)');
 
     // Оригиналы обязаны лежать в бэкапе: без них уменьшение необратимо.
-    const bak = path.join(__dirname, '..', '_originals_before_downscale_27_09_2026');
+    const bak = path.join(__dirname, '..', 'archive', 'local', '_originals_before_downscale_27_09_2026');
     assert(fs.existsSync(bak), 'папка с оригиналами до уменьшения существует');
     const bakCp = path.join(bak, 'layers', 'popups', 'location', 'cp_art');
     const bakCps = fs.readdirSync(bakCp).filter(f => /^cp_art_.*\.png$/.test(f));

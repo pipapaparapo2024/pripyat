@@ -1,10 +1,33 @@
 {
-	"folders": [
-		{
-			"path": "dd_proj\\dd_proj"
-		},
-		{
-			"path": "."
-		}
-	]
+  "folders": [
+    { "name": "01 Клиент — код", "path": "_client/src" },
+    { "name": "02 Сервер", "path": "server" },
+    { "name": "03 Изображения игры", "path": "_client/development/images" },
+    { "name": "04 Звуки", "path": "_client/development/sounds" },
+    { "name": "05 Шрифты", "path": "_client/development/fonts" },
+    { "name": "06 Spine", "path": "_client/development/spine" },
+    { "name": "07 Исходники графики", "path": "assets/source" },
+    { "name": "08 Тесты", "path": "tests" },
+    { "name": "09 Инструменты", "path": "tools" },
+    { "name": "10 Документация", "path": "docs" },
+    { "name": "11 Проект и сборка", "path": "." }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/.deploy_deps": true,
+      "**/archive/local": true,
+      "**/github-test-releases": true,
+      "**/prod-button-release": true,
+      "**/prod-server-audit": true,
+      "**/removed-render-experiment-20261030": true
+    },
+    "search.exclude": {
+      "**/archive/**": true,
+      "**/node_modules/**": true,
+      "**/github-test-releases/**": true,
+      "**/prod-button-release/**": true
+    }
+  }
 }

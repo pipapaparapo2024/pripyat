@@ -1,7 +1,8 @@
+var projectRoot = fl.scriptURI.substring(0, fl.scriptURI.lastIndexOf("/dev_tools/") + 1);
 // Animate: Команды → Запустить команду
-var flaPath = "file:///C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/content/animate/interface_elements/interface_elements.fla";
-var upPNG   = "file:///C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/png/toolbars/iface_up.png";
-var downPNG = "file:///C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/png/toolbars/iface_down.png";
+var flaPath = projectRoot + "assets/source/content/animate/interface_elements/interface_elements.fla";
+var upPNG   = projectRoot + "assets/source/img/png/toolbars/iface_up.png";
+var downPNG = projectRoot + "assets/source/img/png/toolbars/iface_down.png";
 
 function exitEdit() {
     fl.getDocumentDOM().exitEditMode();

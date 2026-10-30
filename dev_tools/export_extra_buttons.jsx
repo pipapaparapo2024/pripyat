@@ -1,6 +1,7 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Файл → Сценарии → Обзор → выбрать этот файл
-var doc = app.open(new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/ящик.psd"));
-var outDir = "C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/png/buttons/";
+var doc = app.open(new File(projectRoot + "assets/source/img/psd/ящик.psd"));
+var outDir = projectRoot + "assets/source/img/png/buttons/";
 
 var opts = new ExportOptionsSaveForWeb();
 opts.format = SaveDocumentType.PNG;

@@ -1,8 +1,9 @@
+var projectRoot = new File($.fileName).parent.parent.fsName.replace(/\\/g, "/") + "/";
 // Экспортирует компас из Компас.psd без фона
 // Запуск: Файл → Сценарии → Обзор → этот файл
 
-var psdFile = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/img/psd/Компас.psd");
-var outFile = new File("C:/Users/HONOR/Desktop/vk_game/projects_2026/stalker/_client/development/images/hud/compass_loader.png");
+var psdFile = new File(projectRoot + "assets/source/img/psd/Компас.psd");
+var outFile = new File(projectRoot + "_client/development/images/hud/compass_loader.png");
 
 if (!psdFile.exists) { alert("Файл не найден: Компас.psd"); }
 else {

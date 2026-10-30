@@ -1,0 +1,18 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/.deploy_deps": true,
+    "archive/local": true,
+    "_client/development/github-test-releases": true,
+    "_client/development/prod-button-release": true,
+    "_client/development/prod-server-audit": true,
+    "_client/development/removed-render-experiment-20261030": true
+  },
+  "search.exclude": {
+    "**/archive/**": true,
+    "**/node_modules/**": true,
+    "**/github-test-releases/**": true,
+    "**/prod-button-release/**": true
+  }
+}

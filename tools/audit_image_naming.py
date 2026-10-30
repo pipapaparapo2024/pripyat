@@ -106,7 +106,7 @@ def main():
         print(f'{cat}: {len(results[cat])}')
     print()
 
-    out_path = os.path.join(ROOT, 'IMAGE_NAMING_AUDIT.md')
+    out_path = os.path.join(ROOT, 'docs', 'history', 'IMAGE_NAMING_AUDIT.md')
     with io.open(out_path, 'w', encoding='utf-8') as out:
         out.write('# Аудит имён используемых файлов-ассетов\n\n')
         out.write(f'Всего используемых файлов: {total_used}\n\n')
