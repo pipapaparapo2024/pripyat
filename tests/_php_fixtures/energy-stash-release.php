@@ -16,6 +16,11 @@ $db->user['energy']='6';$db->user['stash_claims']='{"1":10}';$stale['exp']='5';$
 check($db->user['energy']==='6','unrelated save resurrected spent energy');
 check($db->user['stash_claims']==='{"1":10}','unrelated save erased claim/gift counters');
 check(!isset($ops->patchCurrencies($stale)['energy']),'unrelated response sends stale energy back to HUD');
+// Daily-task reporting reloads the same row after a checkpoint save. Its reload
+// must not hide the checkpoint energy change from the final client patch.
+$energyOps=new Gameops($registry);$spent=$energyOps->loadUser();$spent['energy']='2';$energyOps->saveUser($spent);
+$progressRow=$energyOps->loadUser();$progressRow['raznaryadka_data']='{}';$energyOps->saveUser($progressRow);
+check(isset($energyOps->patchCurrencies($spent)['energy']) && intval($energyOps->patchCurrencies($spent)['energy'])===2,'daily task reload suppressed checkpoint energy patch');
 // Actual Base::train, replacing only the database transport.
 class TestMysqli {
     public $connect_error=false;public static $queries=[];

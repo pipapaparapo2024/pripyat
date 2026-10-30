@@ -363,9 +363,11 @@ export function attachInterfacePanels(proto){
         if(!window.hide_unreleased_features){
             const raznYOff = rightCfg.length * (BTN_H_R + GAP_R);
             const raznNorm = new PIXI.Sprite(PIXI.Texture.from(IMG + 'raznaryadka-button.png'));
-            const raznHov = new PIXI.Sprite(raznNorm.texture);
-            raznNorm.alpha = 0.4;
+            const raznHov = new PIXI.Sprite(PIXI.Texture.from(IMG + 'raznaryadka-button-hover.png'));
+            raznNorm.alpha = 1;
             raznHov.alpha = 1;
+            raznNorm.width = raznHov.width = 236;
+            raznNorm.height = raznHov.height = 57;
             raznNorm.y = raznHov.y = raznYOff;
             raznHov.visible = false;
             const raznHit = new PIXI.Graphics();

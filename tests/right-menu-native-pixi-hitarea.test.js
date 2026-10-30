@@ -41,14 +41,15 @@ for(const mobile of [false,true])for(const scale of [0.5,1,1.4]){
             hit.emit('pointerdown');
             assert.strictEqual(opened.pop(),name,`wrong target at ${name}, touch=${mobile}, scale=${scale}`);
             hit.emit('pointerover');
-            const hover=panel.children.filter(c=>c.texture && (String(c.texture.file).includes(' hover.png') || (String(c.texture.file).endsWith('raznaryadka-button.png') && c.alpha===1)) && c.visible);
+            const hover=panel.children.filter(c=>c.texture && (String(c.texture.file).includes(' hover.png') || String(c.texture.file).endsWith('raznaryadka-button-hover.png')) && c.visible);
             assert.strictEqual(hover.length,1);
             const file=['двор','База','Хабар','Сводка','задания'][index];
-            assert(hover[0].texture.file.endsWith(index===4?'raznaryadka-button.png':file+' hover.png'));
+            assert(hover[0].texture.file.endsWith(index===4?'raznaryadka-button-hover.png':file+' hover.png'));
             if(index===4){
-                const normal=panel.children.find(c=>c.texture===hover[0].texture && c!==hover[0]);
-                assert(normal && !normal.visible,'hover uses the exact normal texture');
-                assert.strictEqual(normal.alpha,0.4);
+                const normal=panel.children.find(c=>c.texture && String(c.texture.file).endsWith('raznaryadka-button.png'));
+                assert(normal && !normal.visible,'normal texture is hidden on hover');
+                assert.notStrictEqual(normal.texture.file,hover[0].texture.file);
+                assert.strictEqual(normal.alpha,1);
                 assert.strictEqual(hover[0].alpha,1);
                 assert(!hover[0].filters,'alpha hover does not resample through a filter');
                 assert.strictEqual(hover[0].width,236);
@@ -57,7 +58,7 @@ for(const mobile of [false,true])for(const scale of [0.5,1,1.4]){
             hit.emit('pointerout');
             if(index===4){
                 assert.strictEqual(hover[0].visible,false);
-                assert(panel.children.some(c=>c!==hover[0] && c.texture===hover[0].texture && c.visible));
+                assert(panel.children.some(c=>c.texture && String(c.texture.file).endsWith('raznaryadka-button.png') && c.visible));
             }
         }
         if(index<4){

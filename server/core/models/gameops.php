@@ -2,6 +2,7 @@
 Class Gameops {
     private $registry;
     private $loadedEnergy = null;
+    private $energyChanged = false;
     private $loadedStash = [];
 
     function __construct($registry){
@@ -36,6 +37,8 @@ Class Gameops {
     // добавляем в $update — держит DB level в согласии с exp при любом сохранении, без
     // отдельного вызова в каждом контроллере.
     function saveUser($update){
+        $energyChanged = isset($update['energy'],$update['energy_time']) &&
+            ($this->loadedEnergy === null || [(string)$update['energy'],(string)$update['energy_time']] !== $this->loadedEnergy);
         foreach($this->loadedStash as $key => $old){
             if(array_key_exists($key,$update) && ($update[$key] === $old || $this->sameJsonState($update[$key],$old))) unset($update[$key]);
         }
@@ -54,6 +57,7 @@ Class Gameops {
         $update['id'] = $this->registry['uid'];
         $result = $this->registry['udb']->saveData($this->registry['utb'], $update);
         if(isset($result['error']) && $result['error']) return false;
+        $this->energyChanged = $this->energyChanged || $energyChanged;
         return true;
     }
 
@@ -322,7 +326,7 @@ Class Gameops {
         foreach($keys as $k){
             if(array_key_exists($k, $user)) $patch[$k] = $user[$k];
         }
-        if($this->loadedEnergy !== null && isset($user['energy'],$user['energy_time'])
+        if(!$this->energyChanged && $this->loadedEnergy !== null && isset($user['energy'],$user['energy_time'])
             && [(string)$user['energy'],(string)$user['energy_time']] === $this->loadedEnergy){
             unset($patch['energy'],$patch['energy_time']);
         }

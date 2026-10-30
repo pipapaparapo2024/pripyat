@@ -39,7 +39,7 @@ for(const mobile of [false,true]){
         assert.strictEqual(hits.length,1,`exactly one hit for ${name}, mobile=${mobile}`);
         hits[0].handlers.pointerdown();assert.strictEqual(opened.pop(),name);
         hits[0].handlers.pointerover();
-        const visibleHover=panel.children.filter(c=>c instanceof Sprite && (c.texture.file.includes(' hover.png') || (c.texture.file.endsWith('raznaryadka-button.png') && c.alpha===1)) && c.visible===true);
+        const visibleHover=panel.children.filter(c=>c instanceof Sprite && (c.texture.file.includes(' hover.png') || c.texture.file.endsWith('raznaryadka-button-hover.png')) && c.visible===true);
         assert.strictEqual(visibleHover.length,1);
         assert(visibleHover[0].texture.file.includes(index===4?'raznaryadka-button':index===0?'двор':index===2?'Хабар':'Сводка'));
         hits[0].handlers.pointerout();

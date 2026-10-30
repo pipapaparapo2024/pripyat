@@ -9,6 +9,7 @@ import shlex
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = 715
 sys.path.insert(0, str(ROOT / '.deploy_deps'))
 import paramiko
 
@@ -55,7 +56,7 @@ def main():
     if sys.argv[1:] not in [[], ['--apply']]:
         raise ValueError('Use no arguments or --apply')
     html = (ROOT / '_client/development/index.html').read_text(encoding='utf-8')
-    if 'index.js?v=715' not in html:
+    if ('index.js?v=' + str(VERSION)) not in html:
         raise RuntimeError('Unexpected HTML version')
     client = connect()
     changed = []
@@ -89,7 +90,7 @@ def main():
                         with sftp.open(backup, 'rb') as dest:
                             if sha(dest.read()) != sha(previous):
                                 raise RuntimeError('Backup verification failed')
-                    pending = target + '.v715.pending'
+                    pending = target + '.v' + str(VERSION) + '.pending'
                     with sftp.open(pending, 'wb') as dest:
                         dest.write(data)
                     with sftp.open(pending, 'rb') as dest:
@@ -106,7 +107,7 @@ def main():
                     with sftp.open(target, 'rb') as source:
                         if sha(source.read()) != sha(data):
                             raise RuntimeError('Published SHA256 mismatch: ' + target)
-                if apply:
+                if apply and any(relative.endswith('.php') for _, relative in FILES):
                     print(command(client, 'systemctl restart php8.5-fpm && systemctl is-active php8.5-fpm'), flush=True)
             except Exception:
                 for target, backup, previous in reversed(changed):
@@ -114,7 +115,8 @@ def main():
                         with sftp.open(target + '.rollback.pending', 'wb') as dest:
                             dest.write(previous)
                         sftp.posix_rename(target + '.rollback.pending', target)
-                command(client, 'systemctl restart php8.5-fpm')
+                if any(relative.endswith('.php') for _, relative in FILES):
+                    command(client, 'systemctl restart php8.5-fpm')
                 raise
         print('Verified files:', len(FILES) * len(BASES), '| replaced:', len(changed), flush=True)
     finally:

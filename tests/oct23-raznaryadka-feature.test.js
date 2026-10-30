@@ -173,7 +173,7 @@ console.log('\nTest 7: HUD-кнопка — настоящие PNG-спрайт�
     // norm/hov/hit, что у остальных кнопок этой панели.
     assert(/raznNorm = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'raznaryadka-button\.png'\)\);/.test(panelsSrc),
         'raznNorm — спрайт из "задания.png"');
-    assert(/raznHov\s*=\s*new PIXI\.Sprite\(raznNorm\.texture\);/.test(panelsSrc),
+    assert(/raznHov\s*=\s*new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'raznaryadka-button-hover\.png'\)\);/.test(panelsSrc),
         'raznHov — спрайт из "задания hover.png"');
     assert(/raznHit\.on\('pointerdown', \(\) => \{/.test(panelsSrc) && /this\.openModule\('raznaryadka'\);/.test(panelsSrc),
         'кнопка "задания" открывает модуль через openModule(\'raznaryadka\')');
