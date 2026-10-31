@@ -1,5 +1,5 @@
 /**
- * Test: server/migrate54.php (28.10.2026, по прямому указанию — "раздай всем рандомно значки...
+ * Test: tests/_fixtures/schema-history/migrate54.php.txt (28.10.2026, по прямому указанию — "раздай всем рандомно значки...
  * игрок накопил 150 значек, рассыпь их по всем коллекциям случайно"). Одноразовый backfill:
  * игроки находили нычки (stash_count) до 26.10.2026, когда появился реальный разбор по
  * коллекциям/позициям (stash_data) — для старых находок stash_data остаётся пуст, хотя
@@ -23,13 +23,13 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migPath = path.join(root, 'server', 'migrate54.php');
+const migPath = path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate54.php.txt');
 const mig = fs.existsSync(migPath) ? fs.readFileSync(migPath, 'utf-8') : '';
 
-console.log('\nTest 1: server/migrate54.php существует и защищён ключом, как остальные одноразовые миграции проекта');
+console.log('\nTest 1: tests/_fixtures/schema-history/migrate54.php.txt существует и защищён ключом, как остальные одноразовые миграции проекта');
 {
-    assert(fs.existsSync(migPath), 'server/migrate54.php существует');
-    assert(/\$_GET\['key'\] !== 'stalker_migrate54_2026'/.test(mig), 'защищён ключом stalker_migrate54_2026');
+    assert(fs.existsSync(migPath), 'tests/_fixtures/schema-history/migrate54.php.txt существует');
+    assert(/\$_GET\['key'\] !== 'FIXTURE_NOT_EXECUTABLE'/.test(mig), 'защищён ключом FIXTURE_NOT_EXECUTABLE');
     assert(/http_response_code\(403\)/.test(mig), 'без ключа — 403 Forbidden');
 }
 

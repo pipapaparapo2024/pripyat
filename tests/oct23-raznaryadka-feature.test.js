@@ -72,10 +72,10 @@ console.log('\nTest 1: серверные файлы существуют и в�
     const files = [
         'server/core/models/raznaryadkaprogress.php',
         'server/core/controllers/raznaryadka.php',
-        'server/migrate51.php',
+        'tests/_fixtures/schema-history/migrate51.php.txt',
         '_client/src/game/shell/overlays/raznaryadka.js',
         'tools/gen_raznaryadka_month.php',
-        '_client/development/images/задания.png',
+        '_client/development/images/raznaryadka-button.png',
         '_client/development/images/задания hover.png',
         '_client/development/fonts/BebasNeueBook.ttf',
     ];
@@ -103,7 +103,7 @@ console.log('\nTest 8c: клиент — до старта таймер стат
 
 console.log('\nTest 2: registry.php — класс "raznaryadka" добавлен в whitelist (иначе permit-запросы отклоняются кодом 3)');
 {
-    const src = norm(path.join(root, 'server/core/models/registry.php'));
+    const src = norm(path.join(root, 'server/core/models/registry.example.php'));
     assert(/'classes'=>array\([^)]*'raznaryadka'/.test(src), 'raznaryadka присутствует в registry.classes');
 }
 

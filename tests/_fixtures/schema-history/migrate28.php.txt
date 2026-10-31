@@ -1,0 +1,44 @@
+<?php
+// Миграция 28 — 23.09.2026, перенос "Ежедневных заданий" на сервер: раньше генерация задания
+// (какие 3 дневных/1 недельное/1 особое достались игроку), прогресс и сама выдача награды
+// считались ЦЕЛИКОМ на клиенте (zadaniya.js) — udata['zadaniya'] был client-writable, читер
+// мог одним users.save выставить себе {prog:99999,need:1,reward_val:99999} и забрать любую
+// награду. zadaniya_session — служебное поле, НЕ в whitelist users.php (как dice_session/
+// poker_session/blackjack_session), хранит выбранные на сегодня задания и claimed-статус,
+// клиент физически не может подделать его через users.save. Раздел временно заблокирован на
+// сервере (BETA_LOCKED в tasks.php) — UI-кнопка уже была убрана из HUD 22.09.2026.
+// Запустить: https://pripyat-game.ru/server/migrate28.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$col = 'zadaniya_session';
+$def = "TEXT DEFAULT NULL";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 28 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

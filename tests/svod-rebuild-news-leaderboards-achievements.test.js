@@ -33,7 +33,6 @@ const svodSrc       = readSrc('_client/src/game/svod.js');
 const scrollSrc     = readSrc('_client/src/game/svod/svod-scroll.js');
 const leaderSrc     = readSrc('_client/src/game/svod/svod-leaderboard.js');
 const achSrc        = readSrc('_client/src/game/svod/svod-achievements.js');
-const newsSrc       = readSrc('_client/src/game/svod/svod-news.js');
 const panelsSrc     = readSrc('_client/src/game/interface/interface-panels.js');
 const moduleCtrlSrc = readSrc('_client/src/modules/module_control.js');
 
@@ -126,12 +125,11 @@ console.log('\nTest 7: все ассеты Сводки существуют в 
 {
     const IMAGES_DIR = path.join(root, '_client', 'development', 'images');
     const expected = [
-        'сводка фон.png', 'новости актив.png', 'новости пассив.png',
         'кнопка топ по авторитету актив.png', 'кнопка топ по авторитету пассив.png',
         'кнопка топ по урону актив.png', 'кнопка топ по урону пассив.png',
         'кнопка топ по достижениям актив.png', 'кнопка топ по достижения пассив.png',
         'задний фон топы по авторитету.png', 'задний фон топы по урону.png',
-        'шкала скрола.png', 'стрелка вверх.png', 'стрелка вниз.png', 'свод скролл бегунок.png',
+        'шкала скрола.png', 'свод стрелка вверх.png', 'свод стрелка вниз.png', 'свод скролл бегунок.png',
         'общий топ актив.png', 'общий топ неактив.png',
         'друзья актив.png', 'друзья неактив.png',
         'мои достижения актив.png', 'мои достижения пассив.png',

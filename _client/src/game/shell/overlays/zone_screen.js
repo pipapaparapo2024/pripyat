@@ -279,7 +279,7 @@ export function attachZoneScreen(proto){
 		// касается обеих текстур каждой кнопки (активная/пассивная меняются только текстурой,
 		// см. _updateZoneArrows ниже — x/y выставляются один раз здесь и не трогаются при смене
 		// активная.png ⇄ пассивная.png).
-		const arrowUp = new PIXI.Sprite(PIXI.Texture.from(Z + 'Стрелка вверх.png'));
+		const arrowUp = new PIXI.Sprite(PIXI.Texture.from(Z + 'zone-scroll-arrow-up.png'));
 		arrowUp.anchor.set(0.5, 0.5);
 		arrowUp.x = 635; arrowUp.y = 631;
 		arrowUp.interactive = false;
@@ -553,7 +553,7 @@ export function attachZoneScreen(proto){
 		const down = this._zoneArrowDown;
 		if(up){
 			const canUp = idx > 0;
-			up.texture = PIXI.Texture.from(canUp ? Z + 'активная стрелка вверх.png' : Z + 'Стрелка вверх.png');
+			up.texture = PIXI.Texture.from(canUp ? Z + 'активная стрелка вверх.png' : Z + 'zone-scroll-arrow-up.png');
 			up.interactive = canUp; up.buttonMode = canUp;
 		}
 		if(down){

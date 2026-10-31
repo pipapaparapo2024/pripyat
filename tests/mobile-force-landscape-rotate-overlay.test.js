@@ -26,7 +26,6 @@ function assert(cond, msg) {
 const R = (...p) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf-8');
 
 const forcedLandscape = R('_client', 'src', 'modules', 'forced-landscape.js');
-const overlay = R('_client', 'src', 'modules', 'rotate-overlay.js');
 const index   = R('_client', 'src', 'index.js');
 const claude  = R('AGENTS.md');
 
@@ -77,12 +76,7 @@ console.log('\nTest 3: index.js — resize() поворачивает канва
     assert(/const ratio = 1280 \/ 720;/.test(index), 'логический размер сцены остался 1280×720 (форс-ландшафт вёрстку не меняет)');
 }
 
-console.log('\nTest 4: modules/rotate-overlay.js — оставлен в репозитории, но помечен неиспользуемым');
-{
-    assert(/БОЛЬШЕ НЕ ИСПОЛЬЗУЕТСЯ/.test(overlay), 'файл явно помечен как неактуальный в заголовке');
-    assert(/export function installRotateOverlay/.test(overlay) && /export function setRotateOverlay/.test(overlay),
-        'сами функции не удалены (можно откатиться без восстановления файла из истории)');
-}
+assert(!fs.existsSync(path.join(__dirname, '..', '_client/src/modules/rotate-overlay.js')), 'Unused rotate overlay is removed');
 
 console.log('\nTest 5: AGENTS.md — пункт "Ориентация экрана" отражает замену на форс-поворот');
 {

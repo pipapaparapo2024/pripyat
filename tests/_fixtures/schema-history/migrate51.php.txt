@@ -1,0 +1,42 @@
+<?php
+// Миграция 51 — 23.10.2026, по прямому указанию пользователя (новая фича "Разнарядка" —
+// месячный календарь ежедневных заданий, см. doc "ежедневные задания.docx").
+//
+// Новое поле `raznaryadka_data` (TEXT, JSON) — месячное состояние: какой день какого месяца
+// выполнен/оплачен, какие пороги наград уже забраны. Server-only (НЕ в whitelist users.php,
+// см. raznaryadka.php/raznaryadkaprogress.php) — читает и пишет только сервер. Бэкфилл не
+// нужен: контроллер сам трактует NULL/пустую строку как "пустое состояние" (Gameops::j()
+// возвращает default []).
+//
+// Запустить: https://pripyat-game.ru/server/migrate51.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$col = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE 'raznaryadka_data'");
+if(!$col){ die('ERROR checking column: ' . $link->error); }
+if($col->num_rows === 0){
+    if(!$link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `raznaryadka_data` TEXT NULL")){
+        die('ERROR adding column: ' . $link->error);
+    }
+    echo "<pre>Column raznaryadka_data added.\n";
+} else {
+    echo "<pre>Column raznaryadka_data already exists, skipping ALTER TABLE.\n";
+}
+
+$link->close();
+
+echo "\nDone. DELETE this file!\n</pre>";

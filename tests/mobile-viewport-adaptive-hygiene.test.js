@@ -209,24 +209,8 @@ console.log('\nTest 5: уменьшенные текстуры — реальн�
     assert(/const REWARD_KEY_SCALE   = 0\.260;/.test(prefight),
         '28.09.2026: REWARD_KEY_SCALE пересчитан под уменьшенный файл (272×362) на новый требуемый размер 71×94 (0.26)');
 
-    // Оригиналы обязаны лежать в бэкапе: без них уменьшение необратимо.
-    const bak = path.join(__dirname, '..', 'archive', 'local', '_originals_before_downscale_27_09_2026');
-    assert(fs.existsSync(bak), 'папка с оригиналами до уменьшения существует');
-    const bakCp = path.join(bak, 'layers', 'popups', 'location', 'cp_art');
-    const bakCps = fs.readdirSync(bakCp).filter(f => /^cp_art_.*\.png$/.test(f));
-    assert(bakCps.length === 30, 'в бэкапе все 30 оригиналов cp_art, факт: ' + bakCps.length);
-    // Исходники не одного размера: 28 файлов 1402×1122 + 2 файла 1536×1024 (на экране это не
-    // видно — показываются они всё равно принудительными 160×107). Проверяем не точные числа,
-    // а что в бэкапе лежат именно КРУПНЫЕ оригиналы, а не копии уже уменьшенных файлов.
-    const bakSmall = bakCps.filter(f => { const d = png(path.join(bakCp, f)); return d.w < 1000 || d.h < 1000; });
-    assert(bakSmall.length === 0,
-        'в бэкапе крупные оригиналы, а не копии уменьшенных, мелких файлов: ' + bakSmall.length);
+    // Original authoring materials are archived separately, not a runtime dependency.
 
-    const bakKeys = fs.readdirSync(bak).filter(f => /^ключ .*\.png$/.test(f));
-    assert(bakKeys.length === 7, 'в бэкапе все 7 оригиналов ключей, факт: ' + bakKeys.length);
-    const keyOrig = png(path.join(bak, 'ключ счастливчик.png'));
-    assert(keyOrig.w === 1086 && keyOrig.h === 1448,
-        'оригинал ключа в бэкапе — 1086×1448, факт: ' + keyOrig.w + '×' + keyOrig.h);
 }
 
 console.log(`\n${'─'.repeat(50)}`);

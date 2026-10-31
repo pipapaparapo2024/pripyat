@@ -1,0 +1,46 @@
+<?php
+// Миграция 19 — 18.09.2026, перенос Скиллов на сервер: раньше levels[20] (реальная
+// прокачка скилла) хранился ВНУТРИ udata['skills_data'] — поля, которое ВСЕГДА было в
+// client-writable whitelist users.php (нужно для skillsDmgSpent, которое остаётся
+// client-reported, как и урон в бою с боссами). Значит игрок мог одним users.save с
+// поддельным skills_data мгновенно прокачать ВСЕ 20 скиллов до максимума бесплатно —
+// клиентский расчёт "хватает ли очков" никогда даже не вызывался.
+// skills_levels — служебное поле, НЕ входит в whitelist users.php (как dice_session/
+// yashik_session/roulette_cups) — хранит levels[20]+usedFreeFirstSkill, пишет и читает
+// ТОЛЬКО сервер. skillsDmgSpent остаётся в skills_data (client-writable) — тот же уровень
+// доверия, что и сам урон по боссам (клиент по-прежнему считает урон удара сам).
+// Запустить: https://pripyat-game.ru/server/migrate19.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$col = 'skills_levels';
+$def = "TEXT DEFAULT NULL";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 19 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

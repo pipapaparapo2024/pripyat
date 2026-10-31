@@ -22,7 +22,7 @@ import os, sys, io, glob
 from PIL import Image
 
 ROOT   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMAGES = os.path.join(ROOT, '_client', 'development', 'images')
+IMAGES = os.path.join(ROOT, 'assets', 'images')
 # Мелкие элементы интерфейса (тонкие рамки, текст в картинке) кодируем без потерь — экономия
 # там меньше, зато нет шанса получить артефакты на чётких краях. Крупный арт — q=90.
 LOSSLESS_UNDER = 64 * 1024

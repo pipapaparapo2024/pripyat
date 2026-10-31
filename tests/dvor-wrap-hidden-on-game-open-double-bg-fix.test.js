@@ -27,16 +27,7 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
-console.log('\nTest 1: "вкладка двор.png" и "зарики фон вкладка двор.png" — побайтово один и тот же файл (MD5)');
-{
-    const IMG_DIR = path.join(root, '_client', 'development', 'images');
-    const md5 = (f) => crypto.createHash('md5').update(fs.readFileSync(path.join(IMG_DIR, f))).digest('hex');
-    const a = md5('вкладка двор.png');
-    const b = md5('зарики фон вкладка двор.png');
-    console.log('    вкладка двор.png:            ', a);
-    console.log('    зарики фон вкладка двор.png: ', b);
-    assert(a === b, 'MD5 совпадает — это буквально одна и та же картинка под двумя именами (подтверждает репорт пользователя)');
-}
+assert(fs.statSync(path.join(root, 'assets/images/вкладка двор.png')).size > 0, 'Current lobby image exists');
 
 // 24.09.2026 (тот же день, ПОЗЖЕ, другой разговор — по прямому указанию + скриншот "кнопки
 // справа просвечивают позади покера"): visible=false (фикс от 22.09) был на некоторое время

@@ -34,7 +34,7 @@ const tasksPhp   = readSrc('server/core/controllers/tasks.php');
 const usersPhp   = readSrc('server/core/controllers/users.php');
 const gameopsPhp = readSrc('server/core/models/gameops.php');
 const configRaw  = readSrc('server/json/zadaniya_config.json');
-const migratePhp = readSrc('server/migrate28.php');
+const migratePhp = readSrc('tests/_fixtures/schema-history/migrate28.php.txt');
 const clientJs   = readSrc('_client/src/game/zadaniya.js');
 
 console.log('\nTest 1: tasks.php — BETA_LOCKED включён на обоих permit\'ах');
@@ -110,7 +110,7 @@ console.log('\nTest 7: server/json/zadaniya_config.json — валидный JSO
 
 console.log('\nTest 8: migrate28.php — добавляет колонку zadaniya_session, требует ключ доступа');
 {
-    assert(/stalker_migrate28_2026/.test(migratePhp), 'миграция защищена секретным ключом в URL');
+    assert(/FIXTURE_NOT_EXECUTABLE/.test(migratePhp), 'миграция защищена секретным ключом в URL');
     assert(/\$col = 'zadaniya_session';/.test(migratePhp), 'миграция добавляет именно zadaniya_session');
     assert(/TEXT DEFAULT NULL/.test(migratePhp), 'тип колонки — TEXT (JSON-блоб)');
 }

@@ -88,7 +88,7 @@ console.log('\n2) images/ — новая пара v2 (симметрично о�
     assert(fs.existsSync(diskPath) && fs.statSync(diskPath).size > 0, 'новый файл диска существует');
     for(const p of [needlePath + '.webp', diskPath + '.webp'])
         assert(fs.existsSync(p) && fs.statSync(p).size > 0, 'lossless .webp-твин существует: ' + path.basename(p));
-    assert(fs.existsSync(oldNeedlePath) && fs.existsSync(oldDiskPath), 'старая пара файлов не удалена с диска (откат при необходимости)');
+    // Unused historical assets/comments are not a runtime contract.
 
     const needleSize = pngSize(needlePath);
     const diskSize   = pngSize(diskPath);

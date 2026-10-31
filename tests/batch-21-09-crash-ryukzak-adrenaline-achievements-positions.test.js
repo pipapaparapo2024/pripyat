@@ -41,7 +41,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 const zoneScreenSrc = readSrc('_client/src/game/shell/overlays/zone_screen.js');
 const ryukzakSrc    = readSrc('_client/src/game/shell/overlays/ryukzak.js');
 const ryukzakPhpSrc = readSrc('server/core/controllers/ryukzak.php');
-const registrySrc   = readSrc('server/core/models/registry.php');
+const registrySrc   = readSrc('server/core/models/registry.example.php');
 const errorsSrc     = readSrc('server/json/errors.json');
 const skillsSrc     = readSrc('_client/src/game/skills.js');
 const moduleCtlSrc  = readSrc('_client/src/modules/module_control.js');

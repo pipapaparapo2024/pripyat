@@ -90,13 +90,13 @@ console.log('\n1) server/core/controllers/rewardlinks.php — контролле
 
 console.log('\n2) registry.php — новый класс rewardlinks добавлен в вайтлист роутера');
 {
-    const src = read('server/core/models/registry.php');
+    const src = read('server/core/models/registry.example.php');
     assert(/'classes'=>array\([^)]*'rewardlinks'/.test(src), "'rewardlinks' есть в списке разрешённых классов (иначе universal.php отклонит любой запрос rewardlinks.*)");
 }
 
-console.log('\n3) server/migrate22.php — миграция создаёт обе таблицы с уникальными индексами');
+console.log('\n3) tests/_fixtures/schema-history/migrate22.php.txt — миграция создаёт обе таблицы с уникальными индексами');
 {
-    const src = read('server/migrate22.php');
+    const src = read('tests/_fixtures/schema-history/migrate22.php.txt');
     assert(/CREATE TABLE IF NOT EXISTS `reward_links`/.test(src), 'таблица reward_links');
     assert(/UNIQUE KEY `uniq_code` \(`code`\)/.test(src), 'код ссылки уникален');
     assert(/CREATE TABLE IF NOT EXISTS `reward_link_claims`/.test(src), 'таблица reward_link_claims');

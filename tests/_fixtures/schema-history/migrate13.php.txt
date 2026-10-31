@@ -1,0 +1,62 @@
+<?php
+// Миграция 13 — «рамка уважения» на карточках локаций (16.09.2026): кто заработал больше
+// всего уважения с каждой из 5 локаций, глобально среди всех игроков. Аналог migrate11.php
+// (roulette_state/keyring), только "рекорд по максимуму", а не "последний".
+// Запустить: https://pripyat-game.ru/server/migrate13.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$sql = "CREATE TABLE IF NOT EXISTS `zone_respect_leader` (
+  `location_id` TINYINT UNSIGNED NOT NULL,
+  `user_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `amount` INT UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`location_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+if($link->query($sql)){
+    $results[] = "OK    zone_respect_leader создана (или уже существовала)";
+} else {
+    $results[] = "ERROR " . $link->error;
+}
+
+// Личный (per-player) накопленный счётчик уважения по каждой из 5 локаций — нужен, чтобы
+// клиент знал СВОЙ текущий итог и мог сравнить/отправить его в zone.recordRespect(). Отдельно
+// от zone_respect_leader (та таблица — только текущий глобальный рекордсмен, 5 строк).
+$cols = [];
+for($i = 0; $i < 5; $i++) $cols['loc_respect_'.$i] = "VARCHAR(64) DEFAULT '0'";
+
+foreach($cols as $col => $def){
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+        continue;
+    }
+    if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error . " ($col)";
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 13 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

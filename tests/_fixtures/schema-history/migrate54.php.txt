@@ -1,0 +1,84 @@
+<?php
+// Миграция 54 — 28.10.2026, фича "Заначки" (по прямому указанию: "раздай всем рандомно значки
+// ... игрок накопил 150 значек, рассыпь их по всем коллекциям случайно"). Игроки находили нычки
+// (stash_count += 1 за каждую, zone.php/yashik.php/poker.php/roulette.php) ЗАДОЛГО до того, как
+// 26.10.2026 появился реальный разбор по коллекциям/позициям (stash_data, см.
+// zanachkimodel.php::grantRandomCards()) — для всех находок ДО этой даты stash_count вырос, а
+// stash_data остался пуст, то есть экран "Заначки" показывает 0 собранного, хотя по счётчику
+// игрок явно что-то находил. Миграция — одноразовый backfill: для каждого игрока считает дефицит
+// (stash_count минус реальная сумма по stash_data) и добирает его случайными карточками той же
+// равновероятной логикой, что и grantRandomCards() (15 коллекций × 7 позиций). Идемпотентна —
+// повторный запуск у кого дефицита уже нет просто пропустит игрока.
+// Запустить: https://pripyat-game.ru/server/migrate54.php?key=FIXTURE_NOT_EXECUTABLE
+// (на тестовом сервере — https://test-pripyat-game.ru/server/migrate54.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$utb = $registry['utb'];
+$res = $link->query("SELECT `id`, `stash_count`, `stash_data` FROM `{$utb}`");
+
+$total = 0; $updated = 0; $skipped = 0; $cardsGranted = 0;
+$results = [];
+
+if($res) while($row = $res->fetch_assoc()){
+    $total++;
+    $wantTotal = intval($row['stash_count']);
+    if($wantTotal <= 0){ $skipped++; continue; }
+
+    $raw = json_decode($row['stash_data'] ?: '{}', true);
+    if(!is_array($raw)) $raw = [];
+
+    $data = [];
+    $haveTotal = 0;
+    for($col = 1; $col <= 15; $col++){
+        $colKey = strval($col);
+        $data[$colKey] = [];
+        for($pos = 1; $pos <= 7; $pos++){
+            $posKey = strval($pos);
+            $v = intval($raw[$colKey][$posKey] ?? 0);
+            $data[$colKey][$posKey] = $v;
+            $haveTotal += $v;
+        }
+    }
+
+    $deficit = $wantTotal - $haveTotal;
+    if($deficit <= 0){ $skipped++; continue; }
+
+    for($i = 0; $i < $deficit; $i++){
+        $col = strval(mt_rand(1, 15));
+        $pos = strval(mt_rand(1, 7));
+        $data[$col][$pos]++;
+    }
+
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+    $jsonEsc = $link->real_escape_string($json);
+    $id = intval($row['id']);
+    if($link->query("UPDATE `{$utb}` SET `stash_data` = '{$jsonEsc}' WHERE `id` = {$id}")){
+        $updated++;
+        $cardsGranted += $deficit;
+        $results[] = "OK    id={$id}: +{$deficit} карточек (было {$haveTotal}, стало {$wantTotal})";
+    } else {
+        $results[] = "ERROR id={$id}: " . $link->error;
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 54 results:\n\n";
+echo "Всего игроков: {$total}\nОбновлено: {$updated}\nПропущено (дефицита нет/stash_count=0): {$skipped}\nВсего роздано карточек: {$cardsGranted}\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

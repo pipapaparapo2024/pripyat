@@ -14,7 +14,7 @@
  * мест начисления, см. roulette.php) — poker.php.openBag()/resolve() и клиентские
  * dvor-poker-bag.js/dvor-poker-screen.js переведены читать/писать именно его. poker_spichki
  * больше нигде не пишется (мёртвое поле в БД, старый баланс переносится одноразовой миграцией
- * server/migrate49.php, не трогаем структуру таблицы — ПРАВИЛО №3).
+ * tests/_fixtures/schema-history/migrate49.php.txt, не трогаем структуру таблицы — ПРАВИЛО №3).
  *
  * Run: node tests/poker-bag-currency-matches-poker-spichki.test.js
  */
@@ -38,7 +38,7 @@ console.log('\nTest 1: сервер (poker.php.openBag) списывает roule
     assert(/if\(!\$this->ops->deduct\(\$user, 'roulette_spichki', \$cost\)\) return \$this->ops->fail\(50\);/.test(pokerPhp),
         'deduct() читает и списывает roulette_spichki (общая валюта с рулеткой)');
     assert(!/deduct\(\$user, 'poker_spichki', \$cost\)/.test(pokerPhp),
-        'больше не списывает отдельную poker_spichki — поле мёртвое, см. server/migrate49.php');
+        'больше не списывает отдельную poker_spichki — поле мёртвое, см. tests/_fixtures/schema-history/migrate49.php.txt');
 }
 
 console.log('\nTest 2: patch ответа openBag() возвращает актуальный баланс roulette_spichki');

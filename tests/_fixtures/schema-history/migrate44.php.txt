@@ -1,0 +1,14 @@
+<?php
+// Миграция 44: постоянный серверный флаг согласия на доступ к списку друзей VK.
+// Запускать один раз после выкладки: /migrate44.php?key=FIXTURE_NOT_EXECUTABLE
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r = new Registry();
+$db = new mysqli($r['server'], $r['user'], $r['pass'], $r['db'], 3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error);
+$db->set_charset('utf8mb4');
+$check = $db->query("SHOW COLUMNS FROM `{$r['utb']}` LIKE 'friends_scope_granted'");
+if(!$check) die($db->error);
+if(!$check->num_rows && !$db->query("ALTER TABLE `{$r['utb']}` ADD COLUMN `friends_scope_granted` TINYINT(1) NOT NULL DEFAULT 0")) die($db->error);
+$db->close();
+echo '<pre>Migration 44 complete: friends_scope_granted is ready.</pre>';

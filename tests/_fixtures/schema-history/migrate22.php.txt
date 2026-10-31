@@ -1,0 +1,64 @@
+<?php
+// Миграция 22 — наградные ссылки (25.09.2026, по прямому указанию): сайт-генератор
+// (vk_game/сайт/, отдельный проект вне этого репозитория) создаёт ссылки вида
+// vk.com/app<id>?reward=CODE, reward_links хранит саму награду (JSON) и опциональный срок
+// действия, reward_link_claims — кто и когда уже получил конкретную ссылку (по прямому
+// указанию — "многоразовая, но каждый игрок может получить строго только один раз").
+// Запустить: https://pripyat-game.ru/server/migrate22.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$sql1 = "CREATE TABLE IF NOT EXISTS `reward_links` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(64) NOT NULL,
+  `reward` TEXT NOT NULL,
+  `label` VARCHAR(255) DEFAULT NULL,
+  `created_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  `expires_at` INT UNSIGNED DEFAULT NULL,
+  `active` TINYINT UNSIGNED NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+if($link->query($sql1)){
+    $results[] = "OK    reward_links создана (или уже существовала)";
+} else {
+    $results[] = "ERROR " . $link->error;
+}
+
+$sql2 = "CREATE TABLE IF NOT EXISTS `reward_link_claims` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `link_id` INT UNSIGNED NOT NULL,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `claimed_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_link_user` (`link_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+if($link->query($sql2)){
+    $results[] = "OK    reward_link_claims создана (или уже существовала)";
+} else {
+    $results[] = "ERROR " . $link->error;
+}
+
+$link->close();
+
+echo "<pre>\nMigration 22 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

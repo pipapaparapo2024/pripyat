@@ -1,3 +1,4 @@
+import { habarElapsedDay } from '../modules/habar-progress.js';
 import { applyPatch } from '../modules/patch.js';
 
 // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от дня
@@ -123,6 +124,7 @@ export default class Habar{
         const boughtIdx = parseInt(udata['habar_bought'] || 0) - 1; // -1 = ничего не куплено
         this._habarBtns = [];
         this._habarTimerLabels = [];
+        this._habarCancelBtns = [];
 
         for(let i = 0; i < 4; i++){
             if(boughtIdx === i){
@@ -136,6 +138,16 @@ export default class Habar{
                 btn.on('pointerdown', ()=>this._collectDay());
                 win.addChild(btn);
                 this._habarBtns.push(btn);
+                const cancelTexture = PIXI.Texture.from('./images/хабар отмена подписки.png');
+                cancelTexture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
+                cancelTexture.baseTexture.scaleMode = PIXI.SCALE_MODES.LINEAR;
+                const cancel = new PIXI.Sprite(cancelTexture);
+                cancel.width = 122; cancel.height = 34;
+                cancel.x = BTN_X[i]; cancel.y = BTN_Y[i];
+                cancel.buttonMode = true;
+                cancel.on('pointerdown', () => this._requestCancelHabar());
+                win.addChild(cancel);
+                this._habarCancelBtns[i] = cancel;
 
                 // Пока суточный кулдаун не закончился, вместо кнопки показываем только
                 // некликабельный таймер. Он занимает ту же область, поэтому игрок сразу
@@ -175,9 +187,9 @@ export default class Habar{
                 // такое приплюсовывание уводило текст на полтора десятка-сотню пикселей в сторону
                 // (слот "Элитный" уезжал за пределы своей плашки). x/y используются НАПРЯМУЮ.
                 const TIMER_X = [279, 524, 769, 1014];
-                const TIMER_Y = 508;
+                const TIMER_Y = 534;
                 const timer = new PIXI.Text('', {
-                    fontFamily:'Southbank LT', fontSize:28, fill:'#f0e2c4',
+                    fontFamily:'Southbank LT', fontSize:16, fill:'#f0e2c4',
                     align:'center', fontWeight:'bold',
                     dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:2,
                 });
@@ -232,7 +244,7 @@ export default class Habar{
         const timer = this._habarTimerLabels && this._habarTimerLabels[boughtIdx];
 
         const boughtTs = parseInt(udata['habar_bought_ts'] || 0);
-        const now = Date.now();
+        const now = window.TIMERS && typeof TIMERS.nowMs === 'function' ? TIMERS.nowMs() : Date.now();
         const expired = boughtTs > 0 && now >= boughtTs + HABAR_TOTAL_DAYS_MS;
 
         const lastTs = parseInt(udata['habar_last_collect_ts'] || 0);
@@ -243,10 +255,12 @@ export default class Habar{
         btn.interactive = canCollect;
         btn.buttonMode = canCollect;
         btn.alpha = 1;
+        const cancel = this._habarCancelBtns && this._habarCancelBtns[boughtIdx];
+        if(cancel){ cancel.visible = !canCollect; cancel.interactive = !canCollect && !this._habarCancelling; }
 
         if(timer){
-            timer.visible = !canCollect;
-            const collected = parseInt(udata['habar_days_collected'] || 0);
+            timer.visible = true;
+            const collected = habarElapsedDay(boughtTs, now);
             const countSuffix = '  ' + Math.min(collected, 30) + '/30';
             if(expired){
                 timer.text = 'ХАБАР ИСТЁК' + countSuffix;
@@ -263,6 +277,32 @@ export default class Habar{
                 timer.text = hh + ':' + mm + ':' + ss + countSuffix;
             }
         }
+    }
+
+    _requestCancelHabar(){
+        if(this._habarCancelling || !window.iface || typeof iface._showConfirmPopup !== 'function') return;
+        const container_id = parseInt(udata.habar_bought || 0) - 1;
+        const bought_ts = Number(udata.habar_bought_ts || 0);
+        if(container_id < 0) return;
+        iface._showConfirmPopup('Отменить хабар? Оставшиеся дни сгорят. Уже полученные награды останутся.', () => {
+            if(this._habarCancelling) return;
+            this._habarCancelling = true;
+            this._updateHabarTimer();
+            TS.php('habar.cancel', {container_id, bought_ts}, (res) => {
+                this._habarCancelling = false;
+                if(!res || !res.patch) return;
+                applyPatch(res.patch);
+                const parent = this._pixiWin && this._pixiWin.parent;
+                if(parent) parent.removeChild(this._pixiWin);
+                this._pixiWin = null;
+                this._buildPixiWin();
+                if(parent) parent.addChild(this._pixiWin);
+            }, () => {
+                this._habarCancelling = false;
+                this._updateHabarTimer();
+                notify.showResult({text:'Не удалось отменить хабар. Повторите попытку.'}, 0);
+            });
+        });
     }
 
     _buyAndOpen(idx){

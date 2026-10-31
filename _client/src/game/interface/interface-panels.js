@@ -111,9 +111,9 @@ export function attachInterfacePanels(proto){
         modules.checkFlags(['top'], run);
     };
 
-    proto.openModule = function(name){
+    proto.openModule = function(name, options = {}){
         console.log('[interface.openModule] name:', name, '| _openModuleName:', this._openModuleName, '| window[name]:', !!window[name], '| habar open:', window.habar && window.habar._pixiWin && window.habar._pixiWin.parent ? 'YES' : 'no');
-        if(this._openModuleName === name){
+        if(this._openModuleName === name && !options.forceOpen){
             // Проверяем что модуль РЕАЛЬНО открыт (мог закрыться через собственную X-кнопку)
             const m = window[name];
             const reallyOpen = m && (

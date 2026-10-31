@@ -39,7 +39,7 @@ const read = (...p) => fs.readFileSync(path.join(root, ...p), 'utf-8');
 const ryukzakPhp = read('server', 'core', 'controllers', 'ryukzak.php');
 const ryukzakJs  = read('_client', 'src', 'game', 'shell', 'overlays', 'ryukzak.js');
 const pokerPhp   = read('server', 'core', 'controllers', 'poker.php');
-const migration  = read('server', 'migrate47.php');
+const migration  = read('tests', '_fixtures', 'schema-history', 'migrate47.php.txt');
 
 console.log('\nTest 1: ryukzak.php._grantWeaponReward() портирован 1-в-1 из poker.php');
 {

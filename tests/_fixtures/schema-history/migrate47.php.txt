@@ -1,0 +1,56 @@
+<?php
+// Миграция 47: чинит уже пострадавших игроков от бага "оружие не куплено" (ryukzak.php.open()
+// начислял ammo_machete/ammo_gun/ammo_auto напрямую, не трогая weapons[id].owned — см. фикс
+// ryukzak.php._grantWeaponReward() того же дня). Для каждого игрока: если ammo_<type> > 0,
+// а weapons[wid].owned всё ещё false — выставляет owned=true и подтягивает qty до ammo_<type>
+// (не уменьшает qty, если в weapons уже больше — на случай параллельных источников).
+// Запускать один раз через SSH/CLI: php server/migrate47.php
+if(PHP_SAPI !== 'cli' && (!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE')){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r = new Registry();
+$db = new mysqli($r['server'], $r['user'], $r['pass'], $r['db'], 3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error);
+$db->set_charset('utf8mb4');
+
+$WID = ['machete' => 3, 'gun' => 4, 'auto' => 5];
+
+$rows = $db->query("SELECT id, weapons, ammo_machete, ammo_gun, ammo_auto FROM `{$r['utb']}` WHERE (CAST(ammo_machete AS UNSIGNED) > 0 OR CAST(ammo_gun AS UNSIGNED) > 0 OR CAST(ammo_auto AS UNSIGNED) > 0)");
+if(!$rows) die($db->error);
+
+$fixed = 0; $checked = 0;
+while($row = $rows->fetch_assoc()){
+    $checked++;
+    $data = json_decode($row['weapons'] ?? '', true);
+    if(!is_array($data)) $data = [];
+    $changed = false;
+
+    foreach($WID as $type => $wid){
+        $ammo = intval($row['ammo_' . $type] ?? 0);
+        if($ammo <= 0) continue;
+        if(!isset($data[$wid]) || !is_array($data[$wid])){
+            $data[$wid] = ['owned' => false, 'equipped' => false, 'upg' => 0, 'qty' => 0];
+        }
+        if(empty($data[$wid]['owned'])){
+            $data[$wid]['owned'] = true;
+            $changed = true;
+        }
+        $curQty = intval($data[$wid]['qty'] ?? 0);
+        if($ammo > $curQty){
+            $data[$wid]['qty'] = $ammo;
+            $changed = true;
+        }
+    }
+
+    if(!$changed) continue;
+    for($i = 0; $i < 6; $i++){
+        if(!isset($data[$i]) || !is_array($data[$i])) $data[$i] = ['owned' => $i < 3, 'equipped' => false, 'upg' => 0, 'qty' => 0];
+    }
+    ksort($data);
+    $json = $db->real_escape_string(json_encode(array_values($data), JSON_UNESCAPED_UNICODE));
+    $id = intval($row['id']);
+    if(!$db->query("UPDATE `{$r['utb']}` SET weapons='$json' WHERE id=$id")) die($db->error);
+    $fixed++;
+}
+
+$db->close();
+echo "<pre>Migration 47 complete. Checked: $checked, fixed: $fixed.</pre>";

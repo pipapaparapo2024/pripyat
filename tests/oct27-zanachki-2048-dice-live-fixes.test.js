@@ -310,7 +310,7 @@ console.log('\nTest 14: новые файлы-ассеты реально сущ
 {
     const IMAGES_DIR = path.join(root, '_client', 'development', 'images');
     const expected = [
-        'заначки окно запроса заголовок.png',
+        'заначки окно запроса заголовок твой запрос.png', 'заначки окно запроса заголовок запрос друга.png',
         'двор зарики фон экран 2.png',
     ];
     for(const f of expected){

@@ -63,7 +63,7 @@ console.log('\nTest 1: хабар — новые ассеты кнопок + 24-
     // показывается обратный отсчёт. Поэтому ошибочный попап по раннему клику невозможен.
     assert(/btn\.visible = canCollect;/.test(habar), 'кнопка "СОБРАТЬ" скрывается, пока кулдаун не истёк');
     assert(/btn\.interactive = canCollect;/.test(habar), 'скрытая кнопка некликабельна');
-    assert(/timer\.visible = !canCollect;/.test(habar), 'вместо кнопки во время ожидания показывается таймер');
+    assert(/timer\.visible = true;/.test(habar), 'вместо кнопки во время ожидания показывается таймер');
     assert(/this\._habarTimerInterval = setInterval\(\(\) => this\._updateHabarTimer\(\), 1000\);/.test(habar), 'open() запускает тиканье таймера раз в секунду');
     assert(/clearInterval\(this\._habarTimerInterval\)/.test(habar), 'close() останавливает интервал таймера');
     // 24.09.2026: клиент больше не сбрасывает кулдаун сам при покупке — вместо этого _buyAndOpen()

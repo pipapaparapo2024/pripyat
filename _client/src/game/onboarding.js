@@ -127,6 +127,11 @@ export default class Onboarding{
             console.error('[onboarding._playNarration] PIXI.sound недоступен — озвучка не заиграет');
             return;
         }
+        const context = PIXI.sound.context && PIXI.sound.context.audioContext;
+        if(context && context.state === 'suspended' && typeof context.resume === 'function'){
+            const resume = context.resume();
+            if(resume && typeof resume.catch === 'function') resume.catch(() => {});
+        }
         const alias = 'onboarding_' + url;
         this._narrationAlias = alias;
         const myGen = (this._narrationGen = (this._narrationGen || 0) + 1);

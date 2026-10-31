@@ -25,12 +25,12 @@ print('Target: TEST ONLY /var/www/stalker-test',flush=True)
 # The source/config are fetched from GitHub; installed webpack is reused as a build dependency.
 run(['node',str(ROOT/'_client/node_modules/webpack-cli/bin/cli.js'),'--config','webpack.config.js'],stage/'_client')
 # Bundled PixiJS is a preexisting runtime dependency needed only for native input tests.
-pixi=ROOT/'_client/development/libs/pixi-legacy.min.js'
+pixi=stage/'assets/libs/pixi-legacy.min.js'
 vendor=stage/'_client/development/libs/pixi-legacy.min.js';vendor.write_bytes(pixi.read_bytes())
 for name in ['energy-stash-release','stash-transfer-atomic','collection-achievements-client',
     'friend-wishlist-modal','stash-count-layout','right-menu-native-pixi-hitarea','game2048-top-avatars']:
     run(['node','tests/'+name+'.test.js'],stage)
-spec=importlib.util.spec_from_file_location('release',ROOT/'tools/release-session-715.py')
+spec=importlib.util.spec_from_file_location('release',ROOT/'tools/release.py')
 release=importlib.util.module_from_spec(spec);spec.loader.exec_module(release)
 files=[]
 for file in (stage/'server').rglob('*'):
@@ -39,9 +39,11 @@ for file in (stage/'server').rglob('*'):
     if file.name in ('registry.php','registry.example.php'):continue
     if file.name.startswith(('migrate','reset_')):continue
     files.append((relative,relative))
+for icon in (stage/'assets/server-images').glob('*'):
+    if icon.is_file():files.append((icon.relative_to(stage).as_posix(),'server/images/'+icon.name))
 for prefix in ['client/ver0_41','client/ver0_41/development']:
-    for file in (stage/'_client/development/images').rglob('*'):
-        if file.is_file():files.append((file.relative_to(stage).as_posix(),prefix+'/images/'+file.relative_to(stage/'_client/development/images').as_posix()))
+    for file in (stage/'assets').rglob('*'):
+        if file.is_file() and file.relative_to(stage/'assets').parts[0] in ['images','sounds','fonts','spine','libs']:files.append((file.relative_to(stage).as_posix(),prefix+'/'+file.relative_to(stage/'assets').as_posix()))
     files += [('_client/development/libs/index.js',prefix+'/libs/index.js'),('_client/development/index.html',prefix+'/index.html')]
 base='/var/www/stalker-test'
 client=release.connect()
@@ -49,7 +51,7 @@ try:
     registry_hash=release.command(client,'sha256sum /var/www/stalker-test/server/core/models/registry.php').split()[0]
     paths=[remote for _,remote in files]
     code='import pathlib,hashlib,json\nbase=pathlib.Path('+repr(base)+')\npaths='+repr(paths)+'\nprint(json.dumps({p:hashlib.sha256((base/p).read_bytes()).hexdigest() if (base/p).is_file() else None for p in paths}))'
-    remote_hashes=json.loads(release.command(client,'python3 -c '+shlex.quote(code)))
+    remote_hashes=json.loads(release.run_remote_python(client,code))
 finally:client.close()
 changed=[(local,remote) for local,remote in files if hashlib.sha256((stage/local).read_bytes()).hexdigest()!=remote_hashes.get(remote)]
 print('Changed files:',len(changed),'of',len(files),flush=True)

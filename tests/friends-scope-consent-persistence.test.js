@@ -12,7 +12,7 @@ const ui = fs.readFileSync(path.join(root, '_client/src/game/interface.js'), 'ut
 const preloader = fs.readFileSync(path.join(root, '_client/src/game/preloader.js'), 'utf8');
 const gate = fs.readFileSync(path.join(root, '_client/src/modules/friends-scope-gate.js'), 'utf8');
 const users = fs.readFileSync(path.join(root, 'server/core/controllers/users.php'), 'utf8');
-const migration = fs.readFileSync(path.join(root, 'server/migrate44.php'), 'utf8');
+const migration = fs.readFileSync(path.join(root, 'tests/_fixtures/schema-history/migrate44.php.txt'), 'utf8');
 const leaderboard = fs.readFileSync(path.join(root, '_client/src/game/svod/svod-leaderboard.js'), 'utf8');
 
 console.log('\n1) Кнопка друзей следует сохранённому согласию');

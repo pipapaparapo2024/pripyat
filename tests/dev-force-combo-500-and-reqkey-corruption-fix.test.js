@@ -11,7 +11,7 @@
  *   dice.php/poker.php/blackjack.php/roulette.php, читающие dev_force_dice/poker/blackjack/
  *   roulette, но миграцию для этих 4 колонок не создала и не выполнила — колонок физически
  *   нет в живой БД (SHOW COLUMNS подтвердил только dev_force_drops/dev_force_jackpot).
- *   Фикс — server/migrate33.php (ALTER TABLE, по образцу migrate26.php).
+ *   Фикс — tests/_fixtures/schema-history/migrate33.php.txt (ALTER TABLE, по образцу migrate26.php).
  *
  * Root cause #2 (server.js.completeRequest()): при HTTP-статусе не 200 (как раз наш 500)
  *   client подставляет errors[1] (window.errors, index.js) — объект БЕЗ поля req_key.
@@ -32,10 +32,10 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migratePath = path.join(root, 'server', 'migrate33.php');
+const migratePath = path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate33.php.txt');
 const serverSrc = fs.readFileSync(path.join(root, '_client', 'src', 'modules', 'server.js'), 'utf-8');
 
-console.log('\nTest 1: server/migrate33.php существует и добавляет все 4 недостающие колонки');
+console.log('\nTest 1: tests/_fixtures/schema-history/migrate33.php.txt существует и добавляет все 4 недостающие колонки');
 {
     assert(fs.existsSync(migratePath), 'migrate33.php создан');
     const src = fs.readFileSync(migratePath, 'utf-8');
@@ -43,7 +43,7 @@ console.log('\nTest 1: server/migrate33.php существует и добавл
     assert(/\[.dev_force_poker.,/.test(src), 'колонка dev_force_poker в списке миграции');
     assert(/\[.dev_force_blackjack.,/.test(src), 'колонка dev_force_blackjack в списке миграции');
     assert(/\[.dev_force_roulette.,/.test(src), 'колонка dev_force_roulette в списке миграции');
-    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'stalker_migrate33_2026'\)/.test(src),
+    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'FIXTURE_NOT_EXECUTABLE'\)/.test(src),
         'миграция защищена секретным ключом (тот же паттерн, что migrate26-32)');
     assert(/SHOW COLUMNS FROM `\{\$registry\['utb'\]\}` LIKE '\$col'/.test(src),
         'миграция идемпотентна — пропускает уже существующие колонки (SKIP), не падает при повторном запуске');

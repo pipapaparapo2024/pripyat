@@ -23,7 +23,7 @@ const read = p => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 
 // 2. Сервер — регистри
 {
-    const s = read('server/core/models/registry.php');
+    const s = read('server/core/models/registry.example.php');
     assert(s.includes("function __construct(){"), 'Registry должен получить конструктор для выбора БД по площадке');
     assert(s.includes("$_POST['platform'] ?? ''"), 'переключение БД должно читать $_POST[\'platform\'] с безопасным дефолтом на пустую строку');
     assert(s.includes("=== 'ok'"), 'переключение БД должно срабатывать только при явном platform===\'ok\'');
@@ -34,8 +34,8 @@ const read = p => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 
 // 3. Миграция 45 — клонирование структуры stalker_ok
 {
-    const s = read('server/migrate45.php');
-    assert(s.includes("stalker_migrate45_2026"), 'миграция должна требовать защитный key в query-параметре, как все остальные migrateNN.php');
+    const s = read('tests/_fixtures/schema-history/migrate45.php.txt');
+    assert(s.includes("FIXTURE_NOT_EXECUTABLE"), 'миграция должна требовать защитный key в query-параметре, как все остальные migrateNN.php');
     assert(s.includes("CREATE DATABASE IF NOT EXISTS `stalker_ok`"), 'миграция должна создавать БД stalker_ok (аддитивно, IF NOT EXISTS)');
     assert(s.includes("CREATE TABLE `stalker_ok`.`$table` LIKE `stalker`.`$table`"), 'миграция должна клонировать СТРУКТУРУ таблиц (LIKE), не данные');
     assert(!/INSERT INTO|SELECT \* FROM `stalker`/.test(s), 'миграция НЕ должна копировать данные игроков stalker в stalker_ok');

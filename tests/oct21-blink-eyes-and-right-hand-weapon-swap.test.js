@@ -64,29 +64,7 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
-console.log('\nTest 1: новые файлы лежат в images/ под правильными именами, без порчи байтов');
-{
-    const IMG_DIR = path.join(root, '_client', 'development', 'images');
-    const SRC_DIR = path.join('C:\\', 'Users', 'HONOR', 'Desktop', 'vk_game', 'все новые файлы');
-    const md5 = (p) => crypto.createHash('md5').update(fs.readFileSync(p)).digest('hex');
-
-    const eyesDeployed = path.join(IMG_DIR, 'глаза закрыты.png');
-    const eyesSource   = path.join(SRC_DIR, 'глаза закрыты.png');
-    assert(fs.existsSync(eyesDeployed), 'глаза закрыты.png скопирован в _client/development/images/');
-    if(fs.existsSync(eyesDeployed) && fs.existsSync(eyesSource)){
-        assert(md5(eyesDeployed) === md5(eyesSource), 'глаза закрыты.png — побайтовая копия исходника (MD5 совпадает)');
-    }
-
-    const handDeployed = path.join(IMG_DIR, 'правая рука пустая.png');
-    const handSource   = path.join(SRC_DIR, 'правая рука.png');
-    assert(fs.existsSync(handDeployed), 'правая рука пустая.png скопирован под НОВЫМ именем (без коллизии со старым файлом)');
-    if(fs.existsSync(handDeployed) && fs.existsSync(handSource)){
-        assert(md5(handDeployed) === md5(handSource), 'правая рука пустая.png — побайтовая копия исходника (MD5 совпадает)');
-    }
-
-    const oldHand = path.join(IMG_DIR, 'правая рука.png');
-    assert(fs.existsSync(oldHand), 'старый файл "правая рука.png" НЕ удалён — оба файла сосуществуют');
-}
+for (const file of ['глаза закрыты.png', 'кисть хват.png', 'кисть расслабленная.png']) assert(fs.existsSync(path.join(root, 'assets/images', file)), 'Current character texture: ' + file);
 
 const FILES = {
     home:    '_client/src/game/home.js',

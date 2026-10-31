@@ -40,7 +40,7 @@ const zaruba     = read('server', 'core', 'controllers', 'zaruba.php');
 const engine     = read('server', 'core', 'models', 'achievementengine.php');
 const profile    = read('_client', 'src', 'game', 'shell', 'overlays', 'player_profile.js');
 const svod       = read('_client', 'src', 'game', 'svod.js');
-const migration  = read('server', 'migrate46.php');
+const migration  = read('tests', '_fixtures', 'schema-history', 'migrate46.php.txt');
 const config     = JSON.parse(read('server', 'json', 'achievements_config.json'));
 
 console.log('\nTest 1: "Пригласи друзей" заменено на "Имей друзей", логика friendsCount не тронута');
@@ -118,7 +118,7 @@ console.log('\nTest 9: achievements_config.json — все 6 gym_* тиров и
 
 console.log('\nTest 10: миграция 46 добавляет pvp_wins и gym_invites_sent');
 {
-    assert(migration.includes("stalker_migrate46_2026"), 'уникальный ключ миграции');
+    assert(migration.includes("FIXTURE_NOT_EXECUTABLE"), 'уникальный ключ миграции');
     assert(/foreach\(\['pvp_wins', 'gym_invites_sent'\] as \$col\)/.test(migration), 'добавляет обе колонки в одном проходе');
     assert(migration.includes("VARCHAR(64) DEFAULT '0'"), 'тип колонки — VARCHAR(64) DEFAULT \'0\', как у остальных server-only счётчиков');
 }

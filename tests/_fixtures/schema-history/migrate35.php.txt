@@ -1,0 +1,56 @@
+<?php
+// Миграция 35 — 29.09.2026, по прямому указанию (скриншот попапа победы — "участники боя"
+// показывает урон друга, который на самом деле пришёл от Седого; "урон седого не должен
+// рассчитываться друзьям").
+//
+// Причина: boss_damage_log (миграция 23) не различает источник удара — обычная атака
+// (bosses.php.attack()) и удар "Седого" (bosses.php.useSedoy(), с 26.09.2026 тоже пишет в
+// этот лог, см. большой комментарий над useSedoy()) вставляют строки в ОДНОМ и том же
+// формате. И личный, и "дружеский" урон в рейтинге "УЧАСТНИКИ БОЯ" (_ratingTop(), см.
+// bosses_fight.js/boss_result.js) считается ОБЩИМ SUM() по этой таблице — значит удар
+// Седого (в т.ч. чужой, если друг ударил Седым в ЭТОМ же бою) попадает в рейтинг как будто
+// это честный боевой вклад.
+//
+// Новая колонка is_sedoy — TINYINT(1) NOT NULL DEFAULT 0 — позволяет отличить такие строки
+// без изменения формата остальных полей. useSedoy() будет проставлять её в 1, attack() —
+// оставлять дефолтные 0 (никакой правки самого INSERT в attack() не требуется).
+//
+// Только ADD COLUMN (аддитивно, ничего существующего не трогает, старые строки получают
+// DEFAULT 0 — то есть исторические удары Седого ДО этой миграции будут ошибочно считаться
+// обычным уроном в рейтинге, это принятый компромисс: отличить их сейчас невозможно, см.
+// разбор в чате).
+//
+// Запустить: https://pripyat-game.ru/server/migrate35.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$check = $link->query("SHOW COLUMNS FROM `boss_damage_log` LIKE 'is_sedoy'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  is_sedoy уже существует";
+} else if($link->query("ALTER TABLE `boss_damage_log` ADD COLUMN `is_sedoy` TINYINT(1) NOT NULL DEFAULT 0 AFTER `critical`")){
+    $results[] = "OK    is_sedoy добавлена в boss_damage_log";
+} else {
+    $results[] = "ERROR " . $link->error . " (is_sedoy)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 35 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

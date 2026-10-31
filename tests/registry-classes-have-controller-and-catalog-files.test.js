@@ -35,7 +35,7 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 
 console.log('Test 1: каждый класс из registry.php \'classes\' whitelist имеет файл контроллера в server/core/controllers/');
 {
-    const registrySrc = read('server/core/models/registry.php');
+    const registrySrc = read('server/core/models/registry.example.php');
     const m = registrySrc.match(/'classes'=>array\(([^)]*)\)/);
     assert(!!m, 'массив classes найден в registry.php (regex не сломался на реструктуризации файла)');
     const classes = m[1].match(/'([^']+)'/g).map(s => s.slice(1, -1));

@@ -15,7 +15,7 @@
  * пересмотрено — обе валюты ОБЪЕДИНЕНЫ в одну общую (канонический столбец roulette_spichki, см.
  * poker.php.openBag()/server/json/poker_config.json). Счётчик на экране покера СНОВА читает
  * udata['roulette_spichki'] — на этот раз НЕ регрессия 27.09.2026, а буквально одна и та же
- * валюта с рулеткой (poker_spichki — мёртвое поле, старый баланс перенесён server/migrate49.php).
+ * валюта с рулеткой (poker_spichki — мёртвое поле, старый баланс перенесён tests/_fixtures/schema-history/migrate49.php.txt).
  *
  * Run: node tests/poker-spichki-counter-wrong-currency-field.test.js
  */
@@ -41,7 +41,7 @@ console.log('\nTest 1: счётчик спичек на экране покер�
     assert(line && /udata\['roulette_spichki'\]/.test(line),
         'читает udata[\'roulette_spichki\'] (общая валюта покера и рулетки после объединения 20.10.2026)');
     assert(line && !/udata\['poker_spichki'\]/.test(line),
-        'больше не читает мёртвое поле udata[\'poker_spichki\'] (старый баланс перенесён server/migrate49.php)');
+        'больше не читает мёртвое поле udata[\'poker_spichki\'] (старый баланс перенесён tests/_fixtures/schema-history/migrate49.php.txt)');
 }
 
 console.log('\nTest 2: соседний счётчик фишек (_pokerChipsTxt) не задет фиксом — по-прежнему читает poker_chips');

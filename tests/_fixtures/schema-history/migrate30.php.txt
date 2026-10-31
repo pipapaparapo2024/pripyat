@@ -1,0 +1,47 @@
+<?php
+// Миграция 30 — 24.09.2026, по прямому указанию: перенять у референсной игры (тот же
+// движок) модель "мутируемый HP + курсор урона друзей" вместо пересчёта SUM() с нуля на
+// каждый запрос (см. bosses.php._syncFightSession()/_applyFriendDamage()).
+//
+// boss_fight_session — НОВОЕ server-only поле, тот же класс, что skills_levels/
+// dice_session/poker_session/blackjack_session/yashik_session (см. CLAUDE.md,
+// "Server-only session-поля"). НЕ добавлять в whitelist $allowed в users.php — bosses_data
+// уже в whitelist, и хранить мутируемый HP там было бы прямой дырой: читер выставил бы
+// curHp:0 одним users.save и мгновенно "убивал" любого босса без единого реального удара.
+//
+// Только ADD COLUMN (аддитивно, ничего существующего не трогает).
+//
+// Запустить: https://pripyat-game.ru/server/migrate30.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$check = $link->query("SHOW COLUMNS FROM `users` LIKE 'boss_fight_session'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  boss_fight_session уже существует";
+} else if($link->query("ALTER TABLE `users` ADD COLUMN `boss_fight_session` TEXT DEFAULT NULL")){
+    $results[] = "OK    boss_fight_session добавлена";
+} else {
+    $results[] = "ERROR " . $link->error . " (boss_fight_session)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 30 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

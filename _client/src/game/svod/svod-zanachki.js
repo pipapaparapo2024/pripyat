@@ -268,7 +268,7 @@ export function attachSvodZanachki(proto){
                 // Убираем дублирующую "-7" — сдвиг на 7px относительно card теперь даёт только
                 // CARD_Y_OFF, как и было изначально задумано для первого запроса.
                 const countTxt = new PIXI.Text('0', {
-                    fontFamily: FONT, fontSize: 18, fill: '#000000',
+                    fontFamily: 'Southbank LT', fontSize: 18, fill: '#000000',
                     strokeThickness: 0, padding: 4,
                 });
                 countTxt.anchor.set(0.5, 0);

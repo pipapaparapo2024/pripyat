@@ -7,7 +7,7 @@
  * пересмотрено, теперь это ОДНА общая валюта. Канонический столбец — roulette_spichki (см.
  * poker.php.openBag()/server/json/poker_config.json) — poker_spichki больше нигде не
  * начисляется и не списывается, старый баланс переносится одноразовой миграцией
- * (server/migrate49.php). Тест обновлён под новый канонический столбец.
+ * (tests/_fixtures/schema-history/migrate49.php.txt). Тест обновлён под новый канонический столбец.
  * Run: node tests/poker-spichki-achievement-server-authoritative.test.js
  */
 const assert = require('node:assert/strict');

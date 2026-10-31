@@ -1,6 +1,6 @@
 /**
  * Test: 29.09.2026, по прямому указанию (извинение перед игроками — "сделай так, чтобы у всех
- * игроков все лимиты сбросились прямо сейчас"). server/migrate36.php — разовый ручной сброс
+ * игроков все лимиты сбросились прямо сейчас"). tests/_fixtures/schema-history/migrate36.php.txt — разовый ручной сброс
  * bosses_data.dailyKills/dailyDate у ВСЕХ игроков сразу.
  *
  * Это мутация JSON-блоба построчно (не простой UPDATE column=const), поэтому основной риск —
@@ -22,7 +22,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migratePhp = fs.readFileSync(path.join(root, 'server', 'migrate36.php'), 'utf-8');
+const migratePhp = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate36.php.txt'), 'utf-8');
 
 console.log('\n1) migrate36.php — только ADD/UPDATE точечных полей, никаких DROP/TRUNCATE/DELETE');
 {
@@ -35,7 +35,7 @@ console.log('\n1) migrate36.php — только ADD/UPDATE точечных п�
 
 console.log('\n2) migrate36.php — гейт по ключу, как и остальные миграции проекта');
 {
-    assert(/\$_GET\['key'\].*'stalker_migrate36_2026'/.test(migratePhp), 'защищена секретным ключом в URL (тот же паттерн, что migrate34/migrate35)');
+    assert(/\$_GET\['key'\].*'FIXTURE_NOT_EXECUTABLE'/.test(migratePhp), 'защищена секретным ключом в URL (тот же паттерн, что migrate34/migrate35)');
 }
 
 console.log('\n3) Реальный прогон логики — мутация JSON меняет ТОЛЬКО dailyKills/dailyDate, остальные поля бита-в-бит сохранены');

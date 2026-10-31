@@ -1,0 +1,55 @@
+<?php
+// Миграция 33 — 26.09.2026, найдено по прямому репорту (dev-панель "100% комбинация покера" →
+// 500 Internal Server Error). Причина, подтверждена реальным php_errors.log на сервере:
+//   PHP Fatal error: Uncaught mysqli_sql_exception: Unknown column 'dev_force_poker' in 'field list'
+// users.php.setDevCombo() (и dice.php/poker.php/blackjack.php/roulette.php, читающие эти
+// поля) были написаны в прошлой сессии (см. SESSION_HANDOFF_26_09_2026.md, задачи dev-панели
+// казино) в расчёте на 4 server-only колонки dev_force_dice/poker/blackjack/roulette — та
+// сессия добавила код и unit-тесты, но ЭТА миграция никогда не создавалась и не выполнялась,
+// поэтому колонок физически нет в живой БД (проверено — SHOW COLUMNS выдаёт только
+// dev_force_drops/dev_force_jackpot из migrate26/29). Сам сбой каскадом ломал следующий запрос
+// клиента (server.js.completeRequest() затирал req_key в undefined на ответе без JSON-тела),
+// из-за чего сразу после 500 следующая раздача покера падала "Несовпадение подписи запроса".
+// Запустить: https://pripyat-game.ru/server/migrate33.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$columns = [
+    ['dev_force_dice',      "VARCHAR(32) NOT NULL DEFAULT ''"],
+    ['dev_force_poker',     "VARCHAR(32) NOT NULL DEFAULT ''"],
+    ['dev_force_blackjack', "VARCHAR(32) NOT NULL DEFAULT ''"],
+    ['dev_force_roulette',  "VARCHAR(32) NOT NULL DEFAULT ''"],
+];
+
+$results = [];
+foreach($columns as $c){
+    $col = $c[0]; $def = $c[1];
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+    } else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error . " ($col)";
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 33 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

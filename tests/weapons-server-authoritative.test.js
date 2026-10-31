@@ -24,7 +24,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const weaponsSrc   = readSrc('_client/src/game/weapons.js');
 const weaponsPhp   = readSrc('server/core/controllers/weapons.php');
-const registrySrc  = readSrc('server/core/models/registry.php');
+const registrySrc  = readSrc('server/core/models/registry.example.php');
 const usersPhp     = readSrc('server/core/controllers/users.php');
 const catalogJson  = JSON.parse(readSrc('server/json/weapons_config.json'));
 

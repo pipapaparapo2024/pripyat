@@ -30,7 +30,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const hataPhp     = readSrc('server/core/controllers/hata.php');
 const hataCfg     = JSON.parse(readSrc('server/json/hata_config.json'));
-const registrySrc = readSrc('server/core/models/registry.php');
+const registrySrc = readSrc('server/core/models/registry.example.php');
 const hataJs      = readSrc('_client/src/game/shell/overlays/hata.js');
 
 console.log('\nTest 1: registry.php — контроллер hata зарегистрирован в classes');

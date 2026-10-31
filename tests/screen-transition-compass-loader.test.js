@@ -49,8 +49,8 @@ console.log('\nTest 1: index.html — старая DOM-разметка #_screen
 
 console.log('\nTest 2: файл-ассет реально лежит в images/ (источник для деплоя)');
 {
-    const filePath = path.join(root, '_client', 'development', 'images', 'компас обрезан.png');
-    assert(fs.existsSync(filePath), 'компас обрезан.png существует в images/');
+    const filePath = path.join(root, '_client', 'development', 'images', 'компас v2 обрезан.png');
+    assert(fs.existsSync(filePath), 'компас v2 обрезан.png существует в images/');
 }
 
 console.log('\nTest 3: ui_kit.js — _compassShow/_compassHide — PIXI-контейнер (root.layer2_mc), не трогают #_clo/#_screenLoader вообще');

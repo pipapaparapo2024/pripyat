@@ -38,7 +38,7 @@ console.log('\nTest 1: временная статичная подложка ф
 
 console.log('\nTest 2: новый Preloader.json на диске действительно содержит слоты фона (back/back_front)');
 {
-    const jsonPath = path.join(root, '_client', 'development', 'spine', 'preloader.json');
+    const jsonPath = path.join(root, '_client', 'development', 'spine', 'preloader_v2.json');
     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
     const slotNames = (data.slots || []).map(s => s.name);
     assert(slotNames.includes('back'), "слот 'back' присутствует в preloader.json (второй экспорт)");

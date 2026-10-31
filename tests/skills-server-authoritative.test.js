@@ -39,9 +39,9 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const skillsSrc   = readSrc('_client/src/game/skills.js');
 const skillsPhp   = readSrc('server/core/controllers/skills.php');
-const registrySrc = readSrc('server/core/models/registry.php');
+const registrySrc = readSrc('server/core/models/registry.example.php');
 const usersPhp    = readSrc('server/core/controllers/users.php');
-const migrate19   = readSrc('server/migrate19.php');
+const migrate19   = readSrc('tests/_fixtures/schema-history/migrate19.php.txt');
 const catalogJson = JSON.parse(readSrc('server/json/skills_config.json'));
 
 console.log('\nTest 1: сервер — контроллер Skills зарегистрирован и реализует upgrade()');

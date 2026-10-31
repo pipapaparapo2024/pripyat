@@ -71,7 +71,7 @@ console.log('\nTest 2: svod.claim() и его каталог полностью 
     assert(!fs.existsSync(svodPhpPath), 'server/core/controllers/svod.php удалён');
     assert(!fs.existsSync(svodCatalogPath), 'server/json/svod_achievements.json удалён');
 
-    const registrySrc = readSrc('server/core/models/registry.php');
+    const registrySrc = readSrc('server/core/models/registry.example.php');
     assert(!/'classes'=>array\([^)]*'svod'/.test(registrySrc),
         "'svod' убран из списка разрешённых классов роутера (иначе вызов svod.claim падал бы в PHP fatal error вместо чистого отказа)");
 }

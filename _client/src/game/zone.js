@@ -209,6 +209,7 @@ export default class Zone{
                 return;
             }
 
+            if(window.TIMERS && res.server_time && typeof TIMERS.syncServerClock === 'function') TIMERS.syncServerClock(res.server_time);
             applyPatch(res.patch);
             if(window.resumePlayerSave) resumePlayerSave('zone_fill_checkpoint');
             // applyPatch() уже передал и energy, и energy_time в

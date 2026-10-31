@@ -7,7 +7,7 @@ Class Habar {
     function __construct($registry){
         $this->registry = $registry;
         $this->ops = new Gameops($registry);
-        $this->permits = ['buy', 'collectDay'];
+        $this->permits = ['buy', 'collectDay', 'cancel'];
     }
 
     // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
@@ -17,6 +17,32 @@ Class Habar {
         if($link->connect_error) return null;
         $link->set_charset('utf8mb4');
         return $link;
+    }
+
+    // Отмена и сбор используют одну блокировку строки. Старое подтверждение не
+    // должно отменить новую подписку, купленную в другой вкладке.
+    function cancel(){
+        $uid = intval($this->registry['uid']);
+        $expectedTs = intval($this->registry['user_params']['bought_ts'] ?? -1);
+        $expectedTier = intval($this->registry['user_params']['container_id'] ?? -1) + 1;
+        if($expectedTs < 0 || $expectedTier < 1 || $expectedTier > 4) return $this->ops->fail(51);
+        $link = $this->_rawLink();
+        if(!$link) return $this->ops->fail(99);
+        try {
+            $link->begin_transaction();
+            $res = $link->query("SELECT `habar_bought`,`habar_bought_ts` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+            $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+            if(!$row || intval($row['habar_bought']) !== $expectedTier || intval($row['habar_bought_ts']) !== $expectedTs){
+                $link->rollback(); $link->close(); return $this->ops->fail(57);
+            }
+            $patch = ['habar_bought'=>0, 'habar_bought_ts'=>0, 'habar_days_collected'=>0, 'habar_last_collect_ts'=>0];
+            if(!$link->query("UPDATE `{$this->registry['utb']}` SET `habar_bought`=0,`habar_bought_ts`=0,`habar_days_collected`=0,`habar_last_collect_ts`=0 WHERE `id`=$uid")) throw new RuntimeException('Cancel update failed');
+            if(!$link->commit()) throw new RuntimeException('Cancel commit failed');
+            $link->close();
+            return $this->ops->ok(['patch'=>$patch]);
+        } catch(Throwable $e){
+            $link->rollback(); $link->close(); return $this->ops->fail(99);
+        }
     }
 
     function buy(){
@@ -145,7 +171,7 @@ Class Habar {
         // SELECT...FOR UPDATE; $user[поле] для залоченных колонок остаётся НЕТРОНУТЫМ до конца
         // функции, чтобы общий saveUser() ниже не перезаписал уже закоммиченное устаревшим
         // снимком (тот же принцип, что в weapons.php.buy()).
-        $lockCols = ['habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts', 'coins', 'cigarettes',
+        $lockCols = ['habar_bought', 'habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts', 'coins', 'cigarettes',
             'dice_points', 'blue_points', 'poker_chips', 'sedoy_dmg_total', 'sedoy_dmg_left',
             'weapons', 'ammo_machete', 'ammo_gun', 'ammo_auto'];
         $link = $this->_rawLink();
@@ -156,6 +182,12 @@ Class Habar {
             $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
             $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
             if($row !== null) $lockedUser = array_merge($lockedUser, $row);
+        }
+
+        if($this->ops->i($lockedUser, 'habar_bought') !== $boughtIdx + 1 ||
+            $this->ops->i($lockedUser, 'habar_bought_ts') !== $this->ops->i($user, 'habar_bought_ts')){
+            if($link){ $link->rollback(); $link->close(); }
+            return $this->ops->fail(57);
         }
 
         $now = intval(round(microtime(true) * 1000));

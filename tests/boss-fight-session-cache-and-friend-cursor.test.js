@@ -48,7 +48,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const bossesPhp  = readSrc('server/core/controllers/bosses.php');
 const usersPhp   = readSrc('server/core/controllers/users.php');
-const migratePhp = readSrc('server/migrate30.php');
+const migratePhp = readSrc('tests/_fixtures/schema-history/migrate30.php.txt');
 const claudeMd   = readSrc('AGENTS.md'); // 02.10.2026: проект перешёл CLAUDE.md → AGENTS.md (CLAUDE.md теперь однострочный редирект "@AGENTS.md")
 
 console.log('\nTest 1: migrate30.php — добавляет boss_fight_session аддитивно (ADD COLUMN, не трогает существующие таблицы)');

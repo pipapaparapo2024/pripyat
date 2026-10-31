@@ -51,7 +51,7 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     // 28.09.2026: 'open' убран из permits вместе с самим методом Habar::open() — был
     // недостижимым мёртвым кодом (client habar.js его никогда не вызывал), см.
     // tests/habar-open-dead-code-removed.test.js.
-    assert(/\$this->permits = \['buy', 'collectDay'\];/.test(src), "'collectDay' добавлен в permits");
+    assert(/\$this->permits = \['buy', 'collectDay', 'cancel'\];/.test(src), "'collectDay' добавлен в permits");
     assert(/function collectDay\(\)\{/.test(src), 'collectDay() определён');
     assert(/\$boughtIdx = \$this->ops->i\(\$user, 'habar_bought'\) - 1;/.test(src), 'читает habar_bought из ПОЛНОЙ строки (loadUser), не из client-writable whitelist');
     assert(/if\(\$boughtIdx < 0\) return \$this->ops->fail\(57\);/.test(src), 'отклоняет сбор, если хабар не куплен');

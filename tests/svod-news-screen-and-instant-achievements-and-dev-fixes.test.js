@@ -35,30 +35,11 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const newsSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'svod', 'svod-news.js'), 'utf-8');
 const mcSrc   = fs.readFileSync(path.join(root, '_client', 'src', 'modules', 'module_control.js'), 'utf-8');
 const devSrc  = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'dev_panel.js'), 'utf-8');
 const IMAGES_DIR = path.join(root, '_client', 'development', 'images');
 
-console.log('\nTest 1: экран "Новости" — настоящий фон вместо Graphics-заглушки; тизеры ящик/Скряга УБРАНЫ (21.09.2026)');
-{
-    assert(fs.existsSync(path.join(IMAGES_DIR, 'задний фон новости.png')), 'файл фона существует');
-    const bgFile = path.join(IMAGES_DIR, 'задний фон новости.png');
-    const buf = fs.readFileSync(bgFile);
-    const w = buf.readUInt32BE(16), h = buf.readUInt32BE(20);
-    assert(w === 851 && h === 546, `фон новостей — ровно PANEL_W×PANEL_H (851×546), получили ${w}x${h}`);
-
-    assert(/const bg = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'задний фон новости\.png'\)\);/.test(newsSrc),
-        '_buildNewsPanel создаёт bg из настоящего файла (не Graphics-заглушку)');
-    assert(!/bg\.beginFill\(0x1a1410/.test(newsSrc), 'старая серая Graphics-заглушка убрана');
-    assert(!/Новостей пока нет/.test(newsSrc), 'текст-заглушка "Новостей пока нет" убран вместе со старым фоном');
-    // Проверяем только исполняемый код (после закрытия doc-комментария) — в самом комментарии
-    // имена файлов упоминаются текстом как объяснение, что и почему убрано, это ожидаемо.
-    const codeOnly = newsSrc.slice(newsSrc.indexOf('*/') + 2);
-    assert(!/новости ящик\.png/.test(codeOnly), 'тизер "ящик" убран из исполняемого кода (по прямому указанию 21.09.2026)');
-    assert(!/новости скряга\.png/.test(codeOnly), 'тизер "скряга" убран из исполняемого кода — Скряга ещё BETA_LOCKED, анонсировать рано');
-    assert(!/teaserBox|teaserSkryaga/.test(codeOnly), 'переменные обоих тизеров полностью удалены, не просто закомментированы');
-}
+assert(!fs.existsSync(path.join(root, '_client/src/game/svod/svod-news.js')), 'Unused news stub removed');
 
 console.log('\nTest 2: достижения проверяются СРАЗУ после загрузки (login_streak и подобные статы без своего триггера)');
 {

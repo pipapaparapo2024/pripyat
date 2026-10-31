@@ -179,7 +179,7 @@ console.log('\nTest 4: habar.js — таймер сдвинут влево на 
     // затем исправлено ещё раз тем же днём — x/y используются напрямую, без +w/2,+h/2):
     // Обычный x:279,y:508; Пацанский x:524; Авторитетный x:769; Элитный x:1014.
     assert(/const TIMER_X = \[279, 524, 769, 1014\];/.test(src), 'TIMER_X — 4 индивидуальных значения (строка времени+счётчика)');
-    assert(/const collected = parseInt\(udata\['habar_days_collected'\] \|\| 0\);/.test(src), 'habar_days_collected читается снова');
+    assert(/const collected = habarElapsedDay\(boughtTs, now\);/.test(src), 'habar_days_collected читается снова');
     assert(/const countSuffix = '  ' \+ Math\.min\(collected, 30\) \+ '\/30';/.test(src), 'countSuffix формирует "N/30"');
     assert(/timer\.text = 'ХАБАР ИСТЁК' \+ countSuffix;/.test(src), 'счётчик показывается и в состоянии "ХАБАР ИСТЁК"');
     assert(/timer\.text = hh \+ ':' \+ mm \+ ':' \+ ss \+ countSuffix;/.test(src), 'счётчик дописан в ТУ ЖЕ строку, что и обратный отсчёт (не отдельный текст)');

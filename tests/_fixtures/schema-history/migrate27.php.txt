@@ -1,0 +1,43 @@
+<?php
+// Миграция 27 — 22.09.2026, зарубе возвращён дневной лимит (по прямому указанию: "можно
+// зарубиться только один раз за день"). ВАЖНО: это НЕ старый zaruba_cooldowns (тот был
+// per-pair JSON {target_id: ts} и убран из кода 22.09.2026 более ранним батчем этого же дня,
+// сама колонка в БД по ПРАВИЛУ №3 не трогалась/не дропалась) — это новое, более простое
+// поле: ОДИН таймстамп последней зарубы, безусловно на любую цель (не JSON, не per-target).
+// Без миграции saveUser() упадёт на "Unknown column" (тот же класс бага, что чинили
+// migrate24/25/26.php для их полей).
+// Запустить: https://pripyat-game.ru/server/migrate27.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$col = 'zaruba_last_ts';
+$def = "VARCHAR(32) DEFAULT '0'";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 27 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

@@ -27,9 +27,9 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const bjSrc        = readSrc('_client/src/game/dvor/dvor-blackjack.js');
 const bjPhp        = readSrc('server/core/controllers/blackjack.php');
-const registrySrc  = readSrc('server/core/models/registry.php');
+const registrySrc  = readSrc('server/core/models/registry.example.php');
 const usersPhp     = readSrc('server/core/controllers/users.php');
-const migrate21    = readSrc('server/migrate21.php');
+const migrate21    = readSrc('tests/_fixtures/schema-history/migrate21.php.txt');
 const catalogJson  = JSON.parse(readSrc('server/json/blackjack_config.json'));
 
 console.log('\nTest 1: сервер — контроллер Blackjack зарегистрирован и реализует deal/swap/resolve');
@@ -60,7 +60,7 @@ console.log('\nTest 3: миграция 21 создаёт служебное п�
     assert(/\$col = 'blackjack_session';/.test(migrate21), 'миграция нацелена на колонку blackjack_session');
     assert(/ALTER TABLE `\{\$registry\['utb'\]\}` ADD COLUMN `\$col` \$def/.test(migrate21), 'использует ALTER TABLE ADD COLUMN (тот же паттерн, что migrate19/20)');
     assert(/TEXT DEFAULT NULL/.test(migrate21), 'тип TEXT (JSON-блоб, как dice_session/poker_session)');
-    assert(/stalker_migrate21_2026/.test(migrate21), 'миграция защищена секретным ключом в URL');
+    assert(/FIXTURE_NOT_EXECUTABLE/.test(migrate21), 'миграция защищена секретным ключом в URL');
 }
 
 console.log('\nTest 4: каталог blackjack_config.json совпадает построчно со старой клиентской логикой');

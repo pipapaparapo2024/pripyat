@@ -1,0 +1,48 @@
+<?php
+// Миграция 52 — 26.10.2026, новая мини-игра "2048" (отдельная вкладка, не часть Двора).
+// Server-only поля (game2048_session/game2048_daily — НЕ в whitelist users.php, пишет
+// только game2048.php, см. комментарий там же) + накопленные счётчики (фрагменты/вечный
+// ТОП/lifetime-награды, тот же класс, что habar_bought/ryukzak_points).
+// Запустить: https://pripyat-game.ru/server/migrate52.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$cols = [
+    'game2048_session'            => "TEXT NULL",
+    'game2048_daily'               => "TEXT NULL",
+    'game2048_fragments'           => "VARCHAR(64) DEFAULT '0'",
+    'game2048_games_completed'     => "VARCHAR(64) DEFAULT '0'",
+    'game2048_games_completed_at'  => "VARCHAR(64) DEFAULT '0'",
+    'game2048_lifetime'            => "TEXT NULL",
+];
+foreach($cols as $col => $def){
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+    } else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error . " ($col)";
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 52 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

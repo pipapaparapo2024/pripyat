@@ -145,7 +145,7 @@ console.log('\n6) Прогресс тура — выход в главное м�
         'патчит iface.popHud — единую точку, которую вызывают ВСЕ 8 экранов тура при закрытии (в т.ч. в обход _closeAllPanels)');
     assert(/HUD_ID_TO_TAB_KEY\[id\] === this\._activeTourKey/.test(hookBody),
         'продвигает тур ТОЛЬКО если id закрывшегося экрана совпадает с активным шагом (не любой чужой popHud типа yashik/ryukzak)');
-    assert(/hata\.close = \(\) => \{/.test(hookBody) && /if\(this\._activeTourKey === 'baza'\)/.test(hookBody),
+    assert(/hata\.close = \(\) => \{/.test(hookBody) && /if\(!this\._openingTourKey && this\._activeTourKey === 'baza'\)/.test(hookBody),
         'База (Хата) патчится отдельно — единственный экран тура без pushHud/popHud (legacy close())');
     assert(!/const original = iface\._closeAllPanels\.bind\(iface\);/.test(hookBody),
         'старый безусловный патч _closeAllPanels (продвигал тур по клику на ЛЮБУЮ вкладку) удалён');

@@ -1,0 +1,77 @@
+<?php
+// Миграция 36 — 29.09.2026, по прямому указанию (извинение перед игроками): "сделай так,
+// чтобы у всех игроков все лимиты сбросились прямо сейчас — когда я говорил сбросить в 12,
+// я имел в виду 12 ночи, и все ожидали, что поспят и с утра лимиты уже будут свежими".
+//
+// Разовый ручной сброс дневного лимита попыток боссов (bosses_data.dailyKills) ВСЕМ игрокам
+// сразу, одновременно с переводом самой границы сброса на 00:00 МСК (см. Gameops::
+// mskDailyDate(), server/core/models/gameops.php).
+//
+// bosses_data — JSON-блоб (не отдельная колонка), поэтому чистой UPDATE-констан­той не
+// обойтись — нужно аккуратно декодировать JSON КАЖДОЙ строки, поменять ТОЛЬКО dailyKills/
+// dailyDate и записать обратно, не трогая остальные поля того же блоба (keys/killsTotal/
+// bossStartMs/freeWpnCdMs/curCycleDmg/friendDmgApplied и т.д. — их ЗАТЕРЕТЬ было бы реальным
+// уроном игрокам: обнулёнными ключами/прогрессом боя, а вовсе не "извинением").
+//
+// dailyKills -> [0,0,0,0,0,0,0,0], dailyDate -> сегодняшняя МСК-дата (та же формула, что
+// Gameops::mskDailyDate(), продублирована ниже без создания Gameops — скрипту не нужен
+// $registry с uid/user_params, которых у него нет).
+//
+// Запустить: https://pripyat-game.ru/server/migrate36.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$utb = $registry['utb'];
+
+// Та же формула, что Gameops::mskDailyDate() — сегодняшняя дата по МСК (UTC+3), без DST.
+$todayMsk = gmdate('Y-m-d', time() + 3 * 3600);
+
+$res = $link->query("SELECT `id`, `bosses_data` FROM `{$utb}` WHERE `bosses_data` IS NOT NULL AND `bosses_data` != ''");
+
+$total = 0; $reset = 0; $skippedEmpty = 0; $skippedBadJson = 0; $errors = 0;
+if($res){
+    while($row = $res->fetch_assoc()){
+        $total++;
+        $raw = $row['bosses_data'];
+        $data = json_decode($raw, true);
+        if(!is_array($data)){ $skippedBadJson++; continue; }
+
+        // Уже без активных boss-полей вообще (пустая структура) — нечего сбрасывать.
+        if(!isset($data['dailyKills']) && !isset($data['dailyDate'])){ $skippedEmpty++; continue; }
+
+        $data['dailyKills'] = array_fill(0, 8, 0);
+        $data['dailyDate']  = $todayMsk;
+
+        $newJson = json_encode($data);
+        $stmt = $link->prepare("UPDATE `{$utb}` SET `bosses_data`=? WHERE `id`=?");
+        $stmt->bind_param('si', $newJson, $row['id']);
+        if($stmt->execute()) $reset++;
+        else $errors++;
+        $stmt->close();
+    }
+}
+
+echo "<pre>\nMigration 36 results:\n\n";
+echo "Today (MSK): $todayMsk\n";
+echo "Total rows with bosses_data: $total\n";
+echo "Reset (dailyKills/dailyDate): $reset\n";
+echo "Skipped (already empty, nothing to reset): $skippedEmpty\n";
+echo "Skipped (bad/undecodable JSON): $skippedBadJson\n";
+echo "Errors (UPDATE failed): $errors\n";
+
+$link->close();
+echo "\nDone. DELETE this file!\n</pre>";

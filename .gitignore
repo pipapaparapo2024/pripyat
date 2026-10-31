@@ -77,3 +77,8 @@ deploy-test-failures.log
 
 # Локальные архивы могут содержать приватные исторические скрипты.
 /archive/local/
+
+# Generated payment icons; source lives in assets/server-images.
+/server/images/
+
+.venv/

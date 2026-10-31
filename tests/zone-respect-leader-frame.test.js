@@ -7,7 +7,7 @@
  *    zone_respect_leader, апсерт "только если больше" через GREATEST/IF (не отдельный
  *    SELECT+UPDATE — атомарно, без гонок между разными игроками).
  *  - 'zone' зарегистрирован в registry.php classes.
- *  - server/migrate13.php — создаёт zone_respect_leader + 5 колонок loc_respect_0..4.
+ *  - tests/_fixtures/schema-history/migrate13.php.txt — создаёт zone_respect_leader + 5 колонок loc_respect_0..4.
  *  - users.php whitelist — те же 5 колонок (личный накопленный счётчик игрока).
  *  - zone.js._addLocRespect(locIdx, amount) — вызывается во всех 3 местах начисления
  *    uважения за локацию (чекпоинт/захват/бизнес-доход).
@@ -27,9 +27,9 @@ function assert(cond, msg) {
 
 const root = path.join(__dirname, '..');
 const zonePhp    = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'zone.php'), 'utf-8');
-const registryPhp = fs.readFileSync(path.join(root, 'server', 'core', 'models', 'registry.php'), 'utf-8');
+const registryPhp = fs.readFileSync(path.join(root, 'server', 'core', 'models', 'registry.example.php'), 'utf-8');
 const usersPhp    = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
-const migrate13   = fs.readFileSync(path.join(root, 'server', 'migrate13.php'), 'utf-8');
+const migrate13   = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate13.php.txt'), 'utf-8');
 const zoneJsSrc   = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'zone.js'), 'utf-8');
 const zoneScreenSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'zone_screen.js'), 'utf-8');
 

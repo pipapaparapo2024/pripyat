@@ -1,0 +1,48 @@
+<?php
+// Миграция 26 — 22.09.2026, "Потерянный тайник" (pity-счётчик открытий ящика) + личный
+// dev-флаг "100% дропа отовсюду" (по прямому указанию). Обе колонки новые:
+//  - lost_stash_pity  — server-only JSON {idx,count,threshold}, см. yashik.php.openBox()
+//  - dev_force_drops  — личный флаг аккаунта (0/1), см. users.php.setDevFlag()
+// Без миграции saveUser() упадёт на "Unknown column" (тот же класс бага, что чинили
+// migrate24/25.php для gym_pump_cooldowns/shmot_fragments).
+// Запустить: https://pripyat-game.ru/server/migrate26.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$columns = [
+    ['lost_stash_pity', "TEXT DEFAULT NULL"],
+    ['dev_force_drops', "TINYINT(1) NOT NULL DEFAULT 0"],
+];
+
+$results = [];
+foreach($columns as $c){
+    $col = $c[0]; $def = $c[1];
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+    } else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error . " ($col)";
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 26 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

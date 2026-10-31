@@ -1,0 +1,138 @@
+@font-face {
+    font-family: Trebuchet MS; /* Имя шрифта */
+    font-weight: normal;
+    src: url(trebuchet.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Trebuchet MS; /* Имя шрифта */
+    font-weight: bold;
+    src: url(trebuchet_b.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Shadow; /* Имя шрифта */
+    src: url(shadow.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Sensei Medium; /* Имя шрифта */
+    src: url(sensei.otf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: 'Hooge 0553 LeS version'; /* Имя шрифта */
+    src: url(hooge.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Franklin Gothic Medium; /* Имя шрифта */
+    src: url(framd.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Southbank LT; /* Имя шрифта */
+    src: url(southbank.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Adigiana Ultra; /* Имя шрифта */
+    src: url(adigianaUltra.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: ALBOROTO; /* Имя шрифта */
+    src: url(alboroto.otf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Gagalin; /* Имя шрифта */
+    src: url(gagalin.OTF); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Maler; /* Имя шрифта */
+    src: url(Maler.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: MachineC; /* Имя шрифта */
+    src: url(machinec.otf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: AA Bebas Neue; /* Имя шрифта */
+    src: url(AA-BEBASNEUE.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    /* 18.10.2026 (по прямому указанию) — присланный .ttf для верхнего худа */
+    font-family: Bebas Neue Pro Middle;
+    src: url(BebasNeuePro-Middle.ttf);
+}
+
+@font-face {
+    /* 24.10.2026 (по прямому указанию) — для шапки "ВЫПОЛНЕНО ЗАДАНИЙ" на экране "Разнарядка".
+       Отдельное имя семейства (не "Bebas Neue Pro", т.к. уже занято "Bebas Neue Pro Middle" —
+       другой вес того же шрифта, PIXI.Text различает шрифты только по строке font-family). */
+    font-family: 'Bebas Neue Pro Bold';
+    src: url(BebasNeueProBold.ttf);
+}
+
+@font-face {
+    /* 23.10.2026 (по прямому указанию) — настоящий "BebasNeueBook" для экрана "Разнарядка"
+       (изначально заменён на "AA Bebas Neue" как временный аналог, теперь заменён на точный
+       присланный файл; внутреннее имя шрифта в самом .ttf — "Bebas Neue Book"). */
+    font-family: 'Bebas Neue Book';
+    src: url(BebasNeueBook.ttf);
+}
+
+@font-face {
+    font-family: TT Masters DEMO Birds; /* Имя шрифта */
+    src: url(TT_Masters_DEMO_Birds_Regular.otf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Banana Brick; /* Имя шрифта */
+    src: url(BananaBrick.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: AngryBirds; /* Имя шрифта */
+    src: url(angrybirds-regular.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Nixmat; /* Имя шрифта */
+    src: url(NIXMAT.TTF); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: BIPs; /* Имя шрифта */
+    src: url(BIPS.TTF); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: BIP; /* Имя шрифта */
+    src: url(BIP.TTF); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: v_Mouth Breather BB; /* Имя шрифта */
+    src: url(v_mouthbreatherbb.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: v_CCTheStorySoFar; /* Имя шрифта */
+    src: url(v_ccthestorysofar_regular_0.ttf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: dorblue; /* Имя шрифта */
+    src: url(DORBLUE.otf); /* Путь к файлу со шрифтом */
+}
+
+@font-face {
+    font-family: Alcotton; /* Имя шрифта */
+    src: url(alcotton.ttf); /* Путь к файлу со шрифтом */
+}

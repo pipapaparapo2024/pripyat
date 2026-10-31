@@ -1,0 +1,54 @@
+<?php
+// Миграция 48: поднимает medalKills[i] до killsTotal[i] там, где medalKills[i] < killsTotal[i]
+// (поэлементно, по каждому из 8 боссов) — одноразовая отмена эффекта прошлой миграции 42
+// ("обнуляет ТОЛЬКО визуальный прогресс медалей боссов у всех игроков"), по прямому указанию
+// 17.10.2026 — игрок видит счётчик "УБИТО: N" на карточке босса (берётся из killsTotal,
+// никогда не сбрасывался), естественно ждёт медаль при N>=10/50/100, но медали (bronzовая/
+// серебряная/золотая) считаются по ОТДЕЛЬНОМУ medalKills, однажды обнулённому миграцией 42 —
+// рассинхрон читается как баг ("медали не даются"), хотя оба счётчика технически исправны.
+// НИКОГДА не уменьшает medalKills (только поднимает вверх, max(medalKills, killsTotal)) — если
+// у кого-то medalKills почему-то уже БОЛЬШЕ killsTotal (не должно случаться штатно), трогать не
+// будет.
+// Запускать один раз через SSH/CLI: php server/migrate48.php
+if(PHP_SAPI !== 'cli' && (!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE')){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r = new Registry();
+$db = new mysqli($r['server'], $r['user'], $r['pass'], $r['db'], 3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error);
+$db->set_charset('utf8mb4');
+
+$rows = $db->query("SELECT id, bosses_data FROM `{$r['utb']}` WHERE bosses_data LIKE '%killsTotal%'");
+if(!$rows) die($db->error);
+
+$checked = 0; $fixed = 0; $totalBumped = 0;
+while($row = $rows->fetch_assoc()){
+    $checked++;
+    $data = json_decode($row['bosses_data'] ?? '', true);
+    if(!is_array($data)) continue;
+
+    $killsTotal = (isset($data['killsTotal']) && is_array($data['killsTotal'])) ? $data['killsTotal'] : [];
+    if(!$killsTotal) continue;
+
+    if(!isset($data['medalKills']) || !is_array($data['medalKills'])) $data['medalKills'] = array_fill(0, 8, 0);
+    while(count($data['medalKills']) < 8) $data['medalKills'][] = 0;
+
+    $changed = false;
+    for($i = 0; $i < 8; $i++){
+        $kt = intval($killsTotal[$i] ?? 0);
+        $mk = intval($data['medalKills'][$i] ?? 0);
+        if($kt > $mk){
+            $data['medalKills'][$i] = $kt;
+            $changed = true;
+            $totalBumped += ($kt - $mk);
+        }
+    }
+
+    if(!$changed) continue;
+    $json = $db->real_escape_string(json_encode($data, JSON_UNESCAPED_UNICODE));
+    $id = intval($row['id']);
+    if(!$db->query("UPDATE `{$r['utb']}` SET bosses_data='$json' WHERE id=$id")) die($db->error);
+    $fixed++;
+}
+
+$db->close();
+echo "<pre>Migration 48 complete. Checked: $checked, players fixed: $fixed, total kill-points bumped across all bosses: $totalBumped.</pre>";

@@ -23,7 +23,6 @@ function assert(cond, msg) {
 
 const root = path.join(__dirname, '..');
 const pokerSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'poker.php'), 'utf-8');
-const forceSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'dev_panel_casino_force.js'), 'utf-8');
 
 console.log('\nTest 1: dev_force_poker читается через strval()+проверку пустой строки, гасится сразу');
 {
@@ -54,21 +53,7 @@ console.log('\nTest 3: результат (форс или честный) в л
         '_generateHandForCombo() вызывается с targetCombo (общая точка для форса и честной игры)');
 }
 
-console.log('\nTest 4: dev_panel_casino_force.js — 10 комбинаций покера, порядок зеркалит COMBO_ROW_ORDER, каждая кнопка шлёт правильный comboKey');
-{
-    const listStart = forceSrc.indexOf('const POKER_COMBOS = [');
-    const listEnd   = forceSrc.indexOf('];', listStart);
-    const list = forceSrc.slice(listStart, listEnd);
-    const EXPECTED = ['royal_flush','straight_flush','four_of_a_kind','full_house','flush','straight','three_of_a_kind','two_pair','pair','high_card'];
-    EXPECTED.forEach(key => {
-        assert(new RegExp(`key:'${key}'`).test(list), `комбинация ${key} присутствует в POKER_COMBOS`);
-    });
-    assert((list.match(/key:'/g) || []).length === 10, 'ровно 10 комбинаций покера (не больше/меньше)');
-
-    assert(/POKER_COMBOS\.forEach\(c => _row\(c\.label, mkBtn\('poker', c\.key\)\)\);/.test(forceSrc),
-        'каждая строка зовёт mkBtn(\'poker\', c.key) — game=\'poker\' жёстко зашит, combo=реальный ключ комбинации');
-}
-
+// Client force buttons were removed; server authorization and combination checks above remain.
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

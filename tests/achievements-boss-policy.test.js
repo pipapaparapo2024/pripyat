@@ -13,7 +13,7 @@ for(const id of ['dmg_10k', 'dmg_50k', 'dmg_100k', ...Array.from({length:8}, (_,
   check(client.includes(`id:'${id}'`), `${id} сохранено в клиентском списке`);
 }
 for(const id of ['kill_0', 'kill_1', 'kill_2', 'kill_3']) check(ids.has(id), `${id} сохранено`);
-const migration = fs.readFileSync(path.join(root, 'server/migrate43.php'), 'utf8');
+const migration = fs.readFileSync(path.join(root, 'tests/_fixtures/schema-history/migrate43.php.txt'), 'utf8');
 check(migration.includes("'kill_3'") === false, 'миграция не затрагивает достижение Меченого kill_3');
 check(migration.includes('is_int($key) ? strval($value) : strval($key)'), 'миграция поддерживает старый и объектный форматы earned');
 process.exitCode = failed ? 1 : 0;

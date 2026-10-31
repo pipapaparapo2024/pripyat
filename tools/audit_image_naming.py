@@ -7,7 +7,7 @@
 import os, io, glob, re, json
 
 ROOT   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMAGES = os.path.join(ROOT, '_client', 'development', 'images')
+IMAGES = os.path.join(ROOT, 'assets', 'images')
 
 # Папки-исключения — не часть обычного namespace-соглашения, у них своя система имён,
 # либо это заведомо неиспользуемый в рантайме экспорт для Adobe Animate.
@@ -106,7 +106,7 @@ def main():
         print(f'{cat}: {len(results[cat])}')
     print()
 
-    out_path = os.path.join(ROOT, 'docs', 'history', 'IMAGE_NAMING_AUDIT.md')
+    out_path = os.path.join(ROOT, 'docs', 'image-naming-audit.md')
     with io.open(out_path, 'w', encoding='utf-8') as out:
         out.write('# Аудит имён используемых файлов-ассетов\n\n')
         out.write(f'Всего используемых файлов: {total_used}\n\n')

@@ -18,7 +18,7 @@
  * вообще), но это осталось бы миной на будущее.
  *
  * Исправление: счётчик заначек перенесён в отдельное поле stash_count (миграция 15,
- * server/migrate15.php). habar_counts остаётся ИСКЛЮЧИТЕЛЬНО за habar.php/hapuga.php — их
+ * tests/_fixtures/schema-history/migrate15.php.txt). habar_counts остаётся ИСКЛЮЧИТЕЛЬНО за habar.php/hapuga.php — их
  * код НЕ менялся.
  *
  * Run: node tests/habar-counts-collision-stash-count-split.test.js
@@ -98,8 +98,8 @@ console.log('\nTest 4 (обновлено 19.10.2026 — находка закр
 
 console.log('\nTest 5: migrate15.php добавляет колонку stash_count');
 {
-    const migratePath = path.join(root, 'server', 'migrate15.php');
-    assert(fs.existsSync(migratePath), 'server/migrate15.php создан');
+    const migratePath = path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate15.php.txt');
+    assert(fs.existsSync(migratePath), 'tests/_fixtures/schema-history/migrate15.php.txt создан');
     const src = fs.readFileSync(migratePath, 'utf-8');
     assert(/\$col = 'stash_count';/.test(src), 'миграция добавляет именно stash_count');
     assert(/ALTER TABLE `\{\$registry\['utb'\]\}` ADD COLUMN `\$col`/.test(src), 'миграция использует ALTER TABLE ADD COLUMN (не трогает существующие данные)');

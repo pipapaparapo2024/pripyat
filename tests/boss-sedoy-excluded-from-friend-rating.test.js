@@ -12,7 +12,7 @@
  * ЭТОМ же бою) попадал в рейтинг как настоящий боевой вклад, хотя это купленная помощь, а не
  * реальный урон оружием/скиллами.
  *
- * Фикс (миграция 35, server/migrate35.php): новая колонка `boss_damage_log.is_sedoy`
+ * Фикс (миграция 35, tests/_fixtures/schema-history/migrate35.php.txt): новая колонка `boss_damage_log.is_sedoy`
  * (TINYINT(1) DEFAULT 0). useSedoy() теперь пишет is_sedoy=1 для своей строки. Обе функции-
  * суммы получили необязательный параметр $excludeSedoy (по умолчанию false, чтобы НЕ ломать
  * HP-производные вызовы из _syncFightSession()) — _ratingTop() зовёт ОБА вызова с true.
@@ -48,9 +48,9 @@ const root = path.join(__dirname, '..');
 function read(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const bossesPhp  = read('server/core/controllers/bosses.php');
-const migratePhp = read('server/migrate35.php');
+const migratePhp = read('tests/_fixtures/schema-history/migrate35.php.txt');
 
-console.log('\n1) server/migrate35.php — ALTER TABLE аддитивно добавляет is_sedoy (с проверкой на повтор)');
+console.log('\n1) tests/_fixtures/schema-history/migrate35.php.txt — ALTER TABLE аддитивно добавляет is_sedoy (с проверкой на повтор)');
 {
     assert(/SHOW COLUMNS FROM `boss_damage_log` LIKE 'is_sedoy'/.test(migratePhp), 'проверяет, не существует ли колонка уже (идемпотентность повторного запуска)');
     assert(/ALTER TABLE `boss_damage_log` ADD COLUMN `is_sedoy` TINYINT\(1\) NOT NULL DEFAULT 0/.test(migratePhp),

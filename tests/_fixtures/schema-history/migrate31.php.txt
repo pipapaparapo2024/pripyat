@@ -1,0 +1,45 @@
+<?php
+// Миграция 31 — 24.09.2026, по прямому указанию: настройки громкости из попапа звука
+// (sound.js — ползунки звука/музыки) раньше жили ТОЛЬКО в window._sndVol/window._musVol
+// (чисто оперативная память вкладки) — нигде не сохранялись, после перезагрузки страницы
+// откатывались к дефолтам. snd_vol/mus_vol — обычные client-writable поля (не экономика,
+// косметическая настройка), whitelist users.php.
+// Запустить: https://pripyat-game.ru/server/migrate31.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$cols = [
+    'snd_vol' => "VARCHAR(8) DEFAULT '0.7'",
+    'mus_vol' => "VARCHAR(8) DEFAULT '0.5'",
+];
+foreach($cols as $col => $def){
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+    } else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error . " ($col)";
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 31 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

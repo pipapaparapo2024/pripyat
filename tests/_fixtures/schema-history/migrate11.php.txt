@@ -1,0 +1,85 @@
+<?php
+// Миграция 11 — глобальное (общее на всех игроков) состояние рулетки: джек-пот
+// (счётчик прокрутов 3000-3500), Куш в мини-игре (счётчик открытых мини-игр 6-8),
+// Связка ключей (владелец + 30-дневный цикл ожидания).
+// Запустить: https://pripyat-game.ru/server/migrate11.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$sql = "CREATE TABLE IF NOT EXISTS `roulette_state` (
+  `id` TINYINT UNSIGNED NOT NULL,
+  `spin_counter` INT UNSIGNED NOT NULL DEFAULT 0,
+  `spin_threshold` INT UNSIGNED NOT NULL DEFAULT 3000,
+  `kush_counter` INT UNSIGNED NOT NULL DEFAULT 0,
+  `kush_threshold` INT UNSIGNED NOT NULL DEFAULT 6,
+  `keyring_owner_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `keyring_cycle_ends_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+if($link->query($sql)){
+    $results[] = "OK    roulette_state создана (или уже существовала)";
+} else {
+    $results[] = "ERROR " . $link->error;
+}
+
+// Единственная строка (id=1) — если её ещё нет, создаём со случайными стартовыми
+// порогами (те же диапазоны, что и при пересбросе после срабатывания).
+// 26.09.2026 (баг найден по прямому репорту + живой БД — "выбил Связку ключей за первый
+// прокрут"): keyring_cycle_ends_at=0 здесь означало "цикл ожидания уже закончился",
+// т.е. Связка была ДОСТУПНА СРАЗУ с момента запуска фичи — первый же игрок, попавший на
+// сектор №1 или увидевший Связку среди наград стаканчиков, мог её забрать без единого дня
+// ожидания. По ТЗ ожидание обязательно ВСЕГДА, включая самый первый цикл — стартуем сразу
+// с полным 30-дневным циклом, а не с "уже прошедшего".
+$spinT = rand(3000, 3500);
+$kushT = rand(6, 8);
+$initialCycleEnd = time() + 30*24*60*60;
+$ins = "INSERT IGNORE INTO `roulette_state` (`id`, `spin_threshold`, `kush_threshold`, `keyring_cycle_ends_at`)
+        VALUES (1, $spinT, $kushT, $initialCycleEnd)";
+if($link->query($ins)){
+    $results[] = "OK    строка id=1 создана (или уже существовала) — spin_threshold=$spinT kush_threshold=$kushT, keyring недоступна первые 30 дней";
+} else {
+    $results[] = "ERROR " . $link->error;
+}
+
+// Новые поля в users — roulette_cups (что сервер разложил под 9 стаканчиков, до pickCup)
+// и keyring_owner (флаг "этот игрок когда-либо владел Связкой ключей" — на будущее,
+// для отображения в профиле/инвентаре).
+$cols = [
+    'roulette_cups' => "TEXT DEFAULT NULL",
+    'keyring_owner' => "VARCHAR(64) DEFAULT '0'",
+];
+foreach($cols as $col => $def){
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if($check && $check->num_rows > 0){
+        $results[] = "SKIP  $col (already exists)";
+        continue;
+    }
+    if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+        $results[] = "OK    Added $col";
+    } else {
+        $results[] = "ERROR " . $link->error;
+    }
+}
+
+$link->close();
+
+echo "<pre>\nMigration 11 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

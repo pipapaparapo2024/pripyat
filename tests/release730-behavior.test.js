@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm'),path=require('path');
+const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
+function load(p,tail,context={}){vm.runInNewContext(read(p).replace(/^import .*;\r?\n/gm,'').replace(/export default class /,'class ').replace(/export function /g,'function ')+tail,context);return context;}
+const prog=load('_client/src/modules/habar-progress.js','this.day=habarElapsedDay;');
+const t=Date.parse('2026-10-01T12:00:00+03:00');
+assert.equal(prog.day(t,t),1);assert.equal(prog.day(t,t+3*86400000),4);assert.equal(prog.day(t,t+40*86400000),30);assert.equal(prog.day(t,t-86400000),1);
+assert.equal(prog.day(Date.parse('2026-10-01T20:59:59Z'),Date.parse('2026-10-01T21:00:00Z')),2);
+const events={},w={devicePixelRatio:1,visualViewport:{scale:1},addEventListener:(n,f)=>events[n]=f};let changes=0;
+const pin=load('_client/src/modules/pinch-density.js','this.install=installPinchDensity;');const density=pin.install(w,()=>changes++);
+events.wheel({ctrlKey:false,deltaY:-69});assert.equal(density(),1);
+events.wheel({ctrlKey:true,deltaY:-Math.log(2)*100});assert.equal(density(),2);
+w.visualViewport.scale=2;assert.equal(density(),2,'Native pinch is not multiplied twice');
+w.devicePixelRatio=2;w.visualViewport.scale=1;assert.equal(density(),1,'Browser DPR change consumes inferred scale');
+events.touchstart({touches:[{clientX:0,clientY:0},{clientX:100,clientY:0}]});events.touchmove({touches:[{clientX:0,clientY:0},{clientX:200,clientY:0}]});assert.equal(density(),2);assert(changes>=2);
+let mono=100;const tc=load('_client/src/modules/timers.js','this.Timers=Timers;', {performance:{now:()=>mono},window:{},console});
+const timers=Object.create(tc.Timers.prototype);timers.ENERGY_MAX=50;timers.ENERGY_REGEN_SEC=300;timers.syncServerClock(10000);timers.energy_base=21;timers.energy_base_time=10000000;
+assert.equal(timers.getEnergy(),21);mono+=2400000;assert.equal(timers.getEnergy(),29,'Background elapsed time catches up before next interval');
+timers.syncServerClock(12400);timers.energy_base=0;timers.energy_base_time=12400000;assert.equal(timers.getEnergy(),0,'Spent 21 of 21 remains zero');
+const calls=[];let yes;const hc=load('_client/src/game/habar.js','this.Habar=Habar;', {window:{iface:{}},iface:{_showConfirmPopup:(t,cb)=>yes=cb},udata:{habar_bought:2,habar_bought_ts:123},TS:{php:(...a)=>calls.push(a)},applyPatch:()=>{},habarElapsedDay:prog.day});
+const h=Object.create(hc.Habar.prototype);h._updateHabarTimer=()=>{};h._requestCancelHabar();assert.equal(calls.length,0);yes();yes();assert.equal(calls.length,1);assert.equal(calls[0][0],'habar.cancel');assert.equal(calls[0][1].bought_ts,123);assert.equal(calls[0][1].container_id,1);
+const source=read('_client/src/game/habar.js');assert(source.includes('cancel.width = 122; cancel.height = 34'));assert(source.includes('MIPMAP_MODES.ON'));assert(source.includes('const TIMER_Y = 534'));assert(source.includes("fontSize:16"));
+console.log('Calendar days, iframe/native pinch, DPR changes, fresh server-clock energy, confirmation and duplicate cancellation passed');

@@ -26,7 +26,7 @@ function read(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 const roulettePhp = read('server/core/controllers/roulette.php');
 const usersPhp     = read('server/core/controllers/users.php');
 const devPanelJs   = read('_client/src/game/shell/overlays/dev_panel.js');
-const migrate29     = read('server/migrate29.php');
+const migrate29     = read('tests/_fixtures/schema-history/migrate29.php.txt');
 
 console.log('\n1) users.php.setDevFlag() — dev_force_jackpot добавлен в whitelist разрешённых dev-флагов');
 {
@@ -95,7 +95,7 @@ console.log('\n7) Миграция 29 — добавляет колонку dev_
     assert(/dev_force_jackpot/.test(migrate29), 'миграция ссылается на dev_force_jackpot');
     assert(/TINYINT\(1\) NOT NULL DEFAULT 0/.test(migrate29), 'тип колонки — TINYINT(1) DEFAULT 0, тот же, что у dev_force_drops');
     assert(/SHOW COLUMNS FROM/.test(migrate29), 'проверяет существование колонки перед ALTER TABLE (безопасно перезапускать)');
-    assert(/stalker_migrate29_2026/.test(migrate29), 'защищена секретным ключом в query-параметре');
+    assert(/FIXTURE_NOT_EXECUTABLE/.test(migrate29), 'защищена секретным ключом в query-параметре');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

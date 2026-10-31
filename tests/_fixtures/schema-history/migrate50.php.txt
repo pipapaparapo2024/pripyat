@@ -1,0 +1,59 @@
+<?php
+// Миграция 50 — 20.10.2026, по прямому указанию пользователя ("хабар покупается на 30 дней, дни
+// отчитываются от дня покупки, а не от количества сборов").
+//
+// Новое поле `habar_bought_ts` (момент покупки хабара, мс) — раньше срок действия хабара считался
+// по числу УСПЕШНЫХ СБОРОВ (habar_days_collected >= 30), из-за чего игрок, пропустивший часть
+// дней, мог растянуть один хабар на много больше 30 КАЛЕНДАРНЫХ дней. Теперь единственный критерий
+// — 30 дней от момента покупки (habar.php.collectDay()).
+//
+// Шаг 1 — добавить колонку (если её ещё нет).
+// Шаг 2 — бэкфилл: у игроков, уже купивших хабар ДО этой миграции (habar_bought > 0), момента
+// покупки в БД никогда не было — проставляем его в NOW() (точка отсчёта 30 дней = сегодня), а не
+// оставляем 0 (иначе лениво-бэкфилленное значение в collectDay() появилось бы только при СЛЕДУЮЩЕМ
+// клике "СОБРАТЬ" — для игрока, который давно всё собрал и просто не возвращался, срок начал бы
+// отсчитываться позже, чем должен был по факту покупки). Та же точка отсчёта ("сегодня"), что и у
+// ленивого бэкфилла в коде — миграция просто делает это сразу для всех разом, не дожидаясь клика.
+//
+// Запустить: https://pripyat-game.ru/server/migrate50.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$col = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE 'habar_bought_ts'");
+if(!$col){ die('ERROR checking column: ' . $link->error); }
+if($col->num_rows === 0){
+    if(!$link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `habar_bought_ts` VARCHAR(64) DEFAULT '0'")){
+        die('ERROR adding column: ' . $link->error);
+    }
+    echo "<pre>Column habar_bought_ts added.\n";
+} else {
+    echo "<pre>Column habar_bought_ts already exists, skipping ALTER TABLE.\n";
+}
+
+$nowMs = strval(intval(round(microtime(true) * 1000)));
+$stmt = $link->prepare(
+    "UPDATE `{$registry['utb']}` SET `habar_bought_ts` = ? WHERE `habar_bought` > 0 AND (`habar_bought_ts` IS NULL OR `habar_bought_ts` = '' OR `habar_bought_ts` = '0')"
+);
+$stmt->bind_param('s', $nowMs);
+$stmt->execute();
+$affected = $stmt->affected_rows;
+$stmt->close();
+
+echo "Backfilled habar_bought_ts for $affected existing habar owner(s) (point of reference: now).\n";
+$link->close();
+
+echo "\nDone. DELETE this file!\n</pre>";

@@ -1,0 +1,28 @@
+<?php
+// Миграция 11a — только таблица roulette_state (быстрая часть migrate11).
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class_name){ $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php'; if(file_exists($file)) include($file); });
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+$results = [];
+$sql = "CREATE TABLE IF NOT EXISTS `roulette_state` (
+  `id` TINYINT UNSIGNED NOT NULL,
+  `spin_counter` INT UNSIGNED NOT NULL DEFAULT 0,
+  `spin_threshold` INT UNSIGNED NOT NULL DEFAULT 3000,
+  `kush_counter` INT UNSIGNED NOT NULL DEFAULT 0,
+  `kush_threshold` INT UNSIGNED NOT NULL DEFAULT 6,
+  `keyring_owner_id` INT UNSIGNED NOT NULL DEFAULT 0,
+  `keyring_cycle_ends_at` INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+$results[] = $link->query($sql) ? "OK roulette_state" : ("ERROR " . $link->error);
+$spinT = rand(3000, 3500); $kushT = rand(6, 8);
+// 26.09.2026: тот же фикс, что в migrate11.php — цикл ожидания Связки ключей должен
+// действовать и на самый первый цикл, а не начинаться "уже прошедшим" (0 = доступна сразу).
+$initialCycleEnd = time() + 30*24*60*60;
+$ins = "INSERT IGNORE INTO `roulette_state` (`id`, `spin_threshold`, `kush_threshold`, `keyring_cycle_ends_at`) VALUES (1, $spinT, $kushT, $initialCycleEnd)";
+$results[] = $link->query($ins) ? "OK row id=1 (spin_threshold=$spinT kush_threshold=$kushT)" : ("ERROR " . $link->error);
+$link->close();
+echo "<pre>11a results:\n" . implode("\n", $results) . "\n</pre>";

@@ -38,6 +38,7 @@ foreach([$now,$now-90000,$now+600,null,'bad'] as $ts){
  $r=['user_params'=>$params,'api_secret'=>'test','uid'=>123,'udb'=>$store,'tools'=>$sink];
  (new Security($r))->getToken();
  check($store->writes===($ts===$now?1:0),'launch age validation');
+ if($ts!==$now)check($sink->error===8,'stale launch must return recovery code, not identity spoofing');
 }
 $sink=new OutputSink; $store=new Store;
 (new Security(['user_params'=>['sign'=>'forged','vk_ts'=>$now,'vk_user_id'=>123],'api_secret'=>'test','uid'=>123,'udb'=>$store,'tools'=>$sink]))->getToken();

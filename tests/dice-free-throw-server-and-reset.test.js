@@ -18,7 +18,7 @@ function assert(cond, msg) {
 
 const root = path.join(__dirname, '..');
 const usersPhp   = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
-const migrate14  = fs.readFileSync(path.join(root, 'server', 'migrate14.php'), 'utf-8');
+const migrate14  = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate14.php.txt'), 'utf-8');
 const devPanelSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'dev_panel.js'), 'utf-8');
 
 console.log('\nTest 1: dice_free_ts сохраняется на сервере и есть колонка под него');

@@ -1,0 +1,16 @@
+<?php
+// Миграция 42: обнуляет ТОЛЬКО визуальный прогресс медалей боссов у всех игроков.
+// Общие killsTotal сохраняются: это не сброс боссов, достижений или доступа к контенту.
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r=new Registry(); $db=new mysqli($r['server'],$r['user'],$r['pass'],$r['db'],3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error); $db->set_charset('utf8mb4');
+$rows=$db->query("SELECT id,bosses_data FROM `{$r['utb']}`"); $changed=0;
+while($row=$rows->fetch_assoc()){
+  $data=json_decode($row['bosses_data']??'',true); if(!is_array($data)) $data=[];
+  $data['medalKills']=array_fill(0,8,0);
+  $json=$db->real_escape_string(json_encode($data,JSON_UNESCAPED_UNICODE));
+  if(!$db->query("UPDATE `{$r['utb']}` SET bosses_data='$json' WHERE id=".intval($row['id']))) die($db->error);
+  $changed++;
+}
+$db->close(); echo "<pre>Migration 42 complete. Medal progress reset for: $changed players. Delete this file after the one-time run.</pre>";

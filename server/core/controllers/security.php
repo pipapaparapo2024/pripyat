@@ -37,7 +37,7 @@
             $launchTime = $params_sign['vk_ts'] ?? null;
             if(!is_scalar($launchTime) || !ctype_digit((string)$launchTime)
                 || intval($launchTime) < time() - 86400 || intval($launchTime) > time() + 300){
-                return $this->registry['tools']->error(7);
+                return $this->registry['tools']->error(8);
             }
 
             // 26.09.2026 (по прямому указанию — аудит перед модерацией VK, пункт "захват чужого

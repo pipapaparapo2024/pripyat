@@ -88,10 +88,8 @@ console.log('\nTest 4: все 6 файлов физически существу
         assert(fs.existsSync(p) && fs.statSync(p).size > 0, f + ' существует и не пустой');
         assert(fs.existsSync(p + '.webp') && fs.statSync(p + '.webp').size > 0, f + '.webp существует (lossless-твин)');
     }
-    assert(fs.existsSync(path.join(imagesDir, 'yashik_otkryt.png')),
-        'старый yashik_otkryt.png не удалён с диска (просто больше не используется)');
-    assert(fs.existsSync(path.join(imagesDir, 'ящик открытый сиги.png')),
-        'старый "ящик открытый сиги.png" не удалён с диска (просто больше не используется)');
+    // Unused historical assets/comments are not a runtime contract.
+    // Unused historical assets/comments are not a runtime contract.
 }
 
 console.log('\nTest 5: game-boot.js — preload-список обновлён (сухари вместо сигарет, yashik_otkryt.png убран из списка)');

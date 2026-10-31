@@ -9,21 +9,23 @@ remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/main'],cw
 assert remote==commit,'Push this release to GitHub main first'
 stage=root/'_client/development/github-test-releases'/commit
 version=int(re.search(r'index\.js\?v=(\d+)',(stage/'_client/development/index.html').read_text(encoding='utf-8'))[1])
-spec=importlib.util.spec_from_file_location('release',root/'tools/release-session-715.py')
+spec=importlib.util.spec_from_file_location('release',root/'tools/release.py')
 release=importlib.util.module_from_spec(spec);spec.loader.exec_module(release)
 files=[]
 for p in (stage/'server').rglob('*'):
     if not p.is_file() or p.suffix not in ('.php','.json'):continue
     if p.name in ('registry.php','registry.example.php') or p.name.startswith(('migrate','reset_')):continue
     relative=p.relative_to(stage).as_posix();files.append((relative,relative))
+for icon in (stage/'assets/server-images').glob('*'):
+    if icon.is_file():files.append((icon.relative_to(stage).as_posix(),'server/images/'+icon.name))
 for prefix in ['client/ver0_41','client/ver0_41/development']:
-    for p in (stage/'_client/development/images').rglob('*'):
-        if p.is_file():files.append((p.relative_to(stage).as_posix(),prefix+'/images/'+p.relative_to(stage/'_client/development/images').as_posix()))
+    for p in (stage/'assets').rglob('*'):
+        if p.is_file() and p.relative_to(stage/'assets').parts[0] in ['images','sounds','fonts','spine','libs']:files.append((p.relative_to(stage).as_posix(),prefix+'/'+p.relative_to(stage/'assets').as_posix()))
     files += [('_client/development/libs/index.js',prefix+'/libs/index.js'),('_client/development/index.html',prefix+'/index.html')]
 local={remote:hashlib.sha256((stage/local).read_bytes()).hexdigest() for local,remote in files}
 def manifest(client,base):
     code='import pathlib,hashlib,json\nbase=pathlib.Path('+repr(base)+')\npaths='+repr(list(local))+'\nprint(json.dumps({p:hashlib.sha256((base/p).read_bytes()).hexdigest() if (base/p).is_file() else None for p in paths}))'
-    return json.loads(release.command(client,'python3 -c '+shlex.quote(code)))
+    return json.loads(release.run_remote_python(client,code))
 client=release.connect()
 try:
     assert manifest(client,'/var/www/stalker-test')==local,'Test must be fully deployed and verified first'

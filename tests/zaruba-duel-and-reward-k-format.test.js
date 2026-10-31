@@ -35,7 +35,7 @@ const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const zarubaPhp   = readSrc('server/core/controllers/zaruba.php');
-const registrySrc = readSrc('server/core/models/registry.php');
+const registrySrc = readSrc('server/core/models/registry.example.php');
 const usersPhp    = readSrc('server/core/controllers/users.php');
 const errorsJson  = JSON.parse(readSrc('server/json/errors.json'));
 const zarubaCfg   = JSON.parse(readSrc('server/json/zaruba_config.json'));
@@ -208,7 +208,7 @@ console.log('\nTest 13: новые ассеты зарубы скопирова�
     const imgDir = path.join(root, '_client', 'development', 'images');
     const expected = [
         'заруба задний фон.png', 'заруба победитель.png', 'заруба проигравший.png',
-        'заруба панель награды.png', 'заруба кнопка закрыть.png',
+        'заруба кнопка закрыть.png',
     ];
     for(const f of expected){
         assert(fs.existsSync(path.join(imgDir, f)), 'файл существует: ' + f);

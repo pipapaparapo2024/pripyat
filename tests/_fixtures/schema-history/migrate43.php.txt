@@ -1,0 +1,34 @@
+<?php
+// Миграция 43: гарантированно снимает УЖЕ ПОЛУЧЕННЫЕ игроками достижения из согласованного
+// перечня. Правила в achievements_config.json не меняются; Меченный (kill_3) не затрагивается.
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r=new Registry(); $db=new mysqli($r['server'],$r['user'],$r['pass'],$r['db'],3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error); $db->set_charset('utf8mb4');
+$remove=['dmg_10k','dmg_50k','dmg_100k','solo_0','solo_1','solo_2','solo_3','solo_4','solo_5','solo_6','solo_7','kill_4','kill_5','kill_6','kill_7'];
+$removeSet=array_fill_keys($remove,true);
+$cfg=json_decode(file_get_contents(__DIR__.'/json/achievements_config.json'),true) ?: []; $pts=[];
+foreach($cfg as $a) if(isset($a['id'])) $pts[$a['id']]=intval($a['pts']??0);
+$q=$db->query("SHOW COLUMNS FROM `{$r['utb']}` LIKE 'achievement_revoked'");
+if(!$q || !$q->num_rows) $db->query("ALTER TABLE `{$r['utb']}` ADD COLUMN `achievement_revoked` TEXT DEFAULT NULL");
+$rows=$db->query("SELECT id,achievements,achievement_stars,achievement_revoked FROM `{$r['utb']}`");
+$players=0; $removed=0;
+while($row=$rows->fetch_assoc()){
+  $earned=json_decode($row['achievements']??'',true); if(!is_array($earned)) $earned=[];
+  $revoked=json_decode($row['achievement_revoked']??'',true); if(!is_array($revoked)) $revoked=[];
+  $lost=0; $changed=false;
+  // Нормальный формат: {"id":true}. Старый формат: ["id", ...] — поддерживаем оба.
+  foreach($earned as $key=>$value){
+    $id=is_int($key) ? strval($value) : strval($key);
+    if(!isset($removeSet[$id])) continue;
+    unset($earned[$key]); $lost+=($pts[$id]??0); $removed++; $changed=true;
+  }
+  foreach($remove as $id){ if(empty($revoked[$id])){ $revoked[$id]=true; $changed=true; } }
+  if(!$changed) continue;
+  $json=$db->real_escape_string(json_encode($earned,JSON_UNESCAPED_UNICODE));
+  $rev=$db->real_escape_string(json_encode($revoked,JSON_UNESCAPED_UNICODE));
+  $stars=max(0,intval($row['achievement_stars'])-$lost); $id=intval($row['id']);
+  if(!$db->query("UPDATE `{$r['utb']}` SET achievements='$json', achievement_revoked='$rev', achievement_stars=$stars WHERE id=$id")) die($db->error);
+  $players++;
+}
+$db->close(); echo "<pre>Migration 43 complete. Players updated: $players. Achievements removed: $removed. Marked kill_3 was preserved. Delete this file after the one-time run.</pre>";

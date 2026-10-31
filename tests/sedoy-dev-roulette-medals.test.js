@@ -42,7 +42,7 @@ must(users, "['1113977365', '382448269', '438953352', '184138040']", 'серве
 const select = read('_client/src/game/shell/overlays/bosses_select.js');
 must(select, 'const medalKilled =', 'вывод медалей должен использовать отдельный прогресс');
 must(select, 'mSpr.alpha = medalKilled', 'медали не должны зависеть от общего числа убийств');
-const migration = read('server/migrate42.php');
+const migration = read('tests/_fixtures/schema-history/migrate42.php.txt');
 must(migration, "$data['medalKills']=array_fill(0,8,0);", 'миграция сброса медалей');
 
 const energyPopup = read('_client/src/game/shell/popups/energy_buy.js');

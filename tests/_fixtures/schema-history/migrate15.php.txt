@@ -1,0 +1,41 @@
+<?php
+// Миграция 15 — 17.09.2026, аудит безопасности: разведена коллизия имён между счётчиком
+// заначек из ящика (yashik.js/dvor.js) и JSON-массивом контейнеров Хабара (habar.php), которые
+// раньше делили одну колонку habar_counts и тихо перезаписывали друг друга через users.save.
+// Одна новая колонка: stash_count — счётчик заначек, отдельно от habar_counts.
+// Запустить: https://pripyat-game.ru/server/migrate15.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$col = 'stash_count';
+$def = "VARCHAR(64) DEFAULT '0'";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 15 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

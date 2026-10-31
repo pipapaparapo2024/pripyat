@@ -1,3 +1,5 @@
+import { showLaunchRecovery } from '../modules/launch-recovery.js';
+import { startupRequest } from '../modules/startup-request.js';
 import { shouldAskFriendsScopeAsync, markFriendsScopeAsked, markFriendsScopeGranted, hasFriendsScopeGrantedLocal } from '../modules/friends-scope-gate.js';
 import { applyPatch } from '../modules/patch.js';
 import { isVk } from '../modules/platform.js';
@@ -32,7 +34,7 @@ export default class Preloader{
 	}
 
 	initTimer(retry = false){
-		bridge.sendPromise("VKWebAppCallAPIMethod", {method: "utils.getServerTime", params:{access_token:VK_token, v:VK_version}}).then(e =>{
+		startupRequest(() => bridge.sendPromise("VKWebAppCallAPIMethod", {method: "utils.getServerTime", params:{access_token:VK_token, v:VK_version}})).then(e =>{
 			window.TIMERS = new Timers(e['response']);
 			this.initLinks();
 		}).catch(() => {
@@ -148,6 +150,7 @@ export default class Preloader{
 	}
 
 	onGetUserInfo(data){
+        if(window.TIMERS && data.server_time && typeof TIMERS.syncServerClock === 'function') TIMERS.syncServerClock(data.server_time);
 		const _raw = data['udata'];
 		if(!_raw || typeof _raw !== 'object'){
 			// Новый пользователь или ошибка сервера — даём дефолты
@@ -215,7 +218,7 @@ export default class Preloader{
 
 		this._updateLoginStreak();
 
-		bridge.sendPromise("VKWebAppGetUserInfo").then(info => {
+		startupRequest(() => bridge.sendPromise("VKWebAppGetUserInfo")).then(info => {
 			window.vk_user_info = info;
 			const savedNick = String(udata['nick'] || '').trim();
 			let vkNick = [info.first_name, info.last_name].filter(Boolean).join(' ').trim();
@@ -413,6 +416,10 @@ export default class Preloader{
 	
 
 	onError(e){
+        if(e && Number(e.code) === 8){
+            showLaunchRecovery(window, isVk() ? vk_params['vk_app_id'] : null);
+            return;
+        }
 		try {
 			// Заставка (preloader_mc) скрыта по умолчанию (см. конструктор) — но при
 			// реальной ошибке загрузки нужно её показать обратно, иначе notify.result

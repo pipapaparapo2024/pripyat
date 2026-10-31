@@ -1,0 +1,121 @@
+<?php
+// Миграция 49 — 20.10.2026, по прямому указанию пользователя ("это должны быть одинаковые
+// спички, исправь"), дополнена тем же днём (по прямому указанию — "из-за этого изменения у
+// игроков могут быть несоответствия в достижениях, сделай миграцию, которая это исправит").
+//
+// Причина (валюта): poker_spichki и roulette_spichki были РАЗНЫМИ валютами (своя "сумка" у
+// покера, свой "кейс" у рулетки) — решение пересмотрено, теперь это ОДНА общая валюта
+// "голубые спички". Канонический столбец — roulette_spichki (см. poker.php.openBag(), код уже
+// переведён читать/писать его одного, server/json/poker_config.json: type poker_spichki ->
+// roulette_spichki). Шаг 1 ниже — одноразовый перенос УЖЕ накопленного баланса poker_spichki,
+// чтобы игроки не потеряли прогресс: roulette_spichki += poker_spichki, затем poker_spichki
+// обнуляется (столбец остаётся в БД неиспользуемым — не трогаем структуру таблицы, ПРАВИЛО №3).
+//
+// Причина (достижения): achievementengine.php.buildState() теперь берёт статистику
+// 'pokerSpichki' ТОЖЕ из roulette_spichki (см. achievements_config.json: pkr_sp1k..pkr_sp10k,
+// statPath=["pokerSpichki"]) — раньше это поле читало ОТДЕЛЬНЫЙ, обычно гораздо меньший
+// poker_spichki. Без этого шага 2 игрок, который вообще никогда не играл в покер, но много
+// играл в рулетку (roulette_spichki уже большой), при первом же checkAll() после деплоя этого
+// кода мгновенно и задним числом получил бы ВСЕ 5 "покерных" достижений (pkr_sp1k..pkr_sp10k,
+// суммарно 56 очков + патроны ящика) — список earned[] это одноразовый ratchet, checkAll()
+// не отличает "честно дошёл до порога игрой в покер" от "порог внезапно пересчитался из-за
+// слияния валют". Шаг 2 — для каждого игрока вычисляет, какие из 5 pkr_sp*-ачивок он получил
+// БЫ непрошено только из-за слияния (не дотягивал по СТАРОМУ отдельному poker_spichki, но уже
+// дотягивает по НОВОМУ объединённому значению) — и молча проставляет их earned=true, БЕЗ
+// начисления очков/ач-скора/патронов (это не настоящий прогресс, просто гасим ложное
+// срабатывание). Уже честно заработанные ДО этой миграции pkr_sp*-ачивки (earned=true, очки
+// уже начислены в прошлом) не трогаются вообще. Достижения rul_sp*/rul_l* (статы rouletteSpichki/
+// rouletteLvl) не затронуты — они и раньше, и сейчас читают тот же roulette_spichki, слияние
+// на их прогресс не влияет.
+//
+// Запустить: https://pripyat-game.ru/server/migrate49.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+foreach(['poker_spichki', 'roulette_spichki', 'achievements'] as $col){
+    $check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+    if(!$check || $check->num_rows === 0){
+        die("ERROR: column $col not found in {$registry['utb']}");
+    }
+}
+
+// Пороги pkr_sp* — 1-в-1 из server/json/achievements_config.json (statPath: ["pokerSpichki"]).
+// Хардкод здесь намеренный: миграция одноразовая, не должна зависеть от того, что кто-то потом
+// поменяет achievements_config.json — снимок порогов ровно на момент слияния валют.
+$PKR_SP_IDS = [
+    'pkr_sp1k'  => 1000,
+    'pkr_sp2k'  => 2000,
+    'pkr_sp4k'  => 4000,
+    'pkr_sp6k'  => 6000,
+    'pkr_sp10k' => 10000,
+];
+
+$rows = $link->query("SELECT `id`, `poker_spichki`, `roulette_spichki`, `achievements` FROM `{$registry['utb']}`");
+if(!$rows){ die('ERROR reading users: ' . $link->error); }
+
+$usersScanned = 0;
+$usersWithPokerSpichki = 0;
+$usersBackfilled = 0;
+$achievementsBackfilled = 0;
+
+while($row = $rows->fetch_assoc()){
+    $usersScanned++;
+    $uid = intval($row['id']);
+    $oldPoker = intval($row['poker_spichki']);
+    $oldRoulette = intval($row['roulette_spichki']);
+    $newTotal = $oldRoulette + $oldPoker;
+    if($oldPoker !== 0) $usersWithPokerSpichki++;
+
+    $earned = json_decode($row['achievements'] ?? '', true);
+    if(!is_array($earned)) $earned = [];
+
+    $touched = false;
+    foreach($PKR_SP_IDS as $id => $threshold){
+        if(!empty($earned[$id])) continue;           // уже честно заработано раньше — не трогаем
+        $wouldEarnOld = $oldPoker  >= $threshold;     // дотягивал по старому, изолированному полю
+        $wouldEarnNew = $newTotal  >= $threshold;     // дотягивает по новому объединённому полю
+        if(!$wouldEarnOld && $wouldEarnNew){
+            // Ложное срабатывание исключительно из-за слияния валют — гасим молча, без очков.
+            $earned[$id] = true;
+            $touched = true;
+            $achievementsBackfilled++;
+        }
+    }
+
+    $newAchievementsJson = $touched ? json_encode($earned, JSON_UNESCAPED_UNICODE) : $row['achievements'];
+
+    if($oldPoker !== 0 || $touched){
+        $stmt = $link->prepare(
+            "UPDATE `{$registry['utb']}` SET `roulette_spichki` = ?, `poker_spichki` = '0', `achievements` = ? WHERE `id` = ?"
+        );
+        $newTotalStr = strval($newTotal);
+        $stmt->bind_param('ssi', $newTotalStr, $newAchievementsJson, $uid);
+        $stmt->execute();
+        $stmt->close();
+        if($touched) $usersBackfilled++;
+    }
+}
+
+echo "<pre>\nMigration 49 results:\n\n";
+echo "Users scanned: $usersScanned\n";
+echo "Users with non-zero poker_spichki (currency merged): $usersWithPokerSpichki\n";
+echo "Users with pkr_sp* achievements silently backfilled (false-positive from merge, no points granted): $usersBackfilled\n";
+echo "Total pkr_sp* achievement entries backfilled: $achievementsBackfilled\n";
+
+$link->close();
+
+echo "\nDone. DELETE this file!\n</pre>";

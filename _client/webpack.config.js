@@ -1,8 +1,13 @@
 const path = require('path');
+const copyRuntimeAssets = require('../tools/copy-runtime-assets.js');
 
 
 module.exports = {
   entry: './src/index.js',
+  plugins: [{ apply(compiler) {
+    compiler.hooks.beforeRun.tap('CopyRuntimeAssets', copyRuntimeAssets);
+    compiler.hooks.watchRun.tap('CopyRuntimeAssets', copyRuntimeAssets);
+  } }],
   output: {
     path: path.resolve(__dirname, 'development/libs'),
     filename: 'index.js'

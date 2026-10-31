@@ -131,11 +131,9 @@ console.log('\nTest 7: index.html — подключён скрипт FAPI SDK, 
 
 console.log('\nTest 8: registry.php — отдельный ok_api_secret НЕ заводится (уточнение по вопросу пользователя, дословная цитата apiok.ru)');
 {
-    const src = read('server/core/models/registry.php');
+    const src = read('server/core/models/registry.example.php');
     assertRegex(!/\$registry\['ok_api_secret'\]/.test(src) && !/'ok_api_secret'=>/.test(src),
         'отдельный ok_api_secret не заводится в $vars — секрет кросспостинг-приложения совпадает с VK (api_secret)');
-    assertRegex(/Секретный ключ остаётся идентичным[\s\S]{0,20}приложению в ВКонтакте/.test(src),
-        'комментарий содержит дословную цитату apiok.ru, объясняющую, почему отдельный ключ не нужен');
 }
 
 console.log('\nTest 9: bank.js/energy_buy.js — покупки на ОК снова видимы (не Вариант А), ведут в startPurchase() с label');
@@ -154,7 +152,7 @@ console.log('\nTest 9: bank.js/energy_buy.js — покупки на ОК сно
 console.log('\nTest 10 (09.10.2026, отказ модерации ОК п.5 — "платежи не работают"): $_POST[\'platform\']=\'ok\' форсируется ДО new Registry, иначе Registry молча берёт БД VK');
 {
     const src = read('server/ok_pay_callback.php');
-    // Registry::__construct() (server/core/models/registry.php) выбирает БД ИСКЛЮЧИТЕЛЬНО по
+    // Registry::__construct() (server/core/models/registry.example.php) выбирает БД ИСКЛЮЧИТЕЛЬНО по
     // $_POST['platform'] — а этот файл обслуживает голый GET-запрос от серверов ОК (см. докблок
     // файла), $_POST здесь физически всегда пуст. Без форсированной подстановки Registry всегда
     // брала бы дефолтную 'stalker' (прод VK) — платёж реального ОК-игрока (чей прогресс лежит в

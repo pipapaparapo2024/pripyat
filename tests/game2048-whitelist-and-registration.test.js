@@ -14,7 +14,7 @@ let passed = 0, failed = 0;
 function check(cond, msg){ if(cond){ console.log('  ✅', msg); passed++; } else { console.error('  ❌ FAIL:', msg); failed++; } }
 
 const usersPhp = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'controllers', 'users.php'), 'utf-8');
-const registryPhp = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'models', 'registry.php'), 'utf-8');
+const registryPhp = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'models', 'registry.example.php'), 'utf-8');
 const game2048Php = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'controllers', 'game2048.php'), 'utf-8');
 
 console.log('\nWhitelist — server-only поля НЕ должны быть client-writable');

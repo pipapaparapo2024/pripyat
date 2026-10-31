@@ -23,15 +23,11 @@ function assert(cond, msg) {
 }
 
 const root     = path.join(__dirname, '..');
-const siteRoot = path.join(__dirname, '..', '..', '..', 'сайт');
 function read(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const rewardlinksSrc = read('server/core/controllers/rewardlinks.php');
 const habarSrc        = read('server/core/controllers/habar.php');
 const dailyConfig      = JSON.parse(read('server/json/habar_daily_config.json'));
-const configSrc = fs.readFileSync(path.join(siteRoot, 'config.php'), 'utf-8');
-const indexSrc  = fs.readFileSync(path.join(siteRoot, 'index.php'), 'utf-8');
-const logsSrc   = fs.readFileSync(path.join(siteRoot, 'logs.php'), 'utf-8');
 
 console.log('\nTest 1: server/core/controllers/rewardlinks.php — kind:"habar" выдаёт habar_bought=containerId+1, "один хабар в одни руки"');
 {
@@ -83,41 +79,7 @@ console.log('\nTest 5: server/json/habar_daily_config.json — 4 контейн�
     dailyConfig.containers.forEach((c, i) => assert(c.id === i, `container[${i}].id === ${i}`));
 }
 
-console.log('\nTest 6: сайт/config.php — habar_catalog() содержит все 4 тира теми же именами, что в habar_daily_config.json');
-{
-    assert(/function habar_catalog\(\)\{/.test(configSrc), 'habar_catalog() определена');
-    const namesFromConfig = dailyConfig.containers.map(c => c.name);
-    namesFromConfig.forEach(name => {
-        assert(new RegExp("'" + name + "'").test(configSrc), `habar_catalog() содержит имя тира "${name}" (совпадает с habar_daily_config.json)`);
-    });
-}
-
-console.log('\nTest 7: сайт/index.php — форма умеет создавать награду kind:"habar" (select + POST-парсинг + рендер сводки)');
-{
-    assert(/<option value="habar">Хабар/.test(indexSrc), 'в select kind_N есть опция "habar"');
-    assert(/name="habar_id_<\?= \$i \?>"/.test(indexSrc), 'есть select habar_id_N для выбора тира контейнера');
-    assert(/foreach\(habar_catalog\(\) as \$id => \$name\)/.test(indexSrc), 'select habar_id_N заполняется из habar_catalog()');
-
-    const postStart = indexSrc.indexOf("} else if(\$kind === 'habar'){");
-    assert(postStart !== -1, 'POST-обработчик action=create умеет парсить kind="habar"');
-    const postBody = indexSrc.slice(postStart, indexSrc.indexOf('\n        }', postStart));
-    assert(/\$habarId = intval\(\$_POST\["habar_id_\$i"\] \?\? -1\);/.test(postBody), 'читает habar_id_N из POST');
-    assert(/\$habarId >= 0 && \$habarId <= 3/.test(postBody), 'валидирует диапазон 0-3 на стороне формы тоже (defense-in-depth, финальная проверка всё равно на сервере в rewardlinks.php)');
-    assert(/\['kind' => 'habar', 'containerId' => \$habarId\]/.test(postBody), 'кладёт в $reward запись kind:habar,containerId');
-
-    assert(/if\(\$kind === 'habar'\)\{[\s\S]{0,200}Хабар: ' \. \$name \. ' \(30 дней\)/.test(indexSrc),
-        'render_reward_summary() показывает админу человекочитаемую сводку для habar-строки ("Хабар: <тир> (30 дней)")');
-
-    assert(/document\.querySelector\(\'\[name="habar_id_\' \+ i \+ \'"\]\'\)\.style\.display\s*=\s*\(kind === 'habar'\) \? '' : 'none';/.test(indexSrc),
-        'JS syncRow() показывает/скрывает habar_id_N вместе с остальными полями по выбранному kind');
-}
-
-console.log('\nTest 8: сайт/logs.php — та же человекочитаемая сводка для habar (независимая копия render_reward_summary, как и у остальных kind)');
-{
-    assert(/if\(\$kind === 'habar'\)\{[\s\S]{0,200}Хабар: ' \. \$name \. ' \(30 дней\)/.test(logsSrc),
-        'render_reward_summary() в logs.php тоже понимает kind:"habar" (не разошлась с index.php)');
-}
-
+// Separate website checks were moved out; game claim and client checks remain.
 console.log('\nTest 9: клиент — _client/src/modules/reward-link.js и .../shell/popups/reward.js понимают kind/type "habar"');
 {
     const rewardLinkSrc = read('_client/src/modules/reward-link.js');

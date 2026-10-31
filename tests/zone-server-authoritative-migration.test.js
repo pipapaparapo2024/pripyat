@@ -188,8 +188,8 @@ console.log('\nTest 10: users.php — zone_collect_0..4 УБРАНЫ из whitel
 
 console.log('\nTest 11: migrate16.php добавляет 5 колонок zone_collect_N');
 {
-    const migratePath = path.join(root, 'server', 'migrate16.php');
-    assert(fs.existsSync(migratePath), 'server/migrate16.php создан');
+    const migratePath = path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate16.php.txt');
+    assert(fs.existsSync(migratePath), 'tests/_fixtures/schema-history/migrate16.php.txt создан');
     const src = fs.readFileSync(migratePath, 'utf-8');
     ['zone_collect_0','zone_collect_1','zone_collect_2','zone_collect_3','zone_collect_4'].forEach(f => {
         assert(new RegExp("'" + f + "'").test(src), `миграция добавляет ${f}`);

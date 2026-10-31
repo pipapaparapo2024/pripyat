@@ -1,0 +1,41 @@
+<?php
+// Миграция 25 — 22.09.2026, дроп персональных вещей боссов (по прямому указанию — "почти все
+// шмотки достаются с боссов"): bosses.php.claimKill() пишет служебное поле shmot_fragments
+// (прогресс сборки "20 частей" сета «ссср» — Панама-Охотник/Футболка-Счастливчик/Шорты-Ястреб).
+// Колонка отсутствует в таблице users — без миграции saveUser() упадёт на "Unknown column"
+// (тот же класс бага, что чинила migrate24.php для gym_pump_cooldowns).
+// Запустить: https://pripyat-game.ru/server/migrate25.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$col = 'shmot_fragments';
+$def = "TEXT DEFAULT NULL";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 25 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

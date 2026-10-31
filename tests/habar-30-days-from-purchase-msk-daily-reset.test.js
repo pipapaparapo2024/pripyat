@@ -15,7 +15,7 @@
  *     collectDay() отклоняет сбор (код 58), если now >= habar_bought_ts + 30×86400000. Для
  *     аккаунтов, купивших хабар ДО миграции (habar_bought_ts ещё 0) — ленивый бэкфилл на
  *     "сегодня" при первом же collectDay() после деплоя (не мгновенно просрочивает уже
- *     оплаченную покупку); server/migrate50.php делает тот же бэкфилл сразу для всех разом.
+ *     оплаченную покупку); tests/_fixtures/schema-history/migrate50.php.txt делает тот же бэкфилл сразу для всех разом.
  *  2) Кулдаун между сборами — Gameops::mskDailyDate() (тот же источник правды, что у дневных
  *     лимитов боссов/покера/блэкджека): доступно не чаще раза за МСК-календарный день, граница
  *     ровно 00:00 МСК, а не "через 24ч от последнего клика".
@@ -87,15 +87,15 @@ console.log('\nTest 5: habar.php.collectDay() — пул урона Седого
         'sedoy_dmg_left ПЕРЕЗАПИСЫВАЕТСЯ новым значением (не прибавляется к тому, что осталось от прошлого раза) — непотраченный остаток сгорает');
 }
 
-console.log('\nTest 6: server/migrate50.php — ALTER TABLE + бэкфилл для уже купивших хабар');
+console.log('\nTest 6: tests/_fixtures/schema-history/migrate50.php.txt — ALTER TABLE + бэкфилл для уже купивших хабар');
 {
-    const migPath = path.join(root, 'server', 'migrate50.php');
-    assert(fs.existsSync(migPath), 'server/migrate50.php существует');
+    const migPath = path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate50.php.txt');
+    assert(fs.existsSync(migPath), 'tests/_fixtures/schema-history/migrate50.php.txt существует');
     const mig = fs.readFileSync(migPath, 'utf-8');
     assert(/ADD COLUMN `habar_bought_ts` VARCHAR\(64\) DEFAULT '0'/.test(mig), 'добавляет колонку habar_bought_ts');
     assert(/WHERE `habar_bought` > 0 AND \(`habar_bought_ts` IS NULL OR `habar_bought_ts` = '' OR `habar_bought_ts` = '0'\)/.test(mig),
         'бэкфиллит только уже купивших хабар без записанной даты покупки');
-    assert(/\$_GET\['key'\] !== 'stalker_migrate50_2026'/.test(mig), 'защищён ключом, как и остальные одноразовые миграции проекта');
+    assert(/\$_GET\['key'\] !== 'FIXTURE_NOT_EXECUTABLE'/.test(mig), 'защищён ключом, как и остальные одноразовые миграции проекта');
 }
 
 console.log('\nTest 7: users.php — habar_bought_ts НЕ в client-writable whitelist, сбрасывается вместе с остальными habar-полями');

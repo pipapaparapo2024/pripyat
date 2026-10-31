@@ -371,6 +371,7 @@
                 'captured' => $captureOut !== null,
                 'capture' => $captureOut,
                 'energy' => $newEnergy,
+                'server_time' => time(),
             ]);
             });
         }

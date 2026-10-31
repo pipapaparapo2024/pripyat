@@ -1,11 +1,11 @@
 /**
- * Test: server/migrate23.php — создаёт таблицу boss_damage_log (аддитивно, CREATE TABLE IF NOT
+ * Test: tests/_fixtures/schema-history/migrate23.php.txt — создаёт таблицу boss_damage_log (аддитивно, CREATE TABLE IF NOT
  * EXISTS), тот же шаблон, что migrate19-22.php (защита ключом в URL, инструкция удалить файл
  * после выполнения). Источник правды для урона по боссам — см. большой комментарий в
  * server/core/controllers/bosses.php над _derivedHp() и
  * boss-attack-server-authoritative-and-timing-friend-rule.test.js за использованием таблицы.
  *
- * 22.09.2026: выполнен на проде вручную (https://pripyat-game.ru/server/migrate23.php?key=...),
+ * 22.09.2026: выполнен на проде вручную (https://pripyat-game.ru/tests/_fixtures/schema-history/migrate23.php.txt?key=...),
  * таблица создана, файл удалён с сервера сразу после — тот же порядок действий, что и у
  * migrate19-22.php (см. историю в CLAUDE.md/migrate21.php). Локальная копия в репозитории
  * остаётся как историческая запись (тот же принцип, что migrate19-22.php).
@@ -23,11 +23,11 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migration = fs.readFileSync(path.join(root, 'server', 'migrate23.php'), 'utf-8');
+const migration = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate23.php.txt'), 'utf-8');
 
 console.log('\nTest 1: защищена ключом в URL — тот же приём, что migrate19-22.php');
 {
-    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'stalker_migrate23_2026'\)\{/.test(migration),
+    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'FIXTURE_NOT_EXECUTABLE'\)\{/.test(migration),
         'защищена уникальным ключом — не выполняется случайным GET-запросом');
     assert(/http_response_code\(403\);/.test(migration), 'отдаёт 403 при неверном/отсутствующем ключе');
 }

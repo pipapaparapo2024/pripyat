@@ -8,7 +8,7 @@
  * любом изменении ползунка (реал-тайм drag, ПОДТВЕРДИТЬ, откат по ОТМЕНА) — обычный автосейв
  * подхватывает и шлёт на сервер. preloader.js.onGetUserInfo() восстанавливает
  * window._sndVol/_musVol из udata['snd_vol']/udata['mus_vol'] сразу как реальные данные
- * приходят с сервера. Миграция — server/migrate31.php (ALTER TABLE ADD COLUMN).
+ * приходят с сервера. Миграция — tests/_fixtures/schema-history/migrate31.php.txt (ALTER TABLE ADD COLUMN).
  *
  * Run: node tests/sound-volume-persisted-to-server.test.js
  */
@@ -26,7 +26,7 @@ const root = path.join(__dirname, '..');
 const soundSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'sound.js'), 'utf-8');
 const preloaderSrc  = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'preloader.js'), 'utf-8');
 const usersPhpSrc   = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
-const migrationSrc  = fs.readFileSync(path.join(root, 'server', 'migrate31.php'), 'utf-8');
+const migrationSrc  = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate31.php.txt'), 'utf-8');
 
 console.log('\nTest 1: snd_vol/mus_vol в client-writable whitelist $allowed users.php');
 {
@@ -37,7 +37,7 @@ console.log('\nTest 2: миграция 31 добавляет обе колон�
 {
     assert(/'snd_vol'\s*=>\s*"VARCHAR\(8\) DEFAULT '0\.7'"/.test(migrationSrc), 'snd_vol: VARCHAR(8) DEFAULT 0.7 (тот же дефолт, что уже был в JS-фолбэке)');
     assert(/'mus_vol'\s*=>\s*"VARCHAR\(8\) DEFAULT '0\.5'"/.test(migrationSrc), 'mus_vol: VARCHAR(8) DEFAULT 0.5');
-    assert(/stalker_migrate31_2026/.test(migrationSrc), 'миграция защищена секретным ключом (тот же паттерн, что migrate19-21)');
+    assert(/FIXTURE_NOT_EXECUTABLE/.test(migrationSrc), 'миграция защищена секретным ключом (тот же паттерн, что migrate19-21)');
 }
 
 console.log('\nTest 3: sound.js пишет udata[snd_vol]/udata[mus_vol] в реальном времени (setVol) и при откате (ОТМЕНА)');

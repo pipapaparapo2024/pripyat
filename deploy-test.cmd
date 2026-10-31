@@ -1,9 +1,8 @@
 @echo off
 setlocal
-set "TEST_DEPLOY_PY=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
-if not exist "%TEST_DEPLOY_PY%" (
-    echo Python runtime not found: %TEST_DEPLOY_PY%
-    exit /b 1
+if exist "%~dp0.venv\Scripts\python.exe" (
+  "%~dp0.venv\Scripts\python.exe" "%~dp0tools\deploy-test-from-github.py" --apply
+) else (
+  py -3 "%~dp0tools\deploy-test-from-github.py" --apply
 )
-"%TEST_DEPLOY_PY%" "%~dp0tools\deploy-test-from-github.py" --apply
 exit /b %errorlevel%

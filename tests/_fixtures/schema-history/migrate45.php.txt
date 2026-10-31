@@ -1,0 +1,40 @@
+<?php
+// Миграция 45: отдельная БД `stalker_ok` под площадку Одноклассники (модерация ОК,
+// 02.10.2026, п.6 — прогресс не должен синхронизироваться между ОК и VK). Клонирует ТОЛЬКО
+// структуру таблиц из `stalker` (без данных — у ОК пока нет ни одного живого игрока).
+// registry.php выбирает эту БД по полю platform='ok', которое клиент шлёт с каждым запросом
+// (см. modules/platform.js / modules/server.js) — сам файл БД никак не трогает текущую `stalker`.
+// Запускать один раз после выкладки: /migrate45.php?key=FIXTURE_NOT_EXECUTABLE
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r = new Registry();
+$db = new mysqli($r['server'], $r['user'], $r['pass'], '', 3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error);
+$db->set_charset('utf8mb4');
+
+$out = [];
+
+if(!$db->query("CREATE DATABASE IF NOT EXISTS `stalker_ok` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci")){
+    die('CREATE DATABASE failed (нужны права CREATE у пользователя "'.$r['user'].'" — если их нет, выполнить эту же команду вручную под root через SSH/mysql CLI): '.$db->error);
+}
+$out[] = 'CREATE DATABASE stalker_ok: OK (или уже существовала)';
+
+$tables = $db->query("SHOW TABLES FROM `stalker`");
+if(!$tables) die('Не удалось прочитать список таблиц stalker: '.$db->error);
+
+while($row = $tables->fetch_array(MYSQLI_NUM)){
+    $table = $row[0];
+    $exists = $db->query("SHOW TABLES FROM `stalker_ok` LIKE '".$db->real_escape_string($table)."'");
+    if($exists && $exists->num_rows > 0){
+        $out[] = "stalker_ok.$table уже существует — пропущено";
+        continue;
+    }
+    if(!$db->query("CREATE TABLE `stalker_ok`.`$table` LIKE `stalker`.`$table`")){
+        $out[] = "ОШИБКА клонирования $table: ".$db->error;
+        continue;
+    }
+    $out[] = "stalker_ok.$table создана (только структура, без данных)";
+}
+
+$db->close();
+echo '<pre>Migration 45 complete:' . "\n" . implode("\n", $out) . '</pre>';

@@ -29,9 +29,9 @@ const pokerGameJs  = readSrc('_client/src/game/dvor/dvor-poker-game.js');
 const pokerScreenJs= readSrc('_client/src/game/dvor/dvor-poker-screen.js');
 const dvorJs       = readSrc('_client/src/game/dvor.js');
 const pokerPhp     = readSrc('server/core/controllers/poker.php');
-const registrySrc  = readSrc('server/core/models/registry.php');
+const registrySrc  = readSrc('server/core/models/registry.example.php');
 const usersPhp     = readSrc('server/core/controllers/users.php');
-const migrate20    = readSrc('server/migrate20.php');
+const migrate20    = readSrc('tests/_fixtures/schema-history/migrate20.php.txt');
 const catalogJson  = JSON.parse(readSrc('server/json/poker_config.json'));
 
 console.log('\nTest 1: сервер — контроллер Poker зарегистрирован и реализует deal/swap/resolve');
@@ -66,7 +66,7 @@ console.log('\nTest 3: миграция 20 создаёт служебное п�
     assert(/\$col = 'poker_session';/.test(migrate20), 'миграция нацелена на колонку poker_session');
     assert(/ALTER TABLE `\{\$registry\['utb'\]\}` ADD COLUMN `\$col` \$def/.test(migrate20), 'использует ALTER TABLE ADD COLUMN (тот же паттерн, что migrate18/19)');
     assert(/TEXT DEFAULT NULL/.test(migrate20), 'тип TEXT (JSON-блоб, как dice_session/yashik_session/skills_levels)');
-    assert(/stalker_migrate20_2026/.test(migrate20), 'миграция защищена секретным ключом в URL');
+    assert(/FIXTURE_NOT_EXECUTABLE/.test(migrate20), 'миграция защищена секретным ключом в URL');
 }
 
 console.log('\nTest 4: каталог poker_config.json совпадает построчно со старой клиентской таблицей комбинаций');

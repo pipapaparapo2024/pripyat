@@ -23,7 +23,6 @@ function assert(cond, msg) {
 
 const root = path.join(__dirname, '..');
 const rouletteSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
-const forceSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'dev_panel_casino_force.js'), 'utf-8');
 
 console.log('\nTest 1: dev_force_roulette читается через strval()+проверку пустой строки в spin(), НЕ через Gameops::i()');
 {
@@ -73,20 +72,7 @@ console.log('\nTest 4: spin() передаёт devForceIdx в _rollSlot() как
         'резервный вызов (когда _rawLink() НЕ доступен) тоже передаёт devForceIdx — форс не теряется при недоступности общей таблицы');
 }
 
-console.log('\nTest 5: dev_panel_casino_force.js — 15 секторов рулетки (idx 0-14), каждая кнопка шлёт правильный idx строкой');
-{
-    const listStart = forceSrc.indexOf('const ROULETTE_SLOTS = [');
-    const listEnd   = forceSrc.indexOf('];', listStart);
-    const list = forceSrc.slice(listStart, listEnd);
-    const lines = list.match(/'idx\d+ —/g) || [];
-    assert(lines.length === 15, 'ровно 15 секторов (idx0-idx14)');
-    for(let i = 0; i < 15; i++){
-        assert(list.includes(`'idx${i} —`), `сектор idx${i} присутствует`);
-    }
-    assert(/ROULETTE_SLOTS\.forEach\(\(label, i\) => _row\(label, mkBtn\('roulette', String\(i\)\)\)\);/.test(forceSrc),
-        'каждая строка зовёт mkBtn(\'roulette\', String(i)) — combo передаётся строкой (совпадает с strval() на сервере)');
-}
-
+// Client force buttons were removed; server authorization and combination checks above remain.
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

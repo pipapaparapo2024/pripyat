@@ -1,0 +1,54 @@
+<?php
+// Миграция 23 — 22.09.2026, по прямому указанию: заменить клиент-writable JSON-агрегат
+// curCycleDmg (bosses_data, пишется через users.save — то есть подделываемый) на настоящий
+// таймstamped-лог урона (id/uid/boss_id/diff_idx/damage/critical/time), как в примере,
+// который прислал пользователь (таблица urona: id/type/damage/time/critical/did).
+//
+// Только CREATE TABLE (аддитивно, ничего существующего не трогает) — bossStartMs остаётся
+// там же, где был (bosses_data), он и так уже server-authoritative (пишется startFight()) и
+// служит границей "начала текущего цикла" для SUM() по этому логу — отдельная таблица под
+// него не заводится, чтобы не держать два дублирующих источника одной и той же границы.
+//
+// Запустить: https://pripyat-game.ru/server/migrate23.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+
+$sql = "CREATE TABLE IF NOT EXISTS `boss_damage_log` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `uid` INT UNSIGNED NOT NULL,
+    `boss_id` TINYINT UNSIGNED NOT NULL,
+    `diff_idx` TINYINT UNSIGNED NOT NULL,
+    `damage` INT UNSIGNED NOT NULL,
+    `critical` TINYINT(1) NOT NULL DEFAULT 0,
+    `time` BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_uid_boss_time` (`uid`, `boss_id`, `diff_idx`, `time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+if($link->query($sql)){
+    $results[] = "OK    boss_damage_log создана (или уже была)";
+} else {
+    $results[] = "ERROR " . $link->error . " (boss_damage_log)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 23 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

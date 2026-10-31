@@ -221,7 +221,7 @@ console.log('\nTest 8: тултип магазина шмоток показыв
 
 console.log('\nTest 9: миграция БД для новой колонки shmot_fragments существует');
 {
-    const migSrc = readSrc('server/migrate25.php');
+    const migSrc = readSrc('tests/_fixtures/schema-history/migrate25.php.txt');
     assert(/\$col = 'shmot_fragments';/.test(migSrc), 'migrate25.php добавляет колонку shmot_fragments');
     assert(/TEXT DEFAULT NULL/.test(migSrc), 'тип колонки — TEXT (JSON-блоб, как shmot/bosses_data и другие server-only поля)');
 }

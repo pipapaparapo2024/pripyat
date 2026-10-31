@@ -89,7 +89,7 @@ console.log('\nTest 5: zaruba.php.fight() — дневной лимит УБРА
 
 console.log('\nTest 6: миграция 27 добавляет zaruba_last_ts, users.php.resetSession() тоже его обнуляет');
 {
-    const migrateSrc = readSrc('server/migrate27.php');
+    const migrateSrc = readSrc('tests/_fixtures/schema-history/migrate27.php.txt');
     assert(/zaruba_last_ts/.test(migrateSrc), 'migrate27.php создаёт колонку zaruba_last_ts');
     assert(/VARCHAR\(32\) DEFAULT '0'/.test(migrateSrc), 'колонка — VARCHAR(32) DEFAULT \'0\' (таймстамп как строка, как остальные server-only ts-поля проекта)');
 

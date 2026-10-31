@@ -1,0 +1,12 @@
+{
+  "name": "pripyat-workspace",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix _client run build",
+    "test": "node run_tests.js && node tests/run-all.js",
+    "test:assets": "node tests/runtime-asset-contract.test.js",
+    "test:text": "node tests/text-quality.test.js",
+    "assets:update": "node tools/update-asset-manifest.js",
+    "assets:audit": "node tools/audit-runtime-assets.cjs"
+  }
+}

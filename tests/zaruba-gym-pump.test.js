@@ -4,7 +4,7 @@
  * фича "качнуть": +1 к "Силе" (str_xp_total) ЦЕЛИ (не себе), клик по кнопке "позвать в
  * качалку" на визитке друга. Кнопка уже существовала как визуальная заглушка
  * (player_profile.js, action gym_invite) — реализована серверная логика (zaruba.php.pump())
- * и клиентский вызов. Требует миграции server/migrate24.php (новое служебное поле
+ * и клиентский вызов. Требует миграции tests/_fixtures/schema-history/migrate24.php.txt (новое служебное поле
  * gym_pump_cooldowns, НЕ в whitelist users.php).
  *
  * Run: node tests/zaruba-gym-pump.test.js
@@ -24,7 +24,7 @@ function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const zarubaPhp   = readSrc('server/core/controllers/zaruba.php');
 const usersPhp    = readSrc('server/core/controllers/users.php');
-const migrateSrc  = readSrc('server/migrate24.php');
+const migrateSrc  = readSrc('tests/_fixtures/schema-history/migrate24.php.txt');
 const profileJs   = readSrc('_client/src/game/shell/overlays/player_profile.js');
 
 console.log('\nTest 1: zaruba.php — permit pump добавлен');
@@ -67,13 +67,13 @@ console.log('\nTest 3: gym_pump_cooldowns НЕ в client-writable whitelist user
         'gym_pump_cooldowns очищается в users.resetSession() — полный сброс аккаунта не оставляет зависший кулдаун (Правило CLAUDE.md)');
 }
 
-console.log('\nTest 4: server/migrate24.php — добавляет колонку gym_pump_cooldowns, идемпотентно (SHOW COLUMNS перед ALTER)');
+console.log('\nTest 4: tests/_fixtures/schema-history/migrate24.php.txt — добавляет колонку gym_pump_cooldowns, идемпотентно (SHOW COLUMNS перед ALTER)');
 {
     assert(/\$col = 'gym_pump_cooldowns';/.test(migrateSrc), 'нацелен на нужную колонку');
     assert(/\$def = "TEXT DEFAULT NULL";/.test(migrateSrc), 'тип TEXT — тот же, что у аналогичных JSON-полей (zaruba_cooldowns и т.п.)');
     assert(/SHOW COLUMNS FROM `\{\$registry\['utb'\]\}` LIKE '\$col'/.test(migrateSrc), 'проверяет наличие колонки перед ALTER — повторный запуск безопасен');
     assert(/ALTER TABLE `\{\$registry\['utb'\]\}` ADD COLUMN `\$col` \$def/.test(migrateSrc), 'реальный ALTER TABLE ADD COLUMN');
-    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'stalker_migrate24_2026'\)\{/.test(migrateSrc),
+    assert(/if\(!isset\(\$_GET\['key'\]\) \|\| \$_GET\['key'\] !== 'FIXTURE_NOT_EXECUTABLE'\)\{/.test(migrateSrc),
         'защищён уникальным ключом (тот же приём, что предыдущие миграции)');
 }
 

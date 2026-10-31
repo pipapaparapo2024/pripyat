@@ -81,7 +81,12 @@ export function attachOnboardingTour(Onboarding){
         hand.rotation = (h.rot || 0) * Math.PI / 180;
         win.addChild(hand);
 
-        hit.on('pointerdown', () => {
+        hit.on('pointerdown', (event) => {
+            if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
+            if(this._openingTourKey) return;
+            this._openingTourKey = tab.key;
+            hit.interactive = false;
+            try {
             console.log('[onboarding tour] клик по подсвеченной вкладке: ' + tab.key);
             this._destroyTourOverlay();
             this._touchOnboardingActivity();
@@ -90,6 +95,7 @@ export function attachOnboardingTour(Onboarding){
                 dvor._setTutorialCloudHighlight(true);
             }
             this._playNarration(tab.sound);
+            } finally { this._openingTourKey = null; }
         });
         win.addChild(hit);
 
@@ -220,6 +226,7 @@ export function attachOnboardingTour(Onboarding){
             // была гонкой и рука следующего шага успевала появиться поверх боёвки.
             // Флаг выставляется строго на время технической замены «выбор боссов → бой».
             // Реальный клик игрока по кресту в выборе не выставляет его и продвигает урок.
+            if(this._openingTourKey) return result;
             if(id === 'bossSelect' && iface._onboardingBossScreenTransition) return result;
             if(hadHud && this._activeTourKey && HUD_ID_TO_TAB_KEY[id] === this._activeTourKey){
                 console.log('[onboarding._hookScreenClose] popHud(' + id + ') совпал с активным шагом тура — продвигаю');
@@ -233,7 +240,7 @@ export function attachOnboardingTour(Onboarding){
             const originalHataClose = hata.close.bind(hata);
             hata.close = () => {
                 const result = originalHataClose();
-                if(this._activeTourKey === 'baza'){
+                if(!this._openingTourKey && this._activeTourKey === 'baza'){
                     console.log('[onboarding._hookScreenClose] hata.close() во время шага "baza" — продвигаю');
                     this._advanceTour('baza');
                 }

@@ -128,15 +128,8 @@ console.log('\nTest 8: все 16 новых файлов реально суще
     });
 }
 
-console.log('\nTest 9: yastreb_v4.json реально существует и отличается от yastreb_v2.json (не пустое переименование)');
-{
-    const crypto = require('crypto');
-    const sha256 = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-    const v2 = path.join(root, '_client', 'development', 'images', 'spine', 'yastreb_v2.json');
-    const v3 = path.join(root, '_client', 'development', 'images', 'spine', 'yastreb_v4.json');
-    assert(fs.existsSync(v3) && fs.statSync(v3).size > 0, 'yastreb_v4.json существует и не пустой');
-    assert(sha256(v2) !== sha256(v3), 'yastreb_v4.json реально отличается от yastreb_v2.json по содержимому');
-}
+const currentYastreb = JSON.parse(fs.readFileSync(path.join(root, 'assets/images/spine/yastreb_v4.json'), 'utf8'));
+assert(currentYastreb.bones.length > 0 && Object.keys(currentYastreb.animations).length > 0, 'Current Yastreb skeleton contains bones and animation');
 
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);

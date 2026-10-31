@@ -23,7 +23,6 @@ function assert(cond, msg) {
 
 const root = path.join(__dirname, '..');
 const bjSrc    = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'blackjack.php'), 'utf-8');
-const forceSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'dev_panel_casino_force.js'), 'utf-8');
 const catalog  = JSON.parse(fs.readFileSync(path.join(root, 'server', 'json', 'blackjack_config.json'), 'utf-8'));
 
 console.log('\nTest 1: dev_force_blackjack читается через strval()+проверку пустой строки');
@@ -72,23 +71,7 @@ console.log('\nTest 4: обычная (не форсированная) разд
         'ветка "иначе" (честная игра, после __nonpair) сохранена — использует _dealRealPair() как раньше');
 }
 
-console.log('\nTest 5: dev_panel_casino_force.js — 9 позиций блэкджека (8 премиум-рангов + __nonpair), ключи реальные ранги из каталога');
-{
-    const listStart = forceSrc.indexOf('const BJ_COMBOS = [');
-    const listEnd   = forceSrc.indexOf('];', listStart);
-    const list = forceSrc.slice(listStart, listEnd);
-    assert((list.match(/key:'/g) || []).length === 9, 'ровно 9 позиций (8 рангов + __nonpair)');
-    assert(/key:'__nonpair'/.test(list), '__nonpair присутствует как отдельная позиция');
-
-    const keys = [...list.matchAll(/key:'([^']+)'/g)].map(m => m[1]).filter(k => k !== '__nonpair');
-    keys.forEach(k => {
-        assert(catalog.ranks.includes(k), `ранг "${k}" из dev-панели реально существует в blackjack_config.json.ranks`);
-    });
-
-    assert(/BJ_COMBOS\.forEach\(c => _row\(c\.label, mkBtn\('blackjack', c\.key\)\)\);/.test(forceSrc),
-        'каждая строка зовёт mkBtn(\'blackjack\', c.key)');
-}
-
+// Client force buttons were removed; server authorization and combination checks above remain.
 console.log(`\n${'─'.repeat(50)}`);
 if (failed === 0) console.log(`✅ All ${passed} tests passed`);
 else              { console.log(`❌ ${failed} FAILED, ${passed} passed`); process.exit(1); }

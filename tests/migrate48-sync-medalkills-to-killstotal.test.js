@@ -7,7 +7,7 @@
  * мог ещё не догнать после сброса. По прямому указанию (после объяснения) — одноразово поднять
  * medalKills до killsTotal всем игрокам, отменяя эффект миграции 42.
  *
- * server/migrate48.php — разовая ручная синхронизация, запущена на проде 17.10.2026 (Checked:
+ * tests/_fixtures/schema-history/migrate48.php.txt — разовая ручная синхронизация, запущена на проде 17.10.2026 (Checked:
  * 66, players fixed: 32, total kill-points bumped: 926 — подтверждено логом выполнения и прямой
  * сверкой нескольких живых аккаунтов по SSH/MySQL, например Antikrizis: killsTotal=[143,53,18,7]
  * medalKills было [112,39,13,5] → стало [143,53,18,7]).
@@ -24,7 +24,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migratePhp = fs.readFileSync(path.join(root, 'server', 'migrate48.php'), 'utf-8');
+const migratePhp = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate48.php.txt'), 'utf-8');
 
 console.log('\n1) migrate48.php — только UPDATE точечной строки, никаких DROP/TRUNCATE/DELETE');
 {
@@ -36,7 +36,7 @@ console.log('\n1) migrate48.php — только UPDATE точечной стр�
 
 console.log('\n2) migrate48.php — гейт по ключу (или CLI), как и остальные миграции проекта');
 {
-    assert(/PHP_SAPI !== 'cli'.*stalker_migrate48_2026/.test(migratePhp),
+    assert(/PHP_SAPI !== 'cli'.*FIXTURE_NOT_EXECUTABLE/.test(migratePhp),
         'защищена секретным ключом в URL ИЛИ разрешён прямой CLI-запуск (тот же паттерн, что migrate47)');
 }
 

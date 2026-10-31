@@ -50,7 +50,7 @@ export const TOUR_TABS = [
         // 30.09.2026, по прямому указанию (живой тест) — снято "📋 СУПЕР КОПИРОВАТЬ" прямо с
         // руки на экране, заменяет прежний дефолтный рендер (target.x, target.y+10, без поворота).
         hand: { x: 1092, y: 223, scale: 1.000, rot: -63 },
-        open: () => window.iface.openModule('dvor'),
+        open: () => window.iface.openModule('dvor', { forceOpen: true }),
     },
     {
         key: 'zone', label: 'Зона',
@@ -82,7 +82,7 @@ export const TOUR_TABS = [
         // 140 + 2*61 = 262, +35
         target: { x: 1123, y: 297 },
         hand: { x: 1083, y: 336, scale: 1.000, rot: -50 },
-        open: () => window.iface.openModule('habar'),
+        open: () => window.iface.openModule('habar', { forceOpen: true }),
     },
     {
         key: 'bosses', label: 'Боссы',
@@ -105,7 +105,7 @@ export const TOUR_TABS = [
         // 140 + 3*61 = 323, +35
         target: { x: 1123, y: 358 },
         hand: { x: 1085, y: 399, scale: 1.000, rot: -53 },
-        open: () => window.iface.openModule('svod'),
+        open: () => window.iface.openModule('svod', { forceOpen: true }),
     },
     {
         key: 'shmot', label: 'Шмотки',
@@ -117,7 +117,7 @@ export const TOUR_TABS = [
         target: { x: 661, y: 632 },
         // 20.10.2026: hand.x 881→782 (снято редактором позиций, -100), →702 (ещё -80).
         hand: { x: 702, y: 672, scale: 1.000, rot: -140 },
-        open: () => window.iface.openModule('shmot'),
+        open: () => window.iface.openModule('shmot', { forceOpen: true }),
     },
     {
         key: 'sidorovich', label: 'Сидорович',

@@ -108,7 +108,7 @@
 
             $user = $this->registry['tools']->refresh($user, [], true);
 
-            $this->registry['tools']->output(array('udata'=>$user, 'friends_top'=>$this->friends_top));
+            $this->registry['tools']->output(array('udata'=>$user, 'friends_top'=>$this->friends_top, 'server_time'=>time()));
         }
 
         // ── ПУБЛИЧНЫЙ ПРОФИЛЬ ИГРОКА (18.09.2026, по прямому указанию) ──

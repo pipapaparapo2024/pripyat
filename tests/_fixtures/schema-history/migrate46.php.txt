@@ -1,0 +1,19 @@
+<?php
+// Миграция 46: новые server-only счётчики для достижений — pvp_wins (победы в "Зарубе",
+// см. zaruba.php.fight()) и gym_invites_sent (клики "позвать в качалку", см. zaruba.php.pump()).
+// Оба поля НЕ входят в whitelist users.php (клиент не может подделать их через users.save) —
+// пишет только сервер. Запускать один раз через SSH/CLI: php server/migrate46.php.
+// HTTP-вызов оставлен только для обратной совместимости и требует одноразовый ключ.
+if(PHP_SAPI !== 'cli' && (!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE')){ http_response_code(403); die('Forbidden'); }
+spl_autoload_register(function($class){ $f=__DIR__.'/core/models/'.strtolower($class).'.php'; if(file_exists($f)) include($f); });
+$r = new Registry();
+$db = new mysqli($r['server'], $r['user'], $r['pass'], $r['db'], 3306);
+if($db->connect_error) die('Connect error: '.$db->connect_error);
+$db->set_charset('utf8mb4');
+foreach(['pvp_wins', 'gym_invites_sent'] as $col){
+    $check = $db->query("SHOW COLUMNS FROM `{$r['utb']}` LIKE '$col'");
+    if(!$check) die($db->error);
+    if(!$check->num_rows && !$db->query("ALTER TABLE `{$r['utb']}` ADD COLUMN `$col` VARCHAR(64) DEFAULT '0'")) die($db->error);
+}
+$db->close();
+echo '<pre>Migration 46 complete: pvp_wins and gym_invites_sent are ready.</pre>';

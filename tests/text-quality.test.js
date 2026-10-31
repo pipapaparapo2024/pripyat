@@ -1,0 +1,28 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
+const root = path.resolve(__dirname, '..');
+class Canvas { constructor(){this.width=10;this.height=10;this.style={};} getContext(){return {fillRect(){},drawImage(){},getImageData(){return {data:new Uint8ClampedArray(4)};}};} addEventListener(){} removeEventListener(){} }
+let loaded, cleared=0;
+const fonts={ready:{then(fn){loaded=fn;}},addEventListener(name,fn){this[name]=fn;}};
+const context=vm.createContext({console,setTimeout,clearTimeout,Uint8ClampedArray,HTMLCanvasElement:Canvas,Image:class{},navigator:{userAgent:'node'},addEventListener(){},removeEventListener(){},document:{createElement:()=>new Canvas(),addEventListener(){},removeEventListener(){},fonts}});
+context.window=context;context.self=context;
+vm.runInContext(fs.readFileSync(path.join(root,'assets/libs/pixi-legacy.min.js'),'utf8'),context);
+const PIXI=context.PIXI;
+let renders=0;
+PIXI.Text.prototype._render=function(){renders++;};
+PIXI.Text.prototype._renderCanvas=function(){renders++;};
+PIXI.TextMetrics.clearMetrics=()=>cleared++;
+vm.runInContext(fs.readFileSync(path.join(root,'_client/src/modules/text-quality.js'),'utf8').replace(/export function/g,'function')+';this.install=installTextQuality;this.density=textTextureResolution;',context);
+context.install(PIXI,context);
+const firstRender=PIXI.Text.prototype._render;context.install(PIXI,context);assert.equal(PIXI.Text.prototype._render,firstRender);
+const text=new PIXI.Text('test',{fontFamily:'Southbank LT',fontSize:18});
+text._render({resolution:1});assert.equal(text.resolution,2);assert.equal(text._autoResolution,false);
+text.dirty=false;text._render({resolution:1});assert.equal(text.dirty,false,'Stable frames must not rerasterize');
+text._render({resolution:2});assert.equal(text.resolution,2.5,'Existing text must adapt to zoom');
+text.worldTransform.a=2;text.worldTransform.d=2;text._render({resolution:2});assert.equal(text.resolution,4);
+text.dirty=false;loaded();text._render({resolution:2});assert.equal(text.dirty,true);assert.equal(cleared,1);
+text.dirty=false;fonts.loadingdone();text._renderCanvas({resolution:2});assert.equal(text.dirty,true);assert.equal(cleared,2);
+assert.equal(context.density(1,{a:0,b:1,c:-1,d:0}),2,'Rotated canvas uses vector scale');
+assert.equal(context.density(20,{a:1,d:1}),4,'Text texture memory is capped');
+assert(renders>=6);
+console.log('Native Pixi: existing/new text, zoom, scaled/rotated transforms, font completion, stable frames and Canvas fallback passed');

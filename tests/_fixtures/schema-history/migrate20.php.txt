@@ -1,0 +1,43 @@
+<?php
+// Миграция 20 — 18.09.2026, перенос Покера на сервер: RNG весовой комбинации, генерация
+// карт под неё, честная замена и итоговая выплата раньше считались клиентом
+// (dvor-poker-game.js) — читер мог напрямую подставить this._pokerHand с рояль-флешем и
+// вызвать _resolvePokerNewScreen(), либо вызвать dvor._give(...) напрямую. poker_session —
+// служебное поле, НЕ в whitelist users.php (как dice_session/yashik_session) — хранит
+// активную раздачу (руку/лимит смен), клиент физически не может подделать его через
+// users.save.
+// Запустить: https://pripyat-game.ru/server/migrate20.php?key=FIXTURE_NOT_EXECUTABLE
+// После выполнения — удалить файл с сервера.
+
+if(!isset($_GET['key']) || $_GET['key'] !== 'FIXTURE_NOT_EXECUTABLE'){
+    http_response_code(403);
+    die('Forbidden');
+}
+
+spl_autoload_register(function($class_name){
+    $file = __DIR__ . '/core/models/'.strtolower($class_name).'.php';
+    if(file_exists($file)) include($file);
+});
+
+$registry = new Registry();
+$link = new mysqli($registry['server'], $registry['user'], $registry['pass'], $registry['db'], 3306);
+if($link->connect_error){ die('Connect error: ' . $link->connect_error); }
+$link->set_charset('utf8mb4');
+
+$results = [];
+$col = 'poker_session';
+$def = "TEXT DEFAULT NULL";
+$check = $link->query("SHOW COLUMNS FROM `{$registry['utb']}` LIKE '$col'");
+if($check && $check->num_rows > 0){
+    $results[] = "SKIP  $col (already exists)";
+} else if($link->query("ALTER TABLE `{$registry['utb']}` ADD COLUMN `$col` $def")){
+    $results[] = "OK    Added $col";
+} else {
+    $results[] = "ERROR " . $link->error . " ($col)";
+}
+
+$link->close();
+
+echo "<pre>\nMigration 20 results:\n\n";
+echo implode("\n", $results);
+echo "\n\nDone. DELETE this file!\n</pre>";

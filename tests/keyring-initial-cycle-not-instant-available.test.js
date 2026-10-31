@@ -29,8 +29,8 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const m11  = fs.readFileSync(path.join(root, 'server', 'migrate11.php'), 'utf-8');
-const m11a = fs.readFileSync(path.join(root, 'server', 'migrate11a.php'), 'utf-8');
+const m11  = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate11.php.txt'), 'utf-8');
+const m11a = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate11a.php.txt'), 'utf-8');
 const rouletteSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
 
 console.log('\nTest 1: migrate11.php — начальный keyring_cycle_ends_at = time()+30 дней, не 0');

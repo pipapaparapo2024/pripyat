@@ -36,7 +36,7 @@ const habarPhp = readSrc('server/core/controllers/habar.php');
 
 console.log('\nTest 1: habar.php — permits больше не включает \'open\'');
 {
-    assert(/\$this->permits = \['buy', 'collectDay'\];/.test(habarPhp),
+    assert(/\$this->permits = \['buy', 'collectDay', 'cancel'\];/.test(habarPhp),
         "\$permits сузился до ['buy', 'collectDay'] — 'open' убран");
     assert(!/\$this->permits = \[[^\]]*'open'[^\]]*\]/.test(habarPhp),
         "нигде в permits не осталось 'open'");

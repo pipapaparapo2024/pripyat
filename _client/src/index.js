@@ -1,3 +1,7 @@
+import { startupRequest } from './modules/startup-request.js';
+import { installPinchDensity } from './modules/pinch-density.js';
+import { physicalRendererResolution } from './modules/physical-render-resolution.js';
+import { installTextQuality } from './modules/text-quality.js';
 import UniHelp from './modules/universal_helper.js';
 import ModuleControl from './modules/module_control.js';
 import Server from './modules/server.js';
@@ -183,7 +187,7 @@ for(let i = 0; i < partsData.length; i++) {
 	userDataVk[currentData[0]] = currentData[1];
 }
 
-bridge.send("VKWebAppInit").then(e => window.VKinit = true).catch(() => { window.VKinit = true; });
+startupRequest(() => bridge.send("VKWebAppInit")).then(e => window.VKinit = true).catch(() => { window.VKinit = true; });
 // 04.10.2026 (модерация ОК, п.1 — см. friends-scope-gate.js): зеркалируем счётчик запусков в
 // VK Storage (серверно, не привязано к устройству) ПОСЛЕ инициализации bridge — не блокирует
 // старт игры, выполняется в фоне.
@@ -335,6 +339,7 @@ let initPreloader = () => {
 		height: 720,
 		view: canv,
 		antialias: true,
+		autoDensity: false,
 		transparent: true
 	});
 
@@ -406,8 +411,8 @@ let initPreloader = () => {
 		// меняется только плотность пикселей в буфере.
 		if(window.scene && scene.renderer){
 			const dpr = window.devicePixelRatio || 1;
-			const targetRes = Math.max(1, (w * dpr) / 1280);
-			if(Math.abs(scene.renderer.resolution - targetRes) > 0.05){
+			const targetRes = physicalRendererResolution(w, dpr, pinchDensity());
+			if(scene.renderer.resolution !== targetRes){
 				scene.renderer.resolution = targetRes;
 				scene.renderer.resize(1280, 720);
 				// 18.09.2026 (репорт пользователя — "вся кликабельность съехала"): у PIXI
@@ -449,6 +454,7 @@ let initPreloader = () => {
 	// visualViewport, с дебаунсом по кадру и повторными пересчётами после поворота экрана
 	// (iOS отдаёт актуальные innerWidth/innerHeight не в момент события, а позже) —
 	// подробности в комментарии modules/mobile-viewport.js.
+	const pinchDensity = installPinchDensity(window, () => requestAnimationFrame(resize));
 	onViewportChange(resize);
 	resize();
 
@@ -521,6 +527,7 @@ window.setTextStyle = (txt, dop_params = {})=>{
 	for(let i = 0; i < arr.length; i++) txt.style[arr[i]] = dop_params[arr[i]];
 };
 
+installTextQuality(PIXI);
 PIXI.settings.ROUND_PIXELS = true;
 
 // 17.10.2026 (репорт пользователя — "буквы в мелком тексте визуально разного размера, особенно

@@ -1,5 +1,6 @@
 export default class Timers{
 	constructor(real_time){
+		this.syncServerClock(real_time);
 		window.TIME = parseInt(real_time);
 		window.DATE = new Date(TIME * 1000);
 		window.SEASON = ['winter','spring','summer','autumn'][parseInt((DATE.getMonth()+1)/3)%4];
@@ -7,7 +8,7 @@ export default class Timers{
 
 		this.month_rus = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-		this.start_t = new Date().getTime();
+		this.start_t = this.nowMs();
 
 		// Энергия: 1 единица каждые 5 минут, максимум 50 (ТЗ)
 		this.ENERGY_MAX = 50;
@@ -20,6 +21,21 @@ export default class Timers{
 
 		this.startEnergyTimer();
 	}
+
+	syncServerClock(seconds){
+        const value = Number(seconds);
+        if(!Number.isFinite(value) || value <= 0) return;
+        this._clockServerMs = value * 1000;
+        this._clockWallMs = new Date().getTime();
+        this._clockMonoMs = typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : null;
+    }
+
+    nowMs(){
+        if(!Number.isFinite(this._clockServerMs)) return new Date().getTime();
+        const elapsed = this._clockMonoMs !== null && typeof performance !== 'undefined' && typeof performance.now === 'function'
+            ? performance.now() - this._clockMonoMs : new Date().getTime() - this._clockWallMs;
+        return this._clockServerMs + Math.max(0, elapsed);
+    }
 
 	// 28.09.2026 (репорт игрока — "энергия не восстанавливается или не сохраняется",
 	// скриншот: 5 энергии спустя ~2 часа простоя): единая формула регенерации, общая для
@@ -54,7 +70,7 @@ export default class Timers{
 		let saved = parseInt(udata['energy']);
 		let saved_time = parseInt(udata['energy_time']);
 		if(!isNaN(saved)){
-			const snap = this._regenSnapshot(saved, saved_time, new Date().getTime());
+			const snap = this._regenSnapshot(saved, saved_time, this.nowMs());
 			this.current_energy = snap.energy;
 			this.energy_base = snap.energy;
 			this.energy_base_time = snap.baseTimeMs;
@@ -64,7 +80,7 @@ export default class Timers{
 				'| next energy in (сек):', this.nextEnergyIn());
 		} else {
 			this.energy_base = this.current_energy;
-			this.energy_base_time = new Date().getTime();
+			this.energy_base_time = this.nowMs();
 		}
 		if(window.iface) iface.updateEnergy();
 	}
@@ -82,7 +98,7 @@ export default class Timers{
 		const saved = parseInt(energyStr);
 		if(isNaN(saved)) return;
 		const saved_time = energyTimeStr !== undefined ? parseInt(energyTimeStr) : NaN;
-		const snap = this._regenSnapshot(saved, saved_time, new Date().getTime());
+		const snap = this._regenSnapshot(saved, saved_time, this.nowMs());
 		this.current_energy = snap.energy;
 		this.energy_base = snap.energy;
 		this.energy_base_time = snap.baseTimeMs;
@@ -99,7 +115,7 @@ export default class Timers{
 
 			let base = this.energy_base !== undefined ? this.energy_base : this.ENERGY_MAX;
 			let base_ms = this.energy_base_time !== undefined ? this.energy_base_time : this.start_t;
-			let elapsed_sec = (new Date().getTime() - base_ms) / 1000;
+			let elapsed_sec = (this.nowMs() - base_ms) / 1000;
 			let regen = Math.floor(elapsed_sec / this.ENERGY_REGEN_SEC);
 			let new_energy = Math.min(this.ENERGY_MAX, base + regen);
 
@@ -111,8 +127,11 @@ export default class Timers{
 	}
 
 	getEnergy(){
-		return this.current_energy;
-	}
+        if(this.energy_base !== undefined && this.energy_base_time !== undefined){
+            this.current_energy = this._regenSnapshot(this.energy_base, Math.floor(this.energy_base_time / 1000), this.nowMs()).energy;
+        }
+        return this.current_energy;
+    }
 
 	// 28.09.2026: раньше жёстко сбрасывал energy_base_time на Date.now() — если до
 	// следующей единицы энергии оставалось, например, 2 минуты (3 из 5 уже прошли), трата
@@ -127,7 +146,7 @@ export default class Timers{
 		const snap = this._regenSnapshot(
 			this.energy_base !== undefined ? this.energy_base : this.ENERGY_MAX,
 			Math.floor(base_ms / 1000),
-			new Date().getTime()
+			this.nowMs()
 		);
 		if(snap.energy < amount) return false;
 		this.current_energy   = snap.energy - amount;
@@ -153,7 +172,7 @@ export default class Timers{
 		const snap = this._regenSnapshot(
 			this.energy_base !== undefined ? this.energy_base : this.ENERGY_MAX,
 			Math.floor(base_ms / 1000),
-			new Date().getTime()
+			this.nowMs()
 		);
 		const before = this.current_energy;
 		this.current_energy = snap.energy + amount;
@@ -169,7 +188,7 @@ export default class Timers{
 	// Время до следующей единицы энергии (секунды)
 	nextEnergyIn(){
 		let base_ms = this.energy_base_time !== undefined ? this.energy_base_time : this.start_t;
-		let elapsed_sec = (new Date().getTime() - base_ms) / 1000;
+		let elapsed_sec = (this.nowMs() - base_ms) / 1000;
 		let next = this.ENERGY_REGEN_SEC - (elapsed_sec % this.ENERGY_REGEN_SEC);
 		return Math.ceil(next);
 	}

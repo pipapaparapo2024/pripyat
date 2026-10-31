@@ -5,7 +5,7 @@
  * Связка ключей была декоративной меткой, навсегда исключённой из выпадения).
  *
  * Новая архитектура:
- *  - server/migrate11.php создаёт общую (одна строка, id=1) таблицу roulette_state
+ *  - tests/_fixtures/schema-history/migrate11.php.txt создаёт общую (одна строка, id=1) таблицу roulette_state
  *    (spin_counter/spin_threshold — джек-пот; kush_counter/kush_threshold — Куш;
  *    keyring_owner_id/keyring_cycle_ends_at — Связка) + колонки users.roulette_cups
  *    (что сервер разложил под 9 стаканчиков) и users.keyring_owner.
@@ -28,9 +28,9 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const migrateSrc   = fs.readFileSync(path.join(root, 'server', 'migrate11.php'), 'utf-8');
+const migrateSrc   = fs.readFileSync(path.join(root, 'tests', '_fixtures', 'schema-history', 'migrate11.php.txt'), 'utf-8');
 const controllerSrc = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
-const registrySrc  = fs.readFileSync(path.join(root, 'server', 'core', 'models', 'registry.php'), 'utf-8');
+const registrySrc  = fs.readFileSync(path.join(root, 'server', 'core', 'models', 'registry.example.php'), 'utf-8');
 const dvorSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor.js'), 'utf-8');
 const roulSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'dvor-roulette.js'), 'utf-8');
 const roulScreenSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'dvor', 'dvor-roulette-screen.js'), 'utf-8');

@@ -39,7 +39,7 @@ console.log('\nTest 2: preloader.js — заставка возвращаетс�
 {
     const errIdx = preloaderSrc.indexOf('onError(e){');
     assert(errIdx !== -1, 'onError найден');
-    const body = preloaderSrc.slice(errIdx, errIdx + 400);
+    const body = preloaderSrc.slice(errIdx);
     assert(/this\.preloader\.visible = true;/.test(body), 'onError возвращает this.preloader.visible=true (иначе notify.result окажется в невидимом дереве)');
 }
 

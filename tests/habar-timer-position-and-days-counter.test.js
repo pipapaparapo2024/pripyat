@@ -28,15 +28,15 @@ const usersSrc = read('server/core/controllers/users.php');
 
 console.log('\nПозиция таймера — 28.10.2026 заменена на 4 индивидуальных значения x (по одному на плашку), вместо единой формулы BTN_X[i]+offset');
 assert(/const TIMER_X = \[279, 524, 769, 1014\];/.test(habarSrc), 'x для 4 плашек (Обычный/Пацанский/Авторитетный/Элитный)');
-assert(/const TIMER_Y = 508;/.test(habarSrc), 'общий Y для всех 4 плашек');
+assert(/const TIMER_Y = 534;/.test(habarSrc), 'общий Y для всех 4 плашек');
 // 28.10.2026 (БАГ, исправлено тем же днём): x/y из редактора для anchor(0.5,0.5)-объекта — уже
 // готовые object.x/y, без доп. +w/2,+h/2 (первая версия правки ошибочно это добавляла).
 assert(/timer\.x = TIMER_X\[i\];/.test(habarSrc), 'X таймера присваивается напрямую, без хитбокс-математики');
 assert(/timer\.y = TIMER_Y;/.test(habarSrc), 'Y таймера присваивается напрямую, без хитбокс-математики');
 assert(!/timer\.x = TIMER_HIT_X/.test(habarSrc), 'старая (ошибочная) формула с TIMER_HIT_X не осталась');
 // 20.10.2026 (редактор позиций, по прямому указанию): fontSize поднят 23→28.
-assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:28,/.test(habarSrc),
-    'таймер получил новый fontSize:28 (было 23)');
+assert(/const timer = new PIXI\.Text\('', \{\s*\n\s*fontFamily:'Southbank LT', fontSize:16,/.test(habarSrc),
+    'таймер получил новый fontSize:16 (было 23)');
 assert(!/timer\.scale\.set\(/.test(habarSrc), 'scale.set() для timer больше не вызывается');
 
 console.log('\nСчётчик "N/30" — восстановлен 28.10.2026 (по прямому указанию, "как раньше было"), в той же строке, что и таймер');
@@ -48,7 +48,7 @@ console.log('\nСчётчик "N/30" — восстановлен 28.10.2026 (п
 assert(!/this\._habarDaysLabels/.test(habarSrc), 'массив меток дней (daysTxt) по-прежнему не существует — счётчик живёт в timer.text, не в отдельном объекте');
 assert(!/const daysTxt = /.test(habarSrc), 'daysTxt как отдельный PIXI.Text по-прежнему не создаётся');
 assert(/\+ '\/30'/.test(habarSrc), 'текст вида "N/30" снова формируется (внутри timer.text)');
-assert(/const collected = parseInt\(udata\['habar_days_collected'\] \|\| 0\);/.test(habarSrc),
+assert(/const collected = habarElapsedDay\(boughtTs, now\);/.test(habarSrc),
     'habar_days_collected снова читается для отображения');
 
 console.log('\nПерсистентность на сервере — прямой ответ на вопрос пользователя (актуализировано после переноса хабара на сервер)');

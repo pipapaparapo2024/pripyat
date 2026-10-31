@@ -40,7 +40,7 @@ const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
 const usersPhp    = readSrc('server/core/controllers/users.php');
-const registryPhp = readSrc('server/core/models/registry.php');
+const registryPhp = readSrc('server/core/models/registry.example.php');
 const dvorPhp      = readSrc('server/core/controllers/dvor.php');
 const dvorJs       = readSrc('_client/src/game/dvor.js');
 
