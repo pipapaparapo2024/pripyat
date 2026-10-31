@@ -35,6 +35,11 @@
             // читать/перезаписывать чужие данные через users.save (см. аудит безопасности).
             if(!is_string($sign) || !hash_equals($generate_sign, $sign))return $this->registry['tools']->error(0);
             $launchTime = $params_sign['vk_ts'] ?? null;
+            // OK Launcher supplies milliseconds; normalize only after signature validation.
+            if(($params_sign['vk_client'] ?? '') === 'ok' && is_scalar($launchTime)
+                && ctype_digit((string)$launchTime) && strlen((string)$launchTime) === 13){
+                $launchTime = intdiv(intval($launchTime), 1000);
+            }
             if(!is_scalar($launchTime) || !ctype_digit((string)$launchTime)
                 || intval($launchTime) < time() - 86400 || intval($launchTime) > time() + 300){
                 return $this->registry['tools']->error(8);
