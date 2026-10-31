@@ -44,7 +44,7 @@ console.log('\nTest 2: reroll() — трассировка попытки (ве�
     const end   = dicePhp.indexOf('function resolve(){');
     const body  = dicePhp.slice(start, end);
     assert(/\$v = \$this->_weightedDie\(\$catalog, \$rollTrace\);/.test(body), 'новое значение кости берётся через _weightedDie() — трассировка попадает в общий $rollTrace');
-    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace\);/.test(body),
+    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace, \$idx\);/.test(body),
         'результат переброса прогоняется через _reducePremiumRoll() — её трассировка (включая возможный полный переброс премиальной комбинации) тоже попадает в $rollTrace');
     assert(/'rollTrace' => \$rollTrace/.test(body), 'rollTrace передаётся клиенту в debug');
     assert(/'debug' => \$debug/.test(body), 'debug передаётся клиенту в ответе ok()');

@@ -1,0 +1,13 @@
+const {execFileSync}=require('node:child_process');
+const {findPhpBin}=require('./_php_bin.js');
+const php=findPhpBin();
+if(php) process.stdout.write(execFileSync(php,['tests/_php_fixtures/dice-selected738.php'],{encoding:'utf8'}));
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+let failed;const scope={window:{},console:{log(){},warn(){},error(){}},performance:{now:()=>0},TS:{php:(method,args,ok,error)=>failed=error}};
+vm.runInNewContext(fs.readFileSync('_client/src/game/dvor/dvor-dice-game.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export function','function')+';this.attach=attachDiceGame',scope);
+const proto={};scope.attach(proto);const game=Object.create(proto);
+game._diceDiceHits=[];game._diceConfirmBtn={visible:true};game._diceDeselectAnim=()=>{};
+game._finishDiceNewScreen=()=>{throw new Error('Failed resolve must not finish a paid round');};
+game._resolveDiceNewScreen();failed({code:99});
+assert.equal(game._diceState,1);assert.equal(game._diceConfirmBtn.visible,true);
+console.log('PASS: failed resolve preserves the paid round for retry');

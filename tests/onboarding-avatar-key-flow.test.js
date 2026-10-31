@@ -19,7 +19,7 @@ ok(/!rest\.length \|\| !window\.bridge \|\| !window\.VK_token/.test(combat), 'б
 // не завершает сразу), поэтому showContinue стал безусловным true вместо `state !== 'final'`.
 // MERGE_X/Y параллельно сдвинуты по месту (391,506 вместо 441,...) — координаты, не логика.
 ok(/const MERGE_X = 391, MERGE_Y = 506/.test(popup) && /const showContinue = true;/.test(popup), 'в финале обучения тоже есть кнопка «Продолжить» (ведёт к попапу "permission"), «Слиться» на заданной позиции');
-ok(/this\._playNarration\(tab\.sound\);/.test(tour) && !/this\._playNarration\(tab\.sound, \(\) => this\._advanceTour/.test(tour), 'озвучка сама не переключает следующий шаг тура');
+ok(/this\._beginGuidedExplanation\(tab\);/.test(tour) && !/this\._playNarration\(tab\.sound, \(\) => this\._advanceTour/.test(tour), 'озвучка сама не переключает следующий шаг тура');
 ok(/!this\._getOwned\(\)\.includes\(this\._idx\)/.test(hata), 'неприобретённая активная база заменяется стартовой');
 ok(JSON.stringify(bosses.bosses[4].gives_keys) === '[5]', 'Крыс выдаёт ровно один ключ Баркута');
 ok(JSON.stringify(bosses.bosses[6].gives_keys) === '[]', 'Борода не выдаёт ключ Жгута');

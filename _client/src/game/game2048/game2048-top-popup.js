@@ -106,6 +106,7 @@ export function attachGame2048TopPopup(proto){
 
     proto._closeGame2048TopPopup = function(){
         if(this._topWin && this._topWin.parent) this._topWin.parent.removeChild(this._topWin);
+        if(this._win && !this._win.parent) root.layer2_mc.addChild(this._win);
     };
 
     proto._fetchGame2048Top = function(){
@@ -142,11 +143,11 @@ export function attachGame2048TopPopup(proto){
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn);
-        exitBtn.x = 1240; exitBtn.y = 83;
+        exitBtn.x = 1049; exitBtn.y = 141;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
-        exitBtn.on('pointerdown', () => this._closeGame2048TopPopup());
+        exitBtn.on('pointerdown', event => {event.stopPropagation();this._closeGame2048TopPopup();});
         win.addChild(exitBtn);
 
         // ── Карточка ТОП-1 (справа) ──

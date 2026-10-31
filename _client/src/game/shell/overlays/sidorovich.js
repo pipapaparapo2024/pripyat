@@ -64,7 +64,7 @@ export function attachSidorovich(proto){
 		if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
 		exitBtn.x = 1240;
 		exitBtn.y = TOP_HUD + 32;
-		exitBtn.interactive = true;
+		exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true;
 		exitBtn.buttonMode = true;
 		exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
 		exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
@@ -152,6 +152,7 @@ export function attachSidorovich(proto){
 		posylkaIdle.x = 919 + 5;
 		posylkaIdle.y = PANEL_Y_SID + 397;
 		win.addChild(posylkaIdle);
+		posylkaIdle._tutorialExplanationHighlight = true;
 
 		const posylkaActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'сидорович посылка актив v2.png'));
 		posylkaActiv.x = 919 + 5;
@@ -172,6 +173,7 @@ export function attachSidorovich(proto){
 		sumkaFront.width = 339; sumkaFront.height = 374;
 		sumkaFront.visible = true;
 		win.addChild(sumkaFront);
+		sumkaFront._tutorialExplanationHighlight = true;
 
 		const sumkaActiv = new PIXI.Sprite(PIXI.Texture.from(BASE + 'сидорович сумка актив v2.png'));
 		sumkaActiv.x = 0; sumkaActiv.y = 305;

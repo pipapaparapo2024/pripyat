@@ -111,7 +111,7 @@ export default class Habar{
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1197; exitBtn.y = 56;
-        exitBtn.interactive = true; exitBtn.buttonMode = true;
+        exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this.close());
@@ -146,6 +146,8 @@ export default class Habar{
                 cancel.x = BTN_X[i]; cancel.y = BTN_Y[i];
                 cancel.buttonMode = true;
                 cancel.on('pointerdown', () => this._requestCancelHabar());
+                cancel.on('pointerover', () => {cancel.width=122*1.08;cancel.height=34*1.08;});
+                cancel.on('pointerout', () => {cancel.width=122;cancel.height=34;});
                 win.addChild(cancel);
                 this._habarCancelBtns[i] = cancel;
 

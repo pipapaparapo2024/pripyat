@@ -1,3 +1,4 @@
+import narrationTexts from './narration-texts.json';
 /** Попап обучения (30.09.2026, по прямому указанию) — общая оболочка для трёх текстовых
  * состояний (intro/currency/final), с кнопками "Продолжить"/"Слиться" (hover актив/пассив).
  *
@@ -103,6 +104,7 @@ export function attachOnboardingPopup(Onboarding){
         // обратно уже invisible — озвучка шла, а самого попапа игрок не видел.
         this._popupWin.visible = true;
         this._popupState = state;
+        if(this._mergeBtn){ const visible=state === 'intro'; this._mergeBtn.passive.visible = this._mergeBtn.hit.visible = visible; this._mergeBtn.active.visible=false; this._mergeBtn.hit.interactive = visible; }
         if(this._continueBtn){
             const showContinue = true;
             this._continueBtn.passive.visible = showContinue;
@@ -115,6 +117,8 @@ export function attachOnboardingPopup(Onboarding){
             this._mergeBtn.passive.x = this._mergeBtn.active.x = this._mergeBtn.hit.x = MERGE_X;
             this._mergeBtn.passive.y = this._mergeBtn.active.y = this._mergeBtn.hit.y = MERGE_Y;
         }
+        this._onboardingText.style.fontSize = 18;
+        this._onboardingText.style.lineHeight = 24;
         this._onboardingText.text = POPUP_TEXTS[state];
         this._onboardingText.y = TEXT_Y_BY_STATE[state] != null ? TEXT_Y_BY_STATE[state] : TEXT_Y_BY_STATE.intro;
         this._onboardingText.style.wordWrapWidth = TEXT_W_BY_STATE[state] != null ? TEXT_W_BY_STATE[state] : TEXT_W_BY_STATE.intro;
@@ -158,9 +162,14 @@ export function attachOnboardingPopup(Onboarding){
         this._destroyCurrencyHighlights();
         if(!window.iface || !iface.up) return;
 
-        const original = RESOURCE_KEYS
+        if(typeof iface._applyTopCurrencyExpanded === 'function'){
+            this._currencyWasExpanded=iface._topCurrencyExpanded;
+            iface._topCurrencyExpanded=true;
+            iface._applyTopCurrencyExpanded();
+        }
+        const original = (iface._tutorialCurrencySprites || RESOURCE_KEYS
             .map(key => iface.up[key])
-            .filter(Boolean)
+            .filter(Boolean))
             .map(obj => ({ obj, alpha: obj.alpha }));
         if(!original.length) return;
 
@@ -168,7 +177,7 @@ export function attachOnboardingPopup(Onboarding){
         const tick = () => {
             // 30.09.2026 (по прямому указанию — "мигание слишком быстрое, сделай в два раза
             // реже"): было t += 0.12 — частота мигания уменьшена вдвое понижением приращения.
-            t += 0.06;
+            t += 0.03;
             const blink = 0.55 + 0.45 * Math.sin(t * 3); // колеблется между ~0.1 и 1
             original.forEach(({ obj }) => { obj.alpha = blink; });
         };
@@ -178,6 +187,11 @@ export function attachOnboardingPopup(Onboarding){
     };
 
     Onboarding.prototype._destroyCurrencyHighlights = function(){
+        if(this._currencyWasExpanded !== undefined && window.iface && typeof iface._applyTopCurrencyExpanded === 'function'){
+            iface._topCurrencyExpanded=this._currencyWasExpanded;
+            iface._applyTopCurrencyExpanded();
+            this._currencyWasExpanded=undefined;
+        }
         if(this._currencyHighlightTick){ PIXI.Ticker.shared.remove(this._currencyHighlightTick); this._currencyHighlightTick = null; }
         if(this._currencyHighlightOriginal){
             this._currencyHighlightOriginal.forEach(({ obj, alpha }) => { obj.alpha = alpha; });
@@ -187,6 +201,8 @@ export function attachOnboardingPopup(Onboarding){
 
     // "Продолжить" ведёт себя по-разному в зависимости от текущего состояния попапа.
     Onboarding.prototype._onContinue = function(){
+        this._stopNarration();
+        if(this._guidedContinue){ this._guidedContinue(); return; }
         this._touchOnboardingActivity();
         if(this._popupState === 'intro'){
             // Попап обучения НЕ прячем — попап смены ника открывается прямо поверх него (по
@@ -215,9 +231,6 @@ export function attachOnboardingPopup(Onboarding){
             return;
         }
         if(this._popupState === 'permission'){
-            // Это уже собственное объясняющее окно игры, поэтому «Продолжить» является
-            // явным согласием игрока. Сначала окончательно сохраняем завершение обучения,
-            // затем просим VK-разрешение — и только если постоянного согласия ещё нет в БД.
             const needsFriendsPermission = !window.udata || String(udata['friends_scope_granted'] || '0') !== '1';
             this._finish();
             if(needsFriendsPermission) window.dispatchEvent(new Event('pripyat:friends-permission-request'));
@@ -244,29 +257,35 @@ export function attachOnboardingPopup(Onboarding){
             // Первый клик — подтверждение, второй действительно завершает урок.
             if(!this._mergeArmed){
                 this._mergeArmed = true;
+                this._onboardingText.text = narrationTexts['подтверждение слиться'];
                 this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeConfirm);
                 return;
             }
             this._finish();
-            this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeDone);
+            this._showGoodbye();
             return;
         }
         if(this._popupState === 'permission'){
             this._finish();
-            this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeDone);
+            this._showGoodbye();
             return;
         }
         // На остальных экранах первый клик — подтверждение намерения, второй — выход.
         if(!this._mergeArmed){
             this._mergeArmed = true;
-            this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeConfirm);
+            this._onboardingText.text = narrationTexts['подтверждение слиться'];
+                this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeConfirm);
             return;
         }
         this._finish();
-        this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeDone);
+        this._showGoodbye();
     };
 
     Onboarding.prototype._finish = function(){
+        if(this._guidedCleanup) this._guidedCleanup();
+        clearTimeout(this._guidedAudioTimeout);
+        if(this._guidedPopupTick){ PIXI.Ticker.shared.remove(this._guidedPopupTick); this._guidedPopupTick = null; }
+        this._guidedContinue = null;
         console.log('[onboarding._finish] обучение завершено (шаг=' + this._popupState + ')');
         this._hidePopup();
         this._mergeArmed = false;

@@ -282,7 +282,7 @@ export function attachTopCurrency(proto){
         const txtSecondary = new PIXI.Text('0', TXT_STYLE);
         // 18.10.2026 (по прямому указанию, редактор позиций — "координаты кол-ва ресурсов у
         // плашки, которая выскакивает снизу: x:757,y:68"): было x:725,y:59.
-        txtSecondary.x = 757; txtSecondary.y = 68; txtSecondary.visible = false;
+        txtSecondary.x = 765; txtSecondary.y = 68; txtSecondary.visible = false;
         up.addChild(txtSecondary);
 
         const btnSecondaryPlus = new PIXI.Sprite(PIXI.Texture.from(BASE + 'верхний худ иконка плюс.png'));
@@ -297,6 +297,7 @@ export function attachTopCurrency(proto){
         up.addChild(btnSecondaryPlus);
 
         this._topCurRows = { iconPrimary, iconSecondary, plateSecondary, txtSecondary, btnSecondaryPlus };
+        this._tutorialCurrencySprites = [plateRub,iconRub,platePrimary,iconPrimary,plateSecondary,iconSecondary];
 
         // Применяет видимость нижней строки к this._topCurrencyExpanded (используется и
         // тогглом, и свапом выше — свап всегда закрывает шторку после закрепления).

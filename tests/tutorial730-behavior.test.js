@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
 let resumed=0,plays=[],stopped=0;const sounds=new Map();
 const sound={context:{audioContext:{state:'suspended',resume(){resumed++;return Promise.resolve();}}},exists:n=>sounds.has(n),find:n=>({stop(){stopped++;}}),add(n,o){sounds.set(n,o);},play(n,o){plays.push({n,o});return {stop(){}};}};
-const ctx={window:{PIXI:{sound},_sndVol:0.3},PIXI:{sound},console,attachOnboardingPopup(){},attachOnboardingTour(){}};
+const ctx={window:{PIXI:{sound},_sndVol:0.3},PIXI:{sound},console,attachGuidedTour(){},attachOnboardingPopup(){},attachOnboardingTour(){}};
 vm.runInNewContext(fs.readFileSync('_client/src/game/onboarding.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export default class','class')+';this.C=Onboarding;',ctx);
 const ob=Object.create(ctx.C.prototype);ob._flushQueuedIdleNarration=()=>{};
 ob._playNarration('./sounds/2 описание двора.mp3');assert.equal(resumed,1);assert.equal(plays.length,0);
@@ -12,3 +12,9 @@ const iface={_hudStack:[{id:'habar'}],popHud(id){this._hudStack=this._hudStack.f
 class Tour{};const tc={window:{iface},iface,console,TOUR_TABS:[]};vm.runInNewContext(fs.readFileSync('_client/src/game/onboarding/onboarding-tour.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export function','function')+';this.attach=attachOnboardingTour;',tc);tc.attach(Tour);
 const tour=new Tour;let advanced=0;tour._activeTourKey='habar';tour._advanceTour=()=>advanced++;tour._hookScreenClose();tour._openingTourKey='habar';iface.popHud('habar');assert.equal(advanced,0,'Technical cleanup during open is not user exit');tour._openingTourKey=null;iface._hudStack.push({id:'habar'});iface.popHud('habar');assert.equal(advanced,1);iface.popHud('habar');assert.equal(advanced,1,'Duplicate cleanup cannot advance');
 console.log('Tutorial: audio resume, delayed-load cancellation, volume/mute, technical close guard and one real exit passed');
+
+ob._playNarration('./sounds/10 описание валюты.mp3');
+[...sounds.values()].at(-1).loaded(null);
+assert.equal(plays.at(-1).o.end,25.7,'Currency narration stops at 25.7 seconds');
+assert.equal(plays[0].o.end,undefined,'Other voice tracks retain full length');
+ob._stopNarration();

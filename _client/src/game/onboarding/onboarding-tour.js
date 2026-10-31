@@ -49,15 +49,26 @@ export function attachOnboardingTour(Onboarding){
         hit.interactive = true; hit.buttonMode = true;
 
         let pulseT = 0;
+        const flashed = new Map();
+        this._tourFlashRestore = () => { for(const [sprite,alpha] of flashed)if(!sprite.destroyed)sprite.alpha=alpha; };
+        const findButton = () => {
+            let best=null, area=Infinity;
+            const walk=node=>{
+                if(!node || node===win || node.visible===false || node.renderable===false)return;
+                if(node instanceof PIXI.Sprite){const b=node.getBounds();const a=b.width*b.height;if(a>0 && a<area && target.x>=b.x && target.x<=b.x+b.width && target.y>=b.y && target.y<=b.y+b.height){best=node;area=a;}}
+                for(const child of node.children || [])walk(child);
+            };walk(root);return best;
+        };
         const pulseTick = () => {
-            pulseT += 0.04;
+            pulseT += 0.02;
             const phase = pulseT % 1;
+            pulse.visible = true;
             pulse.clear();
-            pulse.beginFill(0xffffff, 1);
-            pulse.drawCircle(target.x, target.y, 5);
-            pulse.endFill();
-            pulse.lineStyle(2, 0xffffff, 1 - phase);
-            pulse.drawCircle(target.x, target.y, 8 + phase * 26);
+            pulse.lineStyle(3,0xffffff,1-phase);
+            pulse.drawCircle(target.x,target.y,14+phase*25);
+            for(const [sprite,alpha] of flashed)if(!sprite.destroyed)sprite.alpha=alpha;
+            const button=findButton();
+            if(button){if(!flashed.has(button))flashed.set(button,button.alpha);button.alpha=flashed.get(button)*(0.58+0.42*(Math.sin(pulseT*3)+1)/2);}
 
             hit.clear();
             hit.beginFill(0xffffff, 0.001);
@@ -79,11 +90,13 @@ export function attachOnboardingTour(Onboarding){
         hand.x = h.x; hand.y = h.y;
         hand.scale.set(h.scale != null ? h.scale : 1);
         hand.rotation = (h.rot || 0) * Math.PI / 180;
+        hand._uDraggable = true;
+        hand._uOnTransform = () => { tab.hand={x:hand.x,y:hand.y,scale:hand.scale.x,rot:hand.rotation*180/Math.PI}; };
         win.addChild(hand);
 
         hit.on('pointerdown', (event) => {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
-            if(this._openingTourKey) return;
+            if(this._openingTourKey || (window.iface && iface._uEditOn)) return;
             this._openingTourKey = tab.key;
             hit.interactive = false;
             try {
@@ -94,7 +107,7 @@ export function attachOnboardingTour(Onboarding){
             if(tab.key === 'dvor' && window.dvor && typeof dvor._setTutorialCloudHighlight === 'function'){
                 dvor._setTutorialCloudHighlight(true);
             }
-            this._playNarration(tab.sound);
+            this._beginGuidedExplanation(tab);
             } finally { this._openingTourKey = null; }
         });
         win.addChild(hit);
@@ -147,6 +160,7 @@ export function attachOnboardingTour(Onboarding){
     };
 
     Onboarding.prototype._destroyTourOverlay = function(){
+        if(this._tourFlashRestore){ this._tourFlashRestore(); this._tourFlashRestore=null; }
         if(this._tourPulseTick){ PIXI.Ticker.shared.remove(this._tourPulseTick); this._tourPulseTick = null; }
         if(this._tourKeepOnTopTick){ PIXI.Ticker.shared.remove(this._tourKeepOnTopTick); this._tourKeepOnTopTick = null; }
         if(this._tourWin && this._tourWin.parent) this._tourWin.parent.removeChild(this._tourWin);

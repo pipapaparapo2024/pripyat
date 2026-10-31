@@ -1,5 +1,5 @@
-import { startupRequest } from './modules/startup-request.js';
 import { installPinchDensity } from './modules/pinch-density.js';
+import { startupRequest } from './modules/startup-request.js';
 import { physicalRendererResolution } from './modules/physical-render-resolution.js';
 import { installTextQuality } from './modules/text-quality.js';
 import UniHelp from './modules/universal_helper.js';
@@ -411,10 +411,13 @@ let initPreloader = () => {
 		// меняется только плотность пикселей в буфере.
 		if(window.scene && scene.renderer){
 			const dpr = window.devicePixelRatio || 1;
-			const targetRes = physicalRendererResolution(w, dpr, pinchDensity());
-			if(scene.renderer.resolution !== targetRes){
-				scene.renderer.resolution = targetRes;
+			const targetRes = physicalRendererResolution(w, dpr, 1);
+			scene.renderer._textPixelDensity = targetRes * pinchDensity();
+            if(!scene.renderer._stableBufferInitialized){
+                scene.renderer._stableBufferInitialized = true;
+				scene.renderer.resolution = Math.max(2, Math.min(3, targetRes));
 				scene.renderer.resize(1280, 720);
+                scene.renderer.render(scene.stage);
 				// 18.09.2026 (репорт пользователя — "вся кликабельность съехала"): у PIXI
 				// InteractionManager (обработка кликов/тача) СВОЁ ОТДЕЛЬНОЕ поле resolution,
 				// не связанное с renderer.resolution — оно выставляется один раз при создании
@@ -423,7 +426,7 @@ let initPreloader = () => {
 				// старому масштабу (1), а спрайты рисовались по новому — отсюда смещение.
 				// Обновляем resolution интеракшна вручную вслед за рендером.
 				if(scene.renderer.plugins && scene.renderer.plugins.interaction){
-					scene.renderer.plugins.interaction.resolution = targetRes;
+					scene.renderer.plugins.interaction.resolution = scene.renderer.resolution;
 				}
 				// 19.10.2026 (повторный репорт того же симптома — "буквы разного размера" — в
 				// НОВОМ попапе покупки валюты, открытом на широком десктопном окне): статическая

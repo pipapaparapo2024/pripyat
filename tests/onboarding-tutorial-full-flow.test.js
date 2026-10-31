@@ -60,7 +60,7 @@ console.log('\n3) Тексты попапа — 1-в-1 из присланной
 console.log('\n4) Тур — ровно 8 вкладок, в правильном порядке, с нужными звуковыми файлами');
 {
     const order = [...dataSrc.matchAll(/key: '(\w+)', label: '([^']+)'/g)].map(m => m[1]);
-    assert(JSON.stringify(order) === JSON.stringify(['dvor','zone','baza','habar','bosses','svod','shmot','sidorovich']),
+    assert(JSON.stringify(order) === JSON.stringify(['dvor','zone','baza','habar','bosses','svod','raznaryadka','shmot','sidorovich']),
         'порядок шагов тура: двор→зона→база→хабар→боссы→сводка→шмотки→сидорович (нашли: ' + order.join(',') + ')');
 
     const soundMap = {
@@ -121,7 +121,7 @@ console.log('\n6) Прогресс тура — выход в главное м�
     // баг, отдельная мелкая задача): докблок в шапке ЭТОГО файла (строки 1-6) не обновлён и
     // по-прежнему описывает старое поведение "...когда озвучка доиграла ИЛИ игрок сам вышел — что
     // наступит раньше" — вводит в заблуждение, стоит поправить отдельно.
-    assert(/tab\.open\(\);\s*\n(\s*if\(tab\.key === 'dvor'[\s\S]{0,160}\n\s*\}\s*\n)?\s*this\._playNarration\(tab\.sound\);/.test(tourSrc),
+    assert(/tab\.open\(\);\s*\n(\s*if\(tab\.key === 'dvor'[\s\S]{0,160}\n\s*\}\s*\n)?\s*this\._beginGuidedExplanation\(tab\);/.test(tourSrc),
         'клик по подсвеченной вкладке: открывает экран, играет звук — без onComplete-колбэка (шаг продвигается только выходом из экрана)');
     assert(/if\(this\._activeTourKey !== fromKey\) return;/.test(tourSrc),
         '_advanceTour идемпотентен — повторный/устаревший вызов для уже пройденного шага игнорируется');
@@ -163,7 +163,7 @@ console.log('\n7) Попап про валюту → финал: "Продолж
     // появился промежуточный шаг.
     assert(/if\(this\._popupState === 'final'\)\{\s*\n\s*this\._mergeArmed = false;\s*\n\s*this\._setStep\('permission'\);\s*\n\s*this\._showPopup\('permission'\);\s*\n\s*return;\s*\n\s*\}/.test(onContinueBody),
         '"Продолжить" на финальном попапе переключает на новый попап "permission" (запрос доступа к друзьям), не завершает обучение напрямую');
-    assert(/if\(this\._popupState === 'permission'\)\{[\s\S]{0,400}this\._finish\(\);/.test(onContinueBody),
+    assert(/if\(this\._popupState === 'permission'\)\{[\s\S]*?this\._finish\(\);/.test(onContinueBody),
         '"Продолжить" на попапе "permission" завершает обучение (_finish() вызывается именно здесь)');
     const onMergeBody = popupSrc.slice(popupSrc.indexOf('_onMerge = function'), popupSrc.indexOf('_finish = function'));
     assert(/this\._finish\(\);/.test(onMergeBody), '"Слиться" в любом состоянии завершает обучение');

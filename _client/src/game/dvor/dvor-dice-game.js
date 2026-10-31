@@ -355,7 +355,9 @@ export function attachDiceGame(proto){
             if(window.resumePlayerSave) resumePlayerSave('dice_resolve');
             console.error('[dvor-dice._resolveDiceNewScreen] ← ошибка сервера:', JSON.stringify(err));
             if(window.notify) notify.showResult({text:'Не удалось подвести итог партии'}, 0);
-            this._finishDiceNewScreen();
+            // Keep the paid round available for an explicit retry after a network error.
+            this._diceState = 1;
+            if(this._diceConfirmBtn) this._diceConfirmBtn.visible = true;
         });
     };
 

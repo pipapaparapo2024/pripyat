@@ -315,7 +315,7 @@ $resultData = RaznaryadkaProgress::devForceLaunchMonth($opsLaunch, $userLaunch);
 echo (($resultData['month'] ?? null) === '2026-11' ? "PASS" : "FAIL") . ": месяц переключён на launch_month ('2026-11'), получено " . var_export($resultData['month'] ?? null, true) . "\n";
 echo (($resultData['days'] ?? ['x']) === [] ? "PASS" : "FAIL") . ": дни нового месяца пустые, получено " . json_encode($resultData['days'] ?? null) . "\n";
 echo (!array_key_exists('dev_day_offset', $resultData) ? "PASS" : "FAIL") . ": dev_day_offset НЕ перенесён в новый \$data (свежий объект без ключа) — эффективный день нового месяца возвращается к реальному\n";
-echo (intval($userLaunch['coins'] ?? 0) === 30 ? "PASS" : "FAIL") . ": автосбор выдал порог need:2 (coins+30) за 2 выполненных дня старого месяца, получено " . var_export($userLaunch['coins'] ?? null, true) . "\n";
+echo (intval($userLaunch['coins'] ?? 0) === 0 ? "PASS" : "FAIL") . ": до запуска автосбор не выдаёт награду за старый месяц, получено " . var_export($userLaunch['coins'] ?? null, true) . "\n";
 
 echo "=== Test 15: devForceLaunchMonth() — возвращает null, если launch_month не задан в конфиге (ничего не ломает) ===\n";
 $cfgNoLaunch = $CONFIG; // launch_month отсутствует в этом локальном $CONFIG

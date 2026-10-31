@@ -125,6 +125,10 @@ export default class Raznaryadka {
     _build(){
         const IMG = './images/';
         const win = new PIXI.Container();
+        this._rewardRowEls = [];
+        this._dayTileSprs = {};
+        this._dayCrossSprs = {};
+        this._dayCheckSprs = {};
         win.interactive = true;
 
         // 28.10.2026 (баг найден по прямому указанию, тот же класс гонки, что уже чинился в
@@ -308,6 +312,14 @@ export default class Raznaryadka {
             rowTxt1.x = centerRowX; rowTxt1.y = rowBg.y + rowBg.texture.height / 2 - 9;
             rowTxt2.x = centerRowX; rowTxt2.y = rowBg.y + rowBg.texture.height / 2 + 11;
             win.addChild(rowTxt1, rowTxt2);
+            const positionRewardTexts=()=>{
+                const centerY=rowBg.y+rowBg.texture.height/2;
+                rowTxt1.x=rowTxt2.x=rowBg.x+rowBg.texture.width/2;
+                rowTxt1.y=centerY-9;rowTxt2.y=centerY+11;
+                if(!last) amtTxt.y=centerY+3;
+            };
+            if(rowBg.texture.width > 1) positionRewardTexts();
+            else rowBg.texture.once('update',positionRewardTexts);
             fontTextsBook.push(rowTxt1, rowTxt2);
 
             const claimBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'разнарядка кнопка забрать.png'));
@@ -339,6 +351,7 @@ export default class Raznaryadka {
         // совпадает с нативным размером файла "выход.png", см. AGENTS.md "Стандартная кнопка
         // выхода"), просто выражен через scale, а не явные width/height.
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
+        exitBtn._tutorialTarget = 'exit';
         exitBtn.scale.set(0.790);
         if(window.isMobile) helper.touchPad(exitBtn);
         exitBtn.x = 1194; exitBtn.y = 117;

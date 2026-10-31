@@ -341,7 +341,7 @@ export default class Dvor{
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240;
         exitBtn.y = 32;
-        exitBtn.interactive = true; exitBtn.buttonMode = true;
+        exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this.close());
@@ -430,19 +430,23 @@ export default class Dvor{
             PIXI.Ticker.shared.remove(this._dvorCloudHighlightTick);
             this._dvorCloudHighlightTick = null;
         }
-        const clouds = this._dvorCloudSprites || [];
+        const clouds = [...(this._dvorCloudSprites || []), ...(this._cigSprites || []), this._game2048PressSpr].filter(Boolean);
+        if(!this._tutorialCloudOriginals) this._tutorialCloudOriginals = new Map();
         if(!enabled){
-            clouds.forEach(s => { if(s && !s.destroyed){ s.alpha = 1; s.scale.set(1); } });
+            for(const [s,state] of this._tutorialCloudOriginals) if(!s.destroyed){s.alpha=state.alpha;s.scale.set(state.x,state.y);}
+            this._tutorialCloudOriginals.clear();
             return;
         }
+        clouds.forEach(s=>{if(!this._tutorialCloudOriginals.has(s))this._tutorialCloudOriginals.set(s,{alpha:s.alpha,x:s.scale.x ?? 1,y:s.scale.y ?? 1});});
         let t = 0;
         const tick = () => {
-            t += 0.06;
+            t += 0.03;
             const pulse = (Math.sin(t * 3) + 1) / 2;
             clouds.forEach(s => {
                 if(!s || s.destroyed) return;
-                s.alpha = 0.58 + pulse * 0.42;
-                s.scale.set(1.03 + pulse * 0.07);
+                const state=this._tutorialCloudOriginals.get(s);
+                s.alpha = state.alpha*(0.58 + pulse * 0.42);
+                s.scale.set(state.x*(1.03+pulse*0.07),state.y*(1.03+pulse*0.07));
             });
         };
         tick();

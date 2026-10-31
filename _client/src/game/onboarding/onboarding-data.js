@@ -1,3 +1,4 @@
+import narrationTexts from './narration-texts.json';
 /** Данные обучения (30.09.2026, по прямому указанию) — тексты, звуки, координаты руки-
  * указателя, порядок шагов. Вынесено отдельно от логики (onboarding.js/onboarding-tour.js),
  * чтобы дальнейшую правку текстов/координат можно было делать не разбираясь в остальном коде.
@@ -108,6 +109,13 @@ export const TOUR_TABS = [
         open: () => window.iface.openModule('svod', { forceOpen: true }),
     },
     {
+        key: 'raznaryadka', label: 'Разнарядка',
+        sound: SOUND_BASE + 'обучение/разнарядка.mp3',
+        target: {x:1123,y:417},
+        hand: {x:1083,y:456,scale:1,rot:-50},
+        open: () => window.iface.openModule('raznaryadka', {forceOpen:true}),
+    },
+    {
         key: 'shmot', label: 'Шмотки',
         sound: SOUND_BASE + '8 описание шмотки.mp3',
         // 30.09.2026 (живой тест, скриншот нижнего ряда ХУДа) — ПРИБЛИЗИТЕЛЬНО, поправляется
@@ -133,3 +141,5 @@ export const TOUR_TABS = [
 
 // Полная последовательность шагов onboarding_step (сохраняется в udata/БД).
 export const STEP_SEQUENCE = ['intro', ...TOUR_TABS.map(t => t.key), 'currency', 'final', 'permission', 'done'];
+
+Object.assign(POPUP_TEXTS, {currency:narrationTexts['10 описание валюты'], final:narrationTexts['11 конец обучения'], permission:narrationTexts['разрешение']});

@@ -2,7 +2,7 @@
 No arguments: read-only plan. --apply: backed-up publication with rollback.
 """
 from pathlib import Path
-import importlib.util,json,sys
+import importlib.util,json,sys,re
 ROOT=Path(__file__).resolve().parents[1]
 if sys.argv[1:] not in ([],['--apply']):raise ValueError('Use --apply or no arguments')
 spec=importlib.util.spec_from_file_location('release',ROOT/'tools/release.py');release=importlib.util.module_from_spec(spec);spec.loader.exec_module(release)
@@ -10,7 +10,7 @@ code=r'''
 from pathlib import Path
 import hashlib,json,datetime,shutil,os,fcntl,subprocess
 apply=APPLY
-version=731
+version=__RELEASE_VERSION__
 test=Path('/var/www/stalker-test').resolve();prod=Path('/var/www/stalker').resolve()
 assert str(test)=='/var/www/stalker-test' and str(prod)=='/var/www/stalker'
 releases=sorted(Path('/var/backups').glob('pripyat-test-unified-'+str(version)+'-*'))
@@ -67,7 +67,7 @@ if apply:
         if any(r.endswith('.php') for r in published):subprocess.run(['systemctl','restart','php8.5-fpm'],check=True)
         print('PROD rollback completed',flush=True)
         raise
-'''.replace('APPLY',repr(sys.argv[1:]==['--apply']))
+'''.replace('APPLY',repr(sys.argv[1:]==['--apply'])).replace('__RELEASE_VERSION__',re.search(r'index\.js\?v=(\d+)',(ROOT/'_client/development/index.html').read_text(encoding='utf-8'))[1])
 client=release.connect()
 try:print(release.run_remote_python(client,code),flush=True)
 finally:client.close()

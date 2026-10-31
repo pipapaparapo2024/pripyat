@@ -3,6 +3,9 @@ import { startBackgroundMusic } from '../modules/background-music.js';
 import { checkRewardLink } from '../modules/reward-link.js';
 
 export function setupGameBoot(){
+    if(PIXI.sound && !PIXI.sound.exists('tutorial_raznaryadka_preload')){
+        PIXI.sound.add('tutorial_raznaryadka_preload',{url:'./sounds/обучение/разнарядка.mp3',preload:true});
+    }
 
     // Глобальный список PNG — доступен сразу при старте (ранняя предзагрузка)
     // 22.10.2026 (баг найден по живому репорту — "100% загрузка, но игра не открывается"):
@@ -319,7 +322,7 @@ export function setupGameBoot(){
             '2048 128.png','2048 256.png','2048 512.png','2048 1024.png','2048 2048.png',
             '2048 4096.png','2048 8192.png','2048 16384.png',
             '2048 прогресс крафта заполнение.png','2048 прогресс крафта фон.png',
-            '2048 игра.png','2048 при платной партии.png','2048 топ попап.png',
+            '2048 фон.png','2048 игра.png','2048 при платной партии.png','2048 топ попап.png',
         ];
 
     // Общий счетчик запускается до FLA/VK-инициализации, чтобы индикатор

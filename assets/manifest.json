@@ -14294,6 +14294,11 @@
     "sha256": "066090a4320a8cba04edc651e00baeed59ed991beef9b81e0e862bc4cfdfab0c",
     "reason": "literal reference"
   },
+  "sounds/обучение/разнарядка.mp3": {
+    "bytes": 149430,
+    "sha256": "d5210abf26df1d40c105a7a9f207db4f988f68fc6e4cff6853be2f8115c5e97e",
+    "reason": "runtime asset; validate references with npm run assets:audit"
+  },
   "sounds/обучение/разрешение.mp3": {
     "bytes": 435861,
     "sha256": "face9ba00d209f7a0bb33737dbf837cb59b76e24c27e7e7d146a9aaed093ac48",

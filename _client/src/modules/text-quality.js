@@ -25,7 +25,7 @@ export function installTextQuality(PIXI, scope = window){
         const render = proto[method];
         if(typeof render !== 'function') continue;
         proto[method] = function(renderer){
-            const desired = textTextureResolution(renderer.resolution, this.worldTransform);
+            const desired = textTextureResolution(renderer._textPixelDensity || renderer.resolution, this.worldTransform);
             // The public setter also disables Pixi 6's automatic downgrade to renderer.resolution.
             if(this._autoResolution || this.resolution !== desired) this.resolution = desired;
             if(this._pripyatFontEpoch !== fontEpoch){

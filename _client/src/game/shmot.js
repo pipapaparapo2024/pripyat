@@ -336,12 +336,18 @@ export default class Shmot{
 			// оставлен неиспользуемым намеренно, не добавлялся обратно.
 		];
 
+		// 31.10.2026: корректировка только обуви на персонаже; сетка инвентаря не меняется.
+		const shoeLeftOffsets = {44:1,49:1,53:1,56:1,63:1,66:1,69:1,71:1,94:1,104:2,109:2,114:2};
+		Object.assign(this.items.find(item=>item.id===92),{manDx:27,manDy:-2,manWidth:32,manHeight:53});
+		Object.assign(this.items.find(item=>item.id===62),{manDx:31,manDy:0,manWidth:22,manHeight:22});
+		for(const item of this.items) if(shoeLeftOffsets[item.id]) item.manDx -= shoeLeftOffsets[item.id];
 		// ВАЖНО: без этого вызова owned/equipped всегда сбрасывались к хардкод-дефолтам
 		// при каждой перезагрузке страницы — купленные/надетые шмотки не переживали сессию.
 		this._loadFromUdata();
 
 		this._bindTabs();
-		this.win.butt_close.on('pointerdown', ()=>this.close());
+		this.win.butt_close._tutorialTarget = 'exit';
+        this.win.butt_close.on('pointerdown', ()=>this.close());
 	}
 
 	_bindTabs(){

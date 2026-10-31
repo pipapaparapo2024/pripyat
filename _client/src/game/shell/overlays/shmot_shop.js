@@ -211,7 +211,7 @@ export function attachShmotShop(proto){
             // шмоток был открыт поверх боя с боссом — вернёт down:false боя, а не всегда true).
             if(window.iface) iface.popHud('shmot');
         });
-        win.addChild(exitBtn);
+        win.addChild(exitBtn); exitBtn._tutorialTarget = 'exit';
 
         // 26.09.2026 (по прямому указанию, перед модерацией VK — MODERATION_HANDOFF_PROMPT.md,
         // критичная находка №2) — кнопки "🛠 РЕДАКТОР"/"📋 КОПИРОВАТЬ" (тумблер редактора

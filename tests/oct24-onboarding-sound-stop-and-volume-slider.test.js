@@ -67,7 +67,7 @@ console.log('\nTest 2: onboarding.js — _stopNarration() останавлива
 console.log('\nTest 3: onboarding.js — _playNarration() больше не шлёт захардкоженную volume:1, читает текущий _sndVol');
 {
     const src = norm(path.join(root, '_client/src/game/onboarding.js'));
-    const start = src.indexOf('_playNarration(url, onComplete){');
+    const start = src.indexOf('_playNarration(url, onComplete, onError){');
     const body = src.slice(start, src.indexOf('\n    }\n', start));
     assert(!/volume:\s*1,/.test(body), 'захардкоженная volume:1 убрана из тела _playNarration()');
     assert(/const vol = window\._sndVol !== undefined \? window\._sndVol : 0\.7;/.test(body),

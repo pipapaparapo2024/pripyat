@@ -274,7 +274,7 @@ export default class Hata {
 
         const rightSpr = new PIXI.Sprite(PIXI.Texture.from('./images/стрелка вправо.png'));
         rightSpr.x = 819; rightSpr.y = 506;
-        rightSpr.interactive = true; rightSpr.buttonMode = true;
+        rightSpr._tutorialTarget = 'base-next'; rightSpr.interactive = true; rightSpr.buttonMode = true;
         rightSpr.on('pointerover', ()=>{ _sa(rightSpr, 0.75); rightSpr.scale.set(1.08); });
         rightSpr.on('pointerout',  ()=>{ _sa(rightSpr, 1); rightSpr.scale.set(1); });
         rightSpr.on('pointerdown', ()=>this._nav(1));
@@ -356,7 +356,7 @@ export default class Hata {
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 83;
-        exitBtn.interactive = true; exitBtn.buttonMode = true;
+        exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>this.close());

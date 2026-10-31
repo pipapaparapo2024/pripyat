@@ -260,8 +260,17 @@
         // НЕ затронуты, это подтверждённое решение, не недосмотр. Шанс уменьшается ДО показа
         // костей игроку (в start()/reroll(), не в resolve()) — поэтому resolve() никогда не
         // отбирает уже показанную награду.
-        private function _reducePremiumRoll($rolls, $catalog, &$trace){
+        private function _reducePremiumRoll($rolls, $catalog, &$trace, $selectedIdx = null){
             if(!$this->_isPremiumCombination($rolls, $catalog) || mt_rand(1, 100) > 10) return $rolls;
+            if($selectedIdx !== null){
+                // A reroll can only change the selected die. Kept dice are immutable.
+                for($attempt=0;$attempt<32;$attempt++){
+                    $candidate=$rolls;
+                    $candidate[$selectedIdx]=$this->_weightedDie($catalog,$trace);
+                    if(!$this->_isPremiumCombination($candidate,$catalog)) return $candidate;
+                }
+                return $rolls; // Kept dice may already guarantee a premium combination.
+            }
             $trace[] = 'premium outcome rerolled before display (x0.9)';
             do {
                 $rolls = [
@@ -420,7 +429,7 @@
             $v = $this->_weightedDie($catalog, $rollTrace);
 
             $active['rolls'][$idx] = $v;
-            $active['rolls'] = $this->_reducePremiumRoll($active['rolls'], $catalog, $rollTrace);
+            $active['rolls'] = $this->_reducePremiumRoll($active['rolls'], $catalog, $rollTrace, $idx);
             $v = $active['rolls'][$idx];
             $active['swapsUsed']   = intval($active['swapsUsed']) + 1;
             $session['active']     = $active;

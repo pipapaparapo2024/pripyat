@@ -39,7 +39,7 @@ const panelsSrc = read('_client/src/game/interface/interface-panels.js');
 console.log('\n1) Мигание ресурсов на попапе про валюту замедлено вдвое');
 {
     const body = popupSrc.slice(popupSrc.indexOf('_buildCurrencyHighlights = function'), popupSrc.indexOf('_destroyCurrencyHighlights = function'));
-    assert(/t \+= 0\.06;/.test(body), 'приращение t уменьшено с 0.12 до 0.06 — вдвое реже мигание');
+    assert(/t \+= 0\.03;/.test(body), 'приращение t уменьшено до 0.03 — вдвое медленнее исходного');
     assert(!/t \+= 0\.12;/.test(body), 'старое (быстрое) приращение 0.12 не осталось рядом');
     assert(/0\.55 \+ 0\.45 \* Math\.sin\(t \* 3\)/.test(body), 'амплитуда/множитель синуса не тронуты — меняется только скорость');
 }

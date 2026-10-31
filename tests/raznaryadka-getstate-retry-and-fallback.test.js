@@ -109,6 +109,10 @@ console.log('Test 4: клик по fallback-тексту скрывает его
 
     const inst = new Raznaryadka();
     inst._build();
+    const firstRows=inst._rewardRowEls.slice();
+    inst._build();
+    assert(inst._rewardRowEls.length === 5, 'повторная сборка содержит ровно пять актуальных строк');
+    assert(inst._rewardRowEls.every(row => !firstRows.includes(row)), 'ссылки на старые строки не переиспользуются');
     assert(!!inst._fetchFailTxt, 'fetchFailTxt создан в _build()');
     assert(inst._fetchFailTxt.visible === false, 'fetchFailTxt изначально скрыт');
 
@@ -148,6 +152,8 @@ console.log('Test 4: клик по fallback-тексту скрывает его
     assert(applyPatchCalls === 1, 'applyPatch вызван с патчем успешного ответа');
     assert(inst._fetchFailTxt.visible === false, 'fallback-текст скрыт после успешного ответа (_hideFetchFailText)');
     assert(inst._doneHeaderTxt.text === 'ВЫПОЛНЕНО ЗАДАНИЙ 2/30', 'реальные данные реально дошли до рендера (не осталась пустая строка)');
+    assert(inst._rewardRowEls[0].amtTxt.text === '×30', 'после повторного входа количество награды записано в новую строку');
+    assert(inst._rewardRowEls[0].rowTxt2.text === '2 задания', 'после повторного входа условие записано в новую строку');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

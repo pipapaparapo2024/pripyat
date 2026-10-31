@@ -974,9 +974,10 @@
                 $this->ops->applyShmotOwnBonus($user, intval($id));
             }
             $user['shmot'] = json_encode($incoming);
+            if(!empty($incoming[100]['owned'])) $user['keyring_owner'] = 1;
             if(!$this->ops->saveUser($user)) return $this->registry['tools']->error(99);
             $this->registry['tools']->output(['ok' => 1,
-                'patch' => $this->ops->patchCurrencies($user, ['shmot', 'max_energy'])]);
+                'patch' => $this->ops->patchCurrencies($user, ['shmot', 'max_energy', 'keyring_owner'])]);
         }
 
         // 29.09.2026 (см. коммент у $allowed выше — закрытие класса бага "автосейв затирает

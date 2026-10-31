@@ -240,7 +240,8 @@ export function attachZoneScreen(proto){
 				if(window.zone) zone._openLocationPopup(loc.locIdx);
 				else modules.checkFlags(['zone'], () => { if(window.zone) zone._openLocationPopup(loc.locIdx); });
 			});
-			group.addChild(capBtn);
+			capBtn._tutorialTarget = loc.locIdx === 0 ? 'cordon' : null;
+            group.addChild(capBtn);
 
 			// Рамка «уважения» — от угла ЕДИНОГО слота (одна и та же геометрия у всех 5).
 			const cardX = SLOT_CX - SLOT_CARD_W / 2;
@@ -345,7 +346,7 @@ export function attachZoneScreen(proto){
 		exitBtn.scale.set(0.5);
 		if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
 		exitBtn.x = 1240; exitBtn.y = 86;
-		exitBtn.interactive = true; exitBtn.buttonMode = true;
+		exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
 		exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
 		exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
 		exitBtn.on('pointerdown', ()=>this._closeZoneScreen());

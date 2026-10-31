@@ -58,10 +58,10 @@ console.log("\nTest 2: ветка 'permission' вызывает finish() син�
     const permEnd   = body.indexOf('\n        }', permStart);
     const permBody  = body.slice(permStart, permEnd);
     assert(/this\._finish\(\);/.test(permBody), 'this._finish() вызывается внутри ветки permission');
-    assert(/this\._playNarration\(ONBOARDING_EXTRA_SOUNDS\.mergeDone\);/.test(permBody),
+    assert(/this\._showGoodbye\(\);/.test(permBody),
         'озвучка mergeDone всё ещё проигрывается (просто не блокирует завершение)');
     const finishIdx = permBody.indexOf('this._finish();');
-    const soundIdx  = permBody.indexOf('this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeDone);');
+    const soundIdx  = permBody.indexOf('this._showGoodbye();');
     assert(finishIdx !== -1 && soundIdx !== -1 && finishIdx < soundIdx,
         'finish() идёт ДО запуска озвучки (не наоборот) — завершение не зависит от результата воспроизведения');
 }
@@ -70,7 +70,7 @@ console.log("\nTest 3: второй клик на 'остальных экран
 {
     const tailStart = body.lastIndexOf("if(!this._mergeArmed){");
     const tailBody  = body.slice(tailStart);
-    assert(/this\._finish\(\);\s*\n\s*this\._playNarration\(ONBOARDING_EXTRA_SOUNDS\.mergeDone\);\s*$/.test(tailBody.trim() + '\n'),
+    assert(/this\._finish\(\);\s*\n\s*this\._showGoodbye\(\);\s*$/.test(tailBody.trim() + '\n'),
         'хвост функции (после второй проверки _mergeArmed) завершает это(.finish()) синхронно и ПОСЛЕ него играет озвучку');
 }
 
@@ -79,7 +79,7 @@ console.log('\nTest 4: состояние final (уже рабочая этал�
     const finalStart = body.indexOf("if(this._popupState === 'final'){");
     const finalEnd   = body.indexOf("if(this._popupState === 'permission'){");
     const finalBody  = body.slice(finalStart, finalEnd);
-    assert(/this\._finish\(\);\s*\n\s*this\._playNarration\(ONBOARDING_EXTRA_SOUNDS\.mergeDone\);/.test(finalBody),
+    assert(/this\._finish\(\);\s*\n\s*this\._showGoodbye\(\);/.test(finalBody),
         'final: finish() по-прежнему идёт раньше озвучки на втором клике (эталонный, изначально рабочий паттерн)');
 }
 

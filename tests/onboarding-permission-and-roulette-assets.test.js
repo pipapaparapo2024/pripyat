@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const read = rel => fs.readFileSync(path.join(root, '_client', 'src', ...rel.split('/')), 'utf8');
+const read = rel => fs.readFileSync(path.join(root, '_client', 'src', ...rel.split('/')), 'utf8').replace(/\r\n/g, '\n');
 const asset = name => path.join(root, '_client', 'development', 'images', name);
 let failed = 0;
 const test = (name, condition) => {
@@ -23,13 +23,13 @@ const boot = read('game/game-boot.js');
 const zone = read('game/shell/overlays/zone_screen.js');
 const iface = read('game/interface.js');
 const dev = read('game/shell/overlays/dev_panel.js');
-const users = fs.readFileSync(path.join(root, 'server/core/controllers/users.php'), 'utf8');
+const users = fs.readFileSync(path.join(root, 'server/core/controllers/users.php'), 'utf8').replace(/\r\n/g, '\n');
 const leaderboard = read('game/svod/svod-leaderboard.js');
 const dvor = read('game/dvor.js');
 const bossFight = read('game/shell/overlays/bosses_fight.js');
 
-test('В финале обучения есть обе кнопки, а «Слиться» везде имеет заданную посадку',
-    popup.includes('const showContinue = true') && popup.includes('const MERGE_X = 391, MERGE_Y = 506') &&
+test('«Слиться» доступна только в приветствии и имеет заданную посадку',
+    popup.includes("const visible=state === 'intro'") && popup.includes('const MERGE_X = 391, MERGE_Y = 506') &&
     popup.includes('this._mergeBtn.passive.y = this._mergeBtn.active.y = this._mergeBtn.hit.y = MERGE_Y'));
 test('Запрос friends начинается только после собственного окна и явного «Продолжить»',
     // 02.10.2026: событие переименовано pripyat:onboarding-done -> pripyat:friends-permission-request
@@ -60,7 +60,7 @@ test('Финальное «Слиться» подтверждается оди�
     // исключение в PIXI.sound.play), finish() не наступал НИКОГДА, и onboarding_step застревал
     // навсегда. Теперь finish() вызывается СРАЗУ по клику, озвучка — fire-and-forget рядом.
     popup.includes("if(!this._mergeArmed){") &&
-    (popup.match(/this\._finish\(\);\s*\n\s*this\._playNarration\(ONBOARDING_EXTRA_SOUNDS\.mergeDone\);/g) || []).length === 3 &&
+    (popup.match(/this\._finish\(\);\s*\n\s*this\._showGoodbye\(\);/g) || []).length === 3 &&
     !popup.includes('mergeDone, () => this._finish()'));
 test('Обучение не продвигается при переходе bossSelect в бой',
     // 02.10.2026: вместо сравнения this._activeTourKey === 'bosses' используется выделенный флаг
@@ -71,7 +71,7 @@ test('Обучение не продвигается при переходе bos
     bossFight.includes('this._onboardingBossScreenTransition = true;') &&
     bossFight.includes('this._onboardingBossScreenTransition = false;'));
 test('Подтверждённое «Слиться» скрывает попап сразу и доигрывает реплику фоном',
-    popup.includes('this._finish();\n            this._playNarration(ONBOARDING_EXTRA_SOUNDS.mergeDone)'));
+    popup.includes('this._finish();\n            this._showGoodbye()'));
 test('Окно позывного открывается без фонового попапа обучения и отмена его возвращает',
     popup.includes('this._popupWin.visible = false') && popup.includes('this._popupWin.visible = true') &&
     read('game/shell/popups/nick.js').includes('function(onSaved, onCancelled)'));
@@ -93,7 +93,7 @@ test('Рулетка использует новый лист, карточки 
 test('Карточки описаний рулетки находятся под листом рулетки',
     roulette.indexOf("addDescriptionButton('рулетка описание.png'") < roulette.indexOf('win.addChild(bg);'));
 test('На первом шаге обучения Двора все игровые облака пульсируют и увеличиваются',
-    dvor.includes('_setTutorialCloudHighlight(enabled)') && dvor.includes('s.scale.set(1.03 + pulse * 0.07)') &&
+    dvor.includes('_setTutorialCloudHighlight(enabled)') && dvor.includes('state.x*(1.03+pulse*0.07)') &&
     tour.includes("tab.key === 'dvor'") && tour.includes("dvor._setTutorialCloudHighlight(true)"));
 test('Отладочные надписи колеса и связки ключей не выводятся игроку',
     !roulette.includes("dbgTxt.text = 'колесо | url:") && !shop.includes("dbgTxt.text = 'связка ключей | url:"));

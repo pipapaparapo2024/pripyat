@@ -78,7 +78,7 @@ export function attachBossesSelect(proto){
 		exitBtn.scale.set(0.5);
 		if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
 		exitBtn.x = 1203; exitBtn.y = 98;
-		exitBtn.interactive = true; exitBtn.buttonMode = true;
+		exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
 		exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
 		exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
 		exitBtn.on('pointerdown', ()=>{

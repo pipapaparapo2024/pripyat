@@ -266,6 +266,9 @@ export function attachInterfacePanels(proto){
     proto.hideCloseBtn = function(){ if(window.globalCloseBtn) window.globalCloseBtn.visible = false; };
 
     proto._closeCurrentModule = function(){
+        const game = window.game2048;
+        if(game && game._topWin && game._topWin.parent){game._closeGame2048TopPopup();return;}
+        if(game && game._win && game._win.parent){game._returnToDvor();return;}
         const wishlist = window.svod && svod._zanachkiWishlistWin;
         if(wishlist && wishlist.parent){
             wishlist.parent.removeChild(wishlist);

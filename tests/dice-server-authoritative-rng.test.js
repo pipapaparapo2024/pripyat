@@ -101,7 +101,7 @@ console.log('\nTest 3: dice.php.reroll() — может честно докин�
     assert(/if\(intval\(\$active\['swapsUsed'\]\) >= intval\(\$active\['swapsAllowed'\]\)\) return \$this->ops->fail\(69\);/.test(body),
         'заряды переброса кончились — fail(69)');
     assert(!/othersAll6/.test(body), 'регресс-гвард: othersAll6 отсутствует — хард-блок на докидывание джекпота переброском снят сознательно');
-    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace\);/.test(body),
+    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace, \$idx\);/.test(body),
         'единственная защита после переброса — та же вероятностная _reducePremiumRoll(), что и на первом броске');
 }
 

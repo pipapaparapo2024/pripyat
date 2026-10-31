@@ -1,13 +1,14 @@
 // Use the bundle release for local images, including PIXI and Spine image loads.
 export function installAssetVersion(version, scope = window){
     if(!version || version === '?') return;
+    const launchVersion = version + '-' + (scope.session_hash || Math.random().toString(36).slice(2));
     const base = new URL('./images/', scope.document.baseURI);
     const versionUrl = (source) => {
         if(typeof source !== 'string') return source;
         try {
             const url = new URL(source, scope.document.baseURI);
             if(url.origin !== base.origin || !url.pathname.startsWith(base.pathname)) return source;
-            url.searchParams.set('asset_v', version);
+            url.searchParams.set('asset_v', launchVersion);
             return url.href;
         } catch(e){ return source; }
     };

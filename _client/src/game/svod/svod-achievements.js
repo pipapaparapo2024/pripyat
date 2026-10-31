@@ -474,6 +474,8 @@ export function attachSvodAchievements(proto){
                 c._iconSpr.width  = _isWideIcon ? 54 : 46;
                 c._iconSpr.height = 44;
                 c._iconSpr.x = ICON_X - 1 - (_isWideIcon ? 1 : 0);
+                if(a.cat === 'stash') {c._iconSpr.width+=5;c._iconSpr.x-=2.5;}
+                if(a.id === 'gym_10'){c._iconSpr.width=63;c._iconSpr.x-=14;}
                 c._iconSpr.texture = PIXI.Texture.from(iface._achievementIconFor(a));
             }
             c.nameTxt.text = a.name;

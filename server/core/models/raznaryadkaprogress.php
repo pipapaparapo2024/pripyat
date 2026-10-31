@@ -193,7 +193,7 @@ class RaznaryadkaProgress {
     // переход на launch_month, не трогая реальные системные часы (это сломало бы все
     // остальные таймеры/кулдауны игры, см. ПРАВИЛО №3 AGENTS.md).
     static function _closeMonthAndStartNew($ops, &$user, $data, $config, $newMonth){
-        if(!empty($data['month']) && !empty($data['days'])){
+        if(!empty($data['month']) && !empty($data['days']) && (!isset($config['launch_month']) || $data['month'] >= $config['launch_month'])){
             // Автосбор невыбранных наград прошлого месяца — считаем done-дни и выдаём ВСЕ
             // пороги, до которых прошлый месячный прогресс дотянул, но игрок не забрал.
             $doneCount = 0;
@@ -340,6 +340,7 @@ class RaznaryadkaProgress {
             if(!$user) return;
 
             list($data, $config) = self::loadAndRollover($ops, $user);
+            if(isset($config['launch_month']) && $data['month'] < $config['launch_month']) return;
             // 27.10.2026: дни-в-месяце СЧИТАЕМ ПО ЦЕЛЕВОМУ $data['month'] (daysInMonthFor), не по
             // реальному текущему — см. баг в докблоке daysInMonthFor()/baseDay() выше.
             $monthCfg = self::monthConfig($config, $data['month'], self::daysInMonthFor($data['month']));

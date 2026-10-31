@@ -47,7 +47,7 @@ export function attachZonePopup(proto){
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn); // 27.09.2026: зона нажатия под палец, см. universal_helper.touchPad
         exitBtn.x = 1240; exitBtn.y = 107;
-        exitBtn.interactive = true; exitBtn.buttonMode = true;
+        exitBtn._tutorialTarget = 'exit'; exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout', ()=>{ exitBtn.scale.set(0.5); });
         exitBtn.on('pointerdown', ()=>{
@@ -189,6 +189,7 @@ export function attachZonePopup(proto){
         this._locCellsTxt.anchor.set(0, 0.5);
         win.addChild(this._locCellsTxt);
 
+        this._locExecActiv._tutorialTarget = 'zone-action';
         this._locExecActiv.interactive = true;
         this._locExecActiv.buttonMode  = true;
 		this._locExecActiv._disableHoverScale = true;
@@ -306,6 +307,7 @@ export function attachZonePopup(proto){
         const allDone = loc.checkpoints.every(cp => cp.filled >= cp.cells);
 
         this._locExecActiv.texture = PIXI.Texture.from(LL + 'кнопка выполнить можно.png');
+        this._locExecActiv._tutorialTarget = 'zone-action';
         this._locExecActiv.interactive = true;
         this._locExecActiv.buttonMode = true;
         const energyCost = allDone ? 0 : cps[activeCpIdx].cell_cost;

@@ -103,7 +103,7 @@ console.log('\nTest 2: index.js — размеры канваса из моду�
     assert(/const ratio = 1280 \/ 720;/.test(index), 'логический размер сцены остался 1280×720');
     assert(/scene\.renderer\.resize\(1280, 720\)/.test(index),
         'пересчёт resolution под devicePixelRatio (фикс 18.09.2026) не тронут');
-    assert(/plugins\.interaction\.resolution = targetRes/.test(index),
+    assert(/plugins\.interaction\.resolution = scene\.renderer\.resolution/.test(index),
         'синхронизация resolution интеракшна (фикс 18.09.2026) не тронута');
 
     assert(/env\(safe-area-inset-top\)/.test(index),

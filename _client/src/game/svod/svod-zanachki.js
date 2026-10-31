@@ -37,7 +37,7 @@ const THEMES = {
 // ("заначки фон ряда коллекции.png") нативной высотой 115px — зазор МЕЖДУ рядами = ROW_H минус
 // эта высота, то есть ROW_H = 115 + 13 = 128 (было 130, зазор 15px). ROW_Y0 — тот же отступ 13px
 // перед самым первым рядом (было 10).
-const ROW_H = 128;
+const ROW_H = 126;
 const ROW_Y0 = 13;
 // Y-координаты ниже — АБСОЛЮТНЫЕ для первой (верхней видимой) строки; контейнер списка
 // целиком ставится на VIEW_Y (см. _buildSvodScroll ниже, тот же приём, что в
@@ -370,7 +370,7 @@ export function attachSvodZanachki(proto){
             // на сервере в ZanachkiModel::collectionReward()).
             const amt = rewardAmountForCol(col);
             const sukhariRewardTxt = new PIXI.Text('+' + amt + ' сухарей', {
-                fontFamily: FONT, fontSize: 15, fill: '#ffffff',
+                fontFamily: FONT, fontSize: 16, fill: '#ffffff',
                 stroke: '#000000', strokeThickness: 2, padding: 4,
             });
             sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF - 26;
@@ -378,7 +378,7 @@ export function attachSvodZanachki(proto){
             fontTexts.push(sukhariRewardTxt);
 
             const expRewardTxt = new PIXI.Text('+' + amt + ' опыта', {
-                fontFamily: FONT, fontSize: 15, fill: '#ffffff',
+                fontFamily: FONT, fontSize: 16, fill: '#ffffff',
                 stroke: '#000000', strokeThickness: 2, padding: 4,
             });
             expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = rowY + STAR_Y_OFF + 5;

@@ -11,9 +11,9 @@ for(const [width,dpr,zoom,pixels] of cases){const res=context.compute(width,dpr,
 assert(context.compute(1000,1.25,1)<1,'No forced oversize backing buffer for a smaller window');
 assert.equal(context.compute(1000,1.25),context.compute(800,1.5625),'Browser zoom with same physical display must keep the same pixel buffer');
 const index=fs.readFileSync(path.join(root,'_client/src/index.js'),'utf8');
-assert(index.includes('plugins.interaction.resolution = targetRes'),'Pointer mapping must track backing resolution');
-assert(index.includes('physicalRendererResolution(w, dpr, pinchDensity())'));
-assert(index.includes('if(scene.renderer.resolution !== targetRes)'),'A one-pixel physical change must not be ignored');
+assert(index.includes('plugins.interaction.resolution = scene.renderer.resolution'),'Pointer mapping must track backing resolution');
+assert(index.includes('physicalRendererResolution(w, dpr, 1)'));
+assert(index.includes('if(!scene.renderer._stableBufferInitialized)'),'A one-pixel physical change must not be ignored');
 assert(index.includes('autoDensity: false'),'Pixi must not overwrite manually fitted canvas CSS dimensions');
 console.log('Physical canvas pixels: fractional DPR, sub-1 resolution, desktop/mobile zoom, stable physical size and pointer resolution passed');
 
@@ -39,3 +39,13 @@ for(const [width,dpr,zoom,pixels] of cases.slice(0,7)){
  renderer.destroy(false);
 }
 console.log('Actual Pixi CanvasRenderer: backing width, unchanged CSS fit and pointer mapping passed');
+// Execute the actual resize guard: zoom must never allocate/clear the full canvas again.
+const acorn=require('../_client/node_modules/acorn');
+const ast=acorn.parse(index,{ecmaVersion:'latest',sourceType:'module'});let guard;
+function visit(n){if(!n||typeof n!=='object')return;if(n.type==='IfStatement'&&n.test.type==='UnaryExpression'&&n.test.argument.type==='MemberExpression'&&n.test.argument.property.name==='_stableBufferInitialized')guard=n;for(const v of Object.values(n))if(Array.isArray(v))v.forEach(visit);else if(v&&typeof v==='object')visit(v);}
+visit(ast);assert(guard);let resizes=0,renders=0;const renderer={resolution:1,resize(){resizes++;},render(){renders++;},plugins:{interaction:{}}};
+const resizeGuard=new Function('scene','targetRes','PIXI','dpr','w',index.slice(guard.start,guard.end));
+for(const resolution of [1,1.25,2,0.75,3,1])resizeGuard({renderer,stage:{}},resolution,{settings:{}},1,1280);
+assert.equal(renderer.plugins.interaction.resolution,renderer.resolution,'Input uses stable canvas density');assert.equal(resizes,1,'Zoom must not clear/reallocate the full framebuffer');assert.equal(renders,1,'First allocation is immediately painted');
+assert(index.includes('_textPixelDensity = targetRes * pinchDensity()'),'Pinch changes text density separately');
+console.log('Actual resize guard: repeated zoom preserves the backing buffer and updates text density separately');

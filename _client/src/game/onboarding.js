@@ -1,3 +1,4 @@
+import { attachGuidedTour } from './onboarding/guided-tour.js';
 /** Пошаговое обучение (30.09.2026, по прямому указанию) — вводный попап → смена позывного →
  * тур по 8 вкладкам (рука-указатель + закадровая озвучка) → попап про валюту → финальный попап.
  *
@@ -121,7 +122,7 @@ export default class Onboarding{
 
     // Озвучка — PIXI.sound, тот же паттерн, что background-music.js. onComplete опционален:
     // попапам (интро/валюта/финал) переход по завершению звука не нужен, шагам тура — нужен.
-    _playNarration(url, onComplete){
+    _playNarration(url, onComplete, onError){
         this._stopNarration();
         if(!window.PIXI || !PIXI.sound){
             console.error('[onboarding._playNarration] PIXI.sound недоступен — озвучка не заиграет');
@@ -130,7 +131,7 @@ export default class Onboarding{
         const context = PIXI.sound.context && PIXI.sound.context.audioContext;
         if(context && context.state === 'suspended' && typeof context.resume === 'function'){
             const resume = context.resume();
-            if(resume && typeof resume.catch === 'function') resume.catch(() => {});
+            if(resume && typeof resume.catch === 'function') resume.catch(() => { if(onError) onError(); });
         }
         const alias = 'onboarding_' + url;
         this._narrationAlias = alias;
@@ -146,6 +147,7 @@ export default class Onboarding{
             try{
                 this._narrationInstance = PIXI.sound.play(alias, {
                     volume: vol,
+                    ...(url.endsWith('10 описание валюты.mp3') ? {end:25.7} : {}),
                     complete: () => {
                         if(myGen !== this._narrationGen) return;
                         console.log('[onboarding._playNarration] озвучка доиграла: ' + url);
@@ -157,6 +159,7 @@ export default class Onboarding{
                     },
                 });
             } catch(e){
+                if(onError) onError();
                 console.error('[onboarding._playNarration] ошибка воспроизведения:', e.message);
             }
         };
@@ -164,7 +167,7 @@ export default class Onboarding{
         PIXI.sound.add(alias, {
             url, preload: true,
             loaded: (err) => {
-                if(err){ console.error('[onboarding._playNarration] не удалось загрузить ' + url + ':', err.message); return; }
+                if(err){ if(onError) onError(); console.error('[onboarding._playNarration] не удалось загрузить ' + url + ':', err.message); return; }
                 start();
             },
         });
@@ -223,3 +226,5 @@ export default class Onboarding{
 
 attachOnboardingPopup(Onboarding);
 attachOnboardingTour(Onboarding);
+
+attachGuidedTour(Onboarding);

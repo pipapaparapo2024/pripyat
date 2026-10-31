@@ -65,7 +65,7 @@ console.log('\n3) _reducePremiumRoll() вызывается И в start(), И в
 
     assert(/\$rolls = \$this->_reducePremiumRoll\(\$rolls, \$catalog, \$rollTrace\);/.test(startFn),
         'start(): вызывается после первого честного броска 4 костей, до сохранения active в сессию');
-    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace\);/.test(rerollFn),
+    assert(/\$active\['rolls'\] = \$this->_reducePremiumRoll\(\$active\['rolls'\], \$catalog, \$rollTrace, \$idx\);/.test(rerollFn),
         'reroll(): вызывается после подстановки нового значения кости idx, до сохранения active в сессию');
 }
 

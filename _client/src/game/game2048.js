@@ -93,6 +93,12 @@ export default class Game2048{
         this._moveSeq = 0;
         this._moveBusy = false;
         this._keyHandler = null;
+        if(this._win){
+            if(this._swipeDown) this._win.off('pointerdown', this._swipeDown);
+            if(this._swipeUp){ this._win.off('pointerup', this._swipeUp); this._win.off('pointerupoutside', this._swipeUp); }
+            if(this._swipeCancel) this._win.off('pointercancel', this._swipeCancel);
+        }
+        this._swipeStart = null;
         this._swipeStart = null;
     }
 
@@ -110,7 +116,13 @@ export default class Game2048{
 
     close(){
         this._detachInput();
+        if(this._topWin && this._topWin.parent) this._topWin.parent.removeChild(this._topWin);
         if(this._win && this._win.parent) this._win.parent.removeChild(this._win);
+    }
+
+    _returnToDvor(){
+        this.close();
+        if(window.iface) iface.openModule('dvor',{forceOpen:true});
     }
 
     // ── Сервер ──
@@ -211,22 +223,32 @@ export default class Game2048{
     // ── Ввод: стрелки (десктоп) / свайп (мобильные) ──
 
     _attachInput(){
+        this._detachInput();
         this._keyHandler = (ev) => {
             const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
             if(map[ev.key]){ ev.preventDefault(); this._sendMove(map[ev.key]); }
         };
-        window.addEventListener('keydown', this._keyHandler);
+        if(!window.isMobile) window.addEventListener('keydown', this._keyHandler);
 
         if(window.isMobile && this._win){
-            this._win.on('pointerdown', (ev) => {
+            this._swipeDown = (ev) => {
+                if(ev.data.pointerType === 'mouse') return;
+                if(this._swipeStart){ this._swipeStart = null; this._swipeBlocked = true; return; }
+                if(this._swipeBlocked) return;
+                if(this._tileSprs && ev.data.global && !this._tileSprs.some(tile => tile.getBounds().contains(ev.data.global.x, ev.data.global.y))) return;
                 this._swipeStart = ev.data.getLocalPosition(this._win);
-            });
-            this._win.on('pointerup', (ev) => this._onSwipeEnd(ev));
-            this._win.on('pointerupoutside', (ev) => this._onSwipeEnd(ev));
+            };
+            this._swipeUp = ev => this._onSwipeEnd(ev);
+            this._swipeCancel = () => { this._swipeStart = null; this._swipeBlocked = false; };
+            this._win.on('pointerdown', this._swipeDown);
+            this._win.on('pointerup', this._swipeUp);
+            this._win.on('pointerupoutside', this._swipeUp);
+            this._win.on('pointercancel', this._swipeCancel);
         }
     }
 
     _onSwipeEnd(ev){
+        if(this._swipeBlocked){ this._swipeBlocked = false; return; }
         if(!this._swipeStart) return;
         const end = ev.data.getLocalPosition(this._win);
         const dx = end.x - this._swipeStart.x, dy = end.y - this._swipeStart.y;
@@ -240,6 +262,12 @@ export default class Game2048{
     _detachInput(){
         if(this._keyHandler) window.removeEventListener('keydown', this._keyHandler);
         this._keyHandler = null;
+        if(this._win){
+            if(this._swipeDown) this._win.off('pointerdown', this._swipeDown);
+            if(this._swipeUp){ this._win.off('pointerup', this._swipeUp); this._win.off('pointerupoutside', this._swipeUp); }
+            if(this._swipeCancel) this._win.off('pointercancel', this._swipeCancel);
+        }
+        this._swipeStart = null;
     }
 
     // ── Построение экрана ──
@@ -262,6 +290,9 @@ export default class Game2048{
         darkBg.endFill();
         win.addChild(darkBg);
 
+        const backdrop = new PIXI.Sprite(PIXI.Texture.from(IMG + '2048 фон.png'));
+        backdrop.width=1280;backdrop.height=720;
+        win.addChild(backdrop);
         const bg = new PIXI.Sprite(PIXI.Texture.from(IMG + '2048 игра.png'));
         bg.x = 279; bg.y = 79;
         win.addChild(bg);
@@ -272,11 +303,11 @@ export default class Game2048{
         const exitBtn = new PIXI.Sprite(PIXI.Texture.from(IMG + 'выход.png'));
         exitBtn.scale.set(0.5);
         if(window.isMobile) helper.touchPad(exitBtn);
-        exitBtn.x = 1240; exitBtn.y = 83;
+        exitBtn.x = 1040; exitBtn.y = 136;
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
-        exitBtn.on('pointerdown', () => this.close());
+        exitBtn.on('pointerdown', event => {event.stopPropagation();this._returnToDvor();});
         win.addChild(exitBtn);
 
         // Поле 4×4 — 16 готовых центров из CELL_POS (см. докблок константы выше). Позиция стоит

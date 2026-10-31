@@ -144,7 +144,7 @@
             $daysOut = [];
             for($d = 1; $d <= $daysInMonth; $d++){
                 $dk = strval($d);
-                $st = $data['days'][$dk]['status'] ?? 'pending';
+                $st = $featureLive ? ($data['days'][$dk]['status'] ?? 'pending') : 'pending';
                 if($st === 'done') $doneCount++;
                 $visualStatus = $st === 'done' ? 'done' : ($d < $failedCutoffDay ? 'failed' : 'pending');
                 $daysOut[$dk] = ['status' => $visualStatus];
@@ -177,11 +177,11 @@
                     // RaznaryadkaProgress::report() берётся из конфига напрямую, не из этого поля.
                     'need'  => $isPreLaunch ? 0 : intval($todayCfg['need']),
                     'prog'  => $isPreLaunch ? 0 : intval($data['days'][strval($today)]['prog'] ?? 0),
-                    'done'  => ($data['days'][strval($today)]['status'] ?? '') === 'done',
+                    'done'  => !$isPreLaunch && ($data['days'][strval($today)]['status'] ?? '') === 'done',
                 ];
             }
 
-            $claimed = $data['claimed'] ?? [];
+            $claimed = $isPreLaunch ? [] : ($data['claimed'] ?? []);
             $tiersOut = [];
             foreach($config['reward_tiers'] as $tier){
                 $need = $tier['need'] == -1 ? $daysInMonth : intval($tier['need']);
@@ -233,6 +233,7 @@
             $daysInMonth = RaznaryadkaProgress::daysInMonthFor($data['month']);
 
             $tier = null;
+            if(isset($config['launch_month']) && $data['month'] < $config['launch_month']) return $this->ops->fail(56);
             foreach($config['reward_tiers'] as $t){
                 $tNeed = $t['need'] == -1 ? $daysInMonth : intval($t['need']);
                 if($tNeed === $need){ $tier = $t; break; }
