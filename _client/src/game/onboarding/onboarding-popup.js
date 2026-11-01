@@ -127,6 +127,8 @@ export function attachOnboardingPopup(Onboarding){
             if(iface.up)   root.layer2_mc.addChild(iface.up);
             if(iface.down) root.layer2_mc.addChild(iface.down);
         }
+        if(typeof this._setTutorialHudBlocked === 'function') this._setTutorialHudBlocked(true);
+        if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function') iface._bringDevOnboardingFinishButtonToFront();
         if(state === 'currency') this._buildCurrencyHighlights();
         else this._destroyCurrencyHighlights();
         // Описание валюты не должно превращаться в тупик: раньше после длинной реплики
@@ -150,6 +152,7 @@ export function attachOnboardingPopup(Onboarding){
         this._destroyCurrencyHighlights();
         this._stopNarration();
         this._clearIdleTimer();
+        if(typeof this._setTutorialHudBlocked === 'function') this._setTutorialHudBlocked(false);
     };
 
     // Мигание (alpha) — держится, пока показан попап "про валюту". Модифицирует САМИ объекты

@@ -276,8 +276,10 @@ console.log('\n14) ХУД жёстко заблокирован во время 
         'верхний и нижний ХУД теряют интерактивность целиком, пока идёт шаг тура (баг: другие вкладки кликались параллельно с целевой)');
     assert(/iface\._pngRightPanel\.interactiveChildren = false;/.test(overlayBody),
         'правая PNG-панель (двор/база/хабар/сводка) тоже блокируется');
-    assert(/const _keepOnTop = \(\) => \{ if\(win\.parent\) win\.parent\.addChild\(win\); \};\s*\n\s*PIXI\.Ticker\.shared\.add\(_keepOnTop\);/.test(overlayBody),
-        'оверлей туда каждый кадр возвращается в конец списка детей — рука/затемнение гарантированно выше ХУДа по z-index');
+    assert(/const _keepOnTop = \(\) => \{[\s\S]*?if\(win\.parent\) win\.parent\.addChild\(win\);[\s\S]*?PIXI\.Ticker\.shared\.add\(_keepOnTop\);/.test(overlayBody),
+        'оверлей каждый кадр возвращается поверх игрового HUD, сохраняя блокировку');
+    assert(/iface\._bringDevOnboardingFinishButtonToFront\(\)/.test(overlayBody),
+        'после overlay выше него возвращается только кнопка досрочного завершения для Dev');
 
     const destroyBody = tourSrc.slice(tourSrc.indexOf('_destroyTourOverlay = function'), tourSrc.indexOf('_advanceTour = function'));
     assert(/iface\.up\.interactiveChildren = true;/.test(destroyBody) && /iface\.down\.interactiveChildren = true;/.test(destroyBody),

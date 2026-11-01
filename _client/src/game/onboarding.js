@@ -42,6 +42,15 @@ export default class Onboarding{
         return (window.udata && udata['onboarding_step']) || 'intro';
     }
 
+    // Во время обучения HUD может оставаться в сцене только для правильного порядка слоёв,
+    // но не должен принимать события. Dev-кнопка живёт отдельным объектом поверх blocker.
+    _setTutorialHudBlocked(blocked){
+        if(!window.iface) return;
+        if(iface.up) iface.up.interactiveChildren = !blocked;
+        if(iface.down) iface.down.interactiveChildren = !blocked;
+        if(iface._pngRightPanel) iface._pngRightPanel.interactiveChildren = !blocked;
+    }
+
     // 03.10.2026 (репорт — "после прохождения обучения оно повторно появляется при входе в
     // игру" у части игроков): раньше здесь был СВОЙ отдельный TS.php('users.save', ...) с
     // JSON.stringify(udata) целиком — в обход единого дебаунс/revision-механизма

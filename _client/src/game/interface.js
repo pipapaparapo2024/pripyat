@@ -306,11 +306,15 @@ export default class Interface{
 			};
 			this._refreshDevOnboardingButton();
 			window.addEventListener('pripyat:onboarding-step-changed', this._refreshDevOnboardingButton);
-			this._keepDevOnboardingButtonOnTop = () => {
+			// Оверлеи обучения также вызывают этот метод ПОСЛЕ собственного
+			// addChild(win): их ticker регистрируется позже, поэтому общего ticker
+			// недостаточно — иначе блокер снова оказывается поверх кнопки.
+			this._bringDevOnboardingFinishButtonToFront = () => {
 				if(_finishOnboardingBtn.visible && this._isDevOnboardingActive() && _finishOnboardingBtn.parent){
 					root.layer2_mc.addChild(_finishOnboardingBtn);
 				}
 			};
+			this._keepDevOnboardingButtonOnTop = () => this._bringDevOnboardingFinishButtonToFront();
 			PIXI.Ticker.shared.add(this._keepDevOnboardingButtonOnTop);
 
 			if(typeof this._ensureEditButton === 'function') this._ensureEditButton();

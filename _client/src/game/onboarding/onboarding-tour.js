@@ -146,7 +146,14 @@ export function attachOnboardingTour(Onboarding){
         // z-order), так HUD мог перекрыть оверлей и разблокировать себя визуально. Тикер
         // каждый кадр возвращает win в конец списка — тот же приём, что уже используется для
         // кнопки редактора позиций (universal_pos_editor.js._ensureEditButton).
-        const _keepOnTop = () => { if(win.parent) win.parent.addChild(win); };
+		const _keepOnTop = () => {
+			if(win.parent) win.parent.addChild(win);
+			// Единственное Dev-исключение должно оказаться ВЫШЕ blocker. Весь HUD
+			// остаётся выключенным через interactiveChildren ниже.
+			if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function'){
+				iface._bringDevOnboardingFinishButtonToFront();
+			}
+		};
         PIXI.Ticker.shared.add(_keepOnTop);
         this._tourKeepOnTopTick = _keepOnTop;
 

@@ -54,6 +54,8 @@ export function attachGuidedTour(Onboarding){
         };
         this._guidedContinue = proceed;
         root.layer2_mc.addChild(this._popupWin);
+        if(typeof this._setTutorialHudBlocked === 'function') this._setTutorialHudBlocked(true);
+        if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function') iface._bringDevOnboardingFinishButtonToFront();
         this._guidedPopupTick = () => {
             highlightPhase+=0.06;
             this._highlightGuidedDvor(tab);
@@ -62,6 +64,7 @@ export function attachGuidedTour(Onboarding){
                 const walk=node=>{if(!node || node===this._popupWin)return;if(node._tutorialExplanationHighlight)highlight(node);for(const child of node.children || [])walk(child);};walk(root);
             }
             if(this._popupWin.parent) root.layer2_mc.addChild(this._popupWin);
+            if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function') iface._bringDevOnboardingFinishButtonToFront();
         };
         PIXI.Ticker.shared.add(this._guidedPopupTick);
         const mute = Number(window._sndVol) === 0 || !PIXI.sound;
@@ -86,6 +89,8 @@ export function attachGuidedTour(Onboarding){
         this._continueBtn.hit.interactive = true;
         this._continueBtn.active.visible = false;
         root.layer2_mc.addChild(this._popupWin);
+        if(typeof this._setTutorialHudBlocked === 'function') this._setTutorialHudBlocked(true);
+        if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function') iface._bringDevOnboardingFinishButtonToFront();
         if(Number(window._sndVol) === 0 || !PIXI.sound) fallback();
         else {this._guidedAudioTimeout = setTimeout(fallback,15000);this._playNarration('./sounds/обучение/когда чел решился слиться.mp3', close, fallback);}
     };
