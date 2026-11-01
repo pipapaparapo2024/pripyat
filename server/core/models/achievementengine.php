@@ -1,4 +1,5 @@
 <?php
+    require_once __DIR__ . '/weaponprogress.php';
     require_once __DIR__ . '/zanachkimodel.php';
     // ── SERVER-AUTHORITATIVE ДОСТИЖЕНИЯ (23.09.2026, перенос экономики) ──
     //
@@ -26,6 +27,7 @@
 
         // Порт achievements.js._state() 1-в-1 — те же поля, те же формулы.
         static function buildState($ops, $user){
+            $weaponSlots = $ops->j($user, 'weapons', []);
             $bd = $ops->j($user, 'bosses_data', []);
             $kills = (isset($bd['killsTotal']) && is_array($bd['killsTotal']) && count($bd['killsTotal']) === 8)
                 ? array_map('intval', $bd['killsTotal']) : array_fill(0, 8, 0);
@@ -67,9 +69,9 @@
 
             return [
                 'dmg'  => $ops->i($user, 'total_damage'),
-                'auto' => $ops->i($user, 'auto_count'),
-                'gun'  => $ops->i($user, 'gun_count'),
-                'mac'  => $ops->i($user, 'machete_count'),
+                'auto' => WeaponProgress::total($weaponSlots[5] ?? [], $ops->i($user, 'auto_count')),
+                'gun'  => WeaponProgress::total($weaponSlots[4] ?? [], $ops->i($user, 'gun_count')),
+                'mac'  => WeaponProgress::total($weaponSlots[3] ?? [], $ops->i($user, 'machete_count')),
                 'kills'      => $kills,
                 'soloKills'  => $soloKills,
                 'speedKills' => $speedKills,

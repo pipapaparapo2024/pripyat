@@ -503,7 +503,7 @@ export default class Weapons{
 	}
 
 	_saveToUdata(){
-		const save = this.data.map(w=>({owned:w.owned,equipped:w.equipped,upg:w.upg,qty:w.qty||0}));
+		const save = this.data.map(w=>({owned:w.owned,equipped:w.equipped,upg:w.upg,qty:w.qty||0,acquired_total:Math.max(w.acquired_total||0,w.qty||0)}));
 		udata['weapons'] = JSON.stringify(save);
 		udata['ammo_machete'] = String(this.data[3].qty || 0);
 		udata['ammo_gun']     = String(this.data[4].qty || 0);
@@ -529,6 +529,7 @@ export default class Weapons{
 					this.data[i].owned    = s.owned;
 					this.data[i].equipped = s.equipped;
 					this.data[i].upg      = s.upg    || 0;
+					this.data[i].acquired_total = Math.max(Number(s.acquired_total)||0,Number(s.qty)||0);
 					this.data[i].qty      = s.qty !== undefined ? s.qty : (s.owned ? 1 : 0);
 				}
 			});

@@ -51,6 +51,7 @@ function makeCtx({ referrer = '', notifyCalls, bridgeCalls }){
     // SDK всё же не пробросится.
     vm.createContext(ctx);
     vm.runInContext(platformSrc, ctx);
+    vm.runInContext(read('_client/src/modules/ok-payment-diagnostics.js').replace(/^export function/gm,'function'),ctx);
     vm.runInContext(iapSrc, ctx);
     return ctx;
 }

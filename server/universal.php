@@ -19,6 +19,8 @@
     });
 
 	$registry = new Registry();
+    // Registry may override PHP's destination. Keep game logs environment-local.
+    ini_set('error_log', __DIR__ . '/php_errors.log');
 	$router = new Router($registry);
 
     $registry['tools'] = new Tools($registry);

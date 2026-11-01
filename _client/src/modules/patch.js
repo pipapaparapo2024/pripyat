@@ -1,6 +1,7 @@
 export function applyPatch(patch){
   if(!patch || !window.udata) return;
   Object.assign(udata, patch);
+  if(patch.weapons !== undefined && window.weapons && typeof window.weapons._loadFromUdata === 'function') window.weapons._loadFromUdata();
   // max_energy обновляется ПЕРЕД energy — syncFromPatch() ниже считает регенерацию с
   // клэмпом по TIMERS.ENERGY_MAX, и если патч одновременно меняет потолок (например,
   // апгрейд здания), расчёт должен использовать уже новый потолок, а не старый.

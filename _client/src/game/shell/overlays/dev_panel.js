@@ -2,6 +2,7 @@
 // для офлайн-просмотра в dev-панели (_openErrorBrowser). Сервер остаётся единственным источником
 // истины для реальных ответов — при правке errors.json обновить и этот список.
 import { applyPatch } from '../../../modules/patch.js';
+import { openDevLogs } from '../../../modules/dev-logs.js';
 
 const DEV_ERROR_CATALOG = [
     {code:0,   text:'Не валидный токен'},
@@ -613,6 +614,9 @@ export function attachDevPanel(proto){
 
         // ── ТЕСТ UI ───────────────────────────────────────────────────
         _section('ТЕСТ UI');
+        _row('Серверные события', [
+            {label:'ЛОГИ', color:T, action:()=>openDevLogs()},
+        ]);
         _row('Компас загрузки', [
             {label:'ПОКАЗАТЬ', color:T, action:()=>this._testCompass()},
         ]);

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/weaponprogress.php';
 /** 23.10.2026 (по прямому указанию — новая фича "Разнарядка", месячный календарь ежедневных
  * заданий): центральный хук автозачёта прогресса, вызываемый ИЗ ДРУГИХ контроллеров после
  * успешного игрового действия (bosses.claimKill, zone.fillCheckpoint, dvor.collectCig,
@@ -287,6 +288,7 @@ class RaznaryadkaProgress {
             );
         }
         $ammoKey = 'ammo_' . $type;
+        WeaponProgress::acquire($data[$wid], $amount, max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)));
         $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
         $data[$wid]['owned'] = true;
         ksort($data);

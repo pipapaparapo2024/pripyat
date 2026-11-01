@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
     // ── SERVER-AUTHORITATIVE РЮКЗАК (21.09.2026, перенос экономики, по прямому указанию) ──
     //
     // Раньше открытие рюкзака (списание 20 тушёнки, розыгрыш оружия по весам, начисление
@@ -110,6 +111,7 @@
                 );
             }
             $ammoKey = 'ammo_' . $type;
+            WeaponProgress::acquire($data[$wid], $amount, max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)));
             $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
             $data[$wid]['owned'] = true;
             ksort($data);

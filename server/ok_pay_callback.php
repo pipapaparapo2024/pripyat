@@ -105,6 +105,37 @@
             return $donats;
         }
 
+        // Accept the exact catalog identifier and legacy numeric FAPI codes.
+        // Never use intval on arbitrary strings: an invalid code must not become item 0.
+        static function parseProductCode($raw){
+            if(!is_string($raw) && !is_int($raw)) return -1;
+            if(!preg_match('/^(?:ok_item)?([0-9]{1,3})$/D', strval($raw), $m)) return -1;
+            return intval($m[1]);
+        }
+
+        // Payment uid is the native OK ID, while game accounts use signed vk_user_id.
+        // Revalidate the stored launch proof; never guess a recipient from name or UID size.
+        static function resolveGameUid($nativeUid, $rows, $secret, $appId){
+            $matches=[];
+            if(!is_array($rows))return 0;
+            foreach($rows as $row){
+                if(!is_array($row))continue;
+                $params=$row['vk_params']??null;
+                if(is_string($params))$params=json_decode($params,true);
+                if(!is_array($params) || ($params['vk_client']??'')!=='ok')continue;
+                if(strval($params['vk_ok_user_id']??'')!==strval($nativeUid))continue;
+                $gameUid=intval($params['vk_user_id']??0);
+                if($gameUid<=0 || $gameUid!==intval($row['id']??0) || intval($params['vk_app_id']??0)!==intval($appId))continue;
+                $sig=$params['sign']??null;unset($params['sign']);
+                foreach($params as $value)if(!is_scalar($value))continue 2;
+                ksort($params);
+                $expected=rtrim(strtr(base64_encode(hash_hmac('sha256',http_build_query($params),$secret,true)),'+/','-_'),'=');
+                if(!is_string($sig) || !hash_equals($expected,$sig))continue;
+                $matches[$gameUid]=true;
+            }
+            return count($matches)===1?intval(array_key_first($matches)):0;
+        }
+
         // Допуск на расхождение между нашим расчётом ожидаемой цены (price/7, может быть дробным)
         // и целым amount, которое реально прислала площадка ОК — не точное сравнение float, но и
         // не "принять любую меньшую сумму". 1 ОК — минимальный допуск на округление в любую сторону.
@@ -174,7 +205,9 @@
         // известна заранее.
         $_POST['platform'] = 'ok';
         $registry = new Registry;
+        ini_set('error_log', __DIR__ . '/php_errors.log');
         $registry['tools'] = new Tools($registry);
+        $registry['db_sampler'] = new SampleLoader;
         $registry['udb']   = new Database($registry);
         $registry['json']  = new Jsonloader;
 
@@ -209,9 +242,9 @@
         $uid = intval($_GET['uid'] ?? 0);
         $transactionIdRaw = strval($_GET['transaction_id'] ?? '');
         $transactionId = OkPayCallback::sanitizeTransactionId($transactionIdRaw);
-        $productCode = intval($_GET['product_code'] ?? -1);
+        $productCode = OkPayCallback::parseProductCode($_GET['product_code'] ?? null);
 
-        if($uid <= 0 || $transactionId === ''){
+        if($uid <= 0 || $transactionId === '' || $transactionId!==$transactionIdRaw){
             error_log('[ok_pay_callback] ОТКАЗ — некорректные uid/transaction_id | uid=' . $uid . ' | raw_tid=' . $transactionIdRaw);
             respondError(1001, 'CALLBACK_INVALID_PAYMENT : missing uid/transaction_id');
         }
@@ -236,29 +269,26 @@
             respondError(1003, 'CALLBACK_INVALID_PAYMENT : amount mismatch for product ' . $productCode);
         }
 
-        $tid = OkPayCallback::transKey($transactionId);
-        $transaction = $registry['udb']->getData('trans', ['*'], "tid='" . $tid . "'");
-        if(!isset($transaction['error'])){
-            error_log('[ok_pay_callback] transaction_id уже обработан ранее (идемпотентность) | uid=' . $uid . ' | tid=' . $tid);
+        // The native OK transaction ID and its recipient are persisted with the credit.
+        // No writes to VK's legacy numeric trans table and no full user snapshot save.
+        $link=null;
+        try{
+            $link=new mysqli($registry['server'],$registry['user'],$registry['pass'],$registry['db'],3306);
+            [$field,$count]=$catalog[$productCode];
+            $result=OkPaymentCredit::credit($link,$uid,$transactionId,$productCode,intval($actualAmount),$field,$count,
+                function()use($registry,$uid,$secret){
+                    $rows=$registry['udb']->getData('secure',['id','vk_params'],
+                        "JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(vk_params),vk_params,'{}'), '$.vk_ok_user_id'))='$uid'",true);
+                    return OkPayCallback::resolveGameUid($uid,$rows,$secret,$registry['api_id']);
+                });
+            $link->close();$link=null;
+            error_log('[ok_pay_callback] '.($result['duplicate']?'payment_already_processed':'payment_committed'));
             respondOk();
+        }catch(Throwable $error){
+            if($link)$link->close();
+            $reason=$error instanceof RuntimeException?$error->getMessage():'database_error';
+            error_log('[ok_pay_callback] payment_failed reason='.$reason);
+            respondError(1004,'CALLBACK_INVALID_PAYMENT : payment could not be committed');
         }
-
-        $user = $registry['udb']->getData($registry['utb'], ['*'], 'id=' . $uid);
-        if(isset($user['error']) && $user['error']){
-            error_log('[ok_pay_callback] ОТКАЗ — игрока нет в БД, начислять некуда | uid=' . $uid . ' | tid=' . $tid);
-            respondError(2, 'CALLBACK_INVALID_PAYMENT : user not found');
-        }
-
-        [$field, $count] = $catalog[$productCode];
-        $before = $user[$field] ?? null;
-        $user[$field] = $registry['tools']->summ($user[$field], $count);
-
-        error_log('[ok_pay_callback] НАЧИСЛЯЮ | uid=' . $uid . ' | tid=' . $tid . ' | productCode=' . $productCode
-            . ' | field=' . $field . ' | count=' . $count . ' | before=' . json_encode($before) . ' | after=' . json_encode($user[$field]));
-        $saveRes  = $registry['udb']->saveData($registry['utb'], $user);
-        $transRes = $registry['udb']->saveData('trans', ['uid' => $uid, 'time' => time(), 'tid' => $tid, 'count' => $count]);
-        error_log('[ok_pay_callback] СОХРАНЕНО | uid=' . $uid . ' | tid=' . $tid . ' | saveUserResult=' . json_encode($saveRes) . ' | saveTransResult=' . json_encode($transRes));
-
-        respondOk();
     }
 ?>

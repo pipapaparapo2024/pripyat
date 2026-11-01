@@ -1,9 +1,12 @@
 <?php
+require_once __DIR__ . '/weaponprogress.php';
 Class Gameops {
     private $registry;
     private $loadedEnergy = null;
     private $energyChanged = false;
     private $loadedStash = [];
+    private $loadedHabar = [];
+    private $loadedWeapons = null;
 
     function __construct($registry){
         $this->registry = $registry;
@@ -12,6 +15,11 @@ Class Gameops {
     function loadUser($fields = ['*']){
         $user = $this->registry['udb']->getData($this->registry['utb'], $fields, 'id='.$this->registry['uid']);
         if(isset($user['error']) && $user['error']) return null;
+        $this->loadedWeapons = $user['weapons'] ?? null;
+        $this->loadedHabar = [];
+        foreach(['habar_bought','habar_bought_ts','habar_days_collected','habar_last_collect_ts'] as $key){
+            if(array_key_exists($key,$user)) $this->loadedHabar[$key] = strval($user[$key]);
+        }
         if(array_key_exists('energy', $user) && array_key_exists('energy_time', $user)){
             $this->loadedEnergy = [(string)$user['energy'], (string)$user['energy_time']];
         }
@@ -37,6 +45,11 @@ Class Gameops {
     // добавляем в $update — держит DB level в согласии с exp при любом сохранении, без
     // отдельного вызова в каждом контроллере.
     function saveUser($update){
+        if($this->loadedWeapons !== null && array_key_exists('weapons',$update) && $this->sameJsonState($update['weapons'],$this->loadedWeapons)) unset($update['weapons']);
+        // An unrelated full-row save must not restore dates/cooldowns from an old snapshot.
+        foreach($this->loadedHabar as $key=>$old){
+            if(array_key_exists($key,$update) && strval($update[$key]) === $old) unset($update[$key]);
+        }
         $energyChanged = isset($update['energy'],$update['energy_time']) &&
             ($this->loadedEnergy === null || [(string)$update['energy'],(string)$update['energy_time']] !== $this->loadedEnergy);
         foreach($this->loadedStash as $key => $old){
@@ -285,6 +298,12 @@ Class Gameops {
 
     function catalog($name){
         return $this->registry['json']->get($name, true);
+    }
+
+    static function habarExpiresAtMs($boughtTs, $totalDays = 30){
+        $boughtTs = intval($boughtTs); $totalDays = intval($totalDays);
+        if($boughtTs <= 0 || $totalDays < 1) return 0;
+        return intval((floor(($boughtTs + 10800000) / 86400000) + $totalDays) * 86400000 - 10800000);
     }
 
     function ok($extra = []){

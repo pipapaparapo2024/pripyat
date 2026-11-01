@@ -62,6 +62,12 @@ export function checkRewardLink(){
             if(items.length && window.iface && typeof iface._showRewardPopup === 'function'){
                 iface._showRewardPopup(items);
             }
+        } else if(res.reason === 'habar_active' || res.reason === 'habar_date_missing'){
+            if(window.iface && typeof iface._showRewardPopup === 'function'){
+                iface._showRewardPopup(res.reason === 'habar_active'
+                    ? ['У тебя уже есть действующий хабар.', 'Вернись по ссылке после его окончания.']
+                    : ['Не удалось определить срок старого хабара.', 'Обратись к разработчикам. Награда по ссылке сохранена.']);
+            }
         } else if(res.reason === 'expired'){
             console.log('[reward-link.checkRewardLink] ссылка истекла');
             if(window.iface && typeof iface._showRewardPopup === 'function'){

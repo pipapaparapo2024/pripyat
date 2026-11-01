@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {execFileSync}=require('node:child_process'),{findPhpBin}=require('./_php_bin.js');
+process.stdout.write(execFileSync(findPhpBin(),['tests/_php_fixtures/habar-restore747.php'],{encoding:'utf8'}));
+process.stdout.write(execFileSync(findPhpBin(),['tests/_php_fixtures/habar-lifecycle747.php'],{encoding:'utf8'}));
+const ctx={};vm.runInNewContext(fs.readFileSync('_client/src/modules/habar-progress.js','utf8').replace(/export function/g,'function')+';this.day=habarElapsedDay',ctx);
+const start=Date.parse('2026-10-07T13:59:29+03:00');
+assert.equal(ctx.day(start,Date.parse('2026-11-01T04:00:00+03:00')),25);
+assert.equal(ctx.day(start,start),0);assert.equal(ctx.day(start,start-86400000),0);
+assert.equal(ctx.day(start,start+30*86400000),30);assert.equal(ctx.day(0,Date.now()),0);
+assert.equal(ctx.day(start,NaN),0);

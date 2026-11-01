@@ -307,9 +307,10 @@ $cfgLaunch['launch_month'] = '2026-11';
 // тривиально сработал бы (doneCount>=0 всегда true) и сундук выдался бы незаслуженно. Явно
 // задаём старому месяцу 5 дней, чтобы need:-1 (сундук) НЕ сработал при 2 выполненных днях —
 // тест должен проверять выдачу ТОЛЬКО тира need:2, не оба тира разом.
-$cfgLaunch['months'][$todayMonth] = ['days' => array_fill_keys(['1','2','3','4','5'], ['type' => 'energy', 'need' => 1])];
+$preLaunchMonth = '2026-10'; // Fixed pre-launch month: this assertion must survive 1 November.
+$cfgLaunch['months'][$preLaunchMonth] = ['days' => array_fill_keys(['1','2','3','4','5'], ['type' => 'energy', 'need' => 1])];
 $oldDays = ['1' => ['status' => 'done'], '2' => ['status' => 'done']];
-$userLaunch = ['id' => 1, 'coins' => '0', 'raznaryadka_data' => json_encode(['month' => $todayMonth, 'days' => $oldDays, 'claimed' => [], 'dev_day_offset' => 5])];
+$userLaunch = ['id' => 1, 'coins' => '0', 'raznaryadka_data' => json_encode(['month' => $preLaunchMonth, 'days' => $oldDays, 'claimed' => [], 'dev_day_offset' => 5])];
 $opsLaunch = new FakeOps($userLaunch, $cfgLaunch);
 $resultData = RaznaryadkaProgress::devForceLaunchMonth($opsLaunch, $userLaunch);
 echo (($resultData['month'] ?? null) === '2026-11' ? "PASS" : "FAIL") . ": месяц переключён на launch_month ('2026-11'), получено " . var_export($resultData['month'] ?? null, true) . "\n";

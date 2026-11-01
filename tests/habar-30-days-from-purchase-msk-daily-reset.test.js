@@ -57,8 +57,8 @@ console.log('\nTest 1: habar.php.buy() — записывает habar_bought_ts 
 
 console.log('\nTest 2: habar.php.collectDay() — истечение считается от habar_bought_ts (30 дней), не от числа сборов');
 {
-    assert(/if\(\$now >= \$boughtTs \+ \$totalDays \* 86400000\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(habarPhp),
-        'отклоняет сбор, если 30×86400000мс с момента покупки прошли');
+    assert(/if\(\$now >= Gameops::habarExpiresAtMs\(\$boughtTs, \$totalDays\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(habarPhp),
+        'отклоняет сбор в 00:00 МСК даты получения + 30 календарных дней');
     assert(!/\$collected = \$this->ops->i\(\$lockedUser, 'habar_days_collected'\);\s*\n\s*\$totalDays = intval\(\$cfg\['total_days'\]\);\s*\n\s*if\(\$collected >= \$totalDays\)/.test(habarPhp),
         'старая проверка "collected >= totalDays" (лимит по числу сборов) не встречается');
     assert(/\$boughtTs = \$this->ops->i\(\$lockedUser, 'habar_bought_ts'\);/.test(habarPhp), 'читает habar_bought_ts из залоченной копии');
@@ -118,9 +118,9 @@ console.log('\nTest 7: users.php — habar_bought_ts НЕ в client-writable whi
 console.log('\nTest 8: habar.js — UI больше не использует скользящий кулдаун, считает МСК-день локально для отображения');
 {
     assert(!/HABAR_COLLECT_COOLDOWN_MS/.test(habarJs), 'старая константа 24ч-кулдауна убрана');
-    assert(/const HABAR_TOTAL_DAYS_MS = 30 \* 24 \* 60 \* 60 \* 1000;/.test(habarJs), 'новая константа — 30 дней в мс (срок действия от покупки)');
+    assert(/habarExpiresAtMs/.test(habarJs), 'UI использует календарную границу окончания МСК');
     assert(/function _mskDayKey\(tsMs\)\{/.test(habarJs), 'локальный МСК-день хелпер определён (та же формула +3ч, что на сервере/bosses.js._today())');
-    assert(/const expired = boughtTs > 0 && now >= boughtTs \+ HABAR_TOTAL_DAYS_MS;/.test(habarJs),
+    assert(/const expired = boughtTs > 0 && now >= habarExpiresAtMs\(boughtTs\);/.test(habarJs),
         '_updateHabarTimer вычисляет expired от habar_bought_ts, не от habar_days_collected');
     assert(/const collectedToday = lastTs > 0 && _mskDayKey\(lastTs\) === _mskDayKey\(now\);/.test(habarJs),
         '_updateHabarTimer вычисляет collectedToday сравнением МСК-дат');

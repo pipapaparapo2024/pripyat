@@ -353,10 +353,10 @@ export function attachSvodZanachki(proto){
             content.addChild(sukhariIcon);
 
             const rewardLabelTxt = new PIXI.Text('Награда:', {
-                fontFamily: FONT, fontSize: 15, fill: '#ffffff',
+                fontFamily: FONT, fontSize: 20, fill: '#ffffff',
                 stroke: '#000000', strokeThickness: 2, padding: 4,
             });
-            rewardLabelTxt.x = STAR_X; rewardLabelTxt.y = rowY + STAR_Y_OFF - 50;
+            rewardLabelTxt.x = STAR_X; rewardLabelTxt.y = rowY + STAR_Y_OFF - 50 - (rowIdx === 0 ? 10 : 6);
             content.addChild(rewardLabelTxt);
             fontTexts.push(rewardLabelTxt);
 
@@ -370,18 +370,18 @@ export function attachSvodZanachki(proto){
             // на сервере в ZanachkiModel::collectionReward()).
             const amt = rewardAmountForCol(col);
             const sukhariRewardTxt = new PIXI.Text('+' + amt + ' сухарей', {
-                fontFamily: FONT, fontSize: 16, fill: '#ffffff',
+                fontFamily: FONT, fontSize: 20, fill: '#ffffff',
                 stroke: '#000000', strokeThickness: 2, padding: 4,
             });
-            sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF - 26;
+            sukhariRewardTxt.x = STAR_X + 30; sukhariRewardTxt.y = rowY + STAR_Y_OFF - 30;
             content.addChild(sukhariRewardTxt);
             fontTexts.push(sukhariRewardTxt);
 
             const expRewardTxt = new PIXI.Text('+' + amt + ' опыта', {
-                fontFamily: FONT, fontSize: 16, fill: '#ffffff',
+                fontFamily: FONT, fontSize: 20, fill: '#ffffff',
                 stroke: '#000000', strokeThickness: 2, padding: 4,
             });
-            expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = rowY + STAR_Y_OFF + 5;
+            expRewardTxt.x = STAR_X + starIcon.width + 6; expRewardTxt.y = rowY + STAR_Y_OFF + 1;
             content.addChild(expRewardTxt);
             fontTexts.push(expRewardTxt);
         }

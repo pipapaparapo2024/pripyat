@@ -3,8 +3,8 @@ const read=p=>fs.readFileSync(path.join(__dirname,'..',p),'utf8');
 function load(p,tail,context={}){vm.runInNewContext(read(p).replace(/^import .*;\r?\n/gm,'').replace(/export default class /,'class ').replace(/export function /g,'function ')+tail,context);return context;}
 const prog=load('_client/src/modules/habar-progress.js','this.day=habarElapsedDay;');
 const t=Date.parse('2026-10-01T12:00:00+03:00');
-assert.equal(prog.day(t,t),1);assert.equal(prog.day(t,t+3*86400000),4);assert.equal(prog.day(t,t+40*86400000),30);assert.equal(prog.day(t,t-86400000),1);
-assert.equal(prog.day(Date.parse('2026-10-01T20:59:59Z'),Date.parse('2026-10-01T21:00:00Z')),2);
+assert.equal(prog.day(t,t),0);assert.equal(prog.day(t,t+3*86400000),3);assert.equal(prog.day(t,t+40*86400000),30);assert.equal(prog.day(t,t-86400000),0);
+assert.equal(prog.day(Date.parse('2026-10-01T20:59:59Z'),Date.parse('2026-10-01T21:00:00Z')),1);
 const events={},w={devicePixelRatio:1,visualViewport:{scale:1},addEventListener:(n,f)=>events[n]=f};let changes=0;
 const pin=load('_client/src/modules/pinch-density.js','this.install=installPinchDensity;');const density=pin.install(w,()=>changes++);
 events.wheel({ctrlKey:false,deltaY:-69});assert.equal(density(),1);

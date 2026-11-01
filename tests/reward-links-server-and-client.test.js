@@ -28,64 +28,19 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 function read(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
-console.log('\n1) server/core/controllers/rewardlinks.php — контроллер по стандартному паттерну проекта');
+console.log('\n1) Серверный контракт атомарной выдачи');
 {
-    const src = read('server/core/controllers/rewardlinks.php');
-    assert(/Class Rewardlinks \{/.test(src), 'класс Rewardlinks объявлен');
-    assert(/\$this->ops = new Gameops\(\$registry\);/.test(src), 'использует Gameops (паттерн проекта)');
-    assert(/\$this->permits = \['claim'\];/.test(src), 'единственный публичный метод — claim');
-    assert(/function claim\(\)\{/.test(src), 'метод claim() определён');
-
-    assert(/SELECT id, reward, expires_at, active FROM reward_links WHERE code = \? LIMIT 1/.test(src),
-        'читает ссылку из БД по коду (не доверяет клиенту содержимое награды)');
-    assert(/if\(\$row\['expires_at'\] !== null && intval\(\$row\['expires_at'\]\) > 0 && \$now > intval\(\$row\['expires_at'\]\)\)/.test(src),
-        'проверяет истечение срока действия');
-    assert(/'reason' => 'expired'/.test(src), 'просроченная ссылка возвращает reason:expired');
-    // 27.09.2026 (по прямому указанию — "проверь чтобы за одну ссылку не давали награду
-    // дважды", найдена и закрыта TOCTOU-гонка): раньше проверка "уже получено?" была отдельным
-    // SELECT ДО начисления, а сама отметка INSERT писалась в самом конце, ПОСЛЕ начисления —
-    // два одновременных claim() могли оба пройти SELECT (ни один ещё не записан) и оба
-    // начислить награду, прежде чем второй INSERT упал бы на UNIQUE-constraint. Теперь claim
-    // резервируется через INSERT IGNORE ПЕРВЫМ (атомарно, той же UNIQUE-constraint в БД) —
-    // affected_rows определяет "уже получено", реакция на дубликат уже ДО начисления.
-    assert(/INSERT IGNORE INTO reward_link_claims \(link_id, user_id, claimed_at\) VALUES \(\?, \?, \?\)/.test(src),
-        'claim резервируется атомарно (INSERT IGNORE) ДО начисления награды, не после');
-    assert(/\$reserved = \$link->affected_rows === 1;/.test(src), 'affected_rows определяет, реально ли резервация досталась этому запросу (0 — уже был claim от другого параллельного запроса или раньше)');
-    assert(/'reason' => 'already'/.test(src), 'повторное/параллельное получение той же ссылки тем же игроком отклоняется');
-    // Резервация выше должна идти РАНЬШЕ, чем json_decode/loadUser/начисление — иначе гонка
-    // никуда не делась, просто переехала на другую пару операций.
-    const reserveIdx = src.indexOf('$reserved = $link->affected_rows === 1;');
-    const rewardDecodeIdx = src.indexOf("json_decode(\$row['reward'], true);");
-    assert(reserveIdx !== -1 && rewardDecodeIdx !== -1 && reserveIdx < rewardDecodeIdx,
-        'резервация claim происходит РАНЬШЕ, чем чтение/начисление содержимого награды (порядок — сама суть фикса гонки)');
-
-    assert(/if\(\$kind === 'currency'\)/.test(src) && /in_array\(\$field, self::CURRENCY_FIELDS, true\)/.test(src),
-        'валюта — только по вайтлисту полей (нельзя записать произвольное поле БД через reward)');
-    // 08.10.2026 (рефакторинг при фиксе бага "посылки оружия не используются" — см.
-    // tests/rewardlinks-weapon-ammo-sync.test.js): разбор ОДНОЙ строки награды вынесен из
-    // claim() в отдельный приватный _applyRewardEntry() (ради тестируемости через Reflection
-    // без мока $link) — state теперь хранится в массиве $state['shmot']/['bosses_data'], не в
-    // отдельных переменных $shmotState/$bossesData.
-    assert(/function _applyRewardEntry\(&\$user, \$entry, &\$state\)\{/.test(src),
-        'разбор строки награды вынесен в отдельный чистый метод (без $link) — тестируем через Reflection');
-    assert(/if\(\$kind === 'shmot'\)/.test(src) && /\$state\['shmot'\]\[\$itemId\]\['owned'\] = true;/.test(src),
-        'шмотка — выдаётся владение конкретным id из каталога');
-    assert(/if\(\$kind === 'key'\)/.test(src) && /\$state\['bosses_data'\]\['keys'\]\[\$bossId\] = intval\(\$state\['bosses_data'\]\['keys'\]\[\$bossId\]\) \+ \$amount;/.test(src),
-        'ключ босса — инкремент bosses_data.keys[bossId] (то же поле, что тратит bosses.php.startFight())');
-
-    // Резервация проверена выше (Test 1) — здесь дополнительно проверяем откат резервации,
-    // если награда в итоге НЕ выдана (битый JSON/не удалось загрузить или сохранить юзера/
-    // пустой summary) — иначе игрок навсегда теряет право получить ссылку, хотя ничего не получил.
-    assert(/DELETE FROM reward_link_claims WHERE link_id = \? AND user_id = \?/.test(src),
-        'есть откат резервации (rollback) на путях, где награда не выдаётся после резервации claim');
-    const rollbackCount = (src.match(/\$_rollbackClaim\(\);/g) || []).length;
-    assert(rollbackCount >= 3, `откат вызывается на всех путях "награда не выдана после резервации" (найдено вызовов: ${rollbackCount}, ожидалось минимум 3 — битый JSON, ошибка loadUser/saveUser, пустой summary)`);
-    assert(/\$this->ops->saveUser\(\$user\)/.test(src), 'изменения игрока сохраняются через Gameops::saveUser (полная строка)');
-    // 27.09.2026 (добавлен kind:'habar' — см. tests/reward-links-habar-grant.test.js для полной
-    // проверки этого типа награды): habar_bought добавлен в список ключей patch, иначе клиент
-    // узнает о выданном хабаре только при следующей полной загрузке udata, а не сразу.
-    assert(/patchCurrencies\(\$user, array_merge\(self::CURRENCY_FIELDS, \['shmot', 'bosses_data', 'habar_bought'/.test(src),
-        'ответ возвращает patch (включая habar_bought) — клиент обязан применить его через applyPatch()');
+ const src=read('server/core/controllers/rewardlinks.php');
+ assert(src.includes("$this->permits = ['claim'];"),'единственный публичный метод claim');
+ assert(src.includes('WHERE code = ? LIMIT 1 LOCK IN SHARE MODE'),'содержимое ссылки берётся из БД под блокировкой');
+ assert(src.includes('FOR UPDATE'),'строка игрока блокируется до начисления');
+ assert(src.includes('INSERT IGNORE INTO reward_link_claims'),'уникальная резервация до награды');
+ assert(src.includes('in_array($field, self::CURRENCY_FIELDS, true)'),'валюты ограничены whitelist');
+ assert(!src.includes('$this->ops->saveUser('),'нет отдельного сохранения после коммита');
+ assert(src.includes('$link->rollback()'),'ошибки откатывают общую транзакцию');
+ assert(src.includes('patchCurrencies'),'ответ содержит серверный patch');
+ // Границы срока, повторы, свежий inventory и сбои записи реально исполняются в
+ // rewardlinks-claim-weapons-race-lock.test.js / _php_fixtures/rewardlinks750.php.
 }
 
 console.log('\n2) registry.php — новый класс rewardlinks добавлен в вайтлист роутера');

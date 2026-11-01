@@ -41,8 +41,8 @@ console.log('\nTest 1: server/core/controllers/rewardlinks.php — kind:"habar" 
 
     assert(/\$containerId = intval\(\$entry\['containerId'\] \?\? -1\);/.test(body), 'читает containerId из награды');
     assert(/if\(\$containerId < 0 \|\| \$containerId > 3\) return null;/.test(body), 'валидирует диапазон 0-3 (4 тира хабара, как в habar_daily_config.json)');
-    assert(/if\(\$this->ops->i\(\$user, 'habar_bought'\) > 0\) return null;/.test(body),
-        '"один хабар в одни руки" — если у игрока УЖЕ есть хабар (куплен или получен раньше), строка молча пропускается (return null — не попадает в summary), не перезаписывает');
+    assert(body.includes('Gameops::habarExpiresAtMs($start)') && body.includes('habar_date_missing'),
+        'действующий хабар и неизвестная дата защищены, истёкший можно заменить');
     assert(/\$user\['habar_bought'\] = \$containerId \+ 1;/.test(body),
         'выдаёт ТО ЖЕ поле, что и покупка (habar.php.buy(): habar_bought = idx + 1) — единственный переключатель для collectDay()');
     assert(/return \['kind' => 'habar', 'containerId' => \$containerId\];/.test(body), 'возвращает запись для summary (клиентский попап наград)');
@@ -50,8 +50,8 @@ console.log('\nTest 1: server/core/controllers/rewardlinks.php — kind:"habar" 
 
 console.log('\nTest 2: patch включает habar_bought — клиент узнаёт о выданном хабаре сразу, без перезахода');
 {
-    assert(/patchCurrencies\(\$user, array_merge\(self::CURRENCY_FIELDS, \['shmot', 'bosses_data', 'habar_bought'/.test(rewardlinksSrc),
-        "'habar_bought' добавлен в список ключей patch");
+    assert(rewardlinksSrc.slice(rewardlinksSrc.indexOf('$patch=')).includes("'habar_bought'"),
+        'patch включает состояние хабара');
 }
 
 console.log('\nTest 3: habar_bought НЕ добавлен в client-writable whitelist users.php (server-only поле, как и раньше)');

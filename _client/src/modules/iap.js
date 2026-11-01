@@ -23,7 +23,10 @@
  * VK остаётся на VKWebAppShowOrderBox (у VK цена настроена в его собственном кабинете и этот
  * путь годами работал без проблем).
  */
+// v746: the historical FAPI workaround above applies only to native OK launches.
+// Cross-posted Mini Apps use the launcher's Bridge and an OK-specific server catalogue.
 import { isOk } from './platform.js';
+import { logOkPayment } from './ok-payment-diagnostics.js';
 
 // VK-ветка — поведение 1-в-1 как раньше (bridge.send('VKWebAppShowOrderBox', ...)).
 function _startVkPurchase(itemId){
@@ -38,6 +41,7 @@ function _startVkPurchase(itemId){
 // что это ожидаемый исход.
 let _fapiInitPromise = null;
 function _initFapi(){
+    logOkPayment('sdk-check',{fapi:!!window.FAPI,ui:!!window.FAPI?.UI,showPayment:typeof window.FAPI?.UI?.showPayment==='function',util:!!window.FAPI?.Util,init:typeof window.FAPI?.init==='function'});
     if(_fapiInitPromise) return _fapiInitPromise;
     // 09.10.2026 (живой репорт — "Покупки на этой площадке временно недоступны" при реальной
     // попытке купить на ОК): console-лог, присланный вместе с репортом, обрывается ДО момента
@@ -57,7 +61,7 @@ function _initFapi(){
         // Launcher ОК мог инициализировать полноценный UI, но не передать в iframe игры
         // Util/init для повторной инициализации. Готовый showPayment — достаточный контракт для
         // покупки, поэтому эту ветку нужно проверять РАНЬШЕ требования Util/init.
-        if(window.FAPI && window.FAPI.UI && typeof window.FAPI.UI.showPayment === 'function'){
+        if(window.FAPI && window.FAPI.initialized === true && window.FAPI.UI && typeof window.FAPI.UI.showPayment === 'function'){
             console.log('[iap._initFapi] FAPI.UI.showPayment уже доступен — используем инициализацию Launcher ОК без повторного FAPI.init()');
             resolve(true);
             return;
@@ -69,6 +73,7 @@ function _initFapi(){
         }
         try {
             const rParams = FAPI.Util.getRequestParameters();
+            logOkPayment('sdk-parameters',{hasApiServer:!!rParams?.api_server,hasConnection:!!rParams?.apiconnection});
             console.log('[iap._initFapi] FAPI.Util.getRequestParameters() вернул:', JSON.stringify(rParams));
             if(!rParams || !rParams['api_server'] || !rParams['apiconnection']){
                 console.warn('[iap._initFapi] FAPI есть, но api_server/apiconnection отсутствуют в параметрах запуска | rParams:', JSON.stringify(rParams));
@@ -96,6 +101,7 @@ function _installOkPaymentCallback(){
     _okPaymentCallbackInstalled = true;
     const previous = window.API_callback;
     window.API_callback = function(method, result, data){
+        logOkPayment('callback',{method,result,callbackData:data});
         console.log('[iap.API_callback] ответ ОК | method:', method, '| result:', result, '| data:', data);
         if(method === 'showPayment'){
             if(result === 'ok') console.log('[iap.API_callback] ОК подтвердили платёж на клиенте; начисление подтверждает server/ok_pay_callback.php');
@@ -135,13 +141,29 @@ function _okItemCurrencyAndCount(numericId){
 // itemId приходит как строка вида 'item8'/'item107' (формат, общий с VK-веткой) — для FAPI
 // нужен голый числовой код.
 function _startOkPurchase(itemId, priceOk, label){
+    logOkPayment('buy-click',{item:Number(String(itemId).replace('item','')),price:Number(priceOk)});
     const numericId = parseInt(String(itemId).replace('item', ''));
     if(isNaN(numericId) || !priceOk || priceOk <= 0){
         _okUnavailable(itemId, 'некорректный itemId/priceOk: ' + itemId + ' / ' + priceOk);
         return;
     }
+    // Cross-posted Mini Apps run inside the OK launcher. The game's fapi5.js is
+    // a separate, uninitialised SDK (showPayment exists even in its stub state).
+    // Request item information via the launcher; the server supplies the OK price.
+    if(window.vk_params && window.vk_params.vk_client === 'ok'){
+        logOkPayment('launcher-payment',{item:numericId,price:Number(priceOk)});
+        return Promise.resolve().then(() => bridge.send('VKWebAppShowOrderBox', {type:'item',item:'ok_item'+numericId})).then(() => {
+            logOkPayment('launcher-result',{result:'ok'});
+            const [currency,count] = _okItemCurrencyAndCount(numericId);
+            if(currency && window.bank && window.bank._refreshBalanceAfterPurchase) window.bank._refreshBalanceAfterPurchase(currency,count);
+        }).catch(error => {
+            logOkPayment('callback',{method:'VKWebAppShowOrderBox',result:'error',callbackData:error});
+            _okUnavailable(itemId,'launcher payment rejected');
+        });
+    }
     console.log('[iap._startOkPurchase] запрошена покупка через FAPI.UI.showPayment | item:', itemId, '| numericId:', numericId, '| priceOk:', priceOk);
     _initFapi().then((ok) => {
+        logOkPayment('sdk-ready',{ready:ok});
         if(!ok){
             _okUnavailable(itemId, 'FAPI.init() не удался или FAPI недоступен');
             return;
@@ -156,6 +178,7 @@ function _startOkPurchase(itemId, priceOk, label){
             // ok_pay_callback.php читает product_code через intval(), без парсинга префикса).
             _installOkPaymentCallback();
             FAPI.UI.showPayment(name, desc, numericId, priceOk, null, null, 'ok', 'true', null);
+            logOkPayment('payment-call-sent',{item:numericId,price:Number(priceOk)});
             // У прямого вызова FAPI.UI.showPayment() нет гарантированного VK Bridge-события
             // результата (в отличие от VKWebAppShowOrderBox, который Launcher мог бы
             // эмулировать) — переиспользуем УЖЕ проверенный на VK механизм: опрос баланса с
@@ -170,6 +193,7 @@ function _startOkPurchase(itemId, priceOk, label){
             }
         } catch(e){
             console.error('[iap._startOkPurchase] исключение при вызове FAPI.UI.showPayment', e);
+            logOkPayment('payment-call-failed');
             _okUnavailable(itemId, 'исключение в FAPI.UI.showPayment: ' + e.message);
         }
     });

@@ -59,7 +59,7 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     // числа сборов; обнуление раз в сутки по МСК, 00:00"): замена двух проверок, см. полный
     // разбор в habar-30-days-from-purchase-msk-daily-reset.test.js — здесь только факт того, что
     // старые формулы (collected>=totalDays, now-lastTs<cooldownMs) реально заменены.
-    assert(/if\(\$now >= \$boughtTs \+ \$totalDays \* 86400000\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(src),
+    assert(/if\(\$now >= Gameops::habarExpiresAtMs\(\$boughtTs, \$totalDays\)\)\{[\s\S]{0,120}?return \$this->ops->fail\(58\);/.test(src),
         'отклоняет сбор, если 30 дней с момента ПОКУПКИ (habar_bought_ts) истекли — не от числа сборов');
     assert(!/if\(\$collected >= \$totalDays\)/.test(src), 'старая формула "collected>=totalDays" (лимит по числу сборов) убрана');
     assert(/mskDailyDate\(intval\(\$lastTs \/ 1000\)\) === \$this->ops->mskDailyDate\(intval\(\$now \/ 1000\)\)/.test(src),

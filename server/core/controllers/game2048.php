@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
     // ── SERVER-AUTHORITATIVE 2048 (26.10.2026, новая мини-игра — отдельная вкладка, НЕ часть
     // Двора) ──
     //
@@ -278,6 +279,7 @@
                 );
             }
             $ammoKey = 'ammo_' . $type;
+            WeaponProgress::acquire($data[$wid], $amount, max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)));
             $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
             $data[$wid]['owned'] = true;
             ksort($data);

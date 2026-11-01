@@ -12,6 +12,7 @@
     });
 
     $registry = new Registry;
+    ini_set('error_log', __DIR__ . '/php_errors.log');
 
     $registry['tools'] = new Tools($registry);
     $registry['udb'] = new Database($registry);
@@ -69,6 +70,19 @@
         $item = $_POST['item'];
 
         loadResponses();
+
+        // A distinct product namespace keeps VK prices/transactions unchanged.
+        // This branch is reached only after the usual signature check.
+        if (is_string($item) && strpos($item, 'ok_item') === 0) {
+            if (!in_array($_POST['notification_type'], ['get_item','get_item_test'], true)) {
+                return echoResult(['error_code'=>5,'error_msg'=>'Unsupported notification','critical'=>true], 'error');
+            }
+            $okResponse = OkPaymentItem::response($item, $registry['resps'], $registry['prices']);
+            if ($okResponse === null) return echoResult(['error_code'=>5,'error_msg'=>'Unknown item','critical'=>true], 'error');
+            header('Content-Type: application/json; charset=utf-8');
+            error_log('[universal_pay.ok_catalog] stage=catalog-response item=' . intval(substr($item,7)) . ' price=' . $okResponse['price']);
+            return echoResult($okResponse, 'response');
+        }
 
         error_log('[universal_pay.start] подпись верна, обрабатываю | uid=' . $registry['uid'] . ' | notification_type=' . strval($_POST['notification_type'] ?? '?'));
 
@@ -353,4 +367,4 @@
         }
         return $s;//выводим строку
     }
-?> 
+?>

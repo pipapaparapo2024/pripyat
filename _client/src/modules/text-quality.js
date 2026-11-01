@@ -21,6 +21,13 @@ export function installTextQuality(PIXI, scope = window){
         if(fonts.ready && typeof fonts.ready.then === 'function') fonts.ready.then(refreshFonts);
         if(typeof fonts.addEventListener === 'function') fonts.addEventListener('loadingdone', refreshFonts);
     }
+    // Pixi updates text during transforms/bounds measurement, before _render.
+    // Refresh there too, so layout cannot use a cached fallback-font texture.
+    const updateText = proto.updateText;
+    if(typeof updateText === 'function') proto.updateText = function(...args){
+        if(this._pripyatFontEpoch !== fontEpoch){this._pripyatFontEpoch=fontEpoch;this.dirty=true;}
+        return updateText.apply(this,args);
+    };
     for(const method of ['_render', '_renderCanvas']){
         const render = proto[method];
         if(typeof render !== 'function') continue;

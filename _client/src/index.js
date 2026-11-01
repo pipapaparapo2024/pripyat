@@ -142,7 +142,13 @@ const _okDiagnosticOrigins = (() => {
 // 09.10.2026 выключена везде. При следующем согласованном расследовании достаточно сменить
 // false на true и пересобрать, не восстанавливая сотни console-вызовов из истории.
 window.ok_payment_diagnostics_enabled = false;
-window.ok_payment_diagnostics = window.ok_payment_diagnostics_enabled && (_okDiagnosticOrigins.includes('ok.ru')
+// Same account list as the existing Dev panel. Never enable raw payment logs.
+const _okConsolePlatform = /ok\.ru|odnoklassniki\.ru|st\.okcdn\.ru/.test(_okDiagnosticOrigins) || new URLSearchParams(window.location.search).get('vk_client') === 'ok';
+const _okPaymentDevUid = new URLSearchParams(window.location.search).get('vk_user_id');
+window.ok_payment_diagnostics_for_dev = ['1113977365', '382448269', '438953352', '184138040'].includes(_okPaymentDevUid);
+window.ok_payment_safe_diagnostics = _okConsolePlatform && window.ok_payment_diagnostics_for_dev;
+if(window.ok_payment_safe_diagnostics) _nativeConsole.log('[ok-payment]',{stage:'diagnostics-ready'});
+window.ok_payment_diagnostics = window.ok_payment_diagnostics_for_dev && window.ok_payment_diagnostics_enabled && (_okDiagnosticOrigins.includes('ok.ru')
     || _okDiagnosticOrigins.includes('odnoklassniki.ru') || _okDiagnosticOrigins.includes('st.okcdn.ru'));
 // Не пропускаем весь [bank]: bank.constructor намеренно пишет launch-параметры для локальной
 // отладки. В production ОК допустимы только безопасные логи координат/слотов/FAPI, без токенов,
@@ -160,10 +166,10 @@ const _isPaymentDiagnostic = (args) => typeof args[0] === 'string'
 // правкой кода. Настоящий баннер "ПРИПЯТЬ vN" в титульной строке ниже — единственное
 // исключение (не через console.log, а собственным CSS-блоком на странице), поэтому версия
 // в углу экрана видна игроку как и раньше.
-if(!window.debug_mode){
+if(!window.debug_mode || (_okConsolePlatform && !window.ok_payment_diagnostics_for_dev)){
 	const _noop = () => {};
 	const _okDiagnosticLog = (kind) => (...args) => {
-		if(window.ok_payment_diagnostics && _isPaymentDiagnostic(args)) _nativeConsole[kind](...args);
+		if((window.ok_payment_diagnostics && _isPaymentDiagnostic(args)) || (window.ok_payment_safe_diagnostics && args[0] === '[ok-payment]')) _nativeConsole[kind](...args);
 	};
 	console.log = _okDiagnosticLog('log');
 	console.warn = _okDiagnosticLog('warn');

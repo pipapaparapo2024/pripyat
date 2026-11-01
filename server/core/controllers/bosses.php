@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
 	Class Bosses {
         private $registry, $ops;
 
@@ -1438,6 +1439,7 @@
                     return $this->ops->fail(87); // патроны кончились между первой проверкой и списанием — гонка параллельных запросов
                 }
 
+                WeaponProgress::seed($lockedWeapons[$weaponId], $lockedQty);
                 $lockedWeapons[$weaponId]['qty'] = $lockedQty - $mult;
                 $newWeaponsJson = json_encode($lockedWeapons);
                 $link->query("UPDATE `{$this->registry['utb']}` SET `weapons`='".$link->real_escape_string($newWeaponsJson)."' WHERE `id`=".intval($this->registry['uid']));

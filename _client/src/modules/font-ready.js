@@ -21,8 +21,13 @@ export function scheduleFontRedraw(checkFontCss, texts){
     if(typeof document === 'undefined' || !document.fonts || typeof document.fonts.check !== 'function') return;
     if(document.fonts.check(checkFontCss)) return;
     console.log('[font-ready.scheduleFontRedraw] шрифт ещё не готов (' + checkFontCss + ') — перерисую ' + texts.length + ' текстовых объектов после document.fonts.ready');
-    document.fonts.ready.then(() => {
+    const redraw = () => {
+        if(typeof PIXI !== 'undefined' && PIXI.TextMetrics && PIXI.TextMetrics.clearMetrics) PIXI.TextMetrics.clearMetrics();
         texts.forEach(t => { if(t && !t.destroyed) t.dirty = true; });
         console.log('[font-ready.scheduleFontRedraw] шрифт готов, перерисовано ' + texts.length + ' объектов');
-    });
+    };
+    // Request the actual Cyrillic face; fonts.ready also resolves on load errors.
+    if(typeof document.fonts.load === 'function'){
+        document.fonts.load(checkFontCss, 'Награда Сухари Опыт 0123456789').then(redraw).catch(() => document.fonts.ready.then(redraw));
+    } else document.fonts.ready.then(redraw);
 }

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
     // ── НАГРАДНЫЕ ССЫЛКИ (25.09.2026, по прямому указанию) ──────────────────────────────
     //
     // Отдельный сайт-генератор (vk_game/сайт/, деплоится на этот же сервер, /rewards-admin/)
@@ -40,7 +41,7 @@
         // широкая архитектурная задача, не специфичная для наградных ссылок), добавлен сюда не
         // для защиты от них, а чтобы два параллельных claim() по разным ссылкам одного игрока
         // не затирали друг друга.
-        const PLAIN_LOCK_FIELDS = ['coins', 'cigarettes', 'stew', 'respect', 'exp', 'energy', 'habar_bought'];
+        const PLAIN_LOCK_FIELDS = ['coins', 'cigarettes', 'stew', 'respect', 'exp', 'energy', 'habar_bought', 'habar_bought_ts', 'habar_days_collected', 'habar_last_collect_ts'];
 
         public $permits;
 
@@ -97,6 +98,7 @@
                     while(count($state['weapons']) <= $wid) $state['weapons'][] = ['owned' => false, 'equipped' => false, 'upg' => 0, 'qty' => 0];
                     if(!isset($state['weapons'][$wid]['qty'])) $state['weapons'][$wid]['qty'] = 0;
                     $state['weapons'][$wid]['owned'] = true;
+                    WeaponProgress::acquire($state['weapons'][$wid], $amount, intval($state['weapons'][$wid]['qty']));
                     $state['weapons'][$wid]['qty']   = intval($state['weapons'][$wid]['qty']) + $amount;
                     // Тот же легаси-паттерн зеркала, что weapons.php.buy() — присваиваем
                     // СВЕЖИМ итоговым qty (не прибавляем отдельно), иначе поле снова разойдётся
@@ -134,18 +136,22 @@
             }
 
             if($kind === 'habar'){
-                // 27.09.2026 (по прямому указанию — "выдача хабаров по ссылке, чтобы игрок мог
-                // собирать 30 дней как обычно"): выдаём ТОТ ЖЕ habar_bought=containerId+1, что и
-                // habar.php.buy() при покупке за валюту — это единственное поле, которое
-                // разблокирует habar.php.collectDay() (30-дневный ежедневный сбор). "Один хабар в
-                // одни руки" — то же правило, что и в buy() (код=56 там же): если у игрока УЖЕ
-                // есть хабар (куплен раньше или получен по другой ссылке), строка молча
-                // пропускается (не перезаписываем чужой/уже открытый хабар), как и shmot выше
-                // пропускает уже принадлежащий предмет.
+                // Действующий хабар сохраняем. Истёкший заменяем под блокировкой строки.
+                // При неизвестной дате откатываем всю выдачу: ссылку не расходуем.
                 $containerId = intval($entry['containerId'] ?? -1);
                 if($containerId < 0 || $containerId > 3) return null;
-                if($this->ops->i($user, 'habar_bought') > 0) return null;
+                $nowMs = $state['now_ms'] ?? intval(round(microtime(true) * 1000));
+                if($this->ops->i($user, 'habar_bought') > 0){
+                    $start = $this->ops->i($user, 'habar_bought_ts');
+                    if($start <= 0){$state['habar_blocked_reason']='habar_date_missing';return null;}
+                    if($nowMs < Gameops::habarExpiresAtMs($start)){
+                        $state['habar_blocked_reason']='habar_active';return null;
+                    }
+                }
                 $user['habar_bought'] = $containerId + 1;
+                $user['habar_bought_ts'] = $nowMs;
+                $user['habar_days_collected'] = 0;
+                $user['habar_last_collect_ts'] = 0;
                 return ['kind' => 'habar', 'containerId' => $containerId];
             }
 
@@ -153,173 +159,79 @@
         }
 
         function claim(){
-            $code = isset($this->registry['user_params']['code']) ? trim(strval($this->registry['user_params']['code'])) : '';
-            if($code === '' || strlen($code) > 64) return $this->ops->ok(['claimed' => 0, 'reason' => 'notfound']);
-
-            $link = $this->_rawLink();
-            if(!$link) return $this->ops->fail(99);
-
-            $uid = intval($this->registry['uid']);
-            $now = time();
-
-            $stmt = $link->prepare('SELECT id, reward, expires_at, active FROM reward_links WHERE code = ? LIMIT 1');
-            $stmt->bind_param('s', $code);
-            $stmt->execute();
-            $row = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-
-            if(!$row || !intval($row['active'])){
-                $link->close();
-                return $this->ops->ok(['claimed' => 0, 'reason' => 'notfound']);
-            }
-            $linkId = intval($row['id']);
-
-            if($row['expires_at'] !== null && intval($row['expires_at']) > 0 && $now > intval($row['expires_at'])){
-                $link->close();
-                error_log('[Rewardlinks.claim] код=' . $code . ' истёк (expires_at=' . $row['expires_at'] . ', now=' . $now . '), uid=' . $uid);
-                return $this->ops->ok(['claimed' => 0, 'reason' => 'expired']);
-            }
-
-            // 27.09.2026 (по прямому указанию — "проверь чтобы за одну ссылку не давали
-            // награду дважды"): раньше здесь был SELECT "уже получено?" (см. историю), а сама
-            // отметка INSERT INTO reward_link_claims писалась в САМОМ КОНЦЕ, уже после того как
-            // награда начислена и users сохранён. Между SELECT и финальным INSERT — окно гонки:
-            // два одновременных claim() (двойной клик/replay запроса) оба проходят SELECT (ни
-            // один claim ещё не записан), оба начисляют награду, и только ВТОРОЙ INSERT падает
-            // на UNIQUE KEY uniq_link_user(link_id,user_id) (см. migrate22.php) — но к этому
-            // моменту награда уже выдана дважды. Фикс: сама отметка о получении теперь пишется
-            // ПЕРВОЙ, ДО начисления награды — INSERT либо резервирует право получить (и тогда
-            // начисляем), либо падает на дубликате (и тогда сразу выходим с reason:'already',
-            // ничего не начисляя). Атомарность гарантирует та же UNIQUE-constraint в БД, просто
-            // теперь она защищает ДО начисления, а не после.
-            $stmtI = $link->prepare('INSERT IGNORE INTO reward_link_claims (link_id, user_id, claimed_at) VALUES (?, ?, ?)');
-            $stmtI->bind_param('iii', $linkId, $uid, $now);
-            $stmtI->execute();
-            $reserved = $link->affected_rows === 1;
-            $stmtI->close();
-            if(!$reserved){
-                $link->close();
-                return $this->ops->ok(['claimed' => 0, 'reason' => 'already']);
-            }
-
-            // Со следующей строки claim уже зарезервирован — любой путь ниже, где награда
-            // в итоге НЕ выдана (битый JSON, не удалось прочитать/сохранить юзера, пустой
-            // summary), обязан откатить резервацию через этот же коллбэк, иначе игрок
-            // навсегда теряет право получить ссылку, хотя реально ничего не получил.
-            $_rollbackClaim = function() use ($link, $linkId, $uid){
-                $stmtR = $link->prepare('DELETE FROM reward_link_claims WHERE link_id = ? AND user_id = ?');
-                $stmtR->bind_param('ii', $linkId, $uid);
-                $stmtR->execute();
-                $stmtR->close();
-            };
-
-            $reward = json_decode($row['reward'], true);
-            if(!is_array($reward)){
-                $_rollbackClaim();
-                $link->close();
-                error_log('[Rewardlinks.claim] код=' . $code . ' — reward не распарсился как JSON-массив: ' . $row['reward']);
-                return $this->ops->fail(99);
-            }
-
-            $user = $this->ops->loadUser();
-            if(!$user){
-                $_rollbackClaim();
-                $link->close();
-                return $this->ops->fail(99);
-            }
-
-            // 09.10.2026 (баг по живому репорту — "купил оружие, но оно обнулилось после
-            // промокода"): weapons/shmot/bosses_data — те же поля, что weapons.php.buy()/
-            // upgrade() и bosses.php.attack() уже защищают SELECT...FOR UPDATE (04.10.2026,
-            // "аудит гонок состояний", см. комментарий там же) — здесь, в claim(), этого лока
-            // не было, хотя он читает-мутирует-пишет ровно те же поля той же строки игрока.
-            // Конкурентный запрос (покупка оружия, удар боссу, другой claim) между loadUser()
-            // выше и saveUser() ниже читал СВОЙ снимок и сохранял его ПОЗЖЕ — тёр только что
-            // начисленную/купленную награду целиком (classic lost update). Берём тот же
-            // физический лок строки, что и остальные файлы (любая FOR UPDATE-транзакция на
-            // этой строке — из ЛЮБОГО файла — реально ждёт COMMIT), и перечитываем САМЫЕ
-            // свежие weapons/shmot/bosses_data ПОД локом прямо перед тем, как их мутировать.
-            // 09.10.2026 — расширено на PLAIN_LOCK_FIELDS (см. комментарий у константы выше) —
-            // те же причины, другие колонки.
-            $jsonLockFields = ['weapons', 'shmot', 'bosses_data'];
-            $allLockFields  = array_merge($jsonLockFields, self::PLAIN_LOCK_FIELDS);
-            $link->begin_transaction();
-            $lockColList = implode(',', array_map(function($c){ return "`$c`"; }, $allLockFields));
-            $lockRes = $link->query("SELECT $lockColList FROM `{$this->registry['utb']}` WHERE `id`=" . $uid . " FOR UPDATE");
-            $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
-            if($lockRow !== null){
-                foreach($allLockFields as $lockedField){
-                    if($lockRow[$lockedField] !== null) $user[$lockedField] = $lockRow[$lockedField];
+            $code = trim(strval($this->registry['user_params']['code'] ?? ''));
+            if($code === '' || strlen($code) > 64) return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
+            $link = null;
+            try {
+                $link = $this->_rawLink();
+                if(!$link) return $this->ops->fail(99);
+                if(!$link->begin_transaction()) throw new RuntimeException('Transaction failed');
+                // Share-lock the definition while allowing other players to claim this link.
+                $stmt = $link->prepare('SELECT id, reward, expires_at, active FROM reward_links WHERE code = ? LIMIT 1 LOCK IN SHARE MODE');
+                $stmt->bind_param('s',$code);
+                if(!$stmt->execute()) throw new RuntimeException('Link lookup failed');
+                $row = $stmt->get_result()->fetch_assoc(); $stmt->close();
+                if(!$row || !intval($row['active'])){
+                    $link->rollback(); $link->close();
+                    return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
                 }
-            }
-
-            // Снимок PLAIN_LOCK_FIELDS СРАЗУ ПОСЛЕ перечитывания под локом, но ДО применения
-            // наград — currency/habar-записи мутируют $user напрямую (через $this->ops->add()/
-            // прямое присваивание, см. _applyRewardEntry()), а не через $state, как
-            // weapons/shmot/bosses_data — этот снимок нужен ниже, чтобы понять, какие из них
-            // реально изменились именно в ЭТОМ claim().
-            $plainBefore = [];
-            foreach(self::PLAIN_LOCK_FIELDS as $f) $plainBefore[$f] = $user[$f] ?? null;
-
-            $summary = [];
-            $state = ['shmot' => null, 'bosses_data' => null, 'weapons' => null];
-            foreach($reward as $entry){
-                $result = $this->_applyRewardEntry($user, $entry, $state);
-                if($result !== null) $summary[] = $result;
-            }
-            $shmotState   = $state['shmot'];
-            $bossesData   = $state['bosses_data'];
-            $weaponsState = $state['weapons'];
-
-            if(empty($summary)){
-                // Все строки награды оказались пустыми/некорректными (например, ссылку
-                // сгенерировали без валидных полей) — ничего не выдаём, откатываем claim, чтобы
-                // игрок мог получить награду позже, если её поправят вручную в БД.
-                $link->rollback();
-                $_rollbackClaim();
+                $uid=intval($this->registry['uid']);
+                // All reward fields are read and written on this same locked connection.
+                $res=$link->query("SELECT * FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                if(!$res || !$res->num_rows) throw new RuntimeException('User missing');
+                $user=$res->fetch_assoc(); $before=$user;
+                // Evaluate expiry and receipt time after any wait for the user lock.
+                $nowMs = intval(round(microtime(true) * 1000)); $now = intdiv($nowMs,1000);
+                if(intval($row['expires_at'] ?? 0)>0 && $now>=intval($row['expires_at'])){
+                    $link->rollback(); $link->close();
+                    return $this->ops->ok(['claimed'=>0,'reason'=>'expired']);
+                }
+                $linkId=intval($row['id']);
+                // The unique (link_id,user_id) reservation commits with the reward, never before it.
+                $stmtI=$link->prepare('INSERT IGNORE INTO reward_link_claims (link_id, user_id, claimed_at) VALUES (?, ?, ?)');
+                $stmtI->bind_param('iii',$linkId,$uid,$now);
+                if(!$stmtI->execute()) throw new RuntimeException('Reservation failed');
+                $reserved=$link->affected_rows===1; $stmtI->close();
+                if(!$reserved){
+                    $link->rollback(); $link->close();
+                    return $this->ops->ok(['claimed'=>0,'reason'=>'already']);
+                }
+                $reward=json_decode($row['reward'],true);
+                if(!is_array($reward)) throw new RuntimeException('Invalid reward');
+                $state=['shmot'=>null,'bosses_data'=>null,'weapons'=>null,'now_ms'=>$nowMs]; $summary=[];
+                foreach($reward as $entry){
+                    if(!is_array($entry)) throw new RuntimeException('Invalid entry');
+                    $result=$this->_applyRewardEntry($user,$entry,$state);
+                    if($result!==null) $summary[]=$result;
+                }
+                if(($state['habar_blocked_reason'] ?? '')==='habar_date_missing' || !$summary){
+                    $reason=$state['habar_blocked_reason'] ?? 'notfound';
+                    $link->rollback(); $link->close();
+                    return $this->ops->ok(['claimed'=>0,'reason'=>$reason]);
+                }
+                foreach(['shmot','bosses_data','weapons'] as $field) if($state[$field]!==null) $user[$field]=json_encode($state[$field]);
+                if(isset($user['exp']) && strval($user['exp'])!==strval($before['exp'] ?? '')){
+                    $user['level']=strval(max(0,(int)floor((-1+sqrt(1+intval($user['exp'])/5))/2)));
+                }
+                $updates=[];
+                foreach($user as $field=>$value){
+                    if($field==='id') continue;
+                    if(is_array($value)) $value=json_encode($value);
+                    if($value===($before[$field] ?? null) || ($value!==null && isset($before[$field]) && strval($value)===strval($before[$field]))) continue;
+                    if(!array_key_exists($field,$before) || !preg_match('/^[a-z_]+$/D',$field)) throw new RuntimeException('Invalid reward field');
+                    $updates[]="`$field`=".($value===null?'NULL':"'".$link->real_escape_string(strval($value))."'");
+                }
+                if(!$updates) throw new RuntimeException('Empty update');
+                if(!$link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',',$updates)." WHERE `id`=$uid")) throw new RuntimeException('Reward write failed');
+                if(!$link->commit()) throw new RuntimeException('Commit failed');
                 $link->close();
-                error_log('[Rewardlinks.claim] код=' . $code . ' дал пустой summary (reward: ' . $row['reward'] . '), uid=' . $uid);
-                return $this->ops->ok(['claimed' => 0, 'reason' => 'notfound']);
-            }
-
-            // weapons/shmot/bosses_data + изменившиеся PLAIN_LOCK_FIELDS пишем ОТДЕЛЬНЫМ UPDATE
-            // внутри ТОЙ ЖЕ транзакции, прямо под локом, выставленным выше — тот же приём, что
-            // weapons.php.buy() (см. комментарий там). Эти ключи НЕ передаём в общий $user для
-            // saveUser() ниже — иначе он переписал бы их устаревшим снимком из loadUser() в
-            // начале функции, сводя на нет весь смысл лока. Присваиваем их в $user только ПОСЛЕ
-            // saveUser().
-            $lockedUpdates = [];
-            if($shmotState   !== null) $lockedUpdates['shmot']       = json_encode($shmotState);
-            if($bossesData   !== null) $lockedUpdates['bosses_data'] = json_encode($bossesData);
-            if($weaponsState !== null) $lockedUpdates['weapons']     = json_encode($weaponsState);
-            foreach(self::PLAIN_LOCK_FIELDS as $f){
-                if(isset($user[$f]) && $user[$f] !== $plainBefore[$f]) $lockedUpdates[$f] = strval($user[$f]);
-            }
-            if(!empty($lockedUpdates)){
-                $setParts = [];
-                foreach($lockedUpdates as $col => $val) $setParts[] = "`$col`='" . $link->real_escape_string($val) . "'";
-                $link->query("UPDATE `{$this->registry['utb']}` SET " . implode(',', $setParts) . " WHERE `id`=" . $uid);
-            }
-            $link->commit();
-            foreach(array_keys($lockedUpdates) as $col) unset($user[$col]);
-
-            if(!$this->ops->saveUser($user)){
-                // weapons/shmot/bosses_data/PLAIN_LOCK_FIELDS уже закоммичены под локом выше —
-                // реальная награда (как минимум эта часть) УЖЕ выдана, поэтому НЕ откатываем
-                // claim (иначе игрок мог бы получить её повторно) — только логируем частичный
-                // сбой.
-                $link->close();
-                error_log('[Rewardlinks.claim] код=' . $code . ' uid=' . $uid . ' — часть полей закоммичена под локом, но saveUser() для остальных полей упал');
+                $patch=$this->ops->patchCurrencies($user,array_merge(self::CURRENCY_FIELDS,['shmot','bosses_data','weapons','max_energy','energy_time','level','habar_bought','habar_bought_ts','habar_days_collected','habar_last_collect_ts']));
+                return $this->ops->ok(['claimed'=>1,'patch'=>$patch,'summary'=>$summary]);
+            } catch(Throwable $error){
+                if($link){try{$link->rollback();}catch(Throwable $ignored){} $link->close();}
+                error_log('[Rewardlinks.claim] transaction_failed type='.get_class($error));
                 return $this->ops->fail(99);
             }
-            foreach($lockedUpdates as $col => $val) $user[$col] = $val;
-
-            $link->close();
-
-            error_log('[Rewardlinks.claim] код=' . $code . ' выдан uid=' . $uid . ' | summary=' . json_encode($summary, JSON_UNESCAPED_UNICODE));
-
-            $patch = $this->ops->patchCurrencies($user, array_merge(self::CURRENCY_FIELDS, ['shmot', 'bosses_data', 'habar_bought', 'max_energy', 'weapons']));
-            $this->ops->ok(['claimed' => 1, 'patch' => $patch, 'summary' => $summary]);
         }
     }
 ?>

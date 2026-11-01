@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
     // ── SERVER-AUTHORITATIVE ПОКЕР (18.09.2026, перенос экономики — Казино) ──
     //
     // Раньше ВСЯ игра (списание фишки/тушёнки, весовой RNG комбинации, генерация карт под
@@ -582,6 +583,7 @@
                 );
             }
             $ammoKey = 'ammo_' . $type;
+            WeaponProgress::acquire($data[$wid], $amount, max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)));
             $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
             $data[$wid]['owned'] = true;
             ksort($data);

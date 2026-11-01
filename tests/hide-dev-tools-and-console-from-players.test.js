@@ -106,8 +106,8 @@ console.log('\nTest 5: index.js — console.* глушится для игрок
     assert(!/window\.debug_mode = true;/.test(indexJs), 'debug_mode НЕ включён безусловно (это дало бы GIVE_MILLION/RUN_TESTS всем игрокам на проде)');
     // В блок добавлена отключённая ОК-диагностика с белым списком, поэтому до самой
     // подмены console.* теперь больше комментариев и кода, чем прежние 1500 символов.
-    const body = indexJs.slice(start, start + 5000);
-    assert(/if\(!window\.debug_mode\)\{/.test(body), 'глушение обёрнуто в проверку debug_mode — легко включить обратно локально');
+    const body = indexJs.slice(start, indexJs.indexOf('window.session_hash =', start));
+    assert(/if\(!window\.debug_mode \|\| \(_okConsolePlatform && !window\.ok_payment_diagnostics_for_dev\)\)\{/.test(body), 'глушение обёрнуто в проверку debug_mode — легко включить обратно локально');
     // 09.10.2026: прямой _noop заменён на белый список будущей ОК-диагностики. Пока
     // переключатель false, обёртка столь же молча отбрасывает любой console.log/warn/error.
     assert(/window\.ok_payment_diagnostics_enabled = false;/.test(indexJs), 'ОК-диагностика сохранена в коде, но выключена в production');

@@ -92,14 +92,14 @@ console.log('\nTest 11 (26.10.2026, ответ модерации ОК — "ра
     assertRegex(/respondError\(1003,/.test(gate), 'несовпадение amount отклоняется отдельным кодом ошибки (не молча игнорируется)');
 }
 
-console.log('\nTest 4: исполняемая часть — идемпотентность (повторный transaction_id не начисляет дважды)');
+console.log('\nTest 4: журнал ОК изолирован от числового журнала ВК');
 {
-    const src = read('server/ok_pay_callback.php');
-    assertRegex(/\$transaction = \$registry\['udb'\]->getData\('trans', \['\*'\], "tid='" \. \$tid \. "'"\);/.test(src),
-        'проверяет существующую транзакцию по tid (с префиксом ok_) перед начислением');
-    const idx = src.indexOf("if(!isset(\$transaction['error'])){");
-    const body = src.slice(idx, src.indexOf('}', idx) + 1);
-    assertRegex(/respondOk\(\);/.test(body), 'уже обработанный transaction_id отвечает успехом (идемпотентно), но без повторного начисления');
+ const src=read('server/ok_pay_callback.php'),credit=read('server/core/models/okpaymentcredit.php');
+ assertRegex(src.includes('OkPaymentCredit::credit('),'callback использует атомарное начисление ОК');
+ assertRegex(!src.includes("saveData('trans'"),'callback не записывает строковый ID в числовой журнал ВК');
+ assertRegex(credit.includes('INSERT IGNORE INTO ok_payment_transactions') && credit.includes('PRIMARY KEY'),'уникальный ID резервируется в отдельном журнале');
+ assertRegex(credit.includes('$db->commit()') && credit.includes('$db->rollback()'),'наградa и журнал сохраняются одной транзакцией');
+ // Полный entrypoint и повторная выдача реально исполняются в ok-payment752.test.js.
 }
 
 console.log('\nTest 5: modules/iap.js — 05.10.2026, финальная версия ЗА ОДИН ДЕНЬ прошла два живых теста: FAPI.UI.showPayment() с явной ценой ВОЗВРАЩЁН, VKWebAppShowOrderBox для ОК отменён повторно');

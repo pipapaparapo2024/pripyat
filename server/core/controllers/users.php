@@ -1,4 +1,5 @@
 <?php
+    require_once __DIR__ . '/../models/weaponprogress.php';
 	Class Users {
         private $registry, $friends_top, $ops;
 
@@ -16,6 +17,12 @@
 
         public $permits;
 
+        function devGetLogs(){
+            if (!$this->_requireDevUser()) return;
+            header('Cache-Control: no-store, private');
+            $this->registry['tools']->output(DevLogReader::read());
+        }
+
         function __construct($registry){
             $this->registry = $registry;
             // 28.09.2026 (см. energy-бутстрап в get() ниже + фикс devGrantShmot()): раньше
@@ -25,7 +32,7 @@
             // Gameops-контроллерах (см. CLAUDE.md, правило №9).
             $this->ops = new Gameops($registry);
 
-            $this->permits = ['get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers'];
+            $this->permits = ['get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers', 'devGetLogs'];
         }
 
         function get(){
@@ -1184,7 +1191,11 @@
                 $newQty   = intval($slot['qty'] ?? 0);
 
                 if(($newOwned && !$curOwned) || $newUpg > $curUpg || $newQty > $curQty) return null;
+                // Lifetime totals come only from server grants, never the client payload.
+                if($i>=3 && $i<=5) $incoming[$i]['acquired_total'] = WeaponProgress::total($cur);
             }
+            foreach($current as $i=>$slot) if(!isset($incoming[$i])) $incoming[$i]=$slot;
+            ksort($incoming); $incoming=array_values($incoming);
             return $incoming;
         }
 

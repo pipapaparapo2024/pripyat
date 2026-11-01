@@ -3,6 +3,7 @@ const root=path.resolve(__dirname,'..');
 const udata={stash_data:{1:{1:999}},stash_claims:{1:true,2:10,_gifts:{day:'2026-11-01',to:{42:10}}}};
 const context=vm.createContext({udata,window:{},console:{log(){}},attachAchievementPopup(){},helper:{safeParseJSON(v,fallback){return typeof v==='string'?JSON.parse(v):v||fallback;}}});
 const source=fs.readFileSync(path.join(root,'_client/src/game/achievements.js'),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export default class','class');
+vm.runInContext(fs.readFileSync(path.join(root,'_client/src/modules/weapon-progress.js'),'utf8').replace('export function','function'),context);
 vm.runInContext(source+'\nthis.obj=new Achievements();',context);
 const state=context.obj._state();assert.strictEqual(state.stash.k_lezv,1);assert.strictEqual(state.stash.k_lyub,10);
 assert.strictEqual(state.stash.k_avto,0,'owned cards must not count as exchanged collections');

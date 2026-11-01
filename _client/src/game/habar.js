@@ -1,4 +1,4 @@
-import { habarElapsedDay } from '../modules/habar-progress.js';
+import { habarElapsedDay, habarExpiresAtMs } from '../modules/habar-progress.js';
 import { applyPatch } from '../modules/patch.js';
 
 // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от дня
@@ -6,7 +6,6 @@ import { applyPatch } from '../modules/patch.js';
 // скользящий 24-часовой кулдаун (с момента ПРЕДЫДУЩЕГО сбора) заменён фиксированной границей
 // МСК-полуночи — та же формула, что уже используют bosses.js._today()/Gameops::mskDailyDate()
 // на сервере (единственный источник правды, это только клиентская UX-подсказка).
-const HABAR_TOTAL_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 function _mskDayKey(tsMs){
     const d = new Date(tsMs + 3 * 60 * 60 * 1000);
     return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
@@ -24,7 +23,7 @@ export default class Habar{
         // см. _collectDay()) вообще не включал dice_points в награды этих двух тиров, только
         // Авторитетный/Элитный. Добавлено dice_points:1 в оба, синхронно с server/json/
         // habar_daily_config.json (сверено построчно с картинкой — остальные суммы совпадали).
-        // 28.10.2026 (по прямому указанию — новый фон "хабар фон v4.png" визуально показывает
+        // 28.10.2026 (по прямому указанию — новый фон "хабар фон 20261101.png" визуально показывает
         // другие цены: 150/250/700/1200 тушёнки вместо старых 100/200/300/500): цены синхронно
         // обновлены здесь, в server/json/habar_containers.json (реальное списание, habar.php.buy())
         // и в server/json/habar_daily_config.json (fallback-зеркало того же списка).
@@ -102,7 +101,7 @@ export default class Habar{
         // "рулетка колесо v2.png"/"зона локация ... v3.png").
         // 28.10.2026 (по прямому указанию — новый фон хабара): тот же нативный размер
         // (1280×535), что и у старого v3 — позиция/без width-height не меняется.
-        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар фон v4.png'));
+        const bg = new PIXI.Sprite(PIXI.Texture.from('./images/хабар фон 20261101.png'));
         bg.y = 36;
         win.addChild(bg);
 
@@ -247,7 +246,7 @@ export default class Habar{
 
         const boughtTs = parseInt(udata['habar_bought_ts'] || 0);
         const now = window.TIMERS && typeof TIMERS.nowMs === 'function' ? TIMERS.nowMs() : Date.now();
-        const expired = boughtTs > 0 && now >= boughtTs + HABAR_TOTAL_DAYS_MS;
+        const expired = boughtTs > 0 && now >= habarExpiresAtMs(boughtTs);
 
         const lastTs = parseInt(udata['habar_last_collect_ts'] || 0);
         const collectedToday = lastTs > 0 && _mskDayKey(lastTs) === _mskDayKey(now);

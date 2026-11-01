@@ -2,6 +2,7 @@ import { attachAchievementPopup } from './shell/popups/achievement.js';
 import { collapseNewlyEarnedForPopup } from '../modules/achievement-tiers.js';
 import { flushPlayerSave } from '../modules/player-save.js';
 import { applyPatch } from '../modules/patch.js';
+import { weaponAcquiredTotal } from '../modules/weapon-progress.js';
 
 export default class Achievements {
 	constructor(){
@@ -476,9 +477,9 @@ export default class Achievements {
 
 		return {
 			dmg:        parseInt(udata['total_damage']   || 0),
-			auto:       parseInt(udata['auto_count']     || 0),
-			gun:        parseInt(udata['gun_count']      || 0),
-			mac:        parseInt(udata['machete_count']  || 0),
+			auto:       weaponAcquiredTotal(udata,5,'auto_count'),
+			gun:        weaponAcquiredTotal(udata,4,'gun_count'),
+			mac:        weaponAcquiredTotal(udata,3,'machete_count'),
 			kills,
 			soloKills,
 			speedKills,
@@ -640,9 +641,7 @@ export default class Achievements {
 	}
 
 	onWeaponBuy(type, qty){
-		const map = {machete:'machete_count', gun:'gun_count', auto:'auto_count'};
-		const key = map[type];
-		if(key) udata[key] = (parseInt(udata[key] || 0) + qty).toString();
+		// The authoritative weapons patch already includes acquired_total.
 		this._checkAll();
 	}
 

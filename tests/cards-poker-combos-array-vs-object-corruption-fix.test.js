@@ -71,6 +71,7 @@ console.log('\nTest 1 (vm, реальное исполнение): achievements.
         module: { exports: {} },
     };
     vm.createContext(sandbox);
+    vm.runInContext(readSrc('_client/src/modules/weapon-progress.js').replace('export function','function'), sandbox);
     vm.runInContext(src, sandbox);
     const Achievements = sandbox.module.exports;
     const inst = new Achievements();

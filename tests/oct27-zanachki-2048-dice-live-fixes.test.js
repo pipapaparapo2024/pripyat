@@ -112,7 +112,7 @@ console.log('\nTest 3: svod-zanachki.js — компенсация VIEW_X в X-�
 console.log('\nTest 4: svod-zanachki.js — репозиция блока награды (звезда/иконка сухарей/разделённый текст)');
 {
     assert(/starIcon\.x = STAR_X; starIcon\.y = rowY \+ STAR_Y_OFF - 3;/.test(zanachkiSrc), 'звезда поднята на 3px');
-    assert(/rewardLabelTxt\.x = STAR_X; rewardLabelTxt\.y = rowY \+ STAR_Y_OFF - 50;/.test(zanachkiSrc), '«Награда:» поднята ещё на 30px (итого -50 от базовой точки)');
+    assert(/rewardLabelTxt\.x = STAR_X; rewardLabelTxt\.y = rowY \+ STAR_Y_OFF - 50 - \(rowIdx === 0 \? 10 : 6\);/.test(zanachkiSrc), '«Награда:» дополнительно поднята на 10px в первой строке и 6px в остальных');
     assert(/const sukhariIcon = new PIXI\.Sprite\(PIXI\.Texture\.from\(IMG \+ 'боевка награда сухари\.png'\)\);/.test(zanachkiSrc), 'новая иконка "боевка награда сухари.png" добавлена');
     assert(/sukhariIcon\.width = SUKHARI_ICON_W; sukhariIcon\.height = SUKHARI_ICON_H;/.test(zanachkiSrc), 'иконка сухарей — заданная ширина/пропорциональная высота');
     assert(/const SUKHARI_ICON_W = 25, SUKHARI_ICON_H = Math\.round\(SUKHARI_ICON_W \* 77 \/ 68\);/.test(zanachkiSrc), 'ширина 25px, высота пропорциональна исходнику (68×77)');
@@ -121,8 +121,8 @@ console.log('\nTest 4: svod-zanachki.js — репозиция блока наг
     // обрезки знака "+" через padding в TextStyle).
     assert(/const sukhariRewardTxt = new PIXI\.Text\('\+' \+ amt \+ ' сухарей', \{/.test(zanachkiSrc), '"+N сухарей" — отдельный текст с динамической суммой');
     assert(/const expRewardTxt = new PIXI\.Text\('\+' \+ amt \+ ' опыта', \{/.test(zanachkiSrc), '"+N опыта" — отдельный текст с динамической суммой');
-    assert(/expRewardTxt\.x = STAR_X \+ starIcon\.width \+ 6; expRewardTxt\.y = rowY \+ STAR_Y_OFF \+ 5;/.test(zanachkiSrc), '"+опыта" — новая Y-формула (редактор позиций, 1-я коллекция даёт y:69)');
-    assert(/sukhariRewardTxt\.x = STAR_X \+ 30; sukhariRewardTxt\.y = rowY \+ STAR_Y_OFF - 26;/.test(zanachkiSrc), '"+сухарей" — новая Y-формула (редактор позиций, 1-я коллекция даёт y:38)');
+    assert(/expRewardTxt\.x = STAR_X \+ starIcon\.width \+ 6; expRewardTxt\.y = rowY \+ STAR_Y_OFF \+ 1;/.test(zanachkiSrc), '"+опыта" — новая Y-формула (редактор позиций, дополнительно вверх на 4px)');
+    assert(/sukhariRewardTxt\.x = STAR_X \+ 30; sukhariRewardTxt\.y = rowY \+ STAR_Y_OFF - 30;/.test(zanachkiSrc), '"+сухарей" — новая Y-формула (редактор позиций, дополнительно вверх на 4px)');
     assert(/function rewardAmountForCol\(col\)\{/.test(zanachkiSrc), 'rewardAmountForCol() определена');
     assert(/stroke: '#000000', strokeThickness: 2, padding: 4,/.test(zanachkiSrc), 'padding:4 добавлен на текстах со stroke (фикс обрезки знака "+")');
 }

@@ -7,7 +7,7 @@ class CancelDb{
  function __construct(...$a){}function set_charset($s){}function begin_transaction(){}function close(){}function rollback(){self::$rollback++;}function commit(){self::$commit++;return true;}
  function query($sql){self::$queries[]=$sql;if(str_starts_with($sql,'SELECT'))return new class {public $num_rows=1;function fetch_assoc(){return CancelDb::$row;}};return !self::$fail;}
 }
-$s=file_get_contents(__DIR__.'/../../server/core/controllers/habar.php');eval(str_replace(['<?php','new mysqli('],['','new CancelDb('],$s));
+$s=file_get_contents(__DIR__.'/../../server/core/controllers/habar.php');$s=preg_replace('/^require_once __DIR__.*weaponprogress.php.*$/m','',$s);eval(str_replace(['<?php','new mysqli('],['','new CancelDb('],$s));
 $t=new CancelTools;$r=['uid'=>438953352,'utb'=>'users','tools'=>$t,'server'=>'','user'=>'','pass'=>'','db'=>'','user_params'=>['container_id'=>1,'bought_ts'=>123]];
 (new Habar($r))->cancel();check(count($t->out['patch'])===4,'patch must only reset subscription');check(CancelDb::$commit===1,'commit missing');
 foreach(CancelDb::$queries as $sql){check(str_contains($sql,'`id`=438953352'),'wrong account');check(!preg_match('/energy|coins|stew|weapons|habar_counts/',$sql),'cancellation changed other resources');}

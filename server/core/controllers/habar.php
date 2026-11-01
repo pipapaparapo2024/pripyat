@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
 Class Habar {
     private $registry, $ops;
 
@@ -72,6 +73,7 @@ Class Habar {
         // дня покупки, а не от количества сборов"): habar_bought_ts фиксирует момент покупки —
         // collectDay() ниже считает истечение 30 дней от НЕГО, а не от числа успешных сборов.
         $lockCols = ['habar_bought', 'habar_bought_ts', 'habar_counts', $cur];
+        $lockCols = array_merge($lockCols, ['habar_days_collected','habar_last_collect_ts']);
         if($cur === 'stew') $lockCols[] = 'stew_spent';
         $link = $this->_rawLink();
         $lockedUser = $user;
@@ -105,6 +107,8 @@ Class Habar {
         $lockedUser['habar_counts'] = json_encode($counts);
         $lockedUser['habar_bought'] = $idx + 1;
         $lockedUser['habar_bought_ts'] = intval(round(microtime(true) * 1000));
+        $lockedUser['habar_days_collected'] = 0;
+        $lockedUser['habar_last_collect_ts'] = 0;
 
         if($link){
             $sets = [];
@@ -124,10 +128,12 @@ Class Habar {
             foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
         }
 
+        if($link) foreach($lockCols as $field) unset($user[$field]);
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
         $patchKeys = array_merge([$cur, 'habar_counts', 'habar_bought', 'habar_bought_ts'], $cur === 'stew' ? ['stew_spent'] : []);
+        $patchKeys = array_merge($patchKeys, ['habar_days_collected','habar_last_collect_ts']);
         $patch = $this->ops->patchCurrencies($user, $patchKeys);
         $this->ops->ok(['patch' => $patch]);
     }
@@ -208,9 +214,10 @@ Class Habar {
             $lockedUser['habar_bought_ts'] = $boughtTs;
         }
         $totalDays = intval($cfg['total_days']);
-        if($now >= $boughtTs + $totalDays * 86400000){
+        // Calendar expiry at Moscow midnight; never normalise/overwrite boughtTs itself.
+        if($now >= Gameops::habarExpiresAtMs($boughtTs, $totalDays)){
             if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(58); // 30 дней с момента покупки истекли
+            return $this->ops->fail(58); // 00:00 МСК на дату получения + 30 дней
         }
 
         // 20.10.2026 (по прямому указанию — "обнуление раз в сутки по московскому времени, в
@@ -269,6 +276,7 @@ Class Habar {
             foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
         }
 
+        if($link) foreach($lockCols as $field) unset($user[$field]);
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
@@ -294,6 +302,7 @@ Class Habar {
             );
         }
         $ammoKey = 'ammo_' . $type;
+        WeaponProgress::acquire($data[$wid], $amount, max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)));
         $data[$wid]['qty'] = max(0, intval($data[$wid]['qty']), intval($user[$ammoKey] ?? 0)) + $amount;
         $data[$wid]['owned'] = true;
         ksort($data);

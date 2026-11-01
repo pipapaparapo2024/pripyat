@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/weaponprogress.php';
     // ── SERVER-AUTHORITATIVE ОРУЖИЕ (18.09.2026, перенос экономики — шаг после Дворa/Зоны/Боссов) ──
     //
     // Раньше ВСЯ покупка/прокачка оружия (weapons.js._buy/_upgrade) считалась на клиенте:
@@ -96,6 +97,7 @@
                 }
             }
 
+            WeaponProgress::acquire($weapons[$wid], $mult, intval($weapons[$wid]['qty']));
             $weapons[$wid]['owned'] = true;
             $weapons[$wid]['qty']   = intval($weapons[$wid]['qty']) + $mult;
 

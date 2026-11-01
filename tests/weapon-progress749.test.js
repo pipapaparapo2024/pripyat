@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {execFileSync}=require('node:child_process'),{findPhpBin}=require('./_php_bin.js');
+process.stdout.write(execFileSync(findPhpBin(),['tests/_php_fixtures/weapon-progress749.php'],{encoding:'utf8'}));
+process.stdout.write(execFileSync(findPhpBin(),['tests/_php_fixtures/weapon-buy749.php'],{encoding:'utf8'}));
+const ctx={};vm.runInNewContext(fs.readFileSync('_client/src/modules/weapon-progress.js','utf8').replace('export function','function')+';this.total=weaponAcquiredTotal',ctx);
+assert.equal(ctx.total({weapons:JSON.stringify([null,null,null,{qty:2,acquired_total:100}])},3,'machete_count'),100);
+assert.equal(ctx.total({weapons:[null,null,null,{qty:8}]},3,'machete_count'),8);
+assert.equal(ctx.total({weapons:'invalid'},3,'machete_count'),0);
+const scope={udata:{weapons:JSON.stringify([{}, {}, {}, {owned:true,qty:2,acquired_total:100},{},{ }])},window:{},helper:{safeParseJSON:JSON.parse}};
+vm.runInNewContext(fs.readFileSync('_client/src/game/weapons.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export default class','class')+';this.W=Weapons',scope);
+const w=Object.create(scope.W.prototype);w.data=Array.from({length:6},()=>({}));w._loadFromUdata();assert.equal(JSON.parse(scope.udata.weapons)[3].acquired_total,100);
+console.log('Client weapon progress preserves authoritative lifetime metadata');
+let synced=0;const patchScope={window:{udata:{},weapons:{_loadFromUdata(){synced++;}}},udata:{}};patchScope.window.udata=patchScope.udata;
+vm.runInNewContext(fs.readFileSync('_client/src/modules/patch.js','utf8').replace('export function','function')+';this.apply=applyPatch',patchScope);
+patchScope.apply({weapons:'[]'});assert.equal(synced,1);patchScope.apply({coins:1});assert.equal(synced,1);
