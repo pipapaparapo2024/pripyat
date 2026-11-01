@@ -29,6 +29,7 @@
  * Run: node tests/no-text-fontsize-scale-pixelation.test.js
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 let passed = 0, failed = 0;
@@ -47,9 +48,9 @@ function walk(dir, out) {
     }
 }
 
+function findLiteralCandidates(scanRoot) {
 const files = [];
-walk(root, files);
-
+walk(scanRoot, files);
 const literalCandidates = []; // {file, varName, fontSize, scaleVal}
 // Известные, разобранные вручную случаи именованных констант (НЕ regression — задокументированы
 // в истории правок соответствующих файлов 08.10.2026). Если здесь появится НОВАЯ запись с
@@ -85,11 +86,15 @@ for (const file of files) {
         if (Math.abs(scaleVal - 1) < 0.001) continue; // scale(1) — не баг
 
         literalCandidates.push({
-            file: path.relative(path.join(__dirname, '..'), file).replace(/\\/g, '/'),
+            file: path.relative(scanRoot, file).replace(/\\/g, '/'),
             varName, fontSize, scaleVal,
         });
     }
 }
+return literalCandidates;
+}
+
+const literalCandidates = findLiteralCandidates(root);
 
 console.log('\n1) Ни одного PIXI.Text с fontSize + буквальным scale.set(N≠1) рядом не осталось');
 {
@@ -102,16 +107,16 @@ console.log('\n1) Ни одного PIXI.Text с fontSize + буквальным
 
 console.log('\n2) Сканер реально работает (не пропускает всё вхолостую) — ловит синтетический пример пикселизации');
 {
-    const tmpDir = path.join(__dirname, '..', '_client', 'src', '__pixelation_guard_selftest__');
-    fs.mkdirSync(tmpDir, { recursive: true });
-    const tmpFile = path.join(tmpDir, 'fixture.js');
-    fs.writeFileSync(tmpFile, "const fakeTxt = new PIXI.Text('', { fontSize: 10 });\nfakeTxt.scale.set(2.5);\n");
-    const testFiles = [];
-    walk(path.join(__dirname, '..', '_client', 'src'), testFiles);
-    const src = fs.readFileSync(tmpFile, 'utf8');
-    const found = /fakeTxt\.scale\.set\(([^)]*)\)/.test(src) && /fontSize\s*:\s*10/.test(src);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-    assert(found, 'синтетический файл с fontSize:10 + scale.set(2.5) действительно детектируется той же регуляркой, что и основное сканирование (не ложноположительный "всё ОК" из-за сломанного паттерна)');
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pripyat-pixelation-guard-'));
+    try {
+        const tmpFile = path.join(tmpDir, 'fixture.js');
+        fs.writeFileSync(tmpFile, "const fakeTxt = new PIXI.Text('', { fontSize: 10 });\nfakeTxt.scale.set(2.5);\n");
+        const found = findLiteralCandidates(tmpDir);
+        assert(found.length === 1 && found[0].varName === 'fakeTxt' && found[0].fontSize === 10 && found[0].scaleVal === 2.5,
+            'синтетический файл с fontSize:10 + scale.set(2.5) действительно детектируется тем же сканером, что и исходники игры');
+    } finally {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
 }
 
 console.log(`\n${'─'.repeat(50)}`);

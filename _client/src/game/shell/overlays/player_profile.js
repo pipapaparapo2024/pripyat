@@ -424,7 +424,7 @@ export function attachPlayerProfile(proto){
         avatarSpr.mask = avatarMask;
         avatarSpr.interactive = true; avatarSpr.buttonMode = true;
         avatarSpr.on('pointerdown', () => {
-            window.open('https://vk.com/id' + encodeURIComponent(String(profile.id)), '_blank', 'noopener,noreferrer');
+			window.open(window.platformRuntime.profileUrl(profile.id), '_blank', 'noopener,noreferrer');
         });
         card.addChild(avatarSpr);
         card.addChild(avatarMask);

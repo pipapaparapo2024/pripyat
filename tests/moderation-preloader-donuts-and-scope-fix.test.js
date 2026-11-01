@@ -56,7 +56,7 @@ console.log('\nTest 2: initJSON() присваивает donuts_info из отв
 
 console.log('\nTest 3: VK-scope сужен до \'friends\' — wall/photos/groups убраны');
 {
-    assert(/scope\s*:\s*['"]friends['"]/.test(preloaderJs), 'VKWebAppGetAuthToken запрашивает только scope friends');
+    assert(/scope\s*:\s*['"]friends['"]/.test(read('_client/src/modules/platform-runtime.js')), 'VK/OK runtime запрашивает только scope friends');
     assert(!/wall,photos,groups/.test(preloaderJs), 'wall,photos,groups больше не запрашиваются');
     assert(!/"friends,wall,photos,groups"/.test(preloaderJs), 'старая широкая строка scope удалена целиком');
 }

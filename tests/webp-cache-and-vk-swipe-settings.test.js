@@ -34,10 +34,11 @@ const R = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf-8');
 console.log('\nTest 1: VKWebAppSetSwipeSettings — системный свайп-назад не закрывает игру');
 {
     const index = R('_client', 'src', 'index.js');
-    assert(/VKWebAppSetSwipeSettings/.test(index), 'метод вызывается');
-    assert(/VKWebAppSetSwipeSettings',\s*\{\s*history:\s*false\s*\}/.test(index),
+    const runtime = R('_client', 'src', 'modules', 'platform-runtime.js');
+    assert(/setSwipeHistory\(false\)/.test(index), 'метод вызывается через runtime');
+    assert(/VKWebAppSetSwipeSettings',\s*\{history\}/.test(runtime),
         'передан history:false — клиент VK перестаёт перехватывать жест');
-    const call = index.slice(index.indexOf('VKWebAppSetSwipeSettings'));
+    const call = index.slice(index.indexOf('setSwipeHistory(false)'));
     assert(/\.catch\(/.test(call.slice(0, 600)),
         'есть .catch() — на старых клиентах и в вебе метод отсутствует, это нормальный случай');
 }

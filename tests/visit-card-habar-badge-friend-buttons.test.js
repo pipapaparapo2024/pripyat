@@ -161,8 +161,8 @@ console.log('\nTest 6: player_profile.js — аватарка (фото чере
     // 22.09.2026 (по прямому указанию — "текст id игрока подними вверх на 12px"): 155→143.
     assert(/idTxt\.x = 145; idTxt\.y = 143;/.test(body), 'ID — под никнеймом, поднят на 12px (было y=155)');
     assert(/profile\.displayNick \|\| \('Игрок ' \+ profile\.id\)/.test(body), 'визитка использует игровой ник, а при пустой старой записи — подготовленный fallback VK-имени');
-    assert(/avatarSpr\.on\('pointerdown', \(\) => \{[\s\S]*?window\.open\('https:\/\/vk\.com\/id' \+ encodeURIComponent\(String\(profile\.id\)\), '_blank', 'noopener,noreferrer'\);/.test(body),
-        'клик по аватару открывает страницу VK игрока в отдельной вкладке');
+    assert(/avatarSpr\.on\('pointerdown', \(\) => \{[\s\S]*?window\.open\(window\.platformRuntime\.profileUrl\(profile\.id\), '_blank', 'noopener,noreferrer'\);/.test(body),
+        'клик по аватару открывает платформенный профиль игрока в отдельной вкладке');
     assert(/'ID ' \+ profile\.id/.test(body), 'ID — реальный id профиля, не выдуманный');
 }
 

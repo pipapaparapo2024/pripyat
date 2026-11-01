@@ -79,7 +79,8 @@ export default class Server{
 			// клиент (modules/platform.js, по referrer/ancestorOrigins при загрузке iframe),
 			// поэтому передаём её явно с КАЖДЫМ запросом; registry.php выбирает БД по этому
 			// полю (но не доверяет ему для проверки подписи — api_secret общий для VK/ОК).
-			this.MSSparams += '&platform='+detectPlatform();
+			const runtimePlatform = window.platformRuntime && window.platformRuntime.platform;
+			this.MSSparams += '&platform=' + encodeURIComponent(runtimePlatform || detectPlatform());
 
 			this.MSS.open("POST", this.MSSURL, true);//открыли сокет
 

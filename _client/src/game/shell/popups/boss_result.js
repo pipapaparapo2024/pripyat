@@ -734,7 +734,7 @@ export function attachBossResultPopup(proto){
             const shareLink = 'https://vk.com/app54574178_438953352';
             console.log('[boss_result] РАССКАЗАТЬ | boss:', bossName, '| isWin:', isWin);
             if(window.bridge){
-				bridge.send('VKWebAppShare', { link: shareLink })
+				window.platformRuntime.share(shareLink)
                     .catch((shareError) => {
                         console.error('[boss_result.share] VK share не удался:', shareError);
                     });

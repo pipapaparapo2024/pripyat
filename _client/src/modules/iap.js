@@ -31,7 +31,12 @@ import { logOkPayment } from './ok-payment-diagnostics.js';
 // VK-ветка — поведение 1-в-1 как раньше (bridge.send('VKWebAppShowOrderBox', ...)).
 function _startVkPurchase(itemId){
     console.log('[iap._startVkPurchase] запрошена покупка за голоса ВК | item:', itemId);
-    bridge.send('VKWebAppShowOrderBox', { type: 'item', item: itemId });
+    // Compatibility fallback protects an already running VK/OK client if a stale cached
+    // bundle loads before the new bootstrap module. Normal runtime always uses the adapter.
+    if(window.platformRuntime && typeof window.platformRuntime.startNativePurchase === 'function'){
+        return window.platformRuntime.startNativePurchase(itemId);
+    }
+    return bridge.send('VKWebAppShowOrderBox', { type: 'item', item: itemId });
 }
 
 // Инициализация FAPI — один раз на сессию, кэшируем промис. Возвращает true/false, никогда не
@@ -152,7 +157,10 @@ function _startOkPurchase(itemId, priceOk, label){
     // Request item information via the launcher; the server supplies the OK price.
     if(window.vk_params && window.vk_params.vk_client === 'ok'){
         logOkPayment('launcher-payment',{item:numericId,price:Number(priceOk)});
-        return Promise.resolve().then(() => bridge.send('VKWebAppShowOrderBox', {type:'item',item:'ok_item'+numericId})).then(() => {
+        const startNative = () => window.platformRuntime && typeof window.platformRuntime.startNativePurchase === 'function'
+            ? window.platformRuntime.startNativePurchase('ok_item'+numericId)
+            : bridge.send('VKWebAppShowOrderBox', {type:'item',item:'ok_item'+numericId});
+        return Promise.resolve().then(startNative).then(() => {
             logOkPayment('launcher-result',{result:'ok'});
             const [currency,count] = _okItemCurrencyAndCount(numericId);
             if(currency && window.bank && window.bank._refreshBalanceAfterPurchase) window.bank._refreshBalanceAfterPurchase(currency,count);

@@ -8194,6 +8194,11 @@
     "sha256": "f7f678aa076b457c609a31e0cf7ad4f6b680ad742d7d253dcecf6533f7f899ef",
     "reason": "runtime asset; validate references with npm run assets:audit"
   },
+  "images/хабар фон 20261101.png.webp": {
+    "bytes": 147882,
+    "sha256": "20d56e23886107a4c4c9d4fc3cc91a4fbd0ee6388542a2e2b9e349bf3f7b7f73",
+    "reason": "runtime asset; validate references with npm run assets:audit"
+  },
   "images/Хабар hover.png": {
     "bytes": 25726,
     "sha256": "64f9160fb0399316d49b6ac98cb51358cd0d0d3becda4ecf08c0943924c9260f",

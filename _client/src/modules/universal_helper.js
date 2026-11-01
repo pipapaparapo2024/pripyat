@@ -54,7 +54,7 @@ export default class UniHelp{
         let iof = bitmaps50['id'].indexOf(id);
         if(iof !== -1)url = bitmaps50['bm'][iof];
 
-        if(!url)return bridge.sendPromise("VKWebAppCallAPIMethod", {method:'users.get', params:{fields:'photo_50', user_ids:id,access_token:VK_token, v:VK_version}}).then(data =>{
+        if(!url)return window.platformRuntime.callApi('users.get', {fields:'photo_50', user_ids:id,access_token:VK_token, v:VK_version}).then(data =>{
             this.loadPhoto50(id, callback, data['response'][0]['photo_50'])
 
             bitmaps50['id'].push(id);

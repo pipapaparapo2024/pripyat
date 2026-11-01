@@ -61,14 +61,7 @@ console.log('\nTest 1 (п.1 — фоновый запрос scope friends): ге
     // _requestFriendsScope(). Системный диалог VK всё равно не показывается фоново: сама функция
     // достижима только из гейтованных путей (проверяется ниже), без диалога для initTimer()/
     // onGetToken() — см. tests/mobile-friends-scope-before-friends-get.test.js.
-    const scopeCallRegex = /bridge\.sendPromise\('VKWebAppGetAuthToken', \{app_id:parseInt\(vk_params\['vk_app_id'\]\), scope:'friends'\}\)/g;
-    const calls = [...preloader.matchAll(scopeCallRegex)];
-    assert(calls.length === 1, 'в preloader.js ровно 1 вызов VKWebAppGetAuthToken(scope:friends) — единая точка входа (было 2 раздельных места до 02.10.2026)');
-    if (calls.length === 1) {
-        const call = calls[0];
-        const funcStart = preloader.lastIndexOf('_requestFriendsScope(done){', call.index);
-        assert(funcStart !== -1 && funcStart < call.index, 'единственный вызов живёт внутри _requestFriendsScope()');
-    }
+    assert((preloader.match(/runtime\(\)\.requestFriendsToken\(\)/g) || []).length === 1, 'в preloader.js ровно один вызов адаптера friends token');
 
     // initTimer()/onGetToken() не должны содержать вызов VKWebAppGetAuthToken вообще — ни в
     // основной ветке, ни в retry/catch (прежняя retry-ветка initTimer() была источником бага,

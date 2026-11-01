@@ -27,6 +27,9 @@ function assert(cond, msg) {
 const combatSrc = fs.readFileSync(
     path.join(__dirname, '..', '_client', 'src', 'game', 'bosses', 'bosses-combat.js'), 'utf-8'
 );
+const runtimeSrc = fs.readFileSync(
+    path.join(__dirname, '..', '_client', 'src', 'modules', 'platform-runtime.js'), 'utf-8'
+);
 const fightSrc = fs.readFileSync(
     path.join(__dirname, '..', '_client', 'src', 'game', 'shell', 'overlays', 'bosses_fight.js'), 'utf-8'
 );
@@ -79,7 +82,10 @@ console.log('\nTest 2: bosses-combat.js._resolveVkUsers — свой id из vk_
         const body = m[1];
         assert(/sid === myId/.test(body), 'сравнивает id с собственным vk_params.vk_user_id');
         assert(/window\.vk_user_info/.test(body), 'для себя использует уже закэшированный vk_user_info (без лишнего запроса)');
-        assert(/method: 'users\.get'/.test(body), 'для остальных — VK API users.get');
+        assert(/window\.platformRuntime\.callApi\('users\.get'/.test(body),
+            'для остальных — users.get через единый платформенный runtime, без прямой зависимости от VK Bridge');
+        assert(/callApi: \(method, apiParams\) => sendPromise\('VKWebAppCallAPIMethod', \{method, params: apiParams\}\)/.test(runtimeSrc),
+            'VK/OK-реализация runtime по-прежнему вызывает VKWebAppCallAPIMethod с переданным методом');
         assert(/user_ids: rest\.join\(','\)/.test(body), 'один батч-запрос со всеми недостающими id сразу, а не по одному');
     }
 }

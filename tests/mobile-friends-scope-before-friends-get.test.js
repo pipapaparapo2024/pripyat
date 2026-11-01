@@ -55,8 +55,7 @@ console.log('\nTest 2: _requestFriendsScope() — единственная то�
     const end   = preloaderJs.indexOf('\n\t_persistFriendsScopeGranted(');
     const body  = preloaderJs.slice(start, end);
     assert(start !== -1 && end !== -1, '_requestFriendsScope() найден целиком');
-    assert(/VKWebAppGetAuthToken/.test(body), '_requestFriendsScope() вызывает VKWebAppGetAuthToken');
-    assert(/scope:\s*['"]friends['"]/.test(body), 'запрашивается именно scope "friends"');
+    assert(/runtime\(\)\.requestFriendsToken\(\)/.test(body), '_requestFriendsScope() вызывает platform runtime для friends token');
 
     const thenIdx  = body.indexOf('.then(');
     const catchIdx = body.indexOf('.catch(');
@@ -88,15 +87,15 @@ console.log('\nTest 4: _loadFriends() содержит реальные вызо
     const end   = preloaderJs.indexOf('\n\tinitJSON(data){');
     const body  = preloaderJs.slice(start, end);
     assert(start !== -1 && end !== -1, '_loadFriends() найден целиком');
-    assert(/method:\s*"friends\.get"/.test(body), 'вызывает friends.get');
-    assert(/method:\s*'friends\.getAppUsers'/.test(body), 'вызывает friends.getAppUsers');
+    assert(/runtime\(\)\.getVkFriends\(\)/.test(body), 'вызывает адаптер друзей');
     assert(/window\.my_friends\s*=\s*ids;/.test(body), 'устанавливает window.my_friends');
     assert(/TS\.php\("users\.get"/.test(body), 'после друзей всё равно вызывает users.get (как раньше)');
 }
 
 console.log('\nTest 5: аудит-требование (сужение scope до "friends", без wall/photos/groups) остаётся зелёным — фикс не расширил запрошенные права');
 {
-    assert(/scope:\s*['"]friends['"]/.test(preloaderJs), 'scope "friends" присутствует');
+    const runtimeJs = fs.readFileSync(path.join(root, '_client/src/modules/platform-runtime.js'), 'utf8');
+    assert(/scope:\s*['"]friends['"]/.test(runtimeJs), 'scope "friends" присутствует в VK/OK runtime');
     assert(!/wall,photos,groups/.test(preloaderJs), 'wall,photos,groups не запрашиваются');
     assert(!/"friends,wall,photos,groups"/.test(preloaderJs), 'старая широкая строка scope отсутствует');
 }

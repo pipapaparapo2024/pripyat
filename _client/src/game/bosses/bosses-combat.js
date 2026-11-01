@@ -763,8 +763,8 @@ export function attachBossesCombat(proto){
             }
             console.log('[bosses._resolveVkUsers] запрашиваю users.get | ids:', rest.join(','),
                 '| VK_token задан:', !!window.VK_token, '| VK_version:', window.VK_version);
-            bridge.sendPromise('VKWebAppCallAPIMethod', {
-                method: 'users.get', params: { user_ids: rest.join(','), fields: 'photo_50', access_token: VK_token, v: VK_version }
+            window.platformRuntime.callApi('users.get', {
+                user_ids: rest.join(','), fields: 'photo_50', access_token: VK_token, v: VK_version,
             }).then(data => {
                 console.log('[bosses._resolveVkUsers] сырой ответ VKWebAppCallAPIMethod:', JSON.stringify(data));
                 const items = (data && data['response']) || [];

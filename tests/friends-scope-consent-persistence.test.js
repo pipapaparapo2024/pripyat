@@ -22,7 +22,7 @@ assert(/friendsBtn\.visible = !granted/.test(ui), 'после согласия �
 assert(/pripyat:friends-scope-granted/.test(ui), 'кнопка обновляется в текущей сессии без перезагрузки');
 
 console.log('\n2) Согласие фиксируется только после VK Bridge');
-assert(/VKWebAppGetAuthToken[\s\S]{0,1000}_persistFriendsScopeGranted/.test(preloader), 'серверное сохранение происходит после успешного VK Bridge');
+assert(/runtime\(\)\.requestFriendsToken\(\)[\s\S]{0,1000}_persistFriendsScopeGranted/.test(preloader), 'серверное сохранение происходит после успешного platform runtime');
 assert(/TS\.php\('users\.setFriendsScopeGranted'/.test(preloader), 'клиент вызывает узкий серверный endpoint');
 assert(/function setFriendsScopeGranted\(\)/.test(users), 'серверный endpoint реализован');
 assert(/'setFriendsScopeGranted'/.test(users.match(/\$this->permits\s*=\s*\[[^;]+/s)[0]), 'endpoint включён в permits');

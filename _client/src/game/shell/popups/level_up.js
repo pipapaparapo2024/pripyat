@@ -47,7 +47,7 @@ export function attachLevelUpPopup(proto){
 			const shareLink = 'https://vk.com/app54574178_438953352';
 			// Публикация на стену устарела. Открываем только актуальный системный шаринг VK
 			// и исключительно по нажатию игрока.
-			bridge.send('VKWebAppShare', { link: shareLink })
+			window.platformRuntime.share(shareLink)
 				.catch((shareError)=>{
 					console.error('[level-up.share] VK share failed', shareError);
 					notify.showResult({text:'Не удалось поделиться. Откройте игру через приложение ВКонтакте.'}, 0);

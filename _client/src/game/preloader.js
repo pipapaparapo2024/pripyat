@@ -4,6 +4,10 @@ import { shouldAskFriendsScopeAsync, markFriendsScopeAsked, markFriendsScopeGran
 import { applyPatch } from '../modules/patch.js';
 import { isVk } from '../modules/platform.js';
 
+function runtime(){
+	return window.platformRuntime;
+}
+
 export default class Preloader{
 	constructor(preloader_movie){
 		//Регистрация ключевых переменных класса
@@ -34,7 +38,7 @@ export default class Preloader{
 	}
 
 	initTimer(retry = false){
-		startupRequest(() => bridge.sendPromise("VKWebAppCallAPIMethod", {method: "utils.getServerTime", params:{access_token:VK_token, v:VK_version}})).then(e =>{
+		startupRequest(() => runtime().getServerTime()).then(e =>{
 			window.TIMERS = new Timers(e['response']);
 			this.initLinks();
 		}).catch(() => {
@@ -66,13 +70,7 @@ export default class Preloader{
 	}
 
 	initGame(){
-		let keys_vk_params = Object.keys(vk_params), params = {};
-
-		for(let i = 0; i < keys_vk_params.length; i++)if(keys_vk_params[i].indexOf('vk') != -1)params[keys_vk_params[i]] = vk_params[keys_vk_params[i]];
-
-		params['sign'] = vk_params['sign'];
-
-		TS.php('security.getToken', params, (e)=>this.onGetToken(e), (e)=>this.onError(e));
+		TS.php('security.getToken', runtime().getSignedLaunchParams(), (e)=>this.onGetToken(e), (e)=>this.onError(e));
 	}
 
 	onGetToken(data){
@@ -95,9 +93,9 @@ export default class Preloader{
 	}
 
 	_continueWithoutFriends(){
-		window.my_friends = String(vk_params['vk_user_id'] || '');
+		window.my_friends = runtime().getPlayerId();
 		window._friendsScopeReady = false;
-		TS.php("users.get", {uid:vk_params['vk_user_id'], users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
+		TS.php("users.get", {uid:runtime().getPlayerId(), users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
 	}
 
 	_loadFriends(onDone){
@@ -107,14 +105,15 @@ export default class Preloader{
 		window._friendsScopeReady = false;
 		window.non_app_friends = [];
 		let ids = '';
-		bridge.sendPromise("VKWebAppCallAPIMethod", {method: "friends.get", params:{fields:'photo_50', access_token:VK_token, v:VK_version}}).then(e =>{
-			let all_fr = (e && e['response'] && Array.isArray(e['response']['items'])) ? e['response']['items'] : [];
+		runtime().getVkFriends().then(({friends, appUsers}) =>{
+			let all_fr = (friends && friends['response'] && Array.isArray(friends['response']['items'])) ? friends['response']['items'] : [];
 			console.log('[preloader._loadFriends] friends.get вернул друзей:', all_fr.length);
-			bridge.sendPromise("VKWebAppCallAPIMethod", {method:'friends.getAppUsers', params:{access_token:VK_token, v:VK_version}}).then(data =>{
-				const appUsers = (data && Array.isArray(data['response'])) ? data['response'] : [];
-				for(let i = 0; i < all_fr.length; i++)if(appUsers.indexOf(all_fr[i]['id']) == -1)non_app_friends.push(all_fr[i]);
-				vk_params['api_result'] = appUsers;
-				vk_params['api_result'].length > 0 ? ids = vk_params['vk_user_id'] + "," + vk_params['api_result'].join(",") : ids = vk_params['vk_user_id'].toString();
+				const appUserIds = (appUsers && Array.isArray(appUsers['response'])) ? appUsers['response'] : [];
+				for(let i = 0; i < all_fr.length; i++)if(appUserIds.indexOf(all_fr[i]['id']) == -1)non_app_friends.push(all_fr[i]);
+				vk_params['api_result'] = appUserIds;
+				ids = vk_params['api_result'].length > 0
+					? runtime().getPlayerId() + "," + vk_params['api_result'].join(",")
+					: runtime().getPlayerId();
 				window.my_friends = ids;
 				window._friendsScopeReady = true;
 				console.log('[preloader._loadFriends] window.my_friends установлен, id:', ids);
@@ -123,23 +122,17 @@ export default class Preloader{
 				TS.php('users.setFriendsCache', {friends:ids}, (res) => {
 					if(res && res.patch) applyPatch(res.patch);
 					if(onDone) onDone(true);
-					else TS.php("users.get", {uid:vk_params['vk_user_id'], users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
+					else TS.php("users.get", {uid:runtime().getPlayerId(), users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
 				}, () => {
 					window._friendsScopeReady = false;
 					if(onDone) onDone(false);
-					else TS.php("users.get", {uid:vk_params['vk_user_id'], users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
+					else TS.php("users.get", {uid:runtime().getPlayerId(), users:'skip'}, (e)=>this.onGetUserInfo(e), (e)=>this.onError(e));
 				});
-			}).catch(e => {
-				window._friendsScopeReady = false;
-				console.error('[preloader._loadFriends] ошибка friends.getAppUsers, my_friends останется пустым:', e && e.error_data ? JSON.stringify(e.error_data) : e);
-				if(onDone) onDone(false);
-				else TS.php("users.get", { uid: vk_params['vk_user_id'], users: 'skip'}, (e) => this.onGetUserInfo(e), (e) => this.onError(e));
-			})
 		}).catch(e => {
 			window._friendsScopeReady = false;
 			console.error('[preloader._loadFriends] ошибка friends.get, my_friends останется пустым (топ «Друзья» покажет только себя):', e && e.error_data ? JSON.stringify(e.error_data) : e);
 			if(onDone) onDone(false);
-			else TS.php("users.get", { uid: vk_params['vk_user_id'], users: 'skip'}, (e) => this.onGetUserInfo(e), (e) => this.onError(e));
+			else TS.php("users.get", { uid: runtime().getPlayerId(), users: 'skip'}, (e) => this.onGetUserInfo(e), (e) => this.onError(e));
 		})
 	}
 
@@ -170,7 +163,7 @@ export default class Preloader{
 		// Согласие и последний подтверждённый список друзей живут в БД. После перезапуска
 		// этого достаточно для вкладки «Друзья»: повторный VKWebAppGetAuthToken не нужен.
 		if(String(udata['friends_scope_granted'] || '0') === '1'){
-			const selfId = String(vk_params['vk_user_id'] || '').replace(/\D/g, '');
+			const selfId = runtime().getPlayerId().replace(/\D/g, '');
 			const cached = String(udata['friends'] || '').split(',')
 				.map(id => String(id).replace(/\D/g, '')).filter(Boolean);
 			if(selfId && cached.indexOf(selfId) === -1) cached.unshift(selfId);
@@ -218,7 +211,7 @@ export default class Preloader{
 
 		this._updateLoginStreak();
 
-		startupRequest(() => bridge.sendPromise("VKWebAppGetUserInfo")).then(info => {
+		startupRequest(() => runtime().getCurrentUser()).then(info => {
 			window.vk_user_info = info;
 			const savedNick = String(udata['nick'] || '').trim();
 			let vkNick = [info.first_name, info.last_name].filter(Boolean).join(' ').trim();
@@ -352,7 +345,7 @@ export default class Preloader{
 		if(this._friendsScopeRequestPending) return;
 		this._friendsScopeRequestPending = true;
 		markFriendsScopeAsked();
-		bridge.sendPromise('VKWebAppGetAuthToken', {app_id:parseInt(vk_params['vk_app_id']), scope:'friends'})
+		runtime().requestFriendsToken()
 			.then(tokenRes => {
 				VK_token = tokenRes['access_token'];
 				this._persistFriendsScopeGranted((saved) => {
@@ -417,7 +410,7 @@ export default class Preloader{
 
 	onError(e){
         if(e && Number(e.code) === 8){
-            showLaunchRecovery(window, isVk() ? vk_params['vk_app_id'] : null);
+			showLaunchRecovery(window, runtime().recoveryAppId());
             return;
         }
 		try {

@@ -48,8 +48,13 @@ function _localSet(key, value){
 // код сам решает, что делать при null (обычно — довериться локальному фолбэку).
 function _vkStorageGet(key){
     try{
-        if(!window.bridge || typeof bridge.sendPromise !== 'function') return Promise.resolve(null);
-        return bridge.sendPromise('VKWebAppStorageGet', {keys: [key]})
+        const runtime = window.platformRuntime;
+        const read = runtime && typeof runtime.storageGet === 'function'
+            ? runtime.storageGet([key])
+            : (!window.bridge || typeof bridge.sendPromise !== 'function'
+                ? Promise.resolve(null)
+                : bridge.sendPromise('VKWebAppStorageGet', {keys: [key]}));
+        return read
             .then(res => {
                 const entry = res && Array.isArray(res.keys) ? res.keys.find(k => k.key === key) : null;
                 return entry && entry.value !== '' ? entry.value : null;
@@ -66,8 +71,14 @@ function _vkStorageGet(key){
 
 function _vkStorageSet(key, value){
     try{
-        if(!window.bridge || typeof bridge.sendPromise !== 'function') return;
-        bridge.sendPromise('VKWebAppStorageSet', {key, value: String(value)})
+        const runtime = window.platformRuntime;
+        const write = runtime && typeof runtime.storageSet === 'function'
+            ? runtime.storageSet(key, value)
+            : (!window.bridge || typeof bridge.sendPromise !== 'function'
+                ? null
+                : bridge.sendPromise('VKWebAppStorageSet', {key, value: String(value)}));
+        if(!write) return;
+        write
             .catch(e => console.error('[friends-scope-gate._vkStorageSet] ошибка VKWebAppStorageSet для "' + key + '":', e && e.message ? e.message : JSON.stringify(e)));
     } catch(e){
         console.error('[friends-scope-gate._vkStorageSet] синхронная ошибка:', e.message);

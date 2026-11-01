@@ -74,14 +74,15 @@ function _resumeApp(source){
 }
 
 export function installAppLifecyclePause(){
-    if(window.bridge && typeof bridge.subscribe === 'function'){
-        bridge.subscribe((e) => {
+    const runtime = window.platformRuntime;
+    if(runtime && typeof runtime.subscribe === 'function'){
+        runtime.subscribe((e) => {
             if(!e || !e.detail) return;
             if(e.detail.type === 'VKWebAppViewHide') _pauseApp('VKWebAppViewHide');
             else if(e.detail.type === 'VKWebAppViewRestore') _resumeApp('VKWebAppViewRestore');
         });
     } else {
-        console.error('[app-lifecycle.installAppLifecyclePause] window.bridge недоступен — пауза по сворачиванию будет работать только через visibilitychange');
+        console.error('[app-lifecycle.installAppLifecyclePause] platform runtime недоступен — пауза по сворачиванию будет работать только через visibilitychange');
     }
 
     document.addEventListener('visibilitychange', () => {

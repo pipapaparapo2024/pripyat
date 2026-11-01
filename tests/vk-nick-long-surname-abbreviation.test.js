@@ -25,7 +25,7 @@ const nickPopupSrc  = fs.readFileSync(path.join(root, '_client', 'src', 'game', 
 
 console.log('\nTest 1: preloader.js — сокращение фамилии применяется только когда "Имя Фамилия" длиннее 15');
 {
-    const idx = preloaderSrc.indexOf("bridge.sendPromise(\"VKWebAppGetUserInfo\")");
+    const idx = preloaderSrc.indexOf('startupRequest(() => runtime().getCurrentUser())');
     const body = preloaderSrc.slice(idx, idx + 1200);
     assert(/if\(vkNick\.length > 15 && info\.first_name && info\.last_name\)\{/.test(body),
         'условие срабатывает только если объединённая строка длиннее 15 символов');

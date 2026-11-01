@@ -18,7 +18,7 @@ const read = p => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
 {
     const s = read('_client/src/modules/server.js');
     assert(s.includes("import { detectPlatform } from './platform.js';"), 'server.js должен импортировать detectPlatform');
-    assert(s.includes("this.MSSparams += '&platform='+detectPlatform();"), 'server.js должен добавлять platform в КАЖДЫЙ запрос к universal.php');
+    assert(s.includes('runtimePlatform') && s.includes("this.MSSparams += '&platform=' + encodeURIComponent(runtimePlatform || detectPlatform());"), 'server.js должен добавлять platform runtime в КАЖДЫЙ запрос к universal.php с прежним VK/OK fallback');
 }
 
 // 2. Сервер — регистри

@@ -394,9 +394,9 @@ test('Прогресс локаций загружается из строки �
 });
 
 const levelUpSrc = readSrc('game/shell/popups/level_up.js');
-test('Кнопка Поделиться использует только актуальный VK Share', () => {
+test('Кнопка Поделиться использует платформенный Share без устаревшего постинга', () => {
     assert(!levelUpSrc.includes('VKWebAppShowWallPostBox'), 'устаревший постинг на стену не удалён');
-    assert(levelUpSrc.includes("bridge.send('VKWebAppShare'"), 'нет системного VK Share');
+    assert(levelUpSrc.includes('window.platformRuntime.share(shareLink)'), 'кнопка не вызывает платформенный Share');
     assert(levelUpSrc.includes("notify.showResult({text:'Не удалось поделиться"), 'ошибка VK API остаётся невидимой пользователю');
 });
 

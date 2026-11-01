@@ -19,7 +19,7 @@ assert(/let vkNick = \[info\.first_name, info\.last_name\]\.filter\(Boolean\)\.j
 assert(/udata\['nick'\] = vkNick;[\s\S]*?TS\.php\('users\.save'/.test(preloader), 'начальный ник сохраняется в профиль игрока');
 assert(/const nick = String\(profile\.nick \|\| ''\)\.trim\(\) \|\| String\(fallbackNick \|\| ''\)\.trim\(\)/.test(profile), 'игровой ник имеет приоритет над VK fallback');
 assert(/profile\._setDisplayNick = \(resolvedNick\) =>/.test(profile), 'пустой старый ник заменяется именем VK после резолва профиля');
-assert(/avatarSpr\.interactive = true; avatarSpr\.buttonMode = true;[\s\S]*?window\.open\('https:\/\/vk\.com\/id'/.test(profile), 'аватар визитки кликабелен и открывает VK');
+assert(/avatarSpr\.interactive = true; avatarSpr\.buttonMode = true;[\s\S]*?window\.open\(window\.platformRuntime\.profileUrl\(profile\.id\)/.test(profile), 'аватар визитки кликабелен и открывает платформенный профиль');
 // 26.10.2026 (по прямому указанию — фича "Заначки"): кнопка вернулась — теперь у неё есть
 // реальное серверное действие (zanachki.getFriendWishlist/giveCard), см.
 // tests/zanachki-php-real-exec.test.js. Старая проверка "кнопка удалена" (22-25.09.2026, когда

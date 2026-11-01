@@ -155,7 +155,7 @@ console.log('\nTest 8: кнопка ЕЩЁ РАЗ перезапускает б�
 console.log('\nTest 9: кнопка РАССКАЗАТЬ использует только актуальный VK-шаринг');
 {
     assert(!/VKWebAppShowWallPostBox/.test(bossResultSrc), 'устаревший VKWebAppShowWallPostBox удалён');
-    assert(/VKWebAppShare/.test(bossResultSrc), 'используется VKWebAppShare');
+    assert(/window\.platformRuntime\.share\(shareLink\)/.test(bossResultSrc), 'используется платформенный Share');
 }
 
 console.log('\nTest 10: bosses.php.rating()/_ratingTop() отдаёт топ-9 (а не топ-3) — места 4-9 нужны для "ТОП УРОНА"');

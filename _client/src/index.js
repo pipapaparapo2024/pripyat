@@ -20,6 +20,7 @@ import { applyRotatedCanvasStyle, clearRotatedCanvasStyle, mapPositionToPointRot
 import { showRotateHintOnce } from './modules/rotate-hint.js';
 import { installAppLifecyclePause } from './modules/app-lifecycle.js';
 import { registerLaunch, syncLaunchCountToServerStorage } from './modules/friends-scope-gate.js';
+import { createVkOkRuntime, installPlatformRuntime } from './modules/platform-runtime.js';
 
 const _VER = (() => {
     const s = document.querySelector('script[src*="index.js"]');
@@ -193,7 +194,17 @@ for(let i = 0; i < partsData.length; i++) {
 	userDataVk[currentData[0]] = currentData[1];
 }
 
-startupRequest(() => bridge.send("VKWebAppInit")).then(e => window.VKinit = true).catch(() => { window.VKinit = true; });
+// Единственная точка, где текущий VK/OK launch-контекст превращается в нейтральный
+// runtime. Старые window.vk_params/window.bridge ниже оставлены временно как
+// compatibility API для ещё не перенесённых экранов: поведение игроков не меняется.
+window.platformRuntime = installPlatformRuntime(createVkOkRuntime({bridge: vkBridge, launchParams: userDataVk}));
+window.gameSession = Object.freeze({
+	platform: platformRuntime.platform,
+	playerId: platformRuntime.getPlayerId(),
+	appId: platformRuntime.getAppId(),
+});
+
+startupRequest(() => platformRuntime.initialize()).then(e => window.VKinit = true).catch(() => { window.VKinit = true; });
 // 04.10.2026 (модерация ОК, п.1 — см. friends-scope-gate.js): зеркалируем счётчик запусков в
 // VK Storage (серверно, не привязано к устройству) ПОСЛЕ инициализации bridge — не блокирует
 // старт игры, выполняется в фоне.
@@ -206,7 +217,7 @@ syncLaunchCountToServerStorage();
 // с history:false запрещает клиенту VK перехватывать этот жест — страницей управляет игра.
 // Метод есть не во всех версиях клиента (и вообще отсутствует в вебе) — .catch() обязателен,
 // иначе неподдерживаемый метод роняет промис в необработанное исключение.
-bridge.send('VKWebAppSetSwipeSettings', { history: false })
+platformRuntime.setSwipeHistory(false)
     .then(() => console.log('[index.js] VKWebAppSetSwipeSettings: системный свайп-назад отключён'))
     .catch(e => console.log('[index.js] VKWebAppSetSwipeSettings недоступен (норма для веба/старых клиентов):', e && e.error_data));
 
@@ -285,7 +296,7 @@ window.Timers = Timers;
 
 window.helper = new UniHelp();
 window.modules = new ModuleControl();
-window.TS = new Server([vk_params['vk_app_id'], vk_params['vk_user_id'], my_server]);
+window.TS = new Server([gameSession.appId, gameSession.playerId, my_server]);
 
 window.errors = [{text:'Undefined function', code:34}, {text:'Invalid request', code:35}, {text:'Output have invalid format', code:36}];
 window.bitmaps50 = {id:[], bm:[]};
