@@ -292,7 +292,11 @@ export default class Interface{
 			const _finishOnboardingTxt = new PIXI.Text('ЗАКОНЧИТЬ ОБУЧЕНИЕ', {fontFamily:'Southbank LT', fontSize:9, fill:'#ffd78b'});
 			_finishOnboardingTxt.anchor.set(0.5, 0.5); _finishOnboardingTxt.x=83; _finishOnboardingTxt.y=12;
 			_finishOnboardingBtn.addChild(_finishOnboardingTxt);
-			this.up.addChild(_finishOnboardingBtn);
+			// Не кладём кнопку внутрь HUD: во время тура onboarding намеренно выключает
+			// iface.up.interactiveChildren и помещает blocker выше HUD. Кнопка живёт в
+			// layer2 отдельно, поэтому остаётся единственным Dev-исключением над blocker;
+			// игровые вкладки и все остальные элементы HUD всё так же некликабельны.
+			root.layer2_mc.addChild(_finishOnboardingBtn);
 			this._isDevOnboardingActive = () => !!(window.udata && String(udata['onboarding_step'] || 'intro') !== 'done');
 			this._refreshDevOnboardingButton = () => {
 				const active = this._isDevOnboardingActive();
@@ -302,6 +306,12 @@ export default class Interface{
 			};
 			this._refreshDevOnboardingButton();
 			window.addEventListener('pripyat:onboarding-step-changed', this._refreshDevOnboardingButton);
+			this._keepDevOnboardingButtonOnTop = () => {
+				if(_finishOnboardingBtn.visible && this._isDevOnboardingActive() && _finishOnboardingBtn.parent){
+					root.layer2_mc.addChild(_finishOnboardingBtn);
+				}
+			};
+			PIXI.Ticker.shared.add(this._keepDevOnboardingButtonOnTop);
 
 			if(typeof this._ensureEditButton === 'function') this._ensureEditButton();
 		}

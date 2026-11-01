@@ -13,6 +13,10 @@ assert(iface.includes("String(udata['onboarding_step'] || 'intro') !== 'done'"),
     'кнопка доступна только при незавершённом onboarding_step');
 assert(iface.includes("new PIXI.Text('ЗАКОНЧИТЬ ОБУЧЕНИЕ'"),
     'на главном HUD создана кнопка досрочного завершения');
+assert(iface.includes('root.layer2_mc.addChild(_finishOnboardingBtn);'),
+    'кнопка вынесена над HUD и обучающим blocker, а не блокируется вместе с игровыми вкладками');
+assert(iface.includes('PIXI.Ticker.shared.add(this._keepDevOnboardingButtonOnTop);'),
+    'кнопка возвращается выше каждого overlay обучения');
 assert(iface.includes("onboarding.finishEarlyForDev();"),
     'кнопка не меняет данные сама, а вызывает единый путь Onboarding');
 assert(iface.includes("pripyat:onboarding-step-changed"),
