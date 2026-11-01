@@ -60,6 +60,11 @@ export default class Onboarding{
         if(!window.udata) return;
         udata['onboarding_step'] = step;
         console.log('[onboarding._setStep] ' + step);
+        // HUD разработчика подписывается на это событие, чтобы кнопка досрочного завершения
+        // исчезала сразу после сохранения шага done, а не только после перезагрузки игры.
+        if(typeof window.dispatchEvent === 'function'){
+            window.dispatchEvent(new CustomEvent('pripyat:onboarding-step-changed', {detail:{step}}));
+        }
         if(window.suspendPlayerSave) suspendPlayerSave('onboarding_set_step');
         const _done = (err) => {
             if(window.resumePlayerSave) resumePlayerSave('onboarding_set_step');
@@ -117,7 +122,21 @@ export default class Onboarding{
         this._activeTourKey = null;
         this._clearIdleTimer();
         if(window.udata) udata['onboarding_step'] = 'intro';
+        if(typeof window.dispatchEvent === 'function'){
+            window.dispatchEvent(new CustomEvent('pripyat:onboarding-step-changed', {detail:{step:'intro'}}));
+        }
         this._showPopup('intro');
+    }
+
+    // Только UI Dev-панели вызывает этот метод (см. interface.js). Обычный путь игрока
+    // намеренно не меняется: он проходит обучение шаг за шагом. _finish() уже корректно
+    // закрывает попап/тур, останавливает озвучку и сохраняет onboarding_step через общий
+    // revision-safe player-save механизм.
+    finishEarlyForDev(){
+        if(this._currentStep() === 'done' || typeof this._finish !== 'function') return false;
+        console.log('[onboarding.finishEarlyForDev] разработчик завершил обучение досрочно');
+        this._finish();
+        return true;
     }
 
     // Озвучка — PIXI.sound, тот же паттерн, что background-music.js. onComplete опционален:

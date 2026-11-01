@@ -273,6 +273,36 @@ export default class Interface{
 			_devBtn.addChild(_devTxt);
 			this.up.addChild(_devBtn);
 
+			// Быстрый выход нужен только разработчикам во время проверки туториала. Это
+			// отдельная кнопка на главном HUD, чтобы не открывать длинную Dev-панель поверх
+			// активного обучающего попапа. Доступ использует ТОТ ЖЕ whitelist, что и DEV.
+			const _finishOnboardingBtn = new PIXI.Graphics();
+			_finishOnboardingBtn.beginFill(0x3b2626, 0.9);
+			_finishOnboardingBtn.lineStyle(1, 0xe6a14a, 0.9);
+			_finishOnboardingBtn.drawRoundedRect(0, 0, 166, 24, 4);
+			_finishOnboardingBtn.endFill();
+			_finishOnboardingBtn.x = 738; _finishOnboardingBtn.y = 18;
+			_finishOnboardingBtn.interactive = true; _finishOnboardingBtn.buttonMode = true;
+			_finishOnboardingBtn.on('pointerover', ()=>{ _finishOnboardingBtn.alpha = 0.68; });
+			_finishOnboardingBtn.on('pointerout',  ()=>{ _finishOnboardingBtn.alpha = 1; });
+			_finishOnboardingBtn.on('pointerdown', ()=>{
+				if(!window.onboarding || !this._isDevOnboardingActive()) return;
+				onboarding.finishEarlyForDev();
+			});
+			const _finishOnboardingTxt = new PIXI.Text('ЗАКОНЧИТЬ ОБУЧЕНИЕ', {fontFamily:'Southbank LT', fontSize:9, fill:'#ffd78b'});
+			_finishOnboardingTxt.anchor.set(0.5, 0.5); _finishOnboardingTxt.x=83; _finishOnboardingTxt.y=12;
+			_finishOnboardingBtn.addChild(_finishOnboardingTxt);
+			this.up.addChild(_finishOnboardingBtn);
+			this._isDevOnboardingActive = () => !!(window.udata && String(udata['onboarding_step'] || 'intro') !== 'done');
+			this._refreshDevOnboardingButton = () => {
+				const active = this._isDevOnboardingActive();
+				_finishOnboardingBtn.visible = active;
+				_finishOnboardingBtn.interactive = active;
+				_finishOnboardingBtn.buttonMode = active;
+			};
+			this._refreshDevOnboardingButton();
+			window.addEventListener('pripyat:onboarding-step-changed', this._refreshDevOnboardingButton);
+
 			if(typeof this._ensureEditButton === 'function') this._ensureEditButton();
 		}
 
