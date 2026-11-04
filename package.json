@@ -2,6 +2,8 @@
   "name": "pripyat-workspace",
   "private": true,
   "scripts": {
+    "build:website": "npm --prefix _client run build:website",
+    "build:telegram": "npm --prefix _client run build:telegram",
     "build": "npm --prefix _client run build",
     "test": "node run_tests.js && node tests/run-all.js",
     "test:assets": "node tests/runtime-asset-contract.test.js",

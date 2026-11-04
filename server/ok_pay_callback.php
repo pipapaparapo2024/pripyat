@@ -109,7 +109,7 @@
         // Never use intval on arbitrary strings: an invalid code must not become item 0.
         static function parseProductCode($raw){
             if(!is_string($raw) && !is_int($raw)) return -1;
-            if(!preg_match('/^(?:ok_item)?([0-9]{1,3})$/D', strval($raw), $m)) return -1;
+            if(!preg_match('/^(?:ok_item|item)?([0-9]{1,3})$/D', strval($raw), $m)) return -1;
             return intval($m[1]);
         }
 

@@ -39,7 +39,10 @@ export default class Onboarding{
     }
 
     _currentStep(){
-        return (window.udata && udata['onboarding_step']) || 'intro';
+        // Legacy JSON decoding can turn an empty database field into [].
+        // A new character has no saved step; that is a normal first launch.
+        const step = window.udata && udata['onboarding_step'];
+        return typeof step === 'string' && step.trim() ? step.trim() : 'intro';
     }
 
     // Во время обучения HUD может оставаться в сцене только для правильного порядка слоёв,

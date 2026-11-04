@@ -26,9 +26,12 @@ export default class Preloader{
 		// «Продолжить» может напрямую вызвать Bridge, без второго дублирующего HTML-попапа.
 		// Повторный вызов блокируется постоянным флагом из БД.
 		window.addEventListener('pripyat:friends-permission-request', () => {
+			if(runtime().capabilities.friendsPermission === false) return;
 			if(window.udata && String(udata['friends_scope_granted'] || '0') === '1') return;
 			this._requestFriendsScope((ok, reason) => {
 				if(ok) notify.showResult({text:'Друзья подключены.'}, 1);
+				else if(reason === 'scope') notify.showResult({text:'Площадка не предоставила доступ к друзьям. Игра доступна без этого разрешения.'}, 0);
+				else if(reason === 'friends') notify.showResult({text:'Разрешение получено, но список друзей пока недоступен. Попробуйте подключить друзей позже.'}, 0);
 				else if(reason !== 'denied') notify.showResult({text:'Не удалось сохранить разрешение. Попробуйте ещё раз.'}, 0);
 			});
 		});
@@ -241,6 +244,7 @@ export default class Preloader{
 	}
 
 	_scheduleFriendsScopePrompt(){
+		if(runtime().capabilities.friendsPermission === false) return;
 		const waitForOnboarding = () => {
 			// DB-флаг окончательно решает, нужно ли вообще предлагать доступ.
 			if(window.udata && String(udata['friends_scope_granted'] || '0') === '1'){
@@ -283,6 +287,10 @@ export default class Preloader{
 	}
 
 	_showFriendsScopePrompt(options = {}){
+		if(runtime().capabilities.friendsPermission === false){
+			if(typeof window.openTelegramFriends === 'function') window.openTelegramFriends();
+			return;
+		}
 		const hasSavedConsent = !!(window.udata && String(udata['friends_scope_granted'] || '0') === '1');
 		// 02.10.2026 (тот же баг, что в _scheduleFriendsScopePrompt() выше): сохранённое
 		// согласие НЕ означает, что VK_token этой сессии уже получен — только что VK когда-то
@@ -347,6 +355,12 @@ export default class Preloader{
 		markFriendsScopeAsked();
 		runtime().requestFriendsToken()
 			.then(tokenRes => {
+				// A resolved host dialog is not proof of a granted friends permission.
+				const scope=tokenRes&&tokenRes.scope;
+				const hasScope=scope===undefined||(Array.isArray(scope)?scope:typeof scope==='string'?scope.split(/[ ,]+/):[]).includes('friends');
+				if(!tokenRes||typeof tokenRes.access_token!=='string'||!tokenRes.access_token.trim()||!hasScope){
+					this._friendsScopeRequestPending=false;if(done)done(false,'scope');return;
+				}
 				VK_token = tokenRes['access_token'];
 				this._persistFriendsScopeGranted((saved) => {
 					if(!saved){ this._friendsScopeRequestPending = false; if(done) done(false, 'save'); return; }

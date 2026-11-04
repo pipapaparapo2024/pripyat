@@ -201,9 +201,9 @@ console.log('\nTest 3c: id105/110/115 (cat:6) — cellDx/cellDy/cellScale/manDx/
         // cellDy=721-98-688=-65. Следопыт: cellDx=385-77-314=-6, cellDy=727-98-688=-59.
         // cellHeight вырос почти втрое (74→185) — иконка штанов теперь заметно крупнее в
         // ячейке гардероба, по прямому указанию пользователя.
-        103: {cat: 2, expected: 'cellDx:-8, cellDy:-65, cellWidth:128, cellHeight:185, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
+        103: {cat: 2, expected: 'cellDx:-8, cellDy:-65, cellWidth:128, cellHeight:185, cellCompressTop:85, cellCompressBottom:15, cellCompressLeft:8, manDx:-28, manDy:21, manWidth:306, manHeight:139,'},
         108: {cat: 2, expected: 'cellDx:-4, cellDy:-36, cellScale:0.097, manDx:-27, manDy:-17, manWidth:300, manHeight:202,'},
-        113: {cat: 2, expected: 'cellDx:-6, cellDy:-59, cellWidth:129, cellHeight:185, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
+        113: {cat: 2, expected: 'cellDx:-6, cellDy:-59, cellWidth:129, cellHeight:185, cellCompressTop:85, cellCompressBottom:15, cellCompressLeft:8, manDx:-29, manDy:21, manWidth:306, manHeight:137,'},
     };
     for(const [id, {cat, expected}] of Object.entries(CONFIRMED)){
         const m = shmotSrc.match(new RegExp(`\\{id:${id}, cat:${cat}, [^\\n]*`));

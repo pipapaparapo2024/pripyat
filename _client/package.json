@@ -1,5 +1,7 @@
 {
     "scripts": {
+        "build:website": "webpack --config webpack.website.config.js",
+        "build:telegram": "webpack --config webpack.telegram.config.js",
         "build": "webpack",
         "predeploy": "npm run build",
         "deploy": "vk-miniapps-deploy"
@@ -12,6 +14,7 @@
     },
     "devDependencies": {
         "@esotericsoftware/spine-canvas": "^4.3.13",
+        "eruda": "^3.4.3",
         "webpack-cli": "^6.0.1"
     }
 }

@@ -42,7 +42,7 @@ export function createVkOkRuntime({bridge, launchParams}){
         },
         initialize: () => sdk().send('VKWebAppInit'),
         setSwipeHistory: (history) => sdk().send('VKWebAppSetSwipeSettings', {history}),
-        startNativePurchase: (item) => sdk().send('VKWebAppShowOrderBox', {type: 'item', item}),
+        startNativePurchase: (item) => sdk().send('VKWebAppShowOrderBox', {type:'item',item}),
         callApi: (method, apiParams) => sendPromise('VKWebAppCallAPIMethod', {method, params: apiParams}),
         getServerTime: () => sendPromise('VKWebAppCallAPIMethod', {
             method: 'utils.getServerTime', params: {access_token: window.VK_token, v: window.VK_version},

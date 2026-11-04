@@ -6,6 +6,7 @@
         // Разрешённые тестовые аккаунты dev-панели. Проверка серверная:
         // скрытие кнопки в клиенте не защищает от ручного TS.php-вызова.
         private function _isDevUser(){
+            if(($this->registry['platform']??'')==='telegram')return in_array('developer',$this->registry['roles']??[],true);
             return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
         }
 
@@ -20,7 +21,7 @@
         function devGetLogs(){
             if (!$this->_requireDevUser()) return;
             header('Cache-Control: no-store, private');
-            $this->registry['tools']->output(DevLogReader::read());
+            $this->registry['tools']->output(($this->registry['platform']??'')==='telegram'?TelegramDebug::read():DevLogReader::read());
         }
 
         function __construct($registry){

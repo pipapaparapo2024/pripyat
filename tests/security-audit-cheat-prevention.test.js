@@ -123,7 +123,7 @@ console.log('\nTest 4: window.debug_mode по умолчанию false для р
     // test-pripyat-game.ru, для диагностики "бесконечная загрузка" через [game-boot...] логи,
     // правило №8). Ключевое свойство для безопасности прода не изменилось — на любом hostname,
     // кроме тестового (в т.ч. pripyat-game.ru), выражение false, GIVE_MILLION() не включается.
-    assert(/window\.debug_mode = \(typeof location !== 'undefined' && location\.hostname === 'test-pripyat-game\.ru'\);/.test(src),
+    assert(/window\.debug_mode = canViewClientDiagnostics\(window\) && location\.hostname === 'test-pripyat-game\.ru';/.test(src),
         'debug_mode — выражение от hostname, не захардкожен true; на проде (другой hostname) вычисляется в false');
     assert(!/window\.debug_mode = true;\s*\n\s*window\.session_hash/.test(src),
         'старое безусловное true перед session_hash не вернулось');

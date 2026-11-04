@@ -1,0 +1,16 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('_client/src/game/shell/overlays/dev_panel.js','utf8');
+const method=source.match(/proto\._unlockAllShmot = function\(\)\{([\s\S]*?)\n    \};/)[1];
+let request;const items=[{id:41,owned:false,equipped:false},{id:103,owned:false,equipped:false}];
+const udata={shmot:'[]'},proto={};
+const shmot={items,_loadFromUdata(){const data=JSON.parse(udata.shmot);for(const it of items)Object.assign(it,data[it.id])}};
+const TS={php(method,args,ok,fail){request={method,args,ok,fail}}};
+vm.runInNewContext('proto._unlockAllShmot=function(){'+method+'}',{proto,window:{shmot,TS},shmot,TS,udata,applyPatch(p){Object.assign(udata,p)},console:{log(){},error(){}}});
+proto._unlockAllShmot();assert.equal(request.method,'users.devGrantShmot');
+assert.equal(items[0].owned,false);assert.equal(udata.shmot,'[]');
+const first=request;proto._unlockAllShmot();assert.equal(request,first,'Concurrent duplicate request blocked');
+request.fail({code:403});assert.equal(items[0].owned,false);assert.equal(udata.shmot,'[]');
+proto._unlockAllShmot();request.ok({patch:{shmot:request.args.shmot_json}});
+assert.equal(items[0].owned,true);assert.equal(items[1].owned,true);
+assert.equal(JSON.parse(udata.shmot)[103].owned,true);
+console.log('DEV шмот: отказ не создаёт ложного владения, успех применяет серверный patch, повторный клик защищён');

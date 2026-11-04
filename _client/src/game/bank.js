@@ -20,7 +20,7 @@ export default class Bank{
 			'| vk_params.vk_app_id:', window.vk_params && vk_params['vk_app_id'],
 			'| vk_params.vk_platform:', window.vk_params && vk_params['vk_platform'],
 			'| vk_params.sign присутствует:', !!(window.vk_params && vk_params['sign']),
-			'| vk_params полностью:', window.vk_params ? JSON.stringify(vk_params) : null,
+			'| параметры запуска скрыты:', true,
 			'| VKinit (VKWebAppInit завершён):', window.VKinit,
 			'| VK_version (API):', window.VK_version,
 			'| navigator.onLine:', navigator.onLine,
@@ -52,8 +52,6 @@ export default class Bank{
 				}).catch((err) => {
 					console.error('[bank.bridge.send] Promise REJECTED для VKWebAppShowOrderBox | item:', params.item,
 						'| прошло мс:', Math.round(performance.now() - t0),
-						'| ЕСЛИ мс близко к 0 — VK отклонил ЛОКАЛЬНО, до реального похода на сервер VK (клиентская валидация: тестировщик/каталог/верификация приложения);',
-						'| ЕСЛИ мс заметно больше (сотни/тысячи) — запрос дошёл до серверов VK и отклонён УЖЕ там (кабинет выплат/подпись/сервер) |',
 						'| error_type:', err && err.error_type,
 						'| error_code:', err && err.error_data && err.error_data.error_code,
 						'| error_reason:', err && err.error_data && err.error_data.error_reason,
@@ -81,7 +79,7 @@ export default class Bank{
 					'\n  error_reason:', ed.error_reason,
 					'\n  request_id:', d.request_id,
 					'\n  detail полностью:', JSON.stringify(e.detail),
-					'\n  причина: пользователь отменил, либо VK отклонил (приложение не верифицировано / регистрация в кабинете выплат не завершена / товар не настроен в кабинете VK / ошибка на стороне VK)');
+					'\n  причина: SDK сообщил отказ. Конкретную причину проверяем по окну ВК и серверному уведомлению; длительность запроса её не доказывает.');
 			}
 		});
 	}
@@ -162,6 +160,7 @@ export default class Bank{
 	// отображения). На ОК реальных "голосов" не существует — показываем price_ok[i] напрямую,
 	// без деления на 7 (это уже готовая сумма в ОКах, см. server/json/donuts.json).
 	_displayPrice(name, i){
+		if(window.__telegramRuntime)return window.telegramStarsCatalog[name].stars[i];
 		return isOk() ? donuts_info[name]['price_ok'][i] : donuts_info[name]['price'][i] / 7;
 	}
 

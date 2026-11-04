@@ -181,7 +181,7 @@ export default class Interface{
 			}, url || null);
 		};
 		if(window.bridge){
-			bridge.sendPromise('VKWebAppGetUserInfo', {}).then(info=>{
+			window.platformRuntime.getCurrentUser().then(info=>{
 				window.vk_user_info = info;
 			_applyAvatar(info['photo_50'] || info['photo_100'] || info['photo_200'] || null);
 			}).catch(()=>_applyAvatar(null));
@@ -255,7 +255,7 @@ export default class Interface{
 		// Dev-инструменты доступны только тестовому аккаунту Николай Сиденко / fleeeexim
 		// (оба переданных VK URL указывают на uid 1113977365).
 		const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
-		const _isAdminUid = !!(window.vk_params && DEV_UIDS.includes(String(vk_params['vk_user_id'])));
+		const _isAdminUid = window.__telegramRuntime ? window.__telegramRuntime.getRoles().includes('developer') : !!(window.vk_params && DEV_UIDS.includes(String(vk_params['vk_user_id'])));
 		console.log('[interface.initInterfaceUp] проверка админ-доступа к DEV-панели | vk_user_id:', window.vk_params && vk_params['vk_user_id'], '| допущен:', _isAdminUid);
 		if(_isAdminUid){
 			const _devBtn = new PIXI.Graphics();

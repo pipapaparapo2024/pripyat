@@ -1,0 +1,27 @@
+{
+  "release": "v778",
+  "confirmed_date": "2026-11-04",
+  "scope": "closed-native-vk-ok-prod",
+  "files": {
+    "_client/development/libs/index.js": {
+      "sha256": "a6f277a13cf7091d91b0a886c49f59d206799d29961f6190ebe72a07672f1868",
+      "bytes": 930958
+    },
+    "assets/manifest.json": {
+      "sha256": "af922b7f968ae0a64883caa843a225e426684d63ace8ef6cbf00a5182db82c03",
+      "bytes": 601717
+    },
+    "server/native-prod-vk-pay.php": {
+      "sha256": "ec1d9e7f6266f2198dd22cc377da4be18cefe262d6dc88fbeb06960f018b94ea",
+      "bytes": 6614
+    },
+    "server/native-prod-ok-pay.php": {
+      "sha256": "9fc4c15dd3a8ece3eeb54a39c6c2583930f68dcfb0a02f8159b3e348bcb26bff",
+      "bytes": 3439
+    },
+    "server/core/models/nativeprodboundary.php": {
+      "sha256": "0fb7e0b278e9284e3f56f991fc35276537f851cca3e0799edeee237828d57278",
+      "bytes": 3919
+    }
+  }
+}

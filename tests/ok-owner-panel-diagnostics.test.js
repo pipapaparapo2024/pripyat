@@ -1,0 +1,10 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const src=fs.readFileSync('_client/src/modules/ok-payment-diagnostics.js','utf8').replace('export function','function');
+const ctx={};vm.runInNewContext(src+';this.log=logOkPayment',ctx);
+const owner={__nativeProdDevDiagnostics:true,console:{log(){throw Error('OK console must remain private')}}};
+ctx.log('buy-click',{item:6,price:3500,token:'PRIVATE'},owner);
+ctx.log('callback',{method:'OKWebAppOpenPayForm',callbackData:{error_type:'client_error',error_data:{error_code:6,error_reason:'Unsupported platform. Handler not provided token=PRIVATE'}}},owner);
+assert.equal(owner.ok_payment_safe_history.length,2);assert.equal(owner.ok_payment_safe_history[1].reason,'unsupported');assert.equal(owner.ok_payment_safe_history[1].errorCode,6);
+assert(!JSON.stringify(owner.ok_payment_safe_history).includes('PRIVATE'));
+const player={console:{log(){throw Error('Player diagnostic leak')}}};ctx.log('buy-click',{price:7},player);assert.equal(player.ok_payment_safe_history,undefined);
+console.log('Панель ОК владельца: история при выключенной консоли, код/суть отказа, отсутствие секретов и запрет остальным проверены');

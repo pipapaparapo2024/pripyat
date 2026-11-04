@@ -1,3 +1,4 @@
+import { applyShopIconCompression } from '../../../modules/shop-icon-compression.js';
 /** Магазин одежды — новый PIXI-экран. */
 
 export function attachShmotShop(proto){
@@ -628,6 +629,7 @@ export function attachShmotShop(proto){
                     if(img.texture.width > 1) _fitImg(img.texture);
                     else img.texture.once('update', () => _fitImg(img.texture));
                 }
+                applyShopIconCompression(img, item);
                 // 25.09.2026 (по прямому указанию — "шмотки, которые не выбиты, чёрно-белым,
                 // которые получены — цветными, чтобы был контраст"): невладеемые предметы
                 // (ещё не выбиты/не куплены) рендерятся через ColorMatrixFilter.desaturate() —

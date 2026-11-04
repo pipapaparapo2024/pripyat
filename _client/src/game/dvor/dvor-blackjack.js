@@ -632,7 +632,7 @@ export function attachBlackjack(proto){
             const anim = setInterval(()=>{
                 for(let i = 0; i < 4; i++){
                     if(this._bjCardSprites[i]){
-                        this._bjCardSprites[i].texture = PIXI.Texture.from('./images/' + RANKS[Math.floor(Math.random()*8)] + '.png?v=221');
+                        this._bjCardSprites[i].texture = PIXI.Texture.from('./images/карта ранг ' + RANKS[Math.floor(Math.random()*8)] + '.png?v=221');
                         this._bjCardSprites[i].width = 101; this._bjCardSprites[i].height = 152;
                         this._bjCardSprites[i].visible = true;
                     }

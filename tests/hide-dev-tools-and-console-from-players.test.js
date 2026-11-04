@@ -61,7 +61,7 @@ console.log('\nTest 1: interface.js — кнопка DEV возвращена в
     // — это согласованное, осознанное расширение на обоих разработчиков, а не разъехавшийся
     // рефакторинг (в отличие от keyring-тоггла, где осталась узкая личная проверка).
     assert(/DEV_UIDS\s*=\s*\['1113977365',\s*'382448269',\s*'438953352',\s*'184138040'\]/.test(interfaceJs), 'admin-uid список захардкожен и совпадает с dev_panel.js/users.php._isDevUser()');
-    assert(/_isAdminUid\s*=\s*!!\(window\.vk_params\s*&&\s*DEV_UIDS\.includes\(String\(vk_params\['vk_user_id'\]\)\)\)/.test(interfaceJs),
+    assert(/_isAdminUid\s*=\s*window\.__telegramRuntime \? window\.__telegramRuntime\.getRoles\(\)\.includes\('developer'\) : !!\(window\.vk_params\s*&&\s*DEV_UIDS\.includes\(String\(vk_params\['vk_user_id'\]\)\)\)/.test(interfaceJs),
         'проверка идёт по window.vk_params (реальные VK launch params, подделать без валидной сессии нельзя)');
     // Кнопка физически внутри if(_isAdminUid){...} — addChild должен идти ПОСЛЕ объявления
     // проверки и ДО конца функции, без ветки, которая добавляла бы её безусловно.
@@ -101,13 +101,13 @@ console.log('\nTest 5: index.js — console.* глушится для игрок
     // чтобы детальные [game-boot.../spine-boss...] логи (правило №8) были видны в консоли игрока
     // ИМЕННО на тестовом домене (где это безопасно — отдельная БД stalker_test, реальных
     // игроков нет), на проде поведение не меняется (hostname не совпадает → false, как раньше).
-    const start = indexJs.indexOf("window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');");
-    assert(start !== -1, 'window.debug_mode остаётся единой точкой включения отладки, теперь self-gating по hostname теста (не жёсткая false)');
+    const start = indexJs.indexOf("window.debug_mode = canViewClientDiagnostics(window) && location.hostname === 'test-pripyat-game.ru';");
+    assert(start !== -1, 'window.debug_mode остаётся единой точкой включения отладки, доступ только владельцу диагностики на TEST');
     assert(!/window\.debug_mode = true;/.test(indexJs), 'debug_mode НЕ включён безусловно (это дало бы GIVE_MILLION/RUN_TESTS всем игрокам на проде)');
     // В блок добавлена отключённая ОК-диагностика с белым списком, поэтому до самой
     // подмены console.* теперь больше комментариев и кода, чем прежние 1500 символов.
     const body = indexJs.slice(start, indexJs.indexOf('window.session_hash =', start));
-    assert(/if\(!window\.debug_mode \|\| \(_okConsolePlatform && !window\.ok_payment_diagnostics_for_dev\)\)\{/.test(body), 'глушение обёрнуто в проверку debug_mode — легко включить обратно локально');
+    assert(/if\(!canViewClientDiagnostics\(window\) \|\| \(_okConsolePlatform && !window\.ok_payment_diagnostics_for_dev\)\)\{/.test(body), 'консоль закрыта по отдельному праву диагностики, debug-tools остаются только на TEST');
     // 09.10.2026: прямой _noop заменён на белый список будущей ОК-диагностики. Пока
     // переключатель false, обёртка столь же молча отбрасывает любой console.log/warn/error.
     assert(/window\.ok_payment_diagnostics_enabled = false;/.test(indexJs), 'ОК-диагностика сохранена в коде, но выключена в production');

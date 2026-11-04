@@ -77,17 +77,17 @@ console.log('\nTest 3: dev-панель — новая секция ШМОТ с 
         "строка 'Гардероб' с кнопкой 'ОТКРЫТЬ ВСЁ', вызывающей _unlockAllShmot()");
 }
 
-console.log('\nTest 4: proto._unlockAllShmot помечает ВСЕ предметы owned=true (включая дроп) и сохраняет/обновляет экран');
+console.log('\nTest 4: proto._unlockAllShmot запрашивает owned=true без преждевременной мутации (включая дроп) и сохраняет/обновляет экран');
 {
     const m = devSrc.match(/proto\._unlockAllShmot = function\(\)\{([\s\S]*?)\n    \};/);
     assert(!!m, '_unlockAllShmot найден');
     const body = m ? m[1] : '';
-    assert(/shmot\.items\.forEach\(it => \{ it\.owned = true; \}\);/.test(body),
-        'проставляет owned=true КАЖДОМУ предмету без фильтра по price (включая дроп-предметы id41+)');
+    assert(/save\[it\.id\] = \{owned: true, equipped: it\.equipped\};/.test(body),
+        'запрашивает серверную выдачу КАЖДОГО предмета без фильтра по price (включая дроп-предметы id41+)');
     // 25.09.2026: shmot._saveToUdata() удалена (shmot убран из client-writable whitelist,
     // см. tests/shmot-equip-server-authoritative.test.js) — кнопка теперь сохраняет через
     // dev-only users.devGrantShmot (id-индексация построена вручную, тот же формат).
-    assert(/save\[it\.id\] = \{owned: it\.owned, equipped: it\.equipped\};/.test(body),
+    assert(/save\[it\.id\] = \{owned: true, equipped: it\.equipped\};/.test(body),
         'строит id-индексированный массив вручную (та же защита от id-vs-позиция бага, что была в удалённой _saveToUdata)');
     assert(/TS\.php\('users\.devGrantShmot', \{shmot_json: shmotJson\}/.test(body),
         'сохраняет через users.devGrantShmot (прямой SQL update, в обход убранного из whitelist поля)');

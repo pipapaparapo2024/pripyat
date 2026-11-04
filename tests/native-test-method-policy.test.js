@@ -1,0 +1,3 @@
+const {execFileSync}=require('node:child_process'),{findPhpBin}=require('./_php_bin.js');
+const php=findPhpBin();if(!php)throw new Error('Требуется PHP');
+process.stdout.write(execFileSync(php,['tests/_php_fixtures/native-test-method-policy.php'],{encoding:'utf8'}));

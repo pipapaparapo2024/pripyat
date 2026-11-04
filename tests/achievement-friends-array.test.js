@@ -1,0 +1,3 @@
+const {execFileSync}=require('node:child_process');const {findPhpBin}=require('./_php_bin.js');const php=findPhpBin();if(!php)throw new Error('Требуется PHP');
+const code=`require 'server/core/models/gameops.php';require 'server/core/models/achievementengine.php';set_error_handler(function($n,$s){throw new RuntimeException($s);});$ops=new Gameops([]);foreach([['friends'=>'1,2,3'],['friends'=>[1,2,3]],['friends'=>''],['friends'=>[]]] as $u){$s=AchievementEngine::buildState($ops,$u);$want=empty($u['friends'])?0:3;if($s['friendsCount']!==$want)throw new RuntimeException('Wrong friends count');}echo 'Достижения: строка и массив друзей дают одинаковый результат без PHP warnings';`;
+process.stdout.write(execFileSync(php,['-r',code],{encoding:'utf8'}));

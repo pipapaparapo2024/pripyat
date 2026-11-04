@@ -51,6 +51,12 @@ export default class UniHelp{
     }
 
     loadPhoto50(id, callback = null, url = null){
+        if(!url && window.platformRuntime && window.platformRuntime.platform === 'telegram'){
+            return window.platformRuntime.getAvatar(id).then(photo=>{
+                const chosen=photo||null_photo50;
+                if(callback)callback(new PIXI.Sprite.from(chosen));
+            }).catch(()=>{if(callback)callback(new PIXI.Sprite.from(null_photo50));});
+        }
         let iof = bitmaps50['id'].indexOf(id);
         if(iof !== -1)url = bitmaps50['bm'][iof];
 

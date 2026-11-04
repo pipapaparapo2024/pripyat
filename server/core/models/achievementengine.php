@@ -119,7 +119,7 @@
                 'votesSpent'   => $ops->i($user, 'votes_spent'),
                 'coinsSpent'   => $ops->i($user, 'coins_spent'),
                 'stewSpent'    => $ops->i($user, 'stew_spent'),
-                'friendsCount' => count(array_filter(explode(',', strval($user['friends'] ?? '')))),
+                'friendsCount' => count(array_filter(is_array($user['friends']??null)?$user['friends']:explode(',',strval($user['friends']??'')))),
                 // Замороженный снимок ДО начислений этого прохода — так же, как клиент раньше
                 // считал _state() один раз в начале _checkAll(): мета-достижения по общему счёту
                 // очков видят значение "на входе", догоняют на следующем проходе, не в этом же.

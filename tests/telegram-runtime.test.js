@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const context={};vm.createContext(context);
+vm.runInContext(fs.readFileSync('_client/src/modules/telegram-runtime.js','utf8').replace('export function','function'),context);
+const events={},calls=[];
+const runtime=context.createTelegramRuntime({player_id:'42',expires_at:4600,profile:{first_name:'Тест'}},{ready:()=>calls.push('ready'),expand:()=>calls.push('expand'),onEvent:(name,fn)=>events[name]=fn});
+(async()=>{
+    assert.equal(runtime.platform,'telegram');assert.equal(runtime.getPlayerId(),'42');assert.equal(runtime.capabilities.friendsPermission,false);
+    await runtime.initialize();assert.deepEqual(calls,['ready','expand']);
+    assert.equal((await runtime.getCurrentUser()).first_name,'Тест');
+    let photoCalls=0;
+    const photo='https://tg-test-pripyat-game.ru/images/telegram-avatars/'+'a'.repeat(64)+'.jpg?v=123';
+    context.window={TS:{php(method,params,done){assert.equal(method,'telegramavatars.get');assert.equal(params.player_id,'42');photoCalls++;done({photo_url:photo});}}};
+    assert.equal(await runtime.getAvatar(undefined),photo,'legacy HUD without VK ID must resolve own internal ID');
+    assert.equal(await runtime.getAvatar('42'),photo);assert.equal(photoCalls,1,'avatar promises must be cached');
+    assert.equal(await runtime.getAvatar('../private'),null);assert.equal(photoCalls,1,'invalid avatar ID must not reach API');
+    assert.equal((await runtime.getServerTime()).response,1000);
+    await assert.rejects(runtime.requestFriendsToken);await assert.rejects(runtime.startNativePurchase);
+    let event;runtime.subscribe(e=>event=e);events.deactivated();assert.equal(event.detail.type,'VKWebAppViewHide');
+    events.activated();assert.equal(event.detail.type,'VKWebAppViewRestore');
+    console.log('Telegram runtime: ID, профиль, lifecycle и отсутствие VK разрешений/платежей проверены');
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -12,6 +12,13 @@ class DevLogReader {
                 if (strpos($line, $marker) !== false) { $row['event'] = $event; break; }
             }
             if (in_array($row['event'], ['request','authorization'], true) && preg_match('/код ([0-8])\b/u', $line, $code)) $row['code'] = intval($code[1]);
+            if(strpos($line,'[native-prod-pay]')!==false){
+                $row['event']='payment';
+                foreach(['platform'=>['vk','ok'],'stage'=>['catalog','rejected','credited','duplicate'],'mode'=>['real','sandbox'],'reason'=>['invalid_signature','wrong_app','production_notifications_only','developer_required','unknown_product','invalid_order','price_mismatch','transaction_conflict','unknown_player','temporarily_unavailable','account_mapping_missing','product_or_price_mismatch']] as $key=>$allowed){
+                    if(preg_match('/\b'.$key.'=([a-z_]+)\b/',$line,$m)&&in_array($m[1],$allowed,true))$row[$key]=$m[1];
+                }
+                foreach(['product','price'] as $key)if(preg_match('/\b'.$key.'=([0-9]{1,7})\b/',$line,$m))$row[$key]=(int)$m[1];
+            }
             if ($row['event'] === 'application') continue;
             foreach (['mysqli_sql_exception'=>'database_error', 'Too many connections'=>'database_connections', 'Connection refused'=>'connection_refused', 'Unknown column'=>'database_column', 'Undefined array key'=>'array_key', 'Call to undefined function'=>'undefined_function', 'Call to a member function'=>'undefined_object', 'TypeError'=>'type_error', 'Failed opening required'=>'missing_file', 'Permission denied'=>'permission_denied', 'syntax error'=>'syntax_error', 'invalid sig'=>'signature_rejected', 'НЕ СОВПАЛО'=>'signature_rejected'] as $needle=>$reason) {
                 if (strpos($line,$needle)!==false) { $row['reason']=$reason; break; }

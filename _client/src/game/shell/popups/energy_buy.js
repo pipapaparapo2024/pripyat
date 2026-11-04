@@ -112,7 +112,7 @@ export function attachEnergyBuy(proto){
 			// "голос/голоса/голосов" или "ОК/ОКа/ОКов" через modules/platform.js.currencyNames()).
 			// Фона под текст НЕ рисуем — на новой картинке уже есть готовая табличка-рамка,
 			// второй тёмный прямоугольник поверх нее смотрелся бы задвоенно.
-			const price = isOk() ? opt.price_ok : opt.votes;
+			const price = window.__telegramRuntime ? window.telegramStarsCatalog.energy.stars[i] : (isOk() ? opt.price_ok : opt.votes);
 			// 09.10.2026 (правка тем же днём): fontSize 18→16 (-2px), цвет #ffdd44 (золотой) →
 			// #ffffff (белый) — по прямому указанию, для ОБЕИХ площадок одинаково.
 			// 18.10.2026 (по прямому указанию — "сделай текст голосов такой же, как на картинке

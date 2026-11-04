@@ -100,7 +100,11 @@ export function attachDevPanel(proto){
 
     proto._openDevPanel = function(){
         const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
-        if(!window.vk_params || !DEV_UIDS.includes(String(vk_params['vk_user_id']))) return;
+        if(window.__telegramRuntime){
+            if(!window.__telegramRuntime.getRoles().includes('developer'))return;
+        }else{
+            if(!window.vk_params || !DEV_UIDS.includes(String(vk_params['vk_user_id']))) return;
+        }
         if(this._devWin && this._devWin.parent){
             this._closeDevPanel();
             return;
@@ -1456,23 +1460,25 @@ export function attachDevPanel(proto){
     // приём, что уже применён к оружию (_pushWeaponsGrant/users.devGrantWeapons) — dev-only
     // прямой SQL update через users.devGrantShmot, в обход whitelist.
     proto._unlockAllShmot = function(){
-        if(!window.shmot || !Array.isArray(shmot.items) || !window.TS) return;
-        shmot.items.forEach(it => { it.owned = true; });
+        if(!window.shmot || !Array.isArray(shmot.items) || !window.TS || this._shmotGrantPending) return;
         // Индекс массива ДОЛЖЕН быть it.id, не порядковой позицией в this.items — та же дыра,
         // что уже чинили 18.09.2026 в shmot.js._saveToUdata() (id 20+ физически лежат не по
         // порядку). Дублируем тот же формат построения массива здесь.
         const save = [];
-        shmot.items.forEach(it => { save[it.id] = {owned: it.owned, equipped: it.equipped}; });
+        shmot.items.forEach(it => { save[it.id] = {owned: true, equipped: it.equipped}; });
         const shmotJson = JSON.stringify(save);
-        udata['shmot'] = shmotJson; // держим локальный udata в курсе — на случай чтения до следующей полной перезагрузки
+        this._shmotGrantPending = true;
         TS.php('users.devGrantShmot', {shmot_json: shmotJson}, (res) => {
+            this._shmotGrantPending = false;
             console.log('[devPanel._unlockAllShmot] сохранено на сервере:', res);
             if(res && res.patch) applyPatch(res.patch);
+            if(typeof shmot._loadFromUdata === 'function') shmot._loadFromUdata();
             if(typeof shmot._shopRefresh === 'function' && shmot._shopWin) shmot._shopRefresh(true);
         }, (err) => {
+            this._shmotGrantPending = false;
             console.error('[devPanel._unlockAllShmot] ошибка сохранения на сервере:', err);
         });
-        console.log('[devPanel._unlockAllShmot] выдано предметов:', shmot.items.length);
+        console.log('[devPanel._unlockAllShmot] отправлен запрос выдачи:', shmot.items.length);
     };
 
     // Личный редкий предмет рулетки, выдаётся только текущему dev-аккаунту и проходит

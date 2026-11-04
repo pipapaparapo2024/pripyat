@@ -22,6 +22,7 @@
 let _platform = null;
 
 export function detectPlatform(){
+    if(window.__telegramRuntime) return 'telegram';
     if(_platform) return _platform;
 
     let referrer = '', ancestors = [];
@@ -66,7 +67,8 @@ export function isVk(){
 // что и п.5 отказа VK от 30.09.2026 — см. memory project_stalker_vk_moderation_30_09).
 const CURRENCY_NAMES_BY_PLATFORM = {
     vk: ['голос', 'голоса', 'голосов'],
-    ok: ['ОК', 'ОКа', 'ОКов']
+    ok: ['ОК', 'ОКа', 'ОКов'],
+    telegram: ['звезда', 'звезды', 'звёзд']
 };
 
 export function currencyNames(){

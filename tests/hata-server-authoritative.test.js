@@ -51,7 +51,7 @@ console.log('\nTest 2: hata_config.json — каталог локаций сов
     clientLocs.forEach(cl => {
         const sl = hataCfg.locations.find(l => l.id === cl.id);
         assert(!!sl, 'id:' + cl.id + ' присутствует в серверном каталоге');
-        assert(sl && sl.bossReq === cl.bossReq && sl.cost === cl.cost,
+        assert(sl && sl.name === cl.name && sl.bossReq === cl.bossReq && sl.cost === cl.cost,
             'id:' + cl.id + ' (' + cl.name + ') — серверные bossReq/cost совпадают с клиентскими (' + cl.bossReq + '/' + cl.cost + ')');
     });
 }

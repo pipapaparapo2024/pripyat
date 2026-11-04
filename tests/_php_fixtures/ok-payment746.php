@@ -22,6 +22,7 @@ foreach(['get_item','get_item_test'] as $type){
 }
 $_POST=['item'=>'ok_item8','notification_type'=>'get_item','sig'=>'invalid']; ob_start();start();$denied=json_decode(ob_get_clean(),true);
 if(!isset($denied['error']))throw new Exception('Invalid signature allowed');
-foreach(['garbage','item2','ok_item-1','2oops',null,[],9999] as $bad)if(OkPayCallback::parseProductCode($bad)!==-1)throw new Exception('Malformed product accepted');
+foreach(['garbage','item-2','ok_item-1','2oops',null,[],9999] as $bad)if(OkPayCallback::parseProductCode($bad)!==-1)throw new Exception('Malformed product accepted');
 foreach([0,2,23,100,107] as $id)if(OkPayCallback::parseProductCode(strval($id))!==$id)throw new Exception('Legacy FAPI code broken');
+if(OkPayCallback::parseProductCode('item2')!==2)throw new Exception('Site OK item code broken');
 echo "OK metadata: all products and energy prices match webhook; VK catalog unchanged; signature enforced; no DB writes\n";

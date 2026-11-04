@@ -1,0 +1,22 @@
+{
+  "enabled": false,
+  "environment": "prod",
+  "api_id": "54574178",
+  "api_secret": "",
+  "api_service": "",
+  "app_ids": {"vk": "54574178", "ok": "512005669202"},
+  "launch_app_ids": {"vk": "54574178", "ok": "54574178"},
+  "access": {
+    "vk": {"ids": ["1113977365", "382448269", "438953352", "184138040"]},
+    "ok": {"ids": [], "native_ids": ["587256562321"]}
+  },
+  "database_credentials_file": "/etc/pripyat/new-platform-databases.json",
+  "databases": {
+    "stalker": {"host": "127.0.0.1", "port": 3306, "database": "stalker", "user": "SET_ON_SERVER", "password": "SET_ON_SERVER"},
+    "stalker_ok": {"host": "127.0.0.1", "port": 3306, "database": "stalker_ok", "user": "SET_ON_SERVER", "password": "SET_ON_SERVER"}
+  },
+  "credentials_verified": false,
+  "payments": {"vk_enabled": false, "ok_enabled": false},
+  "public_origin": "https://pripyat-game.ru",
+  "configuration_status": "proposed_not_connected"
+}

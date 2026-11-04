@@ -723,6 +723,10 @@ export function attachBossesCombat(proto){
     // дублировать их в БД незачем. Свой id берём из уже закэшированного window.vk_user_info (не дёргаем
     // API лишний раз), для остальных — один батч-запрос users.get с несколькими user_ids сразу.
     proto._resolveVkUsers = function(ids, callback){
+        if(window.platformRuntime&&window.platformRuntime.platform==='telegram'){
+            const resolved={};const valid=[...new Set(ids.map(String))].filter(id=>/^[1-9][0-9]{0,9}$/.test(id)&&Number(id)<=2147483647).slice(0,100);
+            return Promise.all(valid.map(id=>window.platformRuntime.getAvatar(id).then(photo=>{resolved[id]={name:'',photo};}).catch(()=>{}))).then(()=>callback(resolved));
+        }
         const out = {};
         const myId = String(vk_params && vk_params['vk_user_id'] || '');
         const rest = [];

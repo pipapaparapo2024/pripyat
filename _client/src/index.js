@@ -1,3 +1,4 @@
+import { canViewClientDiagnostics, installClientConsolePrivacy } from './modules/client-diagnostics-policy.js';
 import { installPinchDensity } from './modules/pinch-density.js';
 import { startupRequest } from './modules/startup-request.js';
 import { physicalRendererResolution } from './modules/physical-render-resolution.js';
@@ -21,6 +22,8 @@ import { showRotateHintOnce } from './modules/rotate-hint.js';
 import { installAppLifecyclePause } from './modules/app-lifecycle.js';
 import { registerLaunch, syncLaunchCountToServerStorage } from './modules/friends-scope-gate.js';
 import { createVkOkRuntime, installPlatformRuntime } from './modules/platform-runtime.js';
+
+installClientConsolePrivacy(window, console);
 
 const _VER = (() => {
     const s = document.querySelector('script[src*="index.js"]');
@@ -92,23 +95,10 @@ window.bridge = vkBridge;
 // Аудит безопасности 17.09.2026: раньше здесь было true БЕЗУСЛОВНО — в проде это давало
 // любому игроку доступ к GIVE_MILLION()/RUN_TESTS() прямо из консоли браузера, т.к.
 // setupDebugTools() ниже вызывается один раз при загрузке страницы, только если
-// debug_mode===true (флаг, выставленный в консоли ПОСЛЕ загрузки, уже не успевает —
-// setupDebugTools() к тому моменту не вызовется). Для локальной отладки — временно
-// поставить true здесь и пересобрать (npm run build), как с любой другой правкой кода;
-// сами функции GIVE_MILLION/RUN_TESTS из сборки не убраны, просто больше не включены по
-// умолчанию для всех игроков. Дополнительный барьер (на случай если этот флаг всё же
-// обойдут) — сервер (users.php.save()) теперь сам отклоняет неправдоподобные значения
-// основных валют/прогресса, даже если GIVE_MILLION() успеет отработать на клиенте.
-// 08.10.2026 (по прямому указанию — диагностика "бесконечная загрузка на тесте, прелоадер
-// крутится вечно"): раньше флаг был жёстко false — после 26.09.2026 все console.log/warn/error
-// по правилу №8 (ниже) заглушаются ВСЕГДА, то есть даже на тестовом домене диагностировать
-// зависание загрузки по консоли игрока было физически невозможно (видна только версия и
-// браузерные предупреждения, ни одного своего лога). Тестовый домен (test-pripyat-game.ru) —
-// отдельная БД (stalker_test), реальных игроков там нет, включение GIVE_MILLION()/RUN_TESTS()
-// (см. setupDebugTools() ниже) там безопасно. На проде (pripyat-game.ru) hostname не совпадает —
-// флаг остаётся false, поведение для реальных игроков не меняется, хотя файл после супер
-// деплоя побайтово идентичен на обоих доменах (см. AGENTS.md).
-window.debug_mode = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru');
+// Диагностика доступна только выбранному VK-разработчику. Дополнительные
+// локальные инструменты остаются ограничены TEST-доменом; роли Telegram отдельные.
+window.debug_mode = canViewClientDiagnostics(window) && location.hostname === 'test-pripyat-game.ru';
+if(window.__telegramRuntime) window.debug_mode = window.__telegramRuntime.getRoles().includes('developer');
 
 // 28.10.2026 (по прямому указанию — случайный полный супер деплой вынес на прод недоделанные
 // фичи 2048/Разнарядка/Заначки раньше срока, реальные игроки увидели 404 на недостающих
@@ -146,7 +136,7 @@ window.ok_payment_diagnostics_enabled = false;
 // Same account list as the existing Dev panel. Never enable raw payment logs.
 const _okConsolePlatform = /ok\.ru|odnoklassniki\.ru|st\.okcdn\.ru/.test(_okDiagnosticOrigins) || new URLSearchParams(window.location.search).get('vk_client') === 'ok';
 const _okPaymentDevUid = new URLSearchParams(window.location.search).get('vk_user_id');
-window.ok_payment_diagnostics_for_dev = ['1113977365', '382448269', '438953352', '184138040'].includes(_okPaymentDevUid);
+window.ok_payment_diagnostics_for_dev = canViewClientDiagnostics(window);
 window.ok_payment_safe_diagnostics = _okConsolePlatform && window.ok_payment_diagnostics_for_dev;
 if(window.ok_payment_safe_diagnostics) _nativeConsole.log('[ok-payment]',{stage:'diagnostics-ready'});
 window.ok_payment_diagnostics = window.ok_payment_diagnostics_for_dev && window.ok_payment_diagnostics_enabled && (_okDiagnosticOrigins.includes('ok.ru')
@@ -167,7 +157,8 @@ const _isPaymentDiagnostic = (args) => typeof args[0] === 'string'
 // правкой кода. Настоящий баннер "ПРИПЯТЬ vN" в титульной строке ниже — единственное
 // исключение (не через console.log, а собственным CSS-блоком на странице), поэтому версия
 // в углу экрана видна игроку как и раньше.
-if(!window.debug_mode || (_okConsolePlatform && !window.ok_payment_diagnostics_for_dev)){
+// Console visibility is independent of TEST-only debug tools.
+if(!canViewClientDiagnostics(window) || (_okConsolePlatform && !window.ok_payment_diagnostics_for_dev)){
 	const _noop = () => {};
 	const _okDiagnosticLog = (kind) => (...args) => {
 		if((window.ok_payment_diagnostics && _isPaymentDiagnostic(args)) || (window.ok_payment_safe_diagnostics && args[0] === '[ok-payment]')) _nativeConsole[kind](...args);
@@ -197,7 +188,11 @@ for(let i = 0; i < partsData.length; i++) {
 // Единственная точка, где текущий VK/OK launch-контекст превращается в нейтральный
 // runtime. Старые window.vk_params/window.bridge ниже оставлены временно как
 // compatibility API для ещё не перенесённых экранов: поведение игроков не меняется.
-window.platformRuntime = installPlatformRuntime(createVkOkRuntime({bridge: vkBridge, launchParams: userDataVk}));
+if(window.__telegramRuntime){
+    window.platformRuntime = installPlatformRuntime(window.__telegramRuntime);
+}else{
+    window.platformRuntime = installPlatformRuntime(createVkOkRuntime({bridge: vkBridge, launchParams: userDataVk}));
+}
 window.gameSession = Object.freeze({
 	platform: platformRuntime.platform,
 	playerId: platformRuntime.getPlayerId(),
@@ -290,6 +285,7 @@ window.VK_version = '5.132';
 window.my_server = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru')
     ? 'https://test-pripyat-game.ru/server'
     : 'https://pripyat-game.ru/server';
+if(window.__telegramRuntime) window.my_server = window.location.origin + '/server';
 
 window.bridge = bridge;
 window.Timers = Timers;
@@ -297,10 +293,12 @@ window.Timers = Timers;
 window.helper = new UniHelp();
 window.modules = new ModuleControl();
 window.TS = new Server([gameSession.appId, gameSession.playerId, my_server]);
+if(window.__telegramServer) window.TS = window.__telegramServer;
 
 window.errors = [{text:'Undefined function', code:34}, {text:'Invalid request', code:35}, {text:'Output have invalid format', code:36}];
 window.bitmaps50 = {id:[], bm:[]};
 window.null_photo50 = my_server+'/images/noicon.png';
+if(window.__telegramRuntime) window.null_photo50 = './images/2048 аватар заглушка.png';
 
 // 27.09.2026: раньше здесь стояла проверка isMobile только по User-Agent (пропускала iPad на
 // iPadOS 13+ — он отдаёт UA обычного Mac — и планшеты на Windows), и флаг никем не читался.

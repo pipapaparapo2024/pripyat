@@ -11164,6 +11164,11 @@
     "sha256": "2284be2a152eafa79d4a4aac7445a939268be7ef01bc2db5b47ef61bd9a1b73c",
     "reason": "lossless WebP companion of included PNG"
   },
+  "images/maintenance-background.jpg": {
+    "bytes": 833810,
+    "sha256": "b338a7a7e6d16ec57a868ab488f687dc65b9b6884643ecece753baf98761bce8",
+    "reason": "runtime asset; validate references with npm run assets:audit"
+  },
   "images/notify_atlas_1.json": {
     "bytes": 198,
     "sha256": "4e10b162c4d0d30190183291368de5c75cd1702db31f32b5c02104952d026c23",
@@ -14143,6 +14148,16 @@
     "bytes": 14536,
     "sha256": "f4842bb12b365c4924a6d1a2839ad9e3f3aa893a99cf13c3bcb42d88eb7fd541",
     "reason": "WebP companion"
+  },
+  "images/telegram-icon.jpg": {
+    "bytes": 892213,
+    "sha256": "95e26607d30262f31fef10a2bda196a566b590c7db795ff120cec1557afeb8cb",
+    "reason": "runtime asset; validate references with npm run assets:audit"
+  },
+  "images/telegram-welcome.jpg": {
+    "bytes": 953603,
+    "sha256": "7b2c1ecf8355c3f5bdcf93433515c4b8767b377c69042768af2c9c28a514420f",
+    "reason": "runtime asset; validate references with npm run assets:audit"
   },
   "images/yashik_screen_obyskat.png": {
     "bytes": 54535,

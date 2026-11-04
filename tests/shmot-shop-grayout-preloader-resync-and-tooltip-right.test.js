@@ -64,7 +64,7 @@ console.log('\nTest 3: shmot.js — dev-кнопка "ОТКРЫТЬ ВСЁ" п�
     const start = devSrc.indexOf('proto._unlockAllShmot = function(){');
     assert(start !== -1, '_unlockAllShmot существует');
     const chunk = devSrc.slice(start, start + 900);
-    assert(/shmot\.items\.forEach\(it => \{ it\.owned = true; \}\);/.test(chunk), 'помечает ВСЕ предметы owned=true');
+    assert(/save\[it\.id\] = \{owned: true, equipped: it\.equipped\};/.test(chunk), 'запрашивает owned=true без преждевременной мутации');
     // 25.09.2026 (shmot server-authoritative — 'shmot' убран из client-writable whitelist):
     // сохранение переведено с shmot._saveToUdata() (generic users.save(), уже не пишет) на
     // users.devGrantShmot (прямой SQL update в обход whitelist, как devGrantWeapons).

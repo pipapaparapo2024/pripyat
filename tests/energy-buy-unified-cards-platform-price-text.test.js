@@ -55,7 +55,7 @@ console.log('\nTest 2: цена текстом рисуется для ЛЮБО�
 {
     assert(!/if\(isOk\(\)\)\{[\s\S]*?priceTxt/.test(src),
         'priceTxt больше НЕ находится внутри if(isOk()){...} — рисуется безусловно для каждой карточки');
-    assert(/const price = isOk\(\) \? opt\.price_ok : opt\.votes;/.test(src),
+    assert(/const price = window\.__telegramRuntime \? window\.telegramStarsCatalog\.energy\.stars\[i\] : \(isOk\(\) \? opt\.price_ok : opt\.votes\);/.test(src),
         'число цены выбирается по площадке: ОК — price_ok, иначе (VK) — votes (та же схема, что bank.js._displayPrice())');
     assert(/const priceTxt = new PIXI\.Text\(price \+ ' ' \+ helper\.numberEnd\(price, 'votes'\)/.test(src),
         "склонение через helper.numberEnd(price, 'votes') — само подставит нужные слова платформы через modules/platform.js.currencyNames() (голос/голоса/голосов или ОК/ОКа/ОКов)");

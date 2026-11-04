@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../models/weaponprogress.php';
+require_once __DIR__ . '/../models/rewardlinktargets.php';
     // ── НАГРАДНЫЕ ССЫЛКИ (25.09.2026, по прямому указанию) ──────────────────────────────
     //
     // Отдельный сайт-генератор (vk_game/сайт/, деплоится на этот же сервер, /rewards-admin/)
@@ -161,6 +162,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
         function claim(){
             $code = trim(strval($this->registry['user_params']['code'] ?? ''));
             if($code === '' || strlen($code) > 64) return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
+            if(!RewardLinkTargets::matches($code,(string)$this->registry['db']))return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
             $link = null;
             try {
                 $link = $this->_rawLink();

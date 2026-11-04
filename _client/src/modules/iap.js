@@ -121,7 +121,10 @@ function _installOkPaymentCallback(){
 
 function _okUnavailable(itemId, reason){
     console.error('[iap._startOkPurchase] оплата на ОК недоступна в этой сессии | item:', itemId, '| причина:', reason);
-    if(window.notify) notify.showResult({text:'Покупки на этой площадке временно недоступны. Мы уже работаем над этим.'}, 0);
+    const last=(window.ok_payment_safe_history||[]).slice(-1)[0];
+    const unavailable=window.__nativeProdDevDiagnostics===true && last && (last.reason==='unsupported'||last.errorCode===6);
+    const text=unavailable ? 'Launcher ОК не предоставляет платёжный метод. Подробности: DEV → ЛОГИ → Диагностика оплаты ОК.' : 'Покупки на этой площадке временно недоступны. Мы уже работаем над этим.';
+    if(window.notify) notify.showResult({text}, 0);
 }
 
 // item → {валюта, количество} — та же раскладка, что и серверный каталог
@@ -157,10 +160,12 @@ function _startOkPurchase(itemId, priceOk, label){
     // Request item information via the launcher; the server supplies the OK price.
     if(window.vk_params && window.vk_params.vk_client === 'ok'){
         logOkPayment('launcher-payment',{item:numericId,price:Number(priceOk)});
+        const details={name:label||('Товар #'+numericId),description:'Внутриигровая покупка — Припять',price:Number(priceOk)};
         const startNative = () => window.platformRuntime && typeof window.platformRuntime.startNativePurchase === 'function'
-            ? window.platformRuntime.startNativePurchase('ok_item'+numericId)
+            ? window.platformRuntime.startNativePurchase('ok_item'+numericId,details)
             : bridge.send('VKWebAppShowOrderBox', {type:'item',item:'ok_item'+numericId});
-        return Promise.resolve().then(startNative).then(() => {
+        return Promise.resolve().then(startNative).then(result => {
+            if(result && result.success===false) throw new Error('OK payment was not completed');
             logOkPayment('launcher-result',{result:'ok'});
             const [currency,count] = _okItemCurrencyAndCount(numericId);
             if(currency && window.bank && window.bank._refreshBalanceAfterPurchase) window.bank._refreshBalanceAfterPurchase(currency,count);
@@ -211,6 +216,15 @@ function _startOkPurchase(itemId, priceOk, label){
 // где начинается покупка (bank.js.genSlots(), energy_buy.js). label — читаемое имя товара для
 // окна оплаты ОК (VK-ветка его не использует, у VK свой каталог с названиями).
 export function startPurchase(itemId, priceOk, label){
+    if(window.__closedNativeProd===true && window.__nativeProdPayments?.[isOk()?'ok':'vk']!==true){
+        if(window.iface && typeof window.iface._showRewardPopup==='function') window.iface._showRewardPopup(['Оплата временно отключена на время проверки запуска.']);
+        return Promise.resolve(false);
+    }
+    if(window.__nativeTestPaymentsDisabled===true && !(window.__nativeTestVkPaymentsEnabled===true && !isOk())){
+        if(window.iface&&typeof window.iface._showRewardPopup==='function')window.iface._showRewardPopup(['Оплата на тестовом сервере отключена.']);
+        return Promise.resolve(false);
+    }
+    if(window.platformRuntime && window.platformRuntime.platform==='telegram')return window.__telegramPurchase(itemId);
     if(isOk()) return _startOkPurchase(itemId, priceOk, label);
     return _startVkPurchase(itemId);
 }

@@ -308,7 +308,7 @@ export function attachCurrencyPurchase(proto){
                 countTxt.x = slot.x + SLOT_W / 2; countTxt.y = slot.y + 25;
                 gridCont.addChild(countTxt);
 
-                const price = isOk() ? info['price_ok'][i] : info['price'][i] / 7;
+                const price = window.__telegramRuntime ? window.telegramStarsCatalog[key].stars[i] : (isOk() ? info['price_ok'][i] : info['price'][i] / 7);
                 const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), TXT_STYLE_PRICE);
                 priceTxt.resolution = 4;
                 priceTxt.anchor.set(0.5, 1);

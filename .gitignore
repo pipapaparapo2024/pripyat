@@ -34,6 +34,40 @@ SECRETS_LOCAL.md
 server/core/models/registry.php
 server/php_errors.log
 
+# Private environment files at any nesting level. Only sanitized templates are allowed.
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!.env.sample
+!.env.template
+!*.env.example
+!*.env.sample
+!*.env.template
+secrets/
+.secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+website-auth-test.json
+site-test-access.json
+site-test-database.json
+test-platform-databases.json
+new-platform-databases.json
+telegram-test-bot.json
+telegram-prod-bot.json
+rewards-admin-test-access.json
+rewards-admin-test.json
+yookassa-test.json
+telegram-test-network.json
+vk-ok-native-test.json
+vk-ok-native-prod.json
+
 # Одноразовые операции выполняются по SSH/CLI и не должны быть доступны как URL PHP-файлы.
 server/migrate*.php
 server/dev_*.php
@@ -82,3 +116,6 @@ deploy-test-failures.log
 /server/images/
 
 .venv/
+# Separate Telegram build artifacts (source remains in _client/src).
+_client/telegram-build/
+_client/website-build/

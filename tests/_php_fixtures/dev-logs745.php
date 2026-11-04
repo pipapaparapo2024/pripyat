@@ -30,3 +30,7 @@ foreach (['1113977365','382448269','438953352','184138040','123','382448269x',''
     else check($tools->result === ['error'=>403]);
 }
 echo "Dev logs: projection, bounds, all Dev accounts and denial passed\n";
+
+$safe=DevLogReader::project('[native-prod-pay] platform=ok stage=rejected reason=invalid_signature product=6 price=3500 sign='.$secret.' uid=587256562321');
+check($safe===[['event'=>'payment','platform'=>'ok','stage'=>'rejected','reason'=>'invalid_signature','product'=>6,'price'=>3500]]);
+check(strpos(json_encode($safe),$secret)===false);

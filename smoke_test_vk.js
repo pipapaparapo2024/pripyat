@@ -43,7 +43,8 @@ const HOST = 'test-pripyat-game.ru';
 // из /var/www/stalker-test/server/core/models/registry.php (read-only, тот же секрет, что и
 // так публично доступен на диске тестового сервера).
 const API_ID = 54679940; // test registry.php: 'api_id' (НЕ прод 54574178 — другое VK-приложение)
-const API_SECRET = 'WuAnBFaVeG2VQoO8rrxC'; // test registry.php: 'api_secret'
+const API_SECRET = process.env.PRIPYAT_VK_TEST_API_SECRET || '';
+if(!API_SECRET) throw new Error('Задайте PRIPYAT_VK_TEST_API_SECRET вне репозитория.');
 const TEST_UID = 999000001; // синтетический smoke-test аккаунт, НЕ реальный VK-игрок
 // 04.10.2026: второй синтетический аккаунт — для живой проверки "друг реально попадает в
 // rating/friendsDamage" (прямая живая защита бага 04.10.2026, см. AGENTS.md — друзьям сюда

@@ -24,6 +24,9 @@ function _getRewardCode(){
     const hash = window.location.hash || '';
     const m = hash.match(/reward=([^&]+)/);
     if(m) return decodeURIComponent(m[1]);
+    if(window.__telegramRuntime && typeof window.__telegramRuntime.getRewardCode==='function'){
+        const code=window.__telegramRuntime.getRewardCode();if(code)return code;
+    }
     return (window.vk_params && vk_params['reward']) || null;
 }
 

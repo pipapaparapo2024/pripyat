@@ -44,7 +44,7 @@ class HabarUdb747 {
 }
 class HabarCatalog747 {function get($name,...$args){if($name==='habar_daily_config')return ['total_days'=>30,'containers'=>[1=>['rewards'=>[['type'=>'coins','amount'=>5]]]]];return json_decode(file_get_contents(__DIR__.'/../../server/json/'.$name.'.json'),true);}}
 class HabarTools747 {public $result;function output($value){$this->result=$value;}function error($code){$this->result=['error'=>$code];}}
-foreach(['habar','rewardlinks'] as $name){$source=file_get_contents(__DIR__.'/../../server/core/controllers/'.$name.'.php');$source=preg_replace('/^require_once __DIR__.*weaponprogress.php.*$/m','',$source);eval(str_replace(['<?php','new mysqli(','intval(round(microtime(true) * 1000))'],['','new HabarSql747(','HabarSql747::nowMs()'],$source));}
+foreach(['habar','rewardlinks'] as $name){$path=realpath(__DIR__.'/../../server/core/controllers/'.$name.'.php');$source=file_get_contents($path);$source=str_replace('__DIR__',var_export(dirname($path),true),$source);eval(str_replace(['<?php','new mysqli(','intval(round(microtime(true) * 1000))'],['','new HabarSql747(','HabarSql747::nowMs()'],$source));}
 $tools=new HabarTools747;$udb=new HabarUdb747;
 $registry=['tools'=>$tools,'udb'=>$udb,'utb'=>'users','uid'=>42,'json'=>new HabarCatalog747,'server'=>'','user'=>'','pass'=>'','db'=>'','user_params'=>['container_id'=>1,'code'=>'fixture']];
 function fresh747(){HabarSql747::$row=['id'=>42,'habar_bought'=>'0','habar_bought_ts'=>'1000','habar_days_collected'=>'30','habar_last_collect_ts'=>'2000','habar_counts'=>'[0,0,0,0]','stew'=>'10000','coins'=>'100','cigarettes'=>'100','respect'=>'0','exp'=>'0','level'=>'0','energy'=>'10','weapons'=>'[]','shmot'=>'[]','bosses_data'=>'{}'];HabarSql747::$claimed=false;HabarSql747::$onCommit=null;}

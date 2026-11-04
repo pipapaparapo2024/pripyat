@@ -5,7 +5,7 @@ export function attachZoneBiz(proto){
         const LL  = './images/layers/popups/location/';
         const BIZ = './images/layers/biz/';
         const files = [
-            'loc_kordon','loc_svalka','loc_dolina','loc_agroprom','loc_yantar'
+            'локация кордон','локация свалка','локация темная долина','локация агропром','локация янтарь'
         ].map(n => LL + n + '.png').concat([
             LL+'cp_activ.png', LL+'cp_done.png', LL+'cp_inactive.png',
             LL+'кнопка выполнить можно.png', LL+'кнопка выполнить нельзя.png',
