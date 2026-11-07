@@ -7,14 +7,8 @@
  * только внутри setup()). Корень гонки — внутри стороннего скомпилированного
  * pixi-legacy/animate.min.js, точечно не чинится в своём коде (ПРАВИЛО №2).
  *
- * Фикс — два независимых, не связанных с PIXI/notify куска:
- * 1) index.js: глобальный window.addEventListener('error', ...) — гарантирует, что подобная
- *    ошибка попадёт в консоль с понятным тегом и контекстом, а не потеряется.
- * 2) preloader-visual.js: ВТОРОЙ таймер (50с, длиннее уже существующего чисто
- *    информационного 30-секундного) — крайний резерв: если игра так и не стала готова,
- *    показывает поверх Spine-анимации явное сообщение с кнопкой перезагрузки, собранное на
- *    чистом DOM (без PIXI/notify — та часть, что может быть как раз сломана в этот момент).
- *    Существующий 30-секундный таймер остаётся БЕЗ изменений (по дизайну не прерывает показ).
+ * Ранняя диагностика остаётся, но длительная загрузка сама по себе
+ * не должна показывать окно ошибки или предлагать перезагрузку.
  *
  * Run: node tests/oct22-preloader-stuck-failsafe-and-global-error-log.test.js
  */
@@ -46,16 +40,11 @@ console.log('\nTest 1: index.js — глобальный логгер необр
         'логгер ошибок регистрируется раньше startPreloaderVisual() — ловит ошибки с самого начала бута');
 }
 
-console.log('\nTest 2: preloader-visual.js — крайний резервный таймер (50с) с DOM-оверлеем "Перезагрузить"');
+console.log('\nTest 2: долгая загрузка не показывает окно ошибки');
 {
-    assert(/const _hardFailTid = setTimeout\(\(\) => \{/.test(preloaderVisualSrc), 'второй таймер объявлен');
-    assert(/\}, 50000\);/.test(preloaderVisualSrc), 'порог — 50с (длиннее существующего информационного 30с)');
-    assert(/if\(_removed\) return;/.test(preloaderVisualSrc), 'таймер проверяет _removed — не сработает, если игра уже загрузилась');
-    assert(/overlay\.id = '_preloader_stuck_overlay';/.test(preloaderVisualSrc), 'оверлей создаётся с уникальным id');
-    assert(/Не удалось загрузить игру\. Попробуйте перезагрузить страницу\./.test(preloaderVisualSrc),
-        'показывается понятное сообщение игроку');
-    assert(/btn\.onclick = \(\) => location\.reload\(\);/.test(preloaderVisualSrc),
-        'кнопка реально перезагружает страницу (location.reload)');
+    assert(!/\}, 50000\);/.test(preloaderVisualSrc), 'нет таймера ошибки через 50с');
+    assert(!preloaderVisualSrc.includes('_preloader_stuck_overlay'), 'нет DOM-окна зависшей загрузки');
+    assert(!preloaderVisualSrc.includes('location.reload()'), 'визуальный загрузчик не предлагает перезапуск');
 }
 
 console.log('\nTest 3: preloader-visual.js — существующий 30-секундный информационный таймер НЕ тронут (по дизайну не прерывает показ)');
@@ -66,17 +55,11 @@ console.log('\nTest 3: preloader-visual.js — существующий 30-се�
     assert(/\}, 30000\);/.test(preloaderVisualSrc), 'порог 30с не изменён');
 }
 
-console.log('\nTest 4: preloader-visual.js — оба таймера и DOM-оверлей корректно чистятся в _remove()');
+console.log('\nTest 4: при скрытии прелоадера диагностический таймер очищается');
 {
-    const m = preloaderVisualSrc.match(/function _remove\(\)\{([\s\S]*?)\n    \}/);
-    assert(!!m, '_remove() найден');
-    if(m){
-        const body = m[1];
-        assert(/clearTimeout\(_failsafeTid\);/.test(body), '_failsafeTid очищается');
-        assert(/clearTimeout\(_hardFailTid\);/.test(body), '_hardFailTid очищается — не покажет оверлей, если игра успела загрузиться после 50с');
-        assert(/document\.getElementById\('_preloader_stuck_overlay'\)/.test(body),
-            'оверлей (если уже успел показаться) снимается при реальном скрытии прелоадера');
-    }
+    const match = preloaderVisualSrc.match(/function _remove\(\)\{([\s\S]*?)\n    \}/);
+    assert(!!match && /clearTimeout\(_failsafeTid\);/.test(match[1]),
+        'диагностический таймер не срабатывает после завершения загрузки');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

@@ -4340,13 +4340,13 @@
     "reason": "WebP companion"
   },
   "images/левая рука.png": {
-    "bytes": 6729,
-    "sha256": "76cd2817684ac44a7ac05332503beeebc1454adfdf06553b68bfb820cedb46cd",
+    "bytes": 51365,
+    "sha256": "703ac6f04bff1fbbaf86a2ffd14f6ab339dec5f7fe72f8ca968e5883f56d0447",
     "reason": "literal reference"
   },
   "images/левая рука.png.webp": {
-    "bytes": 2976,
-    "sha256": "b5a79b7e36afc26a54e96d8d6992e70db8bde9feb93fd3697b297ba02ef16c8f",
+    "bytes": 30264,
+    "sha256": "fb01f9e2adaebd5d3916503f35551d3d9d75ff0145a4cae72850d5779100556f",
     "reason": "WebP companion"
   },
   "images/левое предплечье.png": {

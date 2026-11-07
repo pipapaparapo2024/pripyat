@@ -1,3 +1,4 @@
+﻿import {telegramGameViewport} from './modules/telegram-layout.js';
 import { canViewClientDiagnostics, installClientConsolePrivacy } from './modules/client-diagnostics-policy.js';
 import { installPinchDensity } from './modules/pinch-density.js';
 import { startupRequest } from './modules/startup-request.js';
@@ -98,6 +99,7 @@ window.bridge = vkBridge;
 // Диагностика доступна только выбранному VK-разработчику. Дополнительные
 // локальные инструменты остаются ограничены TEST-доменом; роли Telegram отдельные.
 window.debug_mode = canViewClientDiagnostics(window) && location.hostname === 'test-pripyat-game.ru';
+if(window.__siteRuntime) window.debug_mode = window.__siteRuntime.getRoles().includes('developer');
 if(window.__telegramRuntime) window.debug_mode = window.__telegramRuntime.getRoles().includes('developer');
 
 // 28.10.2026 (по прямому указанию — случайный полный супер деплой вынес на прод недоделанные
@@ -188,7 +190,9 @@ for(let i = 0; i < partsData.length; i++) {
 // Единственная точка, где текущий VK/OK launch-контекст превращается в нейтральный
 // runtime. Старые window.vk_params/window.bridge ниже оставлены временно как
 // compatibility API для ещё не перенесённых экранов: поведение игроков не меняется.
-if(window.__telegramRuntime){
+if(window.__siteRuntime){
+    window.platformRuntime = installPlatformRuntime(window.__siteRuntime);
+}else if(window.__telegramRuntime){
     window.platformRuntime = installPlatformRuntime(window.__telegramRuntime);
 }else{
     window.platformRuntime = installPlatformRuntime(createVkOkRuntime({bridge: vkBridge, launchParams: userDataVk}));
@@ -226,6 +230,7 @@ installPlayerPersistence();
 // приложения — см. modules/app-lifecycle.js.
 installAppLifecyclePause();
 
+if(window.__siteRuntime){userDataVk.vk_user_id=platformRuntime.getPlayerId();userDataVk.vk_app_id=platformRuntime.getAppId();}
 window.vk_params = userDataVk;
 
 // 30.10.2026: 2048, Разнарядка и Заначки выпускаются для всех игроков, включая прод.
@@ -285,7 +290,7 @@ window.VK_version = '5.132';
 window.my_server = (typeof location !== 'undefined' && location.hostname === 'test-pripyat-game.ru')
     ? 'https://test-pripyat-game.ru/server'
     : 'https://pripyat-game.ru/server';
-if(window.__telegramRuntime) window.my_server = window.location.origin + '/server';
+if(window.__siteRuntime || window.__telegramRuntime) window.my_server = window.location.origin + '/server';
 
 window.bridge = bridge;
 window.Timers = Timers;
@@ -294,11 +299,12 @@ window.helper = new UniHelp();
 window.modules = new ModuleControl();
 window.TS = new Server([gameSession.appId, gameSession.playerId, my_server]);
 if(window.__telegramServer) window.TS = window.__telegramServer;
+if(window.__siteServer) window.TS = window.__siteServer;
 
 window.errors = [{text:'Undefined function', code:34}, {text:'Invalid request', code:35}, {text:'Output have invalid format', code:36}];
 window.bitmaps50 = {id:[], bm:[]};
 window.null_photo50 = my_server+'/images/noicon.png';
-if(window.__telegramRuntime) window.null_photo50 = './images/2048 аватар заглушка.png';
+if(window.__siteRuntime || window.__telegramRuntime) window.null_photo50 = './images/2048 аватар заглушка.png';
 
 // 27.09.2026: раньше здесь стояла проверка isMobile только по User-Agent (пропускала iPad на
 // iPadOS 13+ — он отдаёт UA обычного Mac — и планшеты на Windows), и флаг никем не читался.
@@ -366,7 +372,7 @@ let initPreloader = () => {
 		// и углы игры (кнопка выхода, HUD) было физически нечем нажать. На устройствах без
 		// вырезов safe-area = 0 и поведение ровно прежнее.
 		const physicalViewport = viewportMetrics();
-		const vp = okBannerViewport(physicalViewport, { enabled: isOk(), mobile: window.isMobile });
+		const vp = window.__telegramRuntime ? telegramGameViewport(physicalViewport, window.isMobile) : okBannerViewport(physicalViewport, { enabled: isOk() && !window.__siteRuntime, mobile: window.isMobile });
 		if(vp !== physicalViewport){
 			console.log('[index.js.resize] ОК: игровая область вне баннеров:', vp.w, vp.h, '| отступы:', vp.bannerInsets);
 		}

@@ -761,7 +761,7 @@ export function attachBossesCombat(proto){
             }
         });
         const _doBatchFetch = () => {
-            if(!rest.length || !window.bridge || !window.VK_token){
+            if(!rest.length || !window.bridge || (!window.VK_token && !window.__siteRuntime)){
                 console.log('[bosses._resolveVkUsers] без доп. запроса, resolved:', Object.keys(out).length);
                 callback(out); return;
             }

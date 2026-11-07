@@ -1,3 +1,4 @@
+import {installTelegramBackdrop} from './modules/telegram-layout.js';
 import {loginTelegramTest} from './modules/telegram-login.js';
 import {createTelegramRuntime} from './modules/telegram-runtime.js';
 import TelegramServer from './modules/telegram-server.js';
@@ -7,6 +8,7 @@ import {installTelegramPayments} from './modules/telegram-payments.js';
 import {installTelegramDeveloper} from './modules/telegram-developer.js';
 import starsCatalog from '../../server/json/telegram_stars.json';
 
+installTelegramBackdrop();
 (async()=>{
     const app=window.Telegram && window.Telegram.WebApp;
     const inviteCode=new URL(window.location.href).searchParams.get('friend')||'';
@@ -16,7 +18,7 @@ import starsCatalog from '../../server/json/telegram_stars.json';
     window.__telegramServer=new TelegramServer(session,window.location.origin+'/server');
     window.openTelegramFriends=openTelegramFriends;
     installTelegramPayments(app,starsCatalog);
-    await installTelegramDeveloper(session.roles||[]);
+    await installTelegramDeveloper(session.roles||[],session.owner_diagnostics===true);
     // Unmigrated UI may still read bridge globals; do not load or call VK SDK.
     const unsupported=()=>Promise.reject(new Error('VK API недоступно в Telegram.'));
     window.vkBridge={send:unsupported,sendPromise:unsupported,subscribe:()=>{},supports:()=>false};

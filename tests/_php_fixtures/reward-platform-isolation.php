@@ -29,3 +29,6 @@ checkReward(!$wrong->create(['vk'],$reward,'',0,1000)['vk']['created'],'Ошиб
 foreach(['r1_test_vk_bad','r1_prod_mysql_'.str_repeat('a',32),'r1_test_site_'.str_repeat('a',32).'x'] as $bad)checkReward(!RewardLinkTargets::matches($bad,'stalker_test'),'Неверный привязанный код отвергнут');
 checkReward(RewardLinkTargets::matches('historical-code','legacy-db'),'Исторические коды сохранены');
 echo "Награды: четыре отдельные БД/кода, TEST/PROD, выбор площадок, ошибочный конфиг и частичный сбой проверены\n";
+
+$live=new RewardLinkPublisher('website',fn($name)=>new RewardMemoryDb($name));$out=$live->create(['vk','ok','site','telegram'],$reward,'',0,1000);
+foreach(['vk'=>'stalker','ok'=>'stalker_ok','site'=>'stalker_site_test','telegram'=>'stalker_telegram_test'] as $platform=>$db)checkReward($out[$platform]['created']&&RewardLinkTargets::matches($out[$platform]['code'],$db),'Website current world mismatch');

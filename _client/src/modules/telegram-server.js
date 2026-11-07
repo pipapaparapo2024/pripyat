@@ -14,17 +14,17 @@ export default class TelegramServer extends Server {
         super.php(method,params,onComplete,onError);
     }
     completeRequest(event){
-        if(this.MSS.readyState===4&&this.MSS.status===403){
+        if(this.MSS.readyState===4&&this.MSS.status!==200){
             let denied;try{denied=JSON.parse(this.MSS.response.toString());}catch(_){}
-            if(denied&&denied.status==='error'&&denied.code===403){
+            if(denied&&denied.status==='error'){
                 if(denied.access_denied&&typeof document!=='undefined'&&!document.getElementById('telegram-access-denied')){
                     const overlay=document.createElement('div');overlay.id='telegram-access-denied';
                     overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;background:#171713;color:#eee;font:18px Arial;text-align:center;padding:24px';
-                    overlay.textContent='Доступ к закрытому тестированию отозван. Обратитесь к разработчику. После восстановления доступа откройте игру заново.';
+                    overlay.textContent='Доступ к игре отозван. Обратитесь к разработчику. После восстановления доступа откройте игру заново.';
                     document.body.appendChild(overlay);
                 }
                 this.json=denied;if(denied.req_key)this.req_key=denied.req_key;
-                this.onError();if(this.mc)this.mc.visible=false;this.wait=false;this.nextReq();return;
+                try{this.onError();}catch(callbackError){console.error('[telegram-server] Ошибка обработчика:',callbackError);}finally{if(this.mc)this.mc.visible=false;this.wait=false;this.nextReq();}return;
             }
         }
         super.completeRequest(event);
@@ -33,6 +33,7 @@ export default class TelegramServer extends Server {
         try{
             this.MSS=new XMLHttpRequest();
             this.MSS.open('POST',this.scriptURL,true);
+            this.MSS.timeout=30000;
             this.MSS.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
             this.MSS.addEventListener('loadend',()=>this.completeRequest(this.MSS));
             this.MSS.send(new URLSearchParams({method,payload:JSON.stringify(params||{}),token:this.token,req_key:this.req_key}).toString());

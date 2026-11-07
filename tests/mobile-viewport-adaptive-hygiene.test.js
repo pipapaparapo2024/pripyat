@@ -80,7 +80,7 @@ console.log('\nTest 2: index.js — размеры канваса из моду�
         'старая UA-проверка isMobile убрана из index.js (переехала в модуль)');
 
     assert(/const physicalViewport = viewportMetrics\(\);/.test(index)
-        && /const vp = okBannerViewport\(physicalViewport, \{ enabled: isOk\(\), mobile: window.isMobile \}\);/.test(index),
+        && /const vp = window\.__telegramRuntime \? telegramGameViewport\(physicalViewport, window\.isMobile\) : okBannerViewport\(physicalViewport, \{ enabled: isOk\(\) && !window\.__siteRuntime, mobile: window.isMobile \}\);/.test(index),
         'resize() получает физические метрики и применяет резерв баннеров только в ОК');
     // 03.10.2026: w/h теперь объявляются один раз (`let w, h;`) выше ветвления needsRotate
     // (форс-ландшафт/обычный letterbox, см. modules/forced-landscape.js) — присвоение `w = vp.w;`

@@ -17,11 +17,11 @@ assertBot(TelegramBotHandler::authorized(str_repeat('a',64),str_repeat('a',64)))
 function msg($text){return ['message'=>['chat'=>['id'=>123,'type'=>'private'],'from'=>['id'=>123,'is_bot'=>false],'text'=>$text]];}
 $handler->handle(msg('/start f_'.str_repeat('a',48)));
 assertBot($b->calls[0][0]==='sendPhoto' && $b->calls[0][1]['caption']==='Полное приветствие');
-assertBot(str_contains($b->calls[0][1]['reply_markup']['inline_keyboard'][0][0]['web_app']['url'],'friend=f_'));
-assertBot(count($f->accepted)===1);
+assertBot(!str_contains($b->calls[0][1]['reply_markup']['inline_keyboard'][0][0]['web_app']['url'],'friend=f_'));
+assertBot(count($f->accepted)===0);
 $handler->handle(msg('/friends'));assertBot(str_contains(end($b->calls)[1]['text'],'Друг'));
 $handler->handle(msg('/others'));assertBot(str_contains(end($b->calls)[1]['text'],'Не друзья'));
-$handler->handle(msg('/invite'));assertBot(str_contains(end($b->calls)[1]['text'],'start=f_'));
+$handler->handle(msg('/invite'));assertBot(str_contains(end($b->calls)[1]['text'],'ID'));
 $handler->handle(['callback_query'=>['id'=>'cb','from'=>['id'=>123],'message'=>['chat'=>['id'=>123,'type'=>'private']],'data'=>'remove:8']]);
 assertBot($f->removed===[[7,8]]);
 foreach($b->calls as [$m,$p])if(isset($p['chat_id']))assertBot($p['chat_id']===123);

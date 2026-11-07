@@ -10,6 +10,9 @@
  * Run: node tests/reward-amount-offsets.test.js
  */
 
+const fs = require('node:fs');
+const path = require('node:path');
+
 let passed = 0, failed = 0;
 
 function assert(cond, msg) {
@@ -32,7 +35,7 @@ const _TXT_OFF = {
     gun:          { dx: -2, dy:  0 }, ammo_gun:     { dx: -2, dy:  0 },
     cig:          { dx: -4, dy:  0 }, cigarettes:   { dx: -4, dy:  0 },
     coins:        { dx: -2, dy:  0 },
-    exp:          { dx:  6, dy:  0 }, energy:       { dx:  6, dy:  0 }, heal: { dx:  6, dy:  0 },
+    exp:          { dx:  6, dy:  0 }, heal: { dx:  6, dy:  0 },
     machete:      { dx:  6, dy: -8 }, ammo_machete: { dx:  6, dy: -8 },
     auto:         { dx: 10, dy: -6 }, ammo_auto:    { dx: 10, dy: -6 },
 };
@@ -68,7 +71,6 @@ console.log('\nTest 2: Per-type offset table explicit values');
         ['cigarettes',    -4,  0],
         ['coins',         -2,  0],
         ['exp',            6,  0],
-        ['energy',         6,  0],
         ['heal',           6,  0],
         ['machete',        6, -8],
         ['ammo_machete',   6, -8],
@@ -142,11 +144,14 @@ console.log('\nTest 8: cig and cigarettes alias consistency');
     assert(getOffset('cig').dy        === getOffset('cigarettes').dy, 'cig dy == cigarettes dy');
 }
 
-// ── Test 9: energy and heal share exp offsets ─────────────────────────────
-console.log('\nTest 9: energy / heal share same offset as exp');
+// Test 9: energy alignment in production source.
+console.log('\nTest 9: energy amount is horizontally centered at its existing height');
 {
-    assert(getOffset('energy').dx === getOffset('exp').dx, 'energy dx == exp dx');
-    assert(getOffset('energy').dy === getOffset('exp').dy, 'energy dy == exp dy');
+    const src = fs.readFileSync(path.join(__dirname, '../_client/src/game/shell/popups/reward.js'), 'utf8');
+    const offset = src.match(/energy:\s*\{\s*dx:\s*(-?\d+),\s*dy:\s*(-?\d+)\s*\}/);
+    assert(offset?.[1] === '-2' && offset[2] === '0', 'energy cancels the common +2 X offset and keeps Y');
+    assert(src.includes('amtTxt.x = slotX + 2 + _off.dx;') && src.includes('icon.x = slotX;'),
+        'energy amount and card share the same horizontal center');
     assert(getOffset('heal').dx   === getOffset('exp').dx, 'heal dx == exp dx');
     assert(getOffset('heal').dy   === getOffset('exp').dy, 'heal dy == exp dy');
 }

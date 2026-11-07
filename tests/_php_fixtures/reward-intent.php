@@ -1,0 +1,2 @@
+<?php
+require __DIR__.'/../../website/app/rewardintent.php';$_SESSION=[];$code='r1_prod_vk_'.str_repeat('a',32);RewardIntent::capture(['reward'=>$code,'platform'=>'vk'],100);if(RewardIntent::current('vk',101)!==$code||RewardIntent::current('ok',101)!==null||RewardIntent::current('vk',3701)!==null)throw new RuntimeException('Intent boundary');try{RewardIntent::capture(['reward'=>$code,'platform'=>'site'],100);throw new LogicException('Mismatch accepted');}catch(DomainException $e){}echo "Reward intent: verified world, expiry, mismatch rejection passed\n";

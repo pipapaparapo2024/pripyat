@@ -133,13 +133,15 @@ export default class Server{
 		// краха на заведомо невалидном "undefined").
 		if(this.json['req_key']) this.req_key = this.json['req_key'];
 			
-		this.json['status'] == "error"?this.onError():this.onComplete();
-
-		if(this.mc)this.mc.visible = false;
-
-		this.wait = false;
-
-		this.nextReq();
+        try {
+            this.json['status'] == "error"?this.onError():this.onComplete();
+        } catch(callbackError) {
+            console.error('[server] Ошибка обработчика ответа:',callbackError);
+        } finally {
+            if(this.mc)this.mc.visible = false;
+            this.wait = false;
+            this.nextReq();
+        }
 	}
 	
 	onError(){

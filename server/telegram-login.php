@@ -32,10 +32,6 @@ try {
     if(is_string($reward)&&preg_match('/^r1_test_telegram_[a-f0-9]{32}$/D',$reward)&&RewardLinkTargets::matches($reward,$config['database']))$session['reward_code']=$reward;
     // A URL invite is an opaque invitation, never an asserted user identity. Resolve it
     // only AFTER authenticating initData; signed start_param takes precedence.
-    $invite=$identity['start_param'] ?: ($_POST['invite_code']??'');
-    if(is_string($invite)&&$invite!==''){
-        $session['friend_result']=(new TelegramFriends($db))->accept((int)$session['player_id'],$invite,(int)floor(microtime(true)*1000));
-    }
     echo json_encode($session, JSON_THROW_ON_ERROR);
 } catch (InvalidArgumentException | JsonException $e) {
     if (http_response_code() !== 405) http_response_code(401);

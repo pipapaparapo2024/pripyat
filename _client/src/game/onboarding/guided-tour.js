@@ -45,6 +45,7 @@ export function attachGuidedTour(Onboarding){
         };
         let finished = false;
         const proceed = () => {
+            if(window.__siteRuntime && this._currentStep()==='done')return;
             if(finished) return; finished = true;
             clearTimeout(this._guidedAudioTimeout);
             this._guidedContinue = null;
@@ -95,6 +96,7 @@ export function attachGuidedTour(Onboarding){
         else {this._guidedAudioTimeout = setTimeout(fallback,15000);this._playNarration('./sounds/обучение/когда чел решился слиться.mp3', close, fallback);}
     };
     Onboarding.prototype._guideActions = function(tab){
+        if(window.__siteRuntime && this._currentStep()==='done')return;
         if(tab.key === 'baza' && window.hata){ hata._idx = 0; hata._render(); }
         if(this._guidedPopupTick){ PIXI.Ticker.shared.remove(this._guidedPopupTick); this._guidedPopupTick = null; }
         const steps = tab.key === 'zone' ? ['cordon','zone-action','exit','exit'] : tab.key === 'baza' ? ['base-next','exit'] : ['exit'];

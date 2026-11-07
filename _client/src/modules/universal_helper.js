@@ -51,7 +51,10 @@ export default class UniHelp{
     }
 
     loadPhoto50(id, callback = null, url = null){
-        if(!url && window.platformRuntime && window.platformRuntime.platform === 'telegram'){
+        if(window.__siteRuntime && typeof url === 'string' && /^\/assets\/avatars\/[a-f0-9]{64}\.jpg\?v=[0-9]+$/.test(url)){
+            url = window.location.origin + url;
+        }
+        if(!url && window.platformRuntime && ['telegram','site'].includes(window.platformRuntime.platform)){
             return window.platformRuntime.getAvatar(id).then(photo=>{
                 const chosen=photo||null_photo50;
                 if(callback)callback(new PIXI.Sprite.from(chosen));

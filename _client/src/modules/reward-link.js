@@ -21,6 +21,7 @@ import { applyPatch } from './patch.js';
 //
 // Вызывается из game-boot.js._finishLoading() — "как только загружается главное меню".
 function _getRewardCode(){
+    if(window.__siteRuntime?.getRewardCode){const code=window.__siteRuntime.getRewardCode();if(code)return code;}
     const hash = window.location.hash || '';
     const m = hash.match(/reward=([^&]+)/);
     if(m) return decodeURIComponent(m[1]);
@@ -59,7 +60,7 @@ export function checkRewardLink(){
                     return { type: 'shmot', amount: 1, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem };
                 }
                 if(s.kind === 'key')      return { type: 'boss_keys', amount: s.amount };
-                if(s.kind === 'habar')    return { type: 'habar', amount: 1 };
+                if(s.kind === 'habar')    return null;
                 return null;
             }).filter(Boolean);
             if(items.length && window.iface && typeof iface._showRewardPopup === 'function'){

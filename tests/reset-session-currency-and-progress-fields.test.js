@@ -50,7 +50,14 @@ console.log('\nTest 2: resetSession() теперь явно обнуляет в�
     assert(!!bodyMatch, 'тело resetSession() найдено');
     const body = bodyMatch ? bodyMatch[1] : '';
 
+    const devPanelSrc = fs.readFileSync(path.join(__dirname, '../_client/src/game/shell/overlays/dev_panel.js'), 'utf8');
+    assert(body.includes("['energy', 'energy_time', 'max_energy']"),
+        'resetSession returns the confirmed energy state');
+    assert(/TS\.php\('users\.resetSession', \{\}, \(r\)=>\{\s*if\(r && r\.patch\) applyPatch\(r\.patch\);/.test(devPanelSrc),
+        'Dev reset applies the confirmed energy state to the current HUD');
+
     const EXPECTED = {
+        energy: "'50'", max_energy: "'50'", energy_time: 'time\\(\\)',
         coins: "'10'", stew: "'0'", cigarettes: "'1000'",
         zone: "'\\{\\}'", base_buildings: "''", base_stats: "''", gang_id: "'0'",
         zone_collect_0: "'0'", zone_collect_1: "'0'", zone_collect_2: "'0'",

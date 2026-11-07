@@ -81,11 +81,11 @@ final class TelegramBotHandler {
         }
         if(!$callback && preg_match('/^\/(start|play)(?:@[A-Za-z0-9_]+)?(?:\s+(f_[a-f0-9]{48}|g_r1_test_telegram_[a-f0-9]{32}))?$/D',$text,$m)){
             $invite=$m[2]??'';
-            if($uid && str_starts_with($invite,'f_'))$this->friends->accept($uid,$invite,(int)floor(microtime(true)*1000));
+            if(str_starts_with($invite,'f_'))$invite='';
             $this->bot->call('sendPhoto',['chat_id'=>$chat,'photo'=>'https://tg-test-pripyat-game.ru/images/telegram-welcome.jpg','caption'=>$this->welcome,'reply_markup'=>$this->buttons($invite)]);return;
         }
         if(!$uid){$this->message($chat,'Сначала войдите в игру через кнопку «Играть». После создания персонажа здесь появится список друзей.');return;}
-        if($data==='invite'||$text==='/invite'){$this->message($chat,"Ваша ссылка для взаимного добавления в друзья:\n".$this->friends->invite($uid,time())."\n\nОна подходит и новым, и уже играющим пользователям. Наград за приглашение нет.");return;}
+        if($data==='invite'||$text==='/invite'){$this->message($chat,'Ваш игровой ID: '.$uid.'. Откройте «Друзья» в игре и отправьте заявку по ID друга. Получатель должен принять заявку.');return;}
         if(preg_match('/^list:(friends|others):([0-9]{1,6})$/D',$data,$m)){$this->listing($chat,$uid,$m[1],(int)$m[2]);return;}
         if(preg_match('/^confirm:([1-9][0-9]{0,9})$/D',$data,$m)){
             $this->message($chat,'Удалить эту дружбу у обоих игроков? Награды и таймеры качалки сохранятся.',['inline_keyboard'=>[[['text'=>'Удалить','callback_data'=>'remove:'.$m[1]],['text'=>'Отмена','callback_data'=>'list:friends:0']]]]);return;

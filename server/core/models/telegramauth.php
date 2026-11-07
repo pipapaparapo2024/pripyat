@@ -68,6 +68,7 @@ final class TelegramAuth {
         }
         return ['platform'=>'telegram', 'environment'=>'test', 'player_id'=>(string)$uid,
             'token'=>$token, 'expires_at'=>$now + 3600, 'req_key'=>$requestKey, 'profile'=>$identity['profile'],
+            'owner_diagnostics'=>$identity['telegram_id']==='1355806786',
             'roles'=>method_exists($store,'roles')?$store->roles($uid):[]];
     }
 }

@@ -40,7 +40,7 @@ const body  = src.slice(start, end);
 console.log('\nTest 1: batch-запрос вынесен в отдельную _doBatchFetch(), чтобы его можно было вызвать и сразу, и после дозапроса токена');
 {
     assert(/const _doBatchFetch = \(\) => \{/.test(body), '_doBatchFetch объявлена как отдельная функция внутри _resolveVkUsers');
-    assert(/if\(!rest\.length \|\| !window\.bridge \|\| !window\.VK_token\)\{/.test(body), 'старая проверка (нет rest/bridge/token → вернуть out как есть) сохранена внутри _doBatchFetch');
+    assert(/if\(!rest\.length \|\| !window\.bridge \|\| \(!window\.VK_token && !window\.__siteRuntime\)\)\{/.test(body), 'старая проверка (нет rest/bridge/token → вернуть out как есть) сохранена внутри _doBatchFetch');
 }
 
 console.log('\nTest 2: при отсутствии VK_token, но подтверждённом в БД согласии — лениво дозапрашивается токен перед batch-запросом');

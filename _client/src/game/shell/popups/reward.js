@@ -297,7 +297,7 @@ export function attachRewardPopup(proto){
                     gun:          { dx: -4, dy:  0 }, ammo_gun:     { dx: -4, dy:  0 },
                     cig:          { dx: -8, dy:  0 }, cigarettes:   { dx: -8, dy:  0 },
                     coins:        { dx: -6, dy:  0 },
-                    exp:          { dx: -2, dy:  0 }, energy:       { dx: 12, dy:  0 }, heal: { dx: 12, dy:  0 },
+                    exp:          { dx: -2, dy:  0 }, energy:       { dx: -2, dy:  0 }, heal: { dx: 12, dy:  0 },
                     machete:      { dx: -2, dy: 0 }, ammo_machete: { dx: -2, dy: 0 },
                     auto:         { dx: 0, dy: 0 }, ammo_auto:    { dx: 0, dy: 0 },
                 };

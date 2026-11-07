@@ -291,7 +291,7 @@ export function attachSvodLeaderboard(proto){
             // Launch-token существует почти всегда, но не содержит friends-scope после новой
             // сессии. Поэтому проверяем не факт существования VK_token, а реальный успешный
             // результат friends.get/getAppUsers. Запрос Bridge — только после клика игрока.
-            if(tabCfg.secondScope === 'friends' && !window._friendsScopeReady){
+            if(tabCfg.secondScope === 'friends' && !window._friendsScopeReady && !window.__siteRuntime){
                 const refreshFriends = () => setScope('friends');
                 window.addEventListener('pripyat:friends-connected', refreshFriends, {once:true});
                 if(window.pre_control && typeof pre_control._showFriendsScopePrompt === 'function'){

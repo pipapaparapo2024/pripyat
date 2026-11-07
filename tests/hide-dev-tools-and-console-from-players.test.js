@@ -61,7 +61,7 @@ console.log('\nTest 1: interface.js — кнопка DEV возвращена в
     // — это согласованное, осознанное расширение на обоих разработчиков, а не разъехавшийся
     // рефакторинг (в отличие от keyring-тоггла, где осталась узкая личная проверка).
     assert(/DEV_UIDS\s*=\s*\['1113977365',\s*'382448269',\s*'438953352',\s*'184138040'\]/.test(interfaceJs), 'admin-uid список захардкожен и совпадает с dev_panel.js/users.php._isDevUser()');
-    assert(/_isAdminUid\s*=\s*window\.__telegramRuntime \? window\.__telegramRuntime\.getRoles\(\)\.includes\('developer'\) : !!\(window\.vk_params\s*&&\s*DEV_UIDS\.includes\(String\(vk_params\['vk_user_id'\]\)\)\)/.test(interfaceJs),
+    assert(/_isAdminUid\s*=\s*window\.__siteRuntime \? window\.__siteRuntime\.getRoles\(\)\.includes\('developer'\) : window\.__telegramRuntime \? window\.__telegramRuntime\.getRoles\(\)\.includes\('developer'\) : !!\(window\.vk_params\s*&&\s*DEV_UIDS\.includes\(String\(vk_params\['vk_user_id'\]\)\)\)/.test(interfaceJs),
         'проверка идёт по window.vk_params (реальные VK launch params, подделать без валидной сессии нельзя)');
     // Кнопка физически внутри if(_isAdminUid){...} — addChild должен идти ПОСЛЕ объявления
     // проверки и ДО конца функции, без ветки, которая добавляла бы её безусловно.

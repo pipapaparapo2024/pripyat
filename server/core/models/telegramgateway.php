@@ -1,13 +1,13 @@
 <?php
 final class TelegramGateway {
-    const DEV_METHODS=['users.devGetLogs','users.devGrantWeapons','users.devGrantShmot','users.devGrantCurrency','users.devSetRyukzakLevel','users.setDevFlag','users.setDevCombo','users.toggleDevKeyring','users.devPeekRouletteCups','users.resetSession'];
+    const DEV_METHODS=['users.devGetLogs','users.devGrantEnergy','bosses.devGrantKeys','bosses.devResetDailyLimits','users.devGrantWeapons','users.devGrantShmot','users.devGrantCurrency','users.devSetRyukzakLevel','users.setDevFlag','users.setDevCombo','users.toggleDevKeyring','users.devPeekRouletteCups','users.resetSession'];
     public static function requiresDeveloper(string $method): bool {return in_array($method,self::DEV_METHODS,true);}
     const CLASSES = ['users','event','vassilich','habar','hapuga','shmot','base','gangs','bp','tasks','top','bosses','roulette','zone','dice','yashik','weapons','skills','poker','blackjack','zaruba','ryukzak','hata','achievements','rewardlinks','dvor','raznaryadka','game2048','zanachki'];
     public static function allowed(string $method): bool {
         if($method==='telegramavatars.get')return true;
         if(self::requiresDeveloper($method))return true;
         if(in_array($method,['telegramstars.create','telegramstars.status'],true))return true;
-        if(in_array($method,['telegramfriends.list','telegramfriends.invite','telegramfriends.remove'],true))return true;
+        if(in_array($method,['telegramfriends.list','telegramfriends.requests','telegramfriends.send','telegramfriends.accept','telegramfriends.decline','telegramfriends.remove'],true))return true;
         if (!preg_match('/^([a-z0-9]+)\.([A-Za-z][A-Za-z0-9]*)$/D', $method, $m) || !in_array($m[1], self::CLASSES, true)) return false;
         // Legacy UID-based admin and platform-specific identity operations stay closed.
         if (preg_match('/^(dev|reset|setDev|toggleDev)/i', $m[2])) return false;

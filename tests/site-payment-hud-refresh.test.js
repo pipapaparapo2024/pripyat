@@ -1,0 +1,16 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const store=new Map([['pripyat-site-payment','test-order']]),events={};let outcome='credited',reads=0,fresh=0;
+const data={cigarettes:1000,coins:10,stew:0,energy:50};
+const c={console,setTimeout,clearTimeout,setInterval:()=>1,clearInterval(){},document:{hidden:false},udata:data,helper:{},sessionStorage:{getItem:k=>store.get(k)||null,removeItem:k=>store.delete(k)},window:{udata:data,addEventListener:(k,f)=>events[k]=f,removeEventListener(){},markPlayerDataFresh:()=>fresh++}};
+vm.createContext(c);
+vm.runInContext(fs.readFileSync('_client/src/game/interface/interface-top-currency.js','utf8').replace('export function','function')+';this.attachCurrency=attachTopCurrency;',c);
+const fmtSource=fs.readFileSync('_client/src/modules/universal_helper.js','utf8').match(/formatKK\(n\)\{([\s\S]*?)\n    \}/)[1];
+const fmt=vm.runInContext('(function(n){'+fmtSource+'})',c),proto={};c.attachCurrency(proto);
+const text={txtRub:{},txtPrimary:{},txtSecondary:{},fmt};const iface=Object.assign(Object.create(proto),{_topCur:text,_topCurPinned:'stew',updateUp(){this._updateTopCurrency();},updateEnergy(){this.energyShown=c.udata.energy;}});c.window.iface=iface;
+let synced; c.window.TIMERS={syncFromPatch:(energy,stamp)=>synced=[energy,stamp]};
+iface.updateUp();assert.equal(text.txtRub.text,'1K');
+c.window.TS={php(method,p,done){if(method==='sitepayments.status')done({status:outcome});else if(method==='users.get'){reads++;c.udata=c.window.udata={cigarettes:2600,coins:1010,stew:12,energy:160,energy_time:123};done({udata:c.udata});}}};
+vm.runInContext(fs.readFileSync('_client/src/modules/site-payments.js','utf8').replace('export function','function')+';installSitePayments(true);',c);
+events.focus();assert.equal(reads,1);assert.equal(text.txtRub.text,'2.6K');assert.equal(text.txtPrimary.text,'12');assert.equal(text.txtSecondary.text,'1K');assert.equal(iface.energyShown,160);assert.deepEqual(synced,[160,123]);assert.equal(fresh,1);assert.equal(c.udata.cigarettes,2600);
+store.set('pripyat-site-payment','canceled-order');outcome='canceled';events.focus();assert.equal(reads,1,'canceled payment does not request/repaint a credited balance');
+console.log('Paid snapshot: 1000+1600 -> 2600 and HUD 2.6K, other currencies, energy and canceled-order isolation passed');

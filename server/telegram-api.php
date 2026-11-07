@@ -33,8 +33,9 @@ try {
     $requestKey=$auth['req_key'];$uid=$auth['uid'];
     $externalQuery=$pdo->prepare('SELECT telegram_id FROM telegram_identities WHERE player_id=?');$externalQuery->execute([$uid]);$external=(string)$externalQuery->fetchColumn();
     if(!(new TelegramAccess)->allowed($external)){
-        http_response_code(403);echo json_encode(['status'=>'error','code'=>403,'access_denied'=>true,'req_key'=>$requestKey,'text'=>'Доступ к закрытому тестированию отозван.']);exit;
+        http_response_code(403);echo json_encode(['status'=>'error','code'=>403,'access_denied'=>true,'req_key'=>$requestKey,'text'=>'Доступ к игре отозван.']);exit;
     }
+    if($method==='users.devGetLogs'&&$external!==TelegramAccess::OWNER){http_response_code(403);echo json_encode(['status'=>'error','code'=>403,'req_key'=>$requestKey]);exit;}
     if($method==='telegramavatars.get'){
         $target=$params['player_id']??'';
         if(!preg_match('/^[1-9][0-9]{0,9}$/D',(string)$target)||(int)$target>2147483647)throw new InvalidArgumentException('invalid_avatar_player');
@@ -54,7 +55,8 @@ try {
         $result=$method==='telegramstars.create'?$stars->create($uid,(int)($params['product_id']??-1),time()):$stars->status($uid,(string)($params['order_id']??''));
         echo json_encode($result+['req_key'=>$requestKey,'current_time'=>time()],JSON_THROW_ON_ERROR);exit;
     }
-    $friends=new TelegramFriends($pdo);
+    $friends=new TelegramFriends($pdo);require_once __DIR__.'/core/models/gamefriendrequests.php';
+    if(in_array($method,['telegramfriends.requests','telegramfriends.send','telegramfriends.accept','telegramfriends.decline'],true)){$requests=new GameFriendRequests($pdo,true);$action=substr($method,16);$result=$action==='requests'?$requests->incoming($uid):$requests->act($uid,(int)($params['id']??0),$action);echo json_encode($result+['req_key'=>$requestKey]);exit;}
     if(str_starts_with($method,'telegramfriends.')){
         if($method==='telegramfriends.invite')$result=['link'=>$friends->invite($uid,time())];
         elseif($method==='telegramfriends.remove')$result=['removed'=>$friends->remove($uid,(int)($params['id']??0))];

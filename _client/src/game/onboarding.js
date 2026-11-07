@@ -98,6 +98,10 @@ export default class Onboarding{
     // Вызывается один раз при старте игры (module_control.js.constructShmot(), та же "всё
     // готово" точка, что и первый achievements._checkAll() — см. комментарий там).
     start(){
+        if(window.__siteRuntime){
+            if(this._siteStartScheduled)return;
+            this._siteStartScheduled=true;
+        }
         this._hookScreenClose();
         if(!this._isEligible()){
             console.log('[onboarding.start] uid не в списке допущенных — обучение не показываю');

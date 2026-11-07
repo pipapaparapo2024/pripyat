@@ -216,6 +216,9 @@ function _startOkPurchase(itemId, priceOk, label){
 // где начинается покупка (bank.js.genSlots(), energy_buy.js). label — читаемое имя товара для
 // окна оплаты ОК (VK-ветка его не использует, у VK свой каталог с названиями).
 export function startPurchase(itemId, priceOk, label){
+    if(window.__siteRuntime){
+        return window.__sitePurchase(itemId);
+    }
     if(window.__closedNativeProd===true && window.__nativeProdPayments?.[isOk()?'ok':'vk']!==true){
         if(window.iface && typeof window.iface._showRewardPopup==='function') window.iface._showRewardPopup(['Оплата временно отключена на время проверки запуска.']);
         return Promise.resolve(false);

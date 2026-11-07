@@ -26,7 +26,7 @@ const DEV_ERROR_CATALOG = [
     {code:53,  text:'Условие не выполнено'},
     {code:54,  text:'Неверный параметр'},
     {code:55,  text:'Нет в наличии'},
-    {code:56,  text:'Эта функция пока недоступна — раздел ещё не готов к бета-тесту'},
+    {code:56,  text:'Эта функция пока недоступна'},
     {code:67,  text:'Недостаточно красных поинтов'},
     {code:68,  text:'Нет активного броска — сначала нажми БРОСИТЬ'},
     {code:69,  text:'Заряды переброса кончились'},
@@ -100,7 +100,9 @@ export function attachDevPanel(proto){
 
     proto._openDevPanel = function(){
         const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
-        if(window.__telegramRuntime){
+        if(window.__siteRuntime){
+            if(!window.__siteRuntime.getRoles().includes('developer'))return;
+        }else if(window.__telegramRuntime){
             if(!window.__telegramRuntime.getRoles().includes('developer'))return;
         }else{
             if(!window.vk_params || !DEV_UIDS.includes(String(vk_params['vk_user_id']))) return;
@@ -307,7 +309,7 @@ export function attachDevPanel(proto){
         // с 19.10.2026 они тихо падали в обычный users.save(), который просто игнорирует
         // неразрешённое поле (ни ошибки, ни эффекта). Сервер (devGrantCurrency) 'exp' уже
         // поддерживает — не трогали, чинить нужно было только здесь.
-        const _SERVER_ONLY_CURRENCIES = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp'];
+        const _SERVER_ONLY_CURRENCIES = ['poker_spichki', 'roulette_spichki', 'coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp'];
         const _addU = (key, amt) => {
             if(!window.udata) return;
             if(_SERVER_ONLY_CURRENCIES.includes(key)){
@@ -322,17 +324,9 @@ export function attachDevPanel(proto){
             console.log('[devPanel] +'+amt+' к '+key+'  итого='+udata[key]);
         };
         const _energy = (amount) => {
-            const max = parseInt(udata['max_energy'] || 50);
-            const current = window.TIMERS ? TIMERS.current_energy : parseInt(udata['energy'] || 0);
-            const value = amount === null ? max : Math.min(max, current + amount);
-            udata['energy'] = String(value);
-            if(window.TIMERS){
-                TIMERS.ENERGY_MAX = max;
-                TIMERS.current_energy = TIMERS.energy_base = value;
-                TIMERS.energy_base_time = Date.now();
-            }
-            if(window.iface) iface.updateEnergy();
-            saveDevChanges();
+            TS.php('users.devGrantEnergy',amount===null?{fill:true}:{amount},res=>{
+                if(res?.patch)applyPatch(res.patch);
+            },()=>{if(window.notify)notify.showResult({text:'Не удалось выдать энергию'},1);});
         };
         const _addAmmo = (idx, amt) => {
             if(!window.weapons) return;
@@ -1132,6 +1126,7 @@ export function attachDevPanel(proto){
             // users.save() ниже их не достаёт — без этого отдельного вызова "полный сброс"
             // оставлял бы прокачанные скиллы и зависшие игровые сессии нетронутыми в БД.
             TS.php('users.resetSession', {}, (r)=>{
+                if(r && r.patch) applyPatch(r.patch);
                 console.log('[devPanel._resetAccount] server-only сессии (скиллы/покер/зарики/блэкджек/ящик/рулетка-кубки) сброшены:', JSON.stringify(r));
             }, (err)=>{
                 console.error('[devPanel._resetAccount] не удалось сбросить server-only сессии:', JSON.stringify(err));
@@ -1348,24 +1343,14 @@ export function attachDevPanel(proto){
         // большой коммент у $allowed в users.php, расследование "Антикризиса") — переведены на
         // тот же дельта-путь, прямое присвоение ниже убрано.
         const currencyDeltas = {};
-        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips','exp','respect','stash_count'].forEach(key => {
+        ['coins','stew','cigarettes','dice_points','blue_points','poker_chips','exp','respect','stash_count','poker_spichki','roulette_spichki'].forEach(key => {
             const delta = 1000000 - parseInt(udata[key]||0);
             if(delta !== 0) currencyDeltas[key] = delta;
         });
-        udata['poker_spichki']     = M;
-        udata['roulette_spichki']  = M;
         udata['ammo_auto']         = M;
         udata['ammo_gun']          = M;
         udata['ammo_machete']      = M;
         udata['skill_points']      = '300';
-        udata['energy']            = M;
-        udata['max_energy']        = M;
-        if(window.TIMERS){
-            TIMERS.ENERGY_MAX       = 1000000;
-            TIMERS.current_energy   = 1000000;
-            TIMERS.energy_base      = 1000000;
-            TIMERS.energy_base_time = Date.now();
-        }
         if(window.weapons){
             [3,4,5].forEach(i => { weapons.data[i].qty = 1000000; weapons.data[i].owned = true; });
             weapons._saveToUdata();
@@ -1404,13 +1389,18 @@ export function attachDevPanel(proto){
         // read+write строки, ничего не гвардит по эскалации, порядок относительно
         // weapons/users.save для неё не критичен, но пусть тоже идёт последовательно, а не
         // параллельно остальным двум запросам той же строки.
-        const afterCurrency = () => {
+        const afterEnergy = () => {
             this._pushWeaponsGrant(() => {
                 TS.php('users.save', {udata_json: JSON.stringify(udata)}, (res) => {
                     console.log('[devPanel._giveMillion] сохранено:', res);
                     if(window.notify) notify.showResult({text:'+1 000 000 всего!'}, 1);
                 }, null);
             });
+        };
+        const afterCurrency = () => {
+            TS.php('users.devGrantEnergy',{target:1000000},res=>{
+                if(res?.patch)applyPatch(res.patch);afterEnergy();
+            },()=>{if(window.notify)notify.showResult({text:'Не удалось выдать энергию'},1);});
         };
         if(Object.keys(currencyDeltas).length){
             _grantCurrencyServer(currencyDeltas, afterCurrency);

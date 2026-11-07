@@ -22,6 +22,7 @@
 let _platform = null;
 
 export function detectPlatform(){
+    if(window.__siteRuntime)return window.__siteRuntime.platform;
     if(window.__telegramRuntime) return 'telegram';
     if(_platform) return _platform;
 
@@ -66,11 +67,13 @@ export function isVk(){
 // настоящий прайс ОК придёт из кабинета apiok.ru отдельно (тот же класс отложенной задачи,
 // что и п.5 отказа VK от 30.09.2026 — см. memory project_stalker_vk_moderation_30_09).
 const CURRENCY_NAMES_BY_PLATFORM = {
+    site: ['₽', '₽', '₽'],
     vk: ['голос', 'голоса', 'голосов'],
     ok: ['ОК', 'ОКа', 'ОКов'],
     telegram: ['звезда', 'звезды', 'звёзд']
 };
 
 export function currencyNames(){
+    if(window.__siteRuntime)return CURRENCY_NAMES_BY_PLATFORM.site;
     return CURRENCY_NAMES_BY_PLATFORM[detectPlatform()] || CURRENCY_NAMES_BY_PLATFORM.vk;
 }

@@ -83,8 +83,8 @@ console.log('\nTest 5: server/json/habar_daily_config.json — 4 контейн�
 console.log('\nTest 9: клиент — _client/src/modules/reward-link.js и .../shell/popups/reward.js понимают kind/type "habar"');
 {
     const rewardLinkSrc = read('_client/src/modules/reward-link.js');
-    assert(/if\(s\.kind === 'habar'\)\s*return \{ type: 'habar', amount: 1 \};/.test(rewardLinkSrc),
-        'checkRewardLink() маппит summary kind:"habar" в item {type:"habar"} для попапа наград');
+    assert(/if\(s\.kind === 'habar'\)\s*return null;/.test(rewardLinkSrc),
+        'Хабар начисляется сервером, но не создаёт карточку заначки в попапе');
 
     const popupSrc = read('_client/src/game/shell/popups/reward.js');
     assert(/habar:\s*'попап награда заначки\.png',/.test(popupSrc),

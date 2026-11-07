@@ -287,6 +287,7 @@ export default class Preloader{
 	}
 
 	_showFriendsScopePrompt(options = {}){
+		if(window.__siteRuntime){window.openSiteFriends?.();return;}
 		if(runtime().capabilities.friendsPermission === false){
 			if(typeof window.openTelegramFriends === 'function') window.openTelegramFriends();
 			return;

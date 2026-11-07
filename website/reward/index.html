@@ -3,19 +3,25 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title>Награда — Припять</title>
 <link rel="stylesheet" href="/style.css?v=20261103-5">
-<main><header><span class="symbol" aria-hidden="true">☢</span> ПРИПЯТЬ <span class="label">Подготовка к релизу</span></header>
+<main><header><span class="symbol" aria-hidden="true">☢</span> ПРИПЯТЬ</header>
 <section><p class="eyebrow">НАГРАДНАЯ ССЫЛКА</p><h1>Награда</h1><p id="reward-status">Проверяем ссылку…</p>
 <p id="reward-help"></p><p><a id="reward-login" href="/" hidden>Перейти ко входу</a></p><p><a href="/">На главную</a></p></section></main>
 <script>
-(()=>{
+(async()=>{
  const p=new URL(location.href).searchParams,code=p.get('code')||'',platform=p.get('platform')||'';
  const names={vk:'ВКонтакте',ok:'Одноклассники',telegram:'Telegram',site:'Аккаунт сайта'};
- const m=code.match(/^r1_test_(vk|ok|telegram|site)_[a-f0-9]{32}$/);
+ const m=code.match(/^r1_(?:test|prod)_(vk|ok|telegram|site)_[a-f0-9]{32}$/);
  const status=document.getElementById('reward-status'),help=document.getElementById('reward-help'),link=document.getElementById('reward-login');
  if(!m||m[1]!==platform){status.textContent='Ссылка не подходит выбранной площадке.';help.textContent='Откройте исходную ссылку, которую вы получили.';return;}
  status.textContent='Площадка: '+names[platform]+'.';
- help.textContent='Для получения нужен вход в аккаунт этой площадки. Веб-вход ещё подключается. Награда будет проверена игровым сервером после авторизации; открытие этой страницы её не выдаёт.';
- link.href='/?'+new URLSearchParams({platform,reward:code});link.hidden=false;
+ help.textContent='Для получения нужен вход в аккаунт этой площадки. Награда будет проверена игровым сервером после авторизации; открытие этой страницы её не выдаёт.';
+ const query=new URLSearchParams({platform,reward:code});
+ link.href=platform==='site'?'/account/?'+query:'/auth/'+platform+'/start?'+query;link.hidden=false;
+ try{const response=await fetch('/auth/status',{cache:'no-store'});const session=await response.json();
+ if(session.authenticated&&session.platform===platform)location.replace('/game/?'+query);
+ else location.replace(link.href);
+ }catch(_){help.textContent='Не удалось начать вход. Нажмите «Перейти ко входу».';}
+
 })();
 </script>
 </html>

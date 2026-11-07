@@ -224,6 +224,7 @@ export default class Hata {
         const leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
         leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
         leftHandSpr.texture.baseTexture.update();
+        leftHandSpr.width = 54; leftHandSpr.height = 36;
         leftHandSpr.anchor.set(0, 0);
         leftHandSpr.x = 756 + 2 + CHAR_DX; leftHandSpr.y = 389 + CHAR_DY;
         win.addChild(leftHandSpr);

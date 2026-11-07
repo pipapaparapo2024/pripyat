@@ -67,3 +67,10 @@ foreach(['order_status_change'=>'123','order_status_change_test'=>'-123'] as $ty
 
 prodCheck(NativeProdBoundary::allowsAccountMethod('users.devGetLogs','382448269','ok',['vk_ok_user_id'=>'587256562321']),'OK owner panel logs denied');
 prodCheck(!NativeProdBoundary::allowsAccountMethod('users.devGetLogs','382448269','ok',['vk_ok_user_id'=>'587256562322']),'Other OK native identity got owner logs');
+
+$public=$c;$public['public_access']=true;
+$l=prodSign(['vk_user_id'=>'42','vk_ts'=>'100000','vk_app_id'=>$c['app_ids']['vk'],'vk_client'=>'desktop_web']);
+prodCheck(NativeProdBoundary::resolve($l,'vk','42',$public,100000)['uid']===42,'Public signed player denied');$l['sign']='forged';prodReject(fn()=>NativeProdBoundary::resolve($l,'vk','42',$public,100000));
+
+$publicTest=$test;$publicTest['user_id']='42';prodReject(fn()=>VkProdPayments::verify(prodPaySign($publicTest),'fixture-secret','54574178',['382448269'],true,true));
+VkProdPayments::verify(prodPaySign($test),'fixture-secret','54574178',['382448269'],true,true);

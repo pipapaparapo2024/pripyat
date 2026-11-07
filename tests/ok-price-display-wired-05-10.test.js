@@ -99,7 +99,7 @@ console.log('\nTest 6: energy_buy.js — покупка энергии и на V
     // цены вообще (для ЛЮБОЙ площадки, не только VK) — текст цены теперь рисуется безусловно,
     // не только внутри if(isOk()){...}, платформа влияет лишь на то, ЧТО именно показывать
     // (price_ok или votes).
-    assert(/const price = window\.__telegramRuntime \? window\.telegramStarsCatalog\.energy\.stars\[i\] : \(isOk\(\) \? opt\.price_ok : opt\.votes\);/.test(src), 'цена Telegram берётся из Stars, прежние цены ОК и VK сохранены');
+    assert(/const price = window\.__siteRuntime \? window\.siteRubCatalog\.energy\[i\] : window\.__telegramRuntime \? window\.telegramStarsCatalog\.energy\.stars\[i\] : \(isOk\(\) \? opt\.price_ok : opt\.votes\);/.test(src), 'цена Telegram берётся из Stars, прежние цены ОК и VK сохранены');
     assert(/price \+ ' ' \+ helper\.numberEnd\(price, 'votes'\)/.test(src),
         'текст цены строится из вычисленного price (платформо-зависимого), не захардкожен на opt.price_ok — см. tests/ok-pay-callback-fapi-real-exec-05-10.test.js');
 }

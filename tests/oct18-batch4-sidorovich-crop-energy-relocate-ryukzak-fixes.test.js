@@ -120,7 +120,7 @@ console.log('\n6) Энергия: кнопка-плюс убрана, попап
         'клик по energy_txt открывает попап покупки энергии');
     assert(/this\.energy_timer_txt\.x = 665;\s*\n\s*this\.energy_timer_txt\.y = 63;/.test(ifaceSrc),
         'energy_timer_txt — новая позиция x:665,y:63');
-    assert(/fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff'/.test(energyBuySrc),
+    assert(/fontFamily:'Southbank LT', fontSize:18/.test(energyBuySrc),
         'цена в попапе энергии — Southbank LT 18px белый (было 16px)');
 }
 

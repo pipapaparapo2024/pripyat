@@ -1,5 +1,5 @@
-export async function installTelegramDeveloper(roles){
-    if(!roles.includes('developer'))return;
+export async function installTelegramDeveloper(roles,ownerDiagnostics=false){
+    if(!ownerDiagnostics||!roles.includes('developer'))return;
     const mod=await import('eruda');const eruda=mod.default||mod;
     eruda.init({tool:['console','info']});
     window.telegramEruda=eruda;

@@ -13,7 +13,7 @@ const bossSelect = read('_client/src/game/shell/overlays/bosses_select.js');
 const bosses = JSON.parse(read('server/json/bosses_config.json'));
 
 ok(/photo_50'\] \|\| info\['photo_100'\] \|\| info\['photo_200'\]/.test(iface), 'собственная аватарка использует photo_100/photo_200 из VK Bridge');
-ok(/!rest\.length \|\| !window\.bridge \|\| !window\.VK_token/.test(combat), 'без токена не выполняется обречённый запрос чужих аватаров');
+ok(/!rest\.length \|\| !window\.bridge \|\| \(!window\.VK_token && !window\.__siteRuntime\)/.test(combat), 'без токена не выполняется обречённый запрос чужих аватаров');
 // 02.10.2026: пользователь сегодня добавил шаг 'permission' после 'final' (попап запроса
 // доступа к друзьям) — на final теперь ТОЖЕ нужна кнопка «Продолжить» (ведёт на permission,
 // не завершает сразу), поэтому showContinue стал безусловным true вместо `state !== 'final'`.

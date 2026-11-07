@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="/assets/favicon.jpg">
+  <link rel="stylesheet" href="/style.css">
+  <title>Припять — чеки покупок</title>
+  <script defer src="/payment/qrcode-generator-2.0.4.js"></script>
+  <script defer src="/payment/receipts.js?v=1"></script>
+</head>
+<body class="account-page">
+<main>
+  <header>☢ ПРИПЯТЬ</header>
+  <section>
+    <h1>Чеки покупок</h1>
+    <p>После успешной оплаты игровой баланс обновится в открытой вкладке игры.</p>
+    <p id="receipt-status" role="status" aria-live="polite">Проверяем чеки…</p>
+    <div id="receipt-list"></div>
+    <p><a href="/">На главную</a></p>
+  </section>
+</main>
+</body>
+</html>

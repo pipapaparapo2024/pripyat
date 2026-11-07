@@ -1,0 +1,7 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+let source=fs.readFileSync('_client/src/modules/server.js','utf8').replace(/^\uFEFF?import.*$/mg,'').replace('export default class Server','class Server');
+const ctx={console:{error(){}},window:{},errors:[{},{}]};vm.createContext(ctx);vm.runInContext(source+';this.Server=Server;',ctx);
+let n=0;const s=Object.create(ctx.Server.prototype);Object.assign(s,{MSS:{readyState:4,status:200,response:JSON.stringify({req_key:'new-key'})},mc:{visible:true},wait:true,thisReq:{c(){throw Error('callback failed')}},nextReq(){n++}});s.completeRequest();assert(!s.wait&&!s.mc.visible);assert.equal(s.req_key,'new-key');assert.equal(n,1);
+source=fs.readFileSync('_client/src/modules/telegram-server.js','utf8').replace(/^\uFEFF?import.*$/mg,'').replace('export default class TelegramServer','class TelegramServer');vm.runInContext(source+';this.TelegramServer=TelegramServer;',ctx);
+for(const status of [400,403,500]){const q=Object.create(ctx.TelegramServer.prototype);Object.assign(q,{MSS:{readyState:4,status,response:JSON.stringify({status:'error',code:54,req_key:'rotated'})},mc:{visible:true},wait:true,thisReq:{e(){throw Error('error callback failed')}},nextReq(){n++}});q.completeRequest();assert(!q.wait&&!q.mc.visible);assert.equal(q.req_key,'rotated');}
+assert.equal(n,4);console.log('Queue continues after success/error callback exceptions and structured HTTP failures');

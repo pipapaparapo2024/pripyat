@@ -11,6 +11,7 @@ const HIT_SIZE = 90; // радиус кликабельной зоны вокр�
 
 export function attachOnboardingTour(Onboarding){
     Onboarding.prototype._startTourStep = function(key){
+        if(window.__siteRuntime && this._currentStep()==='done')return;
         const tab = TOUR_TABS.find(t => t.key === key);
         if(!tab){
             console.error('[onboarding._startTourStep] неизвестный шаг тура: ' + key);
@@ -184,6 +185,7 @@ export function attachOnboardingTour(Onboarding){
     // озвучки само по себе сюда не ведёт (01.10.2026). Идемпотентно — повторный вызов для
     // уже пройденного шага ничего не делает.
     Onboarding.prototype._advanceTour = function(fromKey){
+        if(window.__siteRuntime && this._currentStep()==='done')return;
         if(this._activeTourKey !== fromKey) return; // уже продвинулись другим путём
         this._activeTourKey = null;
         if(fromKey === 'dvor' && window.dvor && typeof dvor._setTutorialCloudHighlight === 'function'){

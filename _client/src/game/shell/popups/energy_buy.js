@@ -19,14 +19,15 @@ import { startPurchase } from '../../../modules/iap.js';
 const ENERGY_PRICE_OFFSET_Y = -76;
 const ENERGY_PRICE_OFFSET_X = 3;
 
-// 09.10.2026 (точечная подстройка тем же днём, по прямому указанию — "для 60 голосов подними
-// вверх на 2px, для 85 — на 1px, для 120 — на 1px и вправо на 4px"): индексы совпадают с
-// позицией пакета в energyPacks.json/cards — 5=votes:60(1300 энергии), 6=votes:85(2000),
-// 7=votes:120(3500). Остальные 5 карточек используют только общий offset выше, без правок.
+// 06.11.2026: requested shifts are added to the previous per-card offsets.
 const ENERGY_PRICE_FINE_TUNE = {
-	5: { dx: 0, dy: -2 },
-	6: { dx: 0, dy: -1 },
-	7: { dx: 4, dy: -1 },
+    0: { dx: 4, dy: 1 },
+    1: { dx: 5, dy: 0 },
+    3: { dx: 4, dy: 0 },
+    4: { dx: 3, dy: 0 },
+    5: { dx: 4, dy: 0 },
+    6: { dx: 5, dy: 0 },
+    7: { dx: 9, dy: 1 },
 };
 
 export function attachEnergyBuy(proto){
@@ -45,6 +46,28 @@ export function attachEnergyBuy(proto){
 			return;
 		}
 
+        // Canvas text must be created after the actual font has loaded.
+        if(!this._energyFontReady && typeof document !== 'undefined' && document.fonts?.load){
+            if(!this._energyFontLoading){
+                this._energyFontLoading = document.fonts.load('18px "Southbank LT"', '0123456789 Энергия').then(()=>{
+                    this._energyFontReady = true;
+                    this._energyFontLoading = null;
+                    this._openEnergyPopup();
+                }).catch(()=>{
+                    this._energyFontLoading = null;
+                    console.warn('[energy_buy] Не удалось загрузить шрифт магазина');
+                });
+            }
+            return;
+        }
+        const energyTextStyle = {
+            fontFamily:'Southbank LT', fontSize:18,
+            fill:['#ffffff', '#c8c8c8'],
+            stroke:'#3a3a3a', strokeThickness:2,
+            dropShadow:true, dropShadowColor:'#000000', dropShadowAlpha:0.72,
+            dropShadowDistance:2, dropShadowBlur:2, dropShadowAngle:1.187,
+            padding:8
+        };
 		const win = new PIXI.Container();
 
 		const close = () => { win.visible = false; };
@@ -78,29 +101,21 @@ export function attachEnergyBuy(proto){
 			const card = cards[i];
 			const slot = new PIXI.Sprite(PIXI.Texture.from('./images/layers/popups/Энергия/' + card.file));
 			slot.anchor.set(0.5, 0.5); slot.x = card.x; slot.y = card.y;
-			slot.interactive = true; slot.buttonMode = true;
-			if(window.isMobile) helper.touchPad(slot, 128);
-			console.log('[energy_buy.initButtons] карточка покупки готова | item:', 100 + i,
-				'| interactive:', slot.interactive, '| x,y:', slot.x, slot.y,
-				'| width,height:', Math.round(slot.width), Math.round(slot.height),
-				'| hitArea:', slot.hitArea ? JSON.stringify(slot.hitArea) : 'обычный bounds');
-			slot.on('pointerover', ()=>{ _sa(slot, 0.9); slot.scale.set(1.03); });
-			slot.on('pointerout',  ()=>{ _sa(slot, 1); slot.scale.set(1); });
-			// Выдачу энергии (item100-107) уже обрабатывает ЕДИНЫЙ глобальный
-			// bridge.subscribe в bank.js (Bank.successDonat) — он ловит ЛЮБую
-			// покупку через bridge.send('VKWebAppShowOrderBox', ...), откуда бы она
-			// ни была вызвана. Раньше здесь была ВТОРАЯ, дублирующая подписка,
-			// которая пыталась отписаться через `const _unsub = bridge.subscribe(...)`,
-			// но bridge.subscribe() в этом проекте не возвращает функцию отписки
-			// (см. bank.js — там ни разу не используется возврат) — вызов
-			// несуществующего _unsub() бросал исключение прямо внутри диспетчера
-			// VK Bridge, из-за чего VK показывал свой собственный попап
-			// "Произошла ошибка" поверх уже корректно выданной энергии.
-			slot.on('pointerdown', (e)=>{
-				console.log('[energy_buy.initButtons] PIXI pointerdown по карточке энергии | item:', 100 + i,
-					'| priceOk:', opt.price_ok, '| PIXI global:', e && e.data ? Math.round(e.data.global.x) + ',' + Math.round(e.data.global.y) : 'нет');
-				startPurchase('item' + (100 + i), opt.price_ok, opt.energy + ' энергии');
-			});
+            // The original image is the only purchase button, over its full bounds.
+            slot.interactive = true; slot.buttonMode = true;
+            const syncHitArea = ()=>{
+                const w = slot.texture.orig.width, h = slot.texture.orig.height;
+                // Texture.from may return a 1x1 placeholder before the image arrives.
+                // Never freeze that placeholder as the permanent purchase hit area.
+                if(w<=1 || h<=1){slot.hitArea=null;return;}
+                slot.hitArea = new PIXI.Rectangle(-w/2,-h/2,w,h);
+                if(window.isMobile) helper.touchPad(slot, 128);
+            };
+            slot.name = 'energy-purchase-' + (100+i);
+            syncHitArea();
+            const hitTexture = slot.texture;
+            hitTexture.on('update',syncHitArea);
+            slot.once('destroyed',()=>hitTexture.off('update',syncHitArea));
 			win.addChild(slot);
 
 			// 09.10.2026 (см. комментарий у ENERGY_PRICE_OFFSET_Y выше — новые унифицированные
@@ -112,20 +127,38 @@ export function attachEnergyBuy(proto){
 			// "голос/голоса/голосов" или "ОК/ОКа/ОКов" через modules/platform.js.currencyNames()).
 			// Фона под текст НЕ рисуем — на новой картинке уже есть готовая табличка-рамка,
 			// второй тёмный прямоугольник поверх нее смотрелся бы задвоенно.
-			const price = window.__telegramRuntime ? window.telegramStarsCatalog.energy.stars[i] : (isOk() ? opt.price_ok : opt.votes);
+			const price = window.__siteRuntime ? window.siteRubCatalog.energy[i] : window.__telegramRuntime ? window.telegramStarsCatalog.energy.stars[i] : (isOk() ? opt.price_ok : opt.votes);
 			// 09.10.2026 (правка тем же днём): fontSize 18→16 (-2px), цвет #ffdd44 (золотой) →
 			// #ffffff (белый) — по прямому указанию, для ОБЕИХ площадок одинаково.
 			// 18.10.2026 (по прямому указанию — "сделай текст голосов такой же, как на картинке
 			// 2": Southbank LT, 18.34pt ≈ 18px, белый): fontSize возвращён на 18.
-			const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), {
-				fontFamily:'Southbank LT', fontSize:18, fill:'#ffffff',
-				dropShadow:true, dropShadowColor:'#000000', dropShadowDistance:1
-			});
+			const priceTxt = new PIXI.Text(price + ' ' + helper.numberEnd(price, 'votes'), energyTextStyle);
 			priceTxt.anchor.set(0.5, 0.5);
 			const fine = ENERGY_PRICE_FINE_TUNE[i] || { dx: 0, dy: 0 };
 			priceTxt.x = card.x + ENERGY_PRICE_OFFSET_X + fine.dx;
 			priceTxt.y = card.y + ENERGY_PRICE_OFFSET_Y + fine.dy;
 			win.addChild(priceTxt);
+            priceTxt.interactive = false;
+            slot.on('pointerover',()=>{ _sa(slot,0.9); slot.scale.set(1.03); });
+            slot.on('pointerout',()=>{ _sa(slot,1); slot.scale.set(1); });
+            slot.on('pointerdown',e=>{
+                console.log('[energy_buy.initButtons] PIXI pointerdown по карточке энергии',100+i);
+                e?.stopPropagation?.();
+                if(this._energyPurchasePending)return;
+                const failed = ()=>{
+                    this._energyPurchasePending = false;
+                    close();
+                    this._openSidorovichError?.('Покупка энергии','Не удалось открыть оплату. Попробуйте ещё раз.');
+                };
+                try{
+                    if(window.bank) window.bank.set_donut = 100+i;
+                    this._energyPurchasePending = true;
+                    const request = startPurchase('item' + (100 + i), opt.price_ok, opt.energy + ' энергии');
+                    Promise.resolve(request).then(()=>{this._energyPurchasePending=false;},failed);
+                }catch(_){failed();}
+            });
+
+
 		});
 
 		const closeHit = new PIXI.Graphics();

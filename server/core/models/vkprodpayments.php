@@ -1,13 +1,15 @@
 <?php
 /** Native VK PROD receipts: atomic credit and ledger; no schema changes. */
 final class VkProdPayments {
-    public static function verify(array $input,string $secret,string $appId,array $allowed,bool $allowSandbox=false): array {
+    public static function verify(array $input,string $secret,string $appId,array $allowed,bool $allowSandbox=false,bool $publicAccess=false): array {
         $input=self::verifySignature($input,$secret,$appId);
         // Catalog lookup is read-only; VK may request it before selecting payment mode.
         // Sandbox is opt-in for the closed developer rehearsal only.
         if(!in_array($input['notification_type']??'', array_merge(['get_item','get_item_test','order_status_change'],$allowSandbox?['order_status_change_test']:[]),true))throw new InvalidArgumentException('production_notifications_only');
         $uid=(string)($input['user_id']??'');
-        if(!preg_match('/^[1-9][0-9]{0,9}$/D',$uid)||(int)$uid>2147483647||!in_array($uid,$allowed,true))throw new InvalidArgumentException('developer_required');
+        // Public access never grants permission to receive free sandbox credits.
+        if(($input['notification_type']??'')==='order_status_change_test'&&!in_array($uid,$allowed,true))throw new InvalidArgumentException('developer_required');
+        if(!preg_match('/^[1-9][0-9]{0,9}$/D',$uid)||(int)$uid>2147483647||(!$publicAccess&&!in_array($uid,$allowed,true)))throw new InvalidArgumentException('developer_required');
         return $input;
     }
     public static function verifySignature(array $input,string $secret,string $appId): array {

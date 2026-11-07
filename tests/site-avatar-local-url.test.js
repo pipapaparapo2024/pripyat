@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('_client/src/modules/universal_helper.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('export default class UniHelp','class UniHelp');
+const local='/assets/avatars/'+'a'.repeat(64)+'.jpg?v=123';
+let actual;
+const sandbox={window:{__siteRuntime:{},location:{origin:'https://pripyat-game-site.ru'}},bitmaps50:{id:[],bm:[]},null_photo50:'https://pripyat-game-site.ru/no-avatar.png',PIXI:{Sprite:{from:function(url){this.url=url;}}}};
+vm.runInNewContext(source+'\nthis.helper=new UniHelp();',sandbox);
+sandbox.helper.loadPhoto50(1,bm=>actual=bm.url,local);
+assert.equal(actual,'https://pripyat-game-site.ru'+local);
+sandbox.window.__siteRuntime=null;
+sandbox.helper.loadPhoto50(2,bm=>actual=bm.url,'https://example.com/native.jpg');
+assert.equal(actual,'https://example.com/native.jpg');
+console.log('Site avatar: local uploaded photo reaches renderer; native absolute URL preserved');

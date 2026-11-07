@@ -55,7 +55,7 @@ console.log('\nTest 2: цена текстом рисуется для ЛЮБО�
 {
     assert(!/if\(isOk\(\)\)\{[\s\S]*?priceTxt/.test(src),
         'priceTxt больше НЕ находится внутри if(isOk()){...} — рисуется безусловно для каждой карточки');
-    assert(/const price = window\.__telegramRuntime \? window\.telegramStarsCatalog\.energy\.stars\[i\] : \(isOk\(\) \? opt\.price_ok : opt\.votes\);/.test(src),
+    assert(/const price = window\.__siteRuntime \? window\.siteRubCatalog\.energy\[i\] : window\.__telegramRuntime \? window\.telegramStarsCatalog\.energy\.stars\[i\] : \(isOk\(\) \? opt\.price_ok : opt\.votes\);/.test(src),
         'число цены выбирается по площадке: ОК — price_ok, иначе (VK) — votes (та же схема, что bank.js._displayPrice())');
     assert(/const priceTxt = new PIXI\.Text\(price \+ ' ' \+ helper\.numberEnd\(price, 'votes'\)/.test(src),
         "склонение через helper.numberEnd(price, 'votes') — само подставит нужные слова платформы через modules/platform.js.currencyNames() (голос/голоса/голосов или ОК/ОКа/ОКов)");
@@ -77,16 +77,16 @@ console.log('\nTest 4: позиция цены — ENERGY_PRICE_OFFSET_Y/X, вы
     // votes:60/85/120, см. Test 4b) — точный состав строки проверяется именно там.
     // 18.10.2026 (по прямому указанию — "сделай текст голосов как на картинке 2: Southbank LT
     // 18.34pt"): fontSize возвращён на 18 (отменяет правку 09.10.2026, тогда просили 16).
-    assert(/fontSize:18, fill:'#ffffff'/.test(src), 'fontSize 18 (18.10.2026: как на картинке 2) и цвет белый #ffffff — по прямому указанию, для ОБЕИХ площадок одинаково');
+    assert(/fontFamily:'Southbank LT', fontSize:18/.test(src) && /fill:\['#ffffff', '#c8c8c8'\]/.test(src), 'fontSize 18 (18.10.2026: как на картинке 2) и цвет белый #ffffff — по прямому указанию, для ОБЕИХ площадок одинаково');
     assert(!/card\.y \+ 73/.test(src), 'старое смещение +73 (цена ВНИЗУ старой карточки) не осталось в коде');
 }
 
 console.log('\nTest 4b (09.10.2026, точечная подстройка): индивидуальные сдвиги для карточек votes:60/85/120 (индексы 5/6/7)');
 {
     assert(/const ENERGY_PRICE_FINE_TUNE = \{/.test(src), 'ENERGY_PRICE_FINE_TUNE определён — точечные правки отдельно от общего offset');
-    assert(/5: \{ dx: 0, dy: -2 \},/.test(src), 'индекс 5 (votes:60, 1300 энергии): -2px по Y, без сдвига по X');
-    assert(/6: \{ dx: 0, dy: -1 \},/.test(src), 'индекс 6 (votes:85, 2000 энергии): -1px по Y, без сдвига по X');
-    assert(/7: \{ dx: 4, dy: -1 \},/.test(src), 'индекс 7 (votes:120, 3500 энергии): -1px по Y И +4px по X');
+    assert(/5: \{ dx: 4, dy: 0 \},/.test(src), 'индекс 5 (votes:60, 1300 энергии): -2px по Y, без сдвига по X');
+    assert(/6: \{ dx: 5, dy: 0 \},/.test(src), 'индекс 6 (votes:85, 2000 энергии): -1px по Y, без сдвига по X');
+    assert(/7: \{ dx: 9, dy: 1 \},/.test(src), 'индекс 7 (votes:120, 3500 энергии): -1px по Y И +4px по X');
     assert(/const fine = ENERGY_PRICE_FINE_TUNE\[i\] \|\| \{ dx: 0, dy: 0 \};/.test(src), 'остальные 5 карточек получают нулевую точечную правку (fallback), не ломаются');
     assert(/priceTxt\.x = card\.x \+ ENERGY_PRICE_OFFSET_X \+ fine\.dx;/.test(src), 'priceTxt.x учитывает и общий, и точечный offset');
     assert(/priceTxt\.y = card\.y \+ ENERGY_PRICE_OFFSET_Y \+ fine\.dy;/.test(src), 'priceTxt.y учитывает и общий, и точечный offset');

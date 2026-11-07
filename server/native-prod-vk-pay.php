@@ -18,6 +18,7 @@ try{
     $okCatalog=$site==='OK'||$okPrefix;$platform=$okCatalog?'ok':'vk';
     if(($c['payments'][$platform.'_enabled']??false)!==true)throw new RuntimeException('disabled');
     $sandbox=$platform==='vk'&&($c['payments']['vk_developer_sandbox']??false)===true;
+    $sandboxIds=$c['payments']['vk_sandbox_ids']??[];
     if($okCatalog){
         if(!in_array($input['notification_type']??'', ['get_item','get_item_test'],true))throw new InvalidArgumentException('invalid_notification');
         $candidate=(string)($input['user_id']??'');
@@ -33,7 +34,8 @@ try{
         }
         if(count($matches)!==1)throw new InvalidArgumentException('developer_required');
     }else{
-        $input=VkProdPayments::verify($_POST,$c['api_secret'],NativeProdBoundary::launchAppId($c,'vk'),$c['access']['vk']['ids'],$sandbox);
+        $allowed=($input['notification_type']??'')==='order_status_change_test'?$sandboxIds:$c['access']['vk']['ids'];
+        $input=VkProdPayments::verify($_POST,$c['api_secret'],NativeProdBoundary::launchAppId($c,'vk'),$allowed,$sandbox,($c['public_access']??false)===true);
     }
     $catalogRequest=in_array($input['notification_type'],['get_item','get_item_test'],true);
     if($okCatalog&&!$catalogRequest)throw new InvalidArgumentException('invalid_notification');

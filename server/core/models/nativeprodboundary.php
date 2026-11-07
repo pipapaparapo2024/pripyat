@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/erasedaccounts.php';
 /** Closed native VK/OK PROD. Never selects TEST/TG databases or trusts client roles. */
 final class NativeProdBoundary {
     const WORLDS=['vk'=>'stalker','ok'=>'stalker_ok'];
@@ -19,7 +20,8 @@ final class NativeProdBoundary {
         $ts=(int)$stamp;if($platform==='ok'&&strlen($stamp)===13)$ts=intdiv($ts,1000);
         if($ts>$now+300||($fresh&&$ts<$now-86400))throw new InvalidArgumentException('expired_launch');
         $nativeAllowed=$platform==='ok'&&in_array((string)($launch['vk_ok_user_id']??''),$config['access']['ok']['native_ids']??[],true);
-        if(!$nativeAllowed&&!in_array($uid,$config['access'][$platform]['ids']??[],true))throw new RuntimeException('maintenance');
+        if(($config['public_access']??false)!==true&&!$nativeAllowed&&!in_array($uid,$config['access'][$platform]['ids']??[],true))throw new RuntimeException('maintenance');
+        ErasedAccounts::assertAllowed($platform,(int)$uid);
         return ['platform'=>$platform,'uid'=>(int)$uid,'database'=>self::WORLDS[$platform],'app_id'=>$expectedApp];
     }
     public static function launchAppId(array $config,string $platform): string {

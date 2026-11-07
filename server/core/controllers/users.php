@@ -6,6 +6,7 @@
         // Разрешённые тестовые аккаунты dev-панели. Проверка серверная:
         // скрытие кнопки в клиенте не защищает от ручного TS.php-вызова.
         private function _isDevUser(){
+            if(($this->registry['platform']??'')==='site')return in_array('developer',$this->registry['roles']??[],true);
             if(($this->registry['platform']??'')==='telegram')return in_array('developer',$this->registry['roles']??[],true);
             return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
         }
@@ -33,7 +34,12 @@
             // Gameops-контроллерах (см. CLAUDE.md, правило №9).
             $this->ops = new Gameops($registry);
 
-            $this->permits = ['get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers', 'devGetLogs'];
+            $this->permits = ['cacheAvatar', 'get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devGrantEnergy', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers', 'devGetLogs'];
+        }
+        function cacheAvatar(){
+            $url=$this->registry['user_params']['url']??null;$platform=$this->registry['platform']??'';
+            if(!is_string($url)||!in_array($platform,['vk','ok'],true))return $this->registry['tools']->error(54);
+            $ok=NativeAvatarCache::put($platform,(int)$this->registry['uid'],$url);$this->registry['tools']->output(['ok'=>$ok]);
         }
 
         function get(){
@@ -742,10 +748,9 @@
         // блэкджека/ящика/рулетки-кубков переживали "полный сброс" (баг найден при аудите
         // после изучения проекта — тот же класс проблемы, что уже чинили для bosses_data/
         // zone в dev_panel.js, но для полей, которые вообще не видны через users.save).
-        // Тот же уровень доступа, что и у users.save (сбросить можно только СВОЙ аккаунт,
-        // id берётся из registry, не из параметров запроса) — просто дотягивается до полей,
-        // намеренно скрытых от общего whitelist.
+        // Сбрасывает только собственные серверные поля разработчика. ID берётся из registry.
         function resetSession(){
+            if(!in_array('developer', $this->registry['roles'] ?? [], true) && !$this->_requireDevUser()) return;
             $update = [
                 'id'                  => $this->registry['uid'],
                 'skills_levels'       => null,
@@ -857,6 +862,8 @@
                 // где whitelist теперь молча отбрасывает max_energy — старое накопленное значение
                 // (бонусы шмота/скиллов/банды до сброса) оставалось висеть нетронутым навсегда.
                 'max_energy'             => '50',
+                'energy'                 => '50',
+                'energy_time'            => time(),
                 // 08.10.2026 (баг найден по прямому репорту — "сбросил аккаунт, а после
                 // перезагрузки страницы ресурсы снова старые"): тот же класс, что max_energy
                 // чуть выше — 'coins'/'stew'/'cigarettes' убраны из client-writable $allowed в
@@ -930,7 +937,8 @@
                 $link->close();
             }
 
-            $this->registry['tools']->output(['ok' => 1]);
+            $this->registry['tools']->output(['ok' => 1,
+                'patch' => $this->ops->patchCurrencies($update, ['energy', 'energy_time', 'max_energy'])]);
         }
 
         // 19.09.2026 (репорт "оружие/патроны не сохраняются" — разбор показал: dev-панель
@@ -1003,6 +1011,24 @@
         // текущего значения). Как и остальные dev-permits, доступен без отдельной проверки "это
         // правда дев" — тот же принятый уровень защиты, что у devGrantWeapons/devGrantShmot/
         // setDevFlag (дев-панель скрыта от игроков на уровне интерфейса, не сервера).
+        // Energy grants use the same persistent balance as normal server spending.
+        function devGrantEnergy(){
+            if(!$this->_requireDevUser()) return;
+            $p=$this->registry['user_params'];
+            $user=$this->ops->loadUser();if(!$user)return $this->registry['tools']->error(99);
+            list($live,$anchor)=$this->ops->energySnapshot($user);
+            if(($p['fill']??false)===true)$value=max($live,intval($user['max_energy']??50));
+            else{
+                $field=array_key_exists('target',$p)?'target':'amount';$n=$p[$field]??null;
+                if(!is_int($n)||$n<0||$n>1000000)return $this->registry['tools']->error(54);
+                $value=$field==='target'?$n:$live+$n;
+            }
+            if($value>2147483647)return $this->registry['tools']->error(54);
+            $user['energy']=$value;$user['energy_time']=time();
+            if(!$this->ops->saveUser($user))return $this->registry['tools']->error(99);
+            $this->registry['tools']->output(['ok'=>1,'patch'=>$this->ops->patchCurrencies($user,['energy','energy_time','max_energy'])]);
+        }
+
         function devGrantCurrency(){
             if(!$this->_requireDevUser()) return;
             // 11.10.2026: dice_points/blue_points/poker_chips добавлены сюда же — убраны из
@@ -1020,7 +1046,7 @@
             // игнорировал, "сброшенный" аккаунт реально сохранял старые значения на сервере
             // (ярче всего это проявилось через exp → попап нового уровня с реальным, НЕ
             // сброшенным уровнем). Добавлены сюда же тем же приёмом.
-            $allowedTypes = ['coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp', 'respect', 'stash_count',
+            $allowedTypes = ['poker_spichki', 'roulette_spichki', 'coins', 'stew', 'cigarettes', 'dice_points', 'blue_points', 'poker_chips', 'exp', 'respect', 'stash_count',
                 'total_damage', 'bosses_killed', 'coins_earned', 'zone_fights',
                 'zone_fights_0', 'zone_fights_1', 'zone_fights_2', 'zone_fights_3', 'zone_fights_4',
                 'energy_spent', 'train_count', 'vassilich_buys', 'hata_progress', 'dvor_games',

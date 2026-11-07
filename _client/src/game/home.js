@@ -228,6 +228,7 @@ export default class Home{
 			this._leftHandSpr = new PIXI.Sprite(PIXI.Texture.from('./images/левая рука.png'));
 			this._leftHandSpr.texture.baseTexture.mipmap = PIXI.MIPMAP_MODES.ON;
 			this._leftHandSpr.texture.baseTexture.update();
+        this._leftHandSpr.width = 54; this._leftHandSpr.height = 36;
 			this._leftHandSpr.anchor.set(0, 0);
 			this._leftHandSpr.x = 534;
 			this._leftHandSpr.y = 385;

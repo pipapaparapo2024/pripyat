@@ -229,13 +229,15 @@ export default class Interface{
 		const refreshFriendsButton = () => {
 			// Источник истины — сохранённое на сервере согласие конкретного игрока.
 			// До загрузки udata считаем, что согласия нет: кнопка не пропадает ошибочно.
-			const granted = !!(window.udata && String(udata['friends_scope_granted'] || '0') === '1');
+			const socialWebsite = !!window.__siteRuntime && ['vk', 'ok'].includes(window.platformRuntime?.platform);
+			const granted = socialWebsite || (!window.__siteRuntime && !window.__telegramRuntime && !!(window.udata && String(udata['friends_scope_granted'] || '0') === '1'));
 			friendsBtn.visible = !granted;
 			friendsBtn.interactive = !granted;
 			friendsBtn.buttonMode = !granted;
 		};
 		refreshFriendsButton();
 		friendsBtn.on('pointerdown', () => {
+			if(window.__siteRuntime){window.openSiteFriends?.();return;}
 			if(window.pre_control && typeof pre_control._showFriendsScopePrompt === 'function') pre_control._showFriendsScopePrompt({force:true});
 		});
 		root.layer2_mc.addChild(friendsBtn);
@@ -255,7 +257,7 @@ export default class Interface{
 		// Dev-инструменты доступны только тестовому аккаунту Николай Сиденко / fleeeexim
 		// (оба переданных VK URL указывают на uid 1113977365).
 		const DEV_UIDS = ['1113977365', '382448269', '438953352', '184138040'];
-		const _isAdminUid = window.__telegramRuntime ? window.__telegramRuntime.getRoles().includes('developer') : !!(window.vk_params && DEV_UIDS.includes(String(vk_params['vk_user_id'])));
+		const _isAdminUid = window.__siteRuntime ? window.__siteRuntime.getRoles().includes('developer') : window.__telegramRuntime ? window.__telegramRuntime.getRoles().includes('developer') : !!(window.vk_params && DEV_UIDS.includes(String(vk_params['vk_user_id'])));
 		console.log('[interface.initInterfaceUp] проверка админ-доступа к DEV-панели | vk_user_id:', window.vk_params && vk_params['vk_user_id'], '| допущен:', _isAdminUid);
 		if(_isAdminUid){
 			const _devBtn = new PIXI.Graphics();

@@ -160,6 +160,7 @@ export default class Bank{
 	// отображения). На ОК реальных "голосов" не существует — показываем price_ok[i] напрямую,
 	// без деления на 7 (это уже готовая сумма в ОКах, см. server/json/donuts.json).
 	_displayPrice(name, i){
+		if(window.__siteRuntime)return window.siteRubCatalog[name][i];
 		if(window.__telegramRuntime)return window.telegramStarsCatalog[name].stars[i];
 		return isOk() ? donuts_info[name]['price_ok'][i] : donuts_info[name]['price'][i] / 7;
 	}

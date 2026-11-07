@@ -285,6 +285,10 @@ export function attachOnboardingPopup(Onboarding){
     };
 
     Onboarding.prototype._finish = function(){
+        if(window.__siteRuntime){
+            this._stopNarration();this._clearIdleTimer();this._destroyTourOverlay();this._activeTourKey=null;
+            this._setTutorialHudBlocked(false);
+        }
         if(this._guidedCleanup) this._guidedCleanup();
         clearTimeout(this._guidedAudioTimeout);
         if(this._guidedPopupTick){ PIXI.Ticker.shared.remove(this._guidedPopupTick); this._guidedPopupTick = null; }
