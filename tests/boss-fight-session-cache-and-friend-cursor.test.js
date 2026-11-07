@@ -108,8 +108,8 @@ console.log('\nTest 6: _syncFightSession() — бэкфилл ТОЛЬКО ко�
     assert(/if\(!\$matches\)\{/.test(body), 'бэкфилл выполняется только в ветке несовпадения');
     assert(/\$mine = \$this->_damageSumSince\(\$link, \$uid, \$bossId, \$bossStartMs\);/.test(body),
         'бэкфилл считает свой урон тем же _damageSumSince(), что и раньше (скоуплен по boss_id)');
-    assert(/\$friends = \(\$diffIdx !== 3 && !empty\(\$friendsSince\)\) \? \$this->_friendsDamageSumSince\(\$link, \$friendsSince\) : 0;/.test(body),
-        'бэкфилл считает урон друзей тем же _friendsDamageSumSince() (соло исключено, карта $friendsSince вместо списка)');
+    assert(!/\$friends =/.test(body) && /\$this->_applyFriendDamage\(/.test(body) && /if\(\$diffIdx === 3 \|\| empty\(\$friendsSince\)\) return;/.test(bossesPhp),
+        'урон друзей применяется один раз через курсор; получатель в соло исключён');
     // 27.09.2026 (баг найден по прямому указанию, см. boss-fight-session-friend-cursor-time-
     // scoped.test.js для полного разбора): курсор больше НЕ заводится от текущего глобального
     // максимума в таблице — это ломало учёт урона друга, если $friendIds на момент ИМЕННО этого

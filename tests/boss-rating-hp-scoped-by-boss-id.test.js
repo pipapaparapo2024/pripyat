@@ -73,8 +73,8 @@ console.log('\nTest 3: все точки вызова передают $bossId �
         '_syncFightSession() передаёт $bossId в _damageSumSince() (свой урон, только при бэкфилле)');
     // 30.09.2026: вызов сократился до 2 аргументов ($link, $friendsSince) — карта уже несёт
     // per-uid границу времени, отдельного $bossStartMs-аргумента больше нет.
-    assert(/\$friends = \(\$diffIdx !== 3 && !empty\(\$friendsSince\)\) \? \$this->_friendsDamageSumSince\(\$link, \$friendsSince\) : 0;/.test(bossesPhp),
-        '_syncFightSession() НЕ передаёт $bossId в _friendsDamageSumSince() (друзья кросс-боссово, как раньше; карта $friendsSince, не список)');
+    assert(!/\$friends =/.test(bossesPhp) && /\$this->_applyFriendDamage\(/.test(bossesPhp) && /if\(\$diffIdx === 3 \|\| empty\(\$friendsSince\)\) return;/.test(bossesPhp),
+        'урон друзей применяется один раз через курсор; получатель в соло исключён');
     // 29.09.2026: оба вызова теперь передают ещё и excludeSedoy=true (см. tests/boss-sedoy-
     // excluded-from-friend-rating.test.js) — $bossId-часть сигнатуры не изменилась.
     assert(/\$myDmg = \$this->_damageSumSince\(\$link, \$uid, \$bossId, \$startMs, true\);/.test(bossesPhp),

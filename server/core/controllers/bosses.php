@@ -426,7 +426,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             if(!$matches){
                 $maxHp = $this->BOSS_HP[$bossId][$diffIdx];
                 $mine = $this->_damageSumSince($link, $uid, $bossId, $bossStartMs);
-                $friends = ($diffIdx !== 3 && !empty($friendsSince)) ? $this->_friendsDamageSumSince($link, $friendsSince) : 0;
+                // Friend damage is applied once below, through the same cursor as later polls.
                 // 27.09.2026 (баг найден по прямому указанию, скриншот — "босс до этого стоял, но
                 // хп фулл, урон есть": HP-бар показывал 1000/1000, а панель «РЕЙТИНГ УРОНА» этой
                 // же карточки честно показывала суммарный урон друзей далеко за пределами maxHp).
@@ -452,7 +452,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $row = $res ? $res->fetch_assoc() : null;
                 $session = [
                     'bossId' => $bossId, 'diffIdx' => $diffIdx, 'startMs' => $bossStartMs,
-                    'hp' => max(0, $maxHp - $mine - $friends),
+                    'hp' => max(0, $maxHp - $mine),
                     'cursorId' => $row ? intval($row['maxId']) : 0,
                 ];
             }

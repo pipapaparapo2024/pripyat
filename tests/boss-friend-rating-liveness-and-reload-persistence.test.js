@@ -74,7 +74,8 @@ console.log('\nTest 1: bosses.php — _myFightStart()/_syncFightSession() зав
     assert(syncStart !== -1, '_syncFightSession() определена');
     const syncEnd  = bossesPhp.indexOf('\n        }', syncStart);
     const syncBody = bossesPhp.slice(syncStart, syncEnd);
-    assert(/\$diffIdx !== 3 && !empty\(\$friendsSince\)/.test(syncBody), 'соло (diffIdx=3) исключает друзей из бэкфилла HP полностью');
+    assert(!/\$friends =/.test(syncBody) && /\$this->_applyFriendDamage\(/.test(syncBody) && /if\(\$diffIdx === 3 \|\| empty\(\$friendsSince\)\) return;/.test(bossesPhp),
+        'урон друзей применяется один раз через курсор; получатель в соло исключён');
 }
 
 console.log('\nTest 2: friendsDamage() — считает урон друзей по ЛЮБОМУ их боссу с момента МОЕГО bossStartMs, не привязан к конкретному boss_id друга');

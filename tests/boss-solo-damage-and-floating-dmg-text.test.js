@@ -57,8 +57,8 @@ console.log('\nTest 2: _friendsDamageSumSince()/_friendsDamagePerUserSince() —
     const syncStart = bossesPhp.indexOf('private function _syncFightSession(');
     const syncEnd   = bossesPhp.indexOf('\n        }', syncStart);
     const syncBody  = bossesPhp.slice(syncStart, syncEnd);
-    assert(/\$friends = \(\$diffIdx !== 3 && !empty\(\$friendsSince\)\)/.test(syncBody),
-        '_syncFightSession() по-прежнему явно гейтит друзей по diffIdx!==3 — соло остаётся вырожденным (только свой урон)');
+    assert(!/\$friends =/.test(syncBody) && /\$this->_applyFriendDamage\(/.test(syncBody) && /if\(\$diffIdx === 3 \|\| empty\(\$friendsSince\)\) return;/.test(bossesPhp),
+        'урон друзей применяется один раз через курсор; получатель в соло исключён');
 }
 
 console.log('\nTest 3: attack() синхронизирует кэш HP через _syncFightSession() (которая при бэкфилле использует ту же _damageSumSince()) — соло теперь тоже корректно накапливает урон между ударами');
