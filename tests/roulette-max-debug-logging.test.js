@@ -58,7 +58,7 @@ console.log('\nTest 2: _rollSlot() — трассировка попыток и�
     const start = roulPhp.indexOf('private function _rollSlot(');
     // 29.09.2026: claimKeyring() удалён (был эксплойтом) — следующая функция после _rollSlot()
     // теперь _tryClaimKeyring() (внутренний хелпер pickCup()), используем её как новую границу.
-    const end   = roulPhp.indexOf('private function _tryClaimKeyring(){');
+    const end   = roulPhp.indexOf('private function _tryClaimKeyring(');
     const body  = roulPhp.slice(start, end);
     // 29.09.2026 (ФИНАЛЬНОЕ уточнение тем же днём — "шанс 1/1000000, буквально на миллион
     // один выигравший"): "keyring доступен" ветка перестала быть отдельным циклом mt_rand —

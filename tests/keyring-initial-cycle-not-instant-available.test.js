@@ -48,16 +48,10 @@ console.log('\nTest 2: migrate11a.php — тот же фикс (короткая
 
 console.log('\nTest 3: roulette.php — регресс-гвард (обновлено 28.09.2026)');
 {
-    // 28.09.2026 (по прямому указанию — "Связка ключей должна быть личной наградой, не одной
-    // на весь сервер"): весь эксклюзивный 30-дневный цикл (единственный владелец на сервере,
-    // атомарный UPDATE "кто первый — того и тапки") убран целиком — _tryClaimKeyring() теперь
-    // просто выдаёт keyring_owner=1 текущему игроку через обычный loadUser()/saveUser(), без
-    // претензии на эксклюзивность. Миграции (Test 1/2 выше) не трогали — они лишь заводят
-    // историческую колонку keyring_cycle_ends_at, которая этим фиксом больше не читается для
-    // решения о доступности (see $available = true в openMinigame()/spin()).
-    assert(!/\$cycleEnd = \$now \+ 30\*24\*60\*60;/.test(rouletteSrc), '_tryClaimKeyring больше НЕ ставит эксклюзивный 30-дневный цикл');
-    assert(/function _tryClaimKeyring\(\)\{[\s\S]{0,300}\$user\['keyring_owner'\] = 1;/.test(rouletteSrc),
-        '_tryClaimKeyring() просто выдаёт keyring_owner=1 текущему игроку — без гонки за эксклюзивность');
+    assert(rouletteSrc.includes('SELECT `keyring_cycle_ends_at` FROM `roulette_state` WHERE `id`=1 FOR UPDATE'),
+        'Keyring eligibility is checked under the shared row lock');
+    assert(rouletteSrc.includes("$now + $this->KEYRING_COOLDOWN_DAYS * 86400"),
+        'A successful natural award starts the cooldown');
     assert(/while\(\$idx === 12 \|\| \$idx === 0\)/.test(rouletteSrc), 'сектор №1 (idx=0) по-прежнему исключён из честного розыгрыша (не изменилось этой правкой)');
 }
 

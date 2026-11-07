@@ -104,20 +104,17 @@ console.log('\nTest 5: Связка ключей — бинарная досту
     // всё время), просто получить его можно только в узком открытом окне. Полная проверка — в
     // tests/roulette-global-jackpot-kush-keyring.test.js (структура) и roulette-wheel-visual-keyring-cooldown-impossible.test.js (Monte-Carlo), здесь — только sanity, что личный
     // (не единый глобальный) keyring_owner не откатили обратно к эксклюзивности.
-    assert(/\$user\['keyring_owner'\] = 1;\s*\n\s*return \$this->ops->saveUser\(\$user\);/.test(controllerSrc),
-        '_tryClaimKeyring — просто сохраняет keyring_owner=1 текущему игроку (личная награда, не единый слот)');
+    assert(controllerSrc.includes('SET `roulette_cups`=NULL, `keyring_owner`=1'),
+        'Cup prize is written to the current player and consumes the pending cups');
     assert(/time\(\) >= intval\(\$row\['keyring_cycle_ends_at'\]\)/.test(controllerSrc),
         'доступность снова читается из keyring_cycle_ends_at (не хардкод true) — см. полную проверку в roulette-global-jackpot-kush-keyring.test.js (структура) и roulette-wheel-visual-keyring-cooldown-impossible.test.js (Monte-Carlo)');
 }
 
 console.log('\nTest 6: pickCup — Связка выдаётся напрямую (без claimKeyring), стаканчики одноразовые');
 {
-    // 29.09.2026: pickCup() больше не зовёт _tryClaimKeyring() (раньше — двойная запись в БД:
-    // отдельный loadUser()/saveUser() поверх уже загруженного $user этой же функции) — теперь
-    // keyring_owner ставится прямо на уже загруженный $user, один атомарный saveUser().
-    assert(/if\(\$reward === 'keyring'\)\{[\s\S]{0,800}\$user\['keyring_owner'\] = 1;/.test(controllerSrc),
-        "pickCup для Связки ставит keyring_owner=1 прямо на загруженный \$user (не через отдельный _tryClaimKeyring())");
-    assert(/missed_keyring/.test(controllerSrc), 'при неудачном сохранении — не оставляет игрока без утешительной награды');
+    assert(controllerSrc.includes('$outcome = $this->_tryClaimKeyring($link, $user, $cups);'),
+        'pickCup uses the same locked claim as the wheel');
+    assert(/missed_keyring/.test(controllerSrc), 'A cup that lost the shared race receives consolation');
     assert(/\$user\['roulette_cups'\] = null;/.test(controllerSrc), 'стаканчики очищаются после выбора — повторный pickCup ничего не даст');
 }
 

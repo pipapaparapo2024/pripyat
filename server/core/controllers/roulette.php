@@ -435,6 +435,7 @@ Class Roulette {
 
         $link = $this->_rawLink();
         if(!$link){
+            if($devForceIdx === 0) return $this->ops->fail(99);
             // Глобальный джекпот недоступен (нет соединения к общей таблице) — всё равно
             // списываем поинт и крутим локально без джекпота/ключей, как и раньше (dev-форс
             // тоже уважаем — незачем терять личный тестовый флаг из-за временной недоступности
@@ -500,6 +501,7 @@ Class Roulette {
             // dev-форс НЕ трогает общий счётчик/порог/пул выше — это тестовый исход для одного
             // игрока, реальный прогресс к джекпоту у всех остальных не двигается и не сбрасывается.
 
+            if($jackpot && $devForceIdx === 0) $devForceIdx = null;
             $slotTrace = [];
             $slotResult = $this->_rollSlot($jackpot, $keyringAvailable, $user, $slotTrace, $devForceIdx);
             if($jackpot){
@@ -509,15 +511,9 @@ Class Roulette {
                 $user['roulette_cups'] = json_encode(['__prize_choice__']);
             }
 
-            // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
-            // выше): Связка теперь выдаётся ПРЯМО здесь, в той же атомарной записи, что и остальные
-            // поля этого спина — никакого отдельного claimKeyring()-запроса больше нет (ни лишней
-            // точки отказа, ни эксплойта "вызови из консоли без реального выигрыша"). Как только
-            // сектор №1 реально выпал (включая dev-форс, см. комментарий у _rollSlot) — сразу же
-            // запираем ОБА способа (колесо и мини-игру) на 30 дней вперёд.
-            if($slotResult['slotIdx'] === 0){
-                $user['keyring_owner'] = 1;
-                if(!$link->query("UPDATE `roulette_state` SET `keyring_cycle_ends_at`=" . (time() + $this->KEYRING_COOLDOWN_DAYS * 86400) . " WHERE `id`=1")) throw new RuntimeException("roulette_keyring_update");
+            $keyringSaved = $slotResult['slotIdx'] === 0;
+            if($keyringSaved && $this->_tryClaimKeyring($link, $user, null, $devForceIdx === 0) !== 'awarded'){
+                throw new RuntimeException('roulette_keyring_unavailable');
             }
             if(!$link->commit()) throw new RuntimeException('roulette_commit');
         } catch(Throwable $e){
@@ -528,7 +524,7 @@ Class Roulette {
         }
         $link->close();
 
-        if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+        if(!$keyringSaved && !$this->ops->saveUser($user)) return $this->ops->fail(99);
 
         // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
         // "Сыграть N раз в рулетку" — звать ПОСЛЕ собственного saveUser() выше.
@@ -639,21 +635,42 @@ Class Roulette {
         return ['slotIdx' => $idx, 'reward' => $slot, 'clientRewards' => $clientRewards];
     }
 
-    // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS в
-    // шапке класса): публичный permit-эндпоинт claimKeyring() УДАЛЁН целиком — раньше клиент
-    // вызывал его ОТДЕЛЬНЫМ запросом после спина, но сервер там НИКАК не проверял, что игрок
-    // реально выбил сектор №1 — TS.php('roulette.claimKeyring', {}) из консоли браузера давал
-    // keyring_owner=1 бесплатно и безусловно, в любой момент. Связка ключей колеса теперь
-    // выдаётся ПРЯМО внутри spin() (см. slotResult['slotIdx']===0 там) — той же атомарной
-    // записью, что и остальные поля спина, без отдельной сетевой точки отказа/эксплойта.
-    // _tryClaimKeyring() ниже остался ТОЛЬКО как внутренний хелпер для pickCup() (мини-игра) —
-    // туда попадают лишь reward-значения, которые сервер САМ заранее разложил по стаканчикам
-    // (user['roulette_cups'], server-authoritative), клиент не может подделать этот путь.
-    private function _tryClaimKeyring(){
-        $user = $this->ops->loadUser();
-        if(!$user) return false;
+    // The caller owns the transaction. Lock the shared row before the player row on both paths.
+    private function _tryClaimKeyring($link, &$user, ?array $cups, bool $forced = false){
+        $state = $link->query("SELECT `keyring_cycle_ends_at` FROM `roulette_state` WHERE `id`=1 FOR UPDATE")->fetch_assoc();
+        if(!$state) throw new RuntimeException('roulette_state_missing');
+        $now = time();
+        $available = $forced || $now >= intval($state['keyring_cycle_ends_at']);
+        $table = $this->registry['utb'];
+        $uid = intval($this->registry['uid']);
+        $row = $link->execute_query("SELECT `blue_points`, `roulette_cups`, `exp` FROM `$table` WHERE `id`=? FOR UPDATE", [$uid])->fetch_assoc();
+        if(!$row) return 'stale';
+
+        if($cups === null){
+            if(!$available || intval($row['blue_points']) < 1) return 'stale';
+            $user['blue_points'] = intval($row['blue_points']) - 1;
+            $saved = $link->execute_query("UPDATE `$table` SET `keyring_owner`=1, `blue_points`=?, `dev_force_jackpot`=?, `dev_force_roulette`=? WHERE `id`=?",
+                [$user['blue_points'], intval($user['dev_force_jackpot'] ?? 0), $user['dev_force_roulette'] ?? '', $uid]);
+        } else {
+            if($this->ops->j($row, 'roulette_cups', null) !== $cups) return 'stale';
+            if(!$available){
+                // A different player already won. Consume this cup once and give the usual consolation.
+                $exp = intval($row['exp']) + 1000;
+                $level = max(0, (int)floor((-1 + sqrt(1 + $exp / 5)) / 2));
+                if(!$link->execute_query("UPDATE `$table` SET `roulette_cups`=NULL, `exp`=?, `level`=? WHERE `id`=?", [$exp, $level, $uid])){
+                    throw new RuntimeException('roulette_keyring_consolation');
+                }
+                $user['exp'] = $exp;
+                return 'consolation';
+            }
+            $saved = $link->execute_query("UPDATE `$table` SET `roulette_cups`=NULL, `keyring_owner`=1 WHERE `id`=?", [$uid]);
+        }
+        if(!$saved) throw new RuntimeException('roulette_keyring_save');
+        if(!$forced && !$link->execute_query("UPDATE `roulette_state` SET `keyring_cycle_ends_at`=? WHERE `id`=1", [$now + $this->KEYRING_COOLDOWN_DAYS * 86400])){
+            throw new RuntimeException('roulette_keyring_update');
+        }
         $user['keyring_owner'] = 1;
-        return $this->ops->saveUser($user);
+        return 'awarded';
     }
 
     // Гарантированная ветка сектора «Приз»: ровно 500 рублей, один раз.
@@ -885,31 +902,26 @@ Class Roulette {
             return;
         }
         if($reward === 'keyring'){
-            // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у
-            // KEYRING_COOLDOWN_DAYS в шапке класса): раньше здесь звался _tryClaimKeyring()
-            // (отдельный loadUser()+saveUser() поверх УЖЕ загруженного $user этой функции) —
-            // двойная запись в БД вместо одной (тот же $user уже несёт roulette_cups=null,
-            // выставленный строкой выше). Теперь keyring_owner ставится прямо на уже
-            // загруженный $user и уходит ОДНИМ атомарным saveUser() — как и в spin(). Сразу же
-            // запираем ОБА способа получения (колесо и мини-игру) на 30 дней вперёд.
-            $user['keyring_owner'] = 1;
-            $got = $this->ops->saveUser($user);
-            if($got){
-                $link = $this->_rawLink();
-                if($link){
-                    $link->query("UPDATE `roulette_state` SET `keyring_cycle_ends_at`=" . (time() + $this->KEYRING_COOLDOWN_DAYS * 86400) . " WHERE `id`=1");
-                    $link->close();
-                }
+            $link = $this->_rawLink();
+            if(!$link) return $this->ops->fail(99);
+            try {
+                if(!$link->begin_transaction()) throw new RuntimeException('roulette_keyring_begin');
+                $outcome = $this->_tryClaimKeyring($link, $user, $cups);
+                if(!$link->commit()) throw new RuntimeException('roulette_keyring_commit');
+            } catch(Throwable $e){
+                $link->rollback();
+                error_log('[roulette.pickCup] keyring transaction failed');
+                return $this->ops->fail(99);
+            } finally {
+                $link->close();
             }
+            if($outcome === 'stale') return $this->ops->fail(85);
+            $got = $outcome === 'awarded';
             error_log('[roulette.pickCup] ' . json_encode($debugBase + ['result' => 'keyring', 'gotKeyring' => $got]));
             if($got){
                 $this->ops->ok(['type' => 'keyring', 'amt' => 1, 'otherKushIdx' => $otherKushIdx,
                     'patch' => $this->ops->patchCurrencies($user, ['keyring_owner'])]);
             } else {
-            // Сохранение не удалось — не оставляем игрока совсем без награды.
-                $user['keyring_owner'] = null; // не даём частично записанному значению уйти в следующий saveUser()
-                $this->ops->add($user, 'exp', 1000);
-                if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
                 $this->ops->ok(['type' => 'exp', 'amt' => 1000, 'missed_keyring' => true, 'otherKushIdx' => $otherKushIdx,
                     'patch' => $this->ops->patchCurrencies($user, ['exp']),
                     'clientRewards' => [['type'=>'battlepass_xp','amt'=>10]]]);

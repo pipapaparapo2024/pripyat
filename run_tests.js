@@ -547,13 +547,13 @@ test('Сброс аккаунта закрывает хабар и очищае�
 test('Связка ключей — личная награда с PNG и не блокируется другим игроком', () => {
     const rouletteSrc = fs.readFileSync(path.join(__dirname, 'server', 'core', 'controllers', 'roulette.php'), 'utf-8');
     const bossesPhp = fs.readFileSync(path.join(__dirname, 'server', 'core', 'controllers', 'bosses.php'), 'utf-8');
-    const claimStart = rouletteSrc.indexOf('private function _tryClaimKeyring()');
+    const claimStart = rouletteSrc.indexOf('private function _tryClaimKeyring(');
     const claim = rouletteSrc.slice(claimStart, rouletteSrc.indexOf('\n    }', claimStart) + 6);
     const shmotSrc = readSrc('game/shmot.js');
     assert(/\$user\['keyring_owner'\] = 1/.test(claim),
         'выдача связки не сохраняет личное право игрока');
-    assert(!/keyring_cycle_ends_at/.test(claim),
-        'выдача связки всё ещё зависит от глобального владельца или цикла');
+    assert(claim.includes('FOR UPDATE') && claim.includes('keyring_cycle_ends_at') && !claim.includes('keyring_owner_id'),
+        'Keyring ownership is personal, with a shared locked cooldown');
     // 30.09.2026 (третий заход в тот же день): ?cb=2/?cb=3 не помогли — кэш вне нашего контроля
     // (похоже на прокси/CDN самого ВК) игнорировал смену query-параметра. Файл переименован в
     // "связка ключей v2.png" — смена пути гарантированно пробивает любой кэш.

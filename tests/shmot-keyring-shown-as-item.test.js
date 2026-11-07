@@ -54,7 +54,7 @@ console.log('\nTest 1: механика связки ключей реально
     // из консоли без реального выигрыша — см. tests/roulette-global-jackpot-kush-keyring.test.js (структура) и roulette-wheel-visual-keyring-cooldown-impossible.test.js (Monte-Carlo));
     // выдача связки теперь идёт прямо внутри spin()/pickCup(), _tryClaimKeyring() остался
     // внутренним хелпером для pickCup() — сама выдача реализована, не заглушка.
-    assert(/function spin\(\)/.test(rouletteSrc) && /function _tryClaimKeyring\(\)/.test(rouletteSrc),
+    assert(/function spin\(\)/.test(rouletteSrc) && /function _tryClaimKeyring\(/.test(rouletteSrc),
         'выдача связки (рулетка) реализована, не заглушка');
 }
 
