@@ -341,6 +341,10 @@ Class Roulette {
         return $link;
     }
 
+    private function _ensureGlobalState($link){
+        return $link->query("INSERT INTO `roulette_state` (`id`, `jackpot_pool`) VALUES (1, 0) ON DUPLICATE KEY UPDATE `spin_threshold`=IF(`spin_threshold`=0, 3000, `spin_threshold`)");
+    }
+
     // status — доступность Связки ключей (для отображения сектора №1 рулетки и пула
     // наград мини-игры на клиенте) + текущая сумма джек-пота (jackpot_pool) для отображения
     // при открытии экрана рулетки, ДО первого спина в этой сессии. Счётчик спинов/порог
@@ -457,59 +461,70 @@ Class Roulette {
             return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0] + $slotResult);
         }
 
-        $link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = `jackpot_pool` + 10 WHERE `id`=1");
-        $res = $link->query("SELECT LAST_INSERT_ID() AS c");
-        $counter = $res ? intval($res->fetch_assoc()['c']) : 0;
+        // Keep the shared row locked through the counter check and cycle reset.
+        try {
+            if(!$link->begin_transaction() || !$this->_ensureGlobalState($link)) throw new RuntimeException('roulette_state_init');
+            if(!$link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = COALESCE(`jackpot_pool`, 0) + 10 WHERE `id`=1")) throw new RuntimeException("roulette_counter_update");
+            $res = $link->query("SELECT LAST_INSERT_ID() AS c");
+            $counter = $res ? intval($res->fetch_assoc()['c']) : 0;
 
-        $res2 = $link->query("SELECT `spin_threshold`, `keyring_cycle_ends_at`, `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
-        $row = $res2 ? $res2->fetch_assoc() : ['spin_threshold' => 999999999, 'keyring_cycle_ends_at' => 0, 'jackpot_pool' => 0];
-        $threshold = intval($row['spin_threshold']);
-        // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
-        // выше): было жёстко захардкожено true — теперь честно читает 30-дневное окно ожидания
-        // из БД. Пока time() < keyring_cycle_ends_at, сектор №1 физически исключается из выбора
-        // ниже (_rollSlot) — 0% шанс, не "редкий шанс".
-        $keyringAvailable = time() >= intval($row['keyring_cycle_ends_at']);
-        $jackpotPool = intval($row['jackpot_pool']);
+            $res2 = $link->query("SELECT `spin_threshold`, `keyring_cycle_ends_at`, `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
+            $row = $res2 ? $res2->fetch_assoc() : null;
+            if(!$row || $counter <= 0) throw new RuntimeException('roulette_state_missing');
+            $threshold = intval($row['spin_threshold']);
+            // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
+            // выше): было жёстко захардкожено true — теперь честно читает 30-дневное окно ожидания
+            // из БД. Пока time() < keyring_cycle_ends_at, сектор №1 физически исключается из выбора
+            // ниже (_rollSlot) — 0% шанс, не "редкий шанс".
+            $keyringAvailable = time() >= intval($row['keyring_cycle_ends_at']);
+            $jackpotPool = intval($row['jackpot_pool']);
 
-        $realJackpot = $counter >= $threshold;
-        $jackpot = $realJackpot || $devForceJackpot || ($devForceIdx === 12);
-        $jackpotResetInfo = null;
-        if($realJackpot){
-            $newThreshold = rand(3000, 3500);
-            // 12.10.2026 (РЕВЕРТ по прямому указанию, живой репорт — "выбил настоящий куш, а
-            // дали фиксированные 50 тысяч вместо суммы джекпота; картинка показывала не ту
-            // сумму, что должна была накопиться"): jackpot_pool БОЛЬШЕ НЕ сбрасывается здесь.
-            // Этот момент — всего лишь попадание НА КОЛЕСЕ на сектор джекпота: игрок ещё даже
-            // не выбрал забрать гарантированные 500р или рискнуть, а если рискнёт — реальный
-            // Куш в суперигре может и не достаться (отдельная, более редкая гонка —
-            // kush_counter/kush_threshold, см. openMinigame()). Обнулять уже накопленный пул
-            // ПРОСТО от факта попадания на сектор — значит убивать саму идею растущего
-            // джекпота из ТЗ ни разу никому его не выплатив. Сброс пула ТЕПЕРЬ — ТОЛЬКО в
-            // pickCup(), в момент РЕАЛЬНОГО выигрыша Куша (см. там же).
-            $link->query("UPDATE `roulette_state` SET `spin_counter`=0, `spin_threshold`=$newThreshold WHERE `id`=1");
-            $jackpotResetInfo = ['oldThreshold' => $threshold, 'newThreshold' => $newThreshold];
-        }
-        // dev-форс НЕ трогает общий счётчик/порог/пул выше — это тестовый исход для одного
-        // игрока, реальный прогресс к джекпоту у всех остальных не двигается и не сбрасывается.
+            $realJackpot = $threshold > 0 && $counter >= $threshold;
+            $jackpot = $realJackpot || $devForceJackpot || ($devForceIdx === 12);
+            $jackpotResetInfo = null;
+            if($realJackpot){
+                $newThreshold = rand(3000, 3500);
+                // 12.10.2026 (РЕВЕРТ по прямому указанию, живой репорт — "выбил настоящий куш, а
+                // дали фиксированные 50 тысяч вместо суммы джекпота; картинка показывала не ту
+                // сумму, что должна была накопиться"): jackpot_pool БОЛЬШЕ НЕ сбрасывается здесь.
+                // Этот момент — всего лишь попадание НА КОЛЕСЕ на сектор джекпота: игрок ещё даже
+                // не выбрал забрать гарантированные 500р или рискнуть, а если рискнёт — реальный
+                // Куш в суперигре может и не достаться (отдельная, более редкая гонка —
+                // kush_counter/kush_threshold, см. openMinigame()). Обнулять уже накопленный пул
+                // ПРОСТО от факта попадания на сектор — значит убивать саму идею растущего
+                // джекпота из ТЗ ни разу никому его не выплатив. Сброс пула ТЕПЕРЬ — ТОЛЬКО в
+                // pickCup(), в момент РЕАЛЬНОГО выигрыша Куша (см. там же).
+                if(!$link->query("UPDATE `roulette_state` SET `spin_counter`=0, `spin_threshold`=$newThreshold WHERE `id`=1")) throw new RuntimeException("roulette_cycle_reset");
+                $jackpotResetInfo = ['oldThreshold' => $threshold, 'newThreshold' => $newThreshold];
+            }
+            // dev-форс НЕ трогает общий счётчик/порог/пул выше — это тестовый исход для одного
+            // игрока, реальный прогресс к джекпоту у всех остальных не двигается и не сбрасывается.
 
-        $slotTrace = [];
-        $slotResult = $this->_rollSlot($jackpot, $keyringAvailable, $user, $slotTrace, $devForceIdx);
-        if($jackpot){
-            // Одноразовое серверное право выбрать гарантированные 500р или риск-игру.
-            // Используем уже существующее server-only поле roulette_cups: клиент не может
-            // подделать его через users.save.
-            $user['roulette_cups'] = json_encode(['__prize_choice__']);
-        }
+            $slotTrace = [];
+            $slotResult = $this->_rollSlot($jackpot, $keyringAvailable, $user, $slotTrace, $devForceIdx);
+            if($jackpot){
+                // Одноразовое серверное право выбрать гарантированные 500р или риск-игру.
+                // Используем уже существующее server-only поле roulette_cups: клиент не может
+                // подделать его через users.save.
+                $user['roulette_cups'] = json_encode(['__prize_choice__']);
+            }
 
-        // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
-        // выше): Связка теперь выдаётся ПРЯМО здесь, в той же атомарной записи, что и остальные
-        // поля этого спина — никакого отдельного claimKeyring()-запроса больше нет (ни лишней
-        // точки отказа, ни эксплойта "вызови из консоли без реального выигрыша"). Как только
-        // сектор №1 реально выпал (включая dev-форс, см. комментарий у _rollSlot) — сразу же
-        // запираем ОБА способа (колесо и мини-игру) на 30 дней вперёд.
-        if($slotResult['slotIdx'] === 0){
-            $user['keyring_owner'] = 1;
-            $link->query("UPDATE `roulette_state` SET `keyring_cycle_ends_at`=" . (time() + $this->KEYRING_COOLDOWN_DAYS * 86400) . " WHERE `id`=1");
+            // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
+            // выше): Связка теперь выдаётся ПРЯМО здесь, в той же атомарной записи, что и остальные
+            // поля этого спина — никакого отдельного claimKeyring()-запроса больше нет (ни лишней
+            // точки отказа, ни эксплойта "вызови из консоли без реального выигрыша"). Как только
+            // сектор №1 реально выпал (включая dev-форс, см. комментарий у _rollSlot) — сразу же
+            // запираем ОБА способа (колесо и мини-игру) на 30 дней вперёд.
+            if($slotResult['slotIdx'] === 0){
+                $user['keyring_owner'] = 1;
+                if(!$link->query("UPDATE `roulette_state` SET `keyring_cycle_ends_at`=" . (time() + $this->KEYRING_COOLDOWN_DAYS * 86400) . " WHERE `id`=1")) throw new RuntimeException("roulette_keyring_update");
+            }
+            if(!$link->commit()) throw new RuntimeException('roulette_commit');
+        } catch(Throwable $e){
+            $link->rollback();
+            $link->close();
+            error_log('[roulette.spin] global state update failed');
+            return $this->ops->fail(99);
         }
         $link->close();
 
@@ -692,9 +707,13 @@ Class Roulette {
         // со свежим счётчиком от 0, как будто Куш никогда не появлялся. По ТЗ Куш должен
         // оставаться "на кону" и появляться в раскладке КАЖДОЙ следующей мини-игры, пока игрок
         // его не заберёт.
-        $link->query("UPDATE `roulette_state` SET `kush_counter` = kush_counter + 1 WHERE `id`=1");
+        if(!$this->_ensureGlobalState($link) || !$link->query("UPDATE `roulette_state` SET `kush_counter` = kush_counter + 1 WHERE `id`=1")){
+            $link->close();
+            return $this->ops->fail(99);
+        }
         $res2 = $link->query("SELECT `kush_counter`, `kush_threshold`, `keyring_cycle_ends_at` FROM `roulette_state` WHERE `id`=1");
-        $row = $res2 ? $res2->fetch_assoc() : ['kush_counter' => 0, 'kush_threshold' => 999, 'keyring_cycle_ends_at' => 0];
+        $row = $res2 ? $res2->fetch_assoc() : null;
+        if(!$row){$link->close();return $this->ops->fail(99);}
         $kushCounter = intval($row['kush_counter']);
         $kushThreshold = intval($row['kush_threshold']);
         // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
@@ -706,7 +725,7 @@ Class Roulette {
         $keyringOnCooldown = time() < intval($row['keyring_cycle_ends_at']);
         $keyringAvailable = !$keyringOnCooldown && mt_rand(1, $this->KEYRING_CHANCE_DENOM) === 1;
 
-        $hasKush = $kushCounter >= $kushThreshold;
+        $hasKush = $kushThreshold > 0 && $kushCounter >= $kushThreshold;
         $link->close();
 
         // остальное — случайно из обычного пула (с повторами, пул небольшой).

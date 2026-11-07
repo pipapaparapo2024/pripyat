@@ -10,3 +10,5 @@ assert.match(source, /if\(!\$this->_requireAdmin\(\)\) return;/, 'Активац
 assert.doesNotMatch(source, /ADMIN_KEY|admin_key/, 'В исходниках события не должен оставаться статический пароль администратора.');
 
 console.log('event-admin-server-auth: OK');
+
+assert.match(source, /INSERT INTO `event_settings`[\s\S]*?ON DUPLICATE KEY UPDATE/, 'Activation initializes empty event settings atomically');

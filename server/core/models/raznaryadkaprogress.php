@@ -193,6 +193,24 @@ class RaznaryadkaProgress {
     // (_rollover(), $newMonth = mskMonthKey()), И для dev-инструмента, который симулирует
     // переход на launch_month, не трогая реальные системные часы (это сломало бы все
     // остальные таймеры/кулдауны игры, см. ПРАВИЛО №3 AGENTS.md).
+    // A launch catch-up is part of the saved calendar and counts for reward tiers.
+    static function applyCompletedDays($data, $config, $currentMonth, $currentDay){
+        $month = $data['month'] ?? '';
+        $monthCfg = $config['months'][$month] ?? [];
+        $through = intval($monthCfg['completed_through'] ?? 0);
+        if($through <= 0 || $month > $currentMonth) return $data;
+        if($month === $currentMonth) $through = min($through, $currentDay - 1);
+        for($day = 1; $day <= $through; $day++){
+            $need = $monthCfg['days'][$day]['need'] ?? null;
+            if($need === null) continue;
+            $progress = $data['days'][$day] ?? [];
+            $progress['prog'] = max(intval($progress['prog'] ?? 0), intval($need));
+            $progress['status'] = 'done';
+            $data['days'][$day] = $progress;
+        }
+        return $data;
+    }
+
     static function _closeMonthAndStartNew($ops, &$user, $data, $config, $newMonth){
         if(!empty($data['month']) && !empty($data['days']) && (!isset($config['launch_month']) || $data['month'] >= $config['launch_month'])){
             // Автосбор невыбранных наград прошлого месяца — считаем done-дни и выдаём ВСЕ
@@ -326,8 +344,12 @@ class RaznaryadkaProgress {
         $config = self::loadConfig($ops);
         $data = $ops->j($user, 'raznaryadka_data', []);
         if(!is_array($data)) $data = [];
+        $now = self::mskNow();
+        $currentMonth = $now->format('Y-m');
+        $currentDay = intval($now->format('j'));
+        $data = self::applyCompletedDays($data, $config, $currentMonth, $currentDay);
         $data = self::_rollover($ops, $user, $data, $config);
-        return [$data, $config];
+        return [self::applyCompletedDays($data, $config, $currentMonth, $currentDay), $config];
     }
 
     // Центральный хук — звать ПОСЛЕ успешного завершения (и, желательно, ПОСЛЕ собственного

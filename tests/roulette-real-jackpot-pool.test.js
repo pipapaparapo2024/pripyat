@@ -27,9 +27,16 @@ const rouletteSrc       = fs.readFileSync(path.join(__dirname, '..', '_client', 
 const rouletteScreenSrc = fs.readFileSync(path.join(__dirname, '..', '_client', 'src', 'game', 'dvor', 'dvor-roulette-screen.js'), 'utf-8');
 const minigameSrc       = fs.readFileSync(path.join(__dirname, '..', '_client', 'src', 'game', 'dvor', 'dvor-roulette-minigame.js'), 'utf-8');
 
+const spin = phpSrc.slice(phpSrc.indexOf('function spin(){'), phpSrc.indexOf('private function _rollSlot'));
+assert(phpSrc.includes('VALUES (1, 0) ON DUPLICATE KEY UPDATE'), 'Missing roulette state starts with an empty jackpot pool');
+assert(spin.indexOf('begin_transaction()') < spin.indexOf('_ensureGlobalState($link)') &&
+    spin.indexOf('spin_counter`=0') < spin.indexOf('$link->commit()'), 'Counter initialization and jackpot reset use one transaction');
+assert(spin.includes('if(!$row || $counter <= 0)') && spin.includes('$threshold > 0 && $counter >= $threshold'),
+    'Missing state or a zero threshold cannot trigger a jackpot');
+
 console.log('\nTest 1: server roulette.php — spin() растит и возвращает jackpot_pool, НЕ сбрасывает его при попадании на сектор');
 {
-    assert(/UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID\(`spin_counter` \+ 1\), `jackpot_pool` = `jackpot_pool` \+ 10 WHERE `id`=1/.test(phpSrc),
+    assert(/UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID\(`spin_counter` \+ 1\), `jackpot_pool` = COALESCE\(`jackpot_pool`, 0\) \+ 10 WHERE `id`=1/.test(phpSrc),
         'spin_counter и jackpot_pool (+10) инкрементируются одним запросом');
     assert(/'jackpot_pool' => \$jackpotPool/.test(phpSrc), 'spin() отдаёт jackpot_pool клиенту в ответе');
 

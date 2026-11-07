@@ -166,6 +166,16 @@ echo ($gen1['days'] === $gen2['days'] ? "PASS" : "FAIL") . ": одинаковы
 $CONFIG_NO_DEC = $CONFIG; // декабря нет в конфиге — monthConfig() должен сгенерировать фоллбэк
 $decCfg = RaznaryadkaProgress::monthConfig($CONFIG_NO_DEC, '2026-12', 31);
 echo (isset($decCfg['days']) && count($decCfg['days']) === 31 ? "PASS" : "FAIL") . ": monthConfig() для не подготовленного месяца — фоллбэк на generateMonth(), 31 день\n";
+$releaseConfig = json_decode(file_get_contents(__DIR__.'/../../server/json/raznaryadka_config.json'),true,512,JSON_THROW_ON_ERROR);
+$november = ['month'=>'2026-11','days'=>[2=>['prog'=>999,'status'=>'done','paid'=>true],7=>['prog'=>3,'status'=>'pending']],'claimed'=>[5]];
+$catchup = RaznaryadkaProgress::applyCompletedDays($november,$releaseConfig,'2026-11',7);
+foreach(range(1,6) as $day){
+    if(($catchup['days'][$day]['status']??null)!=='done'||$catchup['days'][$day]['prog']<$releaseConfig['months']['2026-11']['days'][$day]['need'])throw new RuntimeException('November day was not completed');
+}
+if($catchup['claimed']!==[5]||empty($catchup['days'][2]['paid'])||$catchup['days'][7]!==$november['days'][7])throw new RuntimeException('Catch-up overwrote existing data');
+if($catchup!==RaznaryadkaProgress::applyCompletedDays($catchup,$releaseConfig,'2026-11',7))throw new RuntimeException('Catch-up is not idempotent');
+if(isset(RaznaryadkaProgress::applyCompletedDays($november,$releaseConfig,'2026-11',6)['days'][6]))throw new RuntimeException('Current day completed early');
+if($november!==RaznaryadkaProgress::applyCompletedDays($november,$releaseConfig,'2026-10',31))throw new RuntimeException('Future month completed early');
 $novCfg = RaznaryadkaProgress::monthConfig($CONFIG, '2026-11', 30);
 echo ($novCfg === $CONFIG['months']['2026-11'] ? "PASS" : "FAIL") . ": monthConfig() для подготовленного месяца — возвращает ИЗ конфига, не генерирует заново\n";
 

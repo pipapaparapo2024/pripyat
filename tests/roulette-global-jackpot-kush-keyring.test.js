@@ -73,7 +73,7 @@ console.log('\nTest 3: джек-пот — атомарный инкремент
 {
     // 15.09.2026: тот же запрос теперь ЗАОДНО растит jackpot_pool (+10 за спин) —
     // см. tests/roulette-real-jackpot-pool.test.js для полной проверки этой логики.
-    assert(/UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID\(`spin_counter` \+ 1\), `jackpot_pool` = `jackpot_pool` \+ 10 WHERE `id`=1/.test(controllerSrc),
+    assert(/UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID\(`spin_counter` \+ 1\), `jackpot_pool` = COALESCE\(`jackpot_pool`, 0\) \+ 10 WHERE `id`=1/.test(controllerSrc),
         'spin() инкрементирует общий счётчик атомарно через LAST_INSERT_ID (и заодно растит jackpot_pool)');
     assert(/\$newThreshold = rand\(3000, 3500\);/.test(controllerSrc), 'после срабатывания — новый порог 3000-3500');
 }

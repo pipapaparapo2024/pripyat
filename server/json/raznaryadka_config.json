@@ -132,6 +132,7 @@
             }
         },
         "2026-11": {
+            "completed_through": 6,
             "days": {
                 "1": {
                     "type": "respect",

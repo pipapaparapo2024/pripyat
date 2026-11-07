@@ -92,11 +92,12 @@ Class Event {
         $event_id = 'ev_' . time();
         $ends_at  = time() + self::EVENT_DURATION;
 
-        $link->query("UPDATE `event_settings` SET `value`='1'        WHERE `key`='event_active'");
-        $link->query("UPDATE `event_settings` SET `value`='$event_id' WHERE `key`='event_id'");
-        $link->query("UPDATE `event_settings` SET `value`='$ends_at'  WHERE `key`='event_ends_at'");
+        $saved = $link->query("INSERT INTO `event_settings` (`key`, `value`) VALUES
+            ('event_active','1'), ('event_id','$event_id'), ('event_ends_at','$ends_at') AS incoming
+            ON DUPLICATE KEY UPDATE `value`=incoming.`value`");
 
         $link->close();
+        if(!$saved) return $this->registry['tools']->error(99);
         $this->registry['tools']->output(['ok'=>true,'event_id'=>$event_id,'ends_at'=>$ends_at]);
     }
 
