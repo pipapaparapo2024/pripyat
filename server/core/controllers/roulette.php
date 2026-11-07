@@ -635,15 +635,37 @@ Class Roulette {
         return ['slotIdx' => $idx, 'reward' => $slot, 'clientRewards' => $clientRewards];
     }
 
+    private function _applyCupReward(&$user, $type, $amt){
+        $patchKeys = [];
+        $clientRewards = [];
+        if($type === 'cig'){ $this->ops->add($user, 'cigarettes', $amt); $patchKeys[] = 'cigarettes'; }
+        else if($type === 'roulette_spichki'){ $this->ops->add($user, 'roulette_spichki', $amt); $patchKeys[] = 'roulette_spichki'; }
+        else if($type === 'exp'){
+            $this->ops->add($user, 'exp', $amt); $patchKeys[] = 'exp';
+            $clientRewards[] = ['type'=>'battlepass_xp', 'amt'=>max(1, intval(floor($amt / 100)))];
+        }
+        else if($type === 'blue_points'){ $this->ops->add($user, 'blue_points', $amt); $patchKeys[] = 'blue_points'; }
+        else if($type === 'auto' || $type === 'gun' || $type === 'machete'){
+            // 11.10.2026: больше НЕ clientReward (см. большой коммент у _grantWeaponReward()
+            // выше) — та же причина, по которой это уже закрыто у poker.php.resolve():
+            // users.save() отклоняет РОСТ ammo_*/weapons, clientReward+weapons.grantAmmo()
+            // молча терял награду при следующем автосейве.
+            $this->_grantWeaponReward($user, $type, $amt);
+            $patchKeys[] = 'weapons'; $patchKeys[] = 'ammo_' . $type;
+        }
+        else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; }
+        return [$patchKeys, $clientRewards];
+    }
+
     // The caller owns the transaction. Lock the shared row before the player row on both paths.
-    private function _tryClaimKeyring($link, &$user, ?array $cups, bool $forced = false){
+    private function _tryClaimKeyring($link, &$user, ?array $cups, bool $forced = false, ?array &$replacement = null){
         $state = $link->query("SELECT `keyring_cycle_ends_at` FROM `roulette_state` WHERE `id`=1 FOR UPDATE")->fetch_assoc();
         if(!$state) throw new RuntimeException('roulette_state_missing');
         $now = time();
         $available = $forced || $now >= intval($state['keyring_cycle_ends_at']);
         $table = $this->registry['utb'];
         $uid = intval($this->registry['uid']);
-        $row = $link->execute_query("SELECT `blue_points`, `roulette_cups`, `exp` FROM `$table` WHERE `id`=? FOR UPDATE", [$uid])->fetch_assoc();
+        $row = $link->execute_query("SELECT * FROM `$table` WHERE `id`=? FOR UPDATE", [$uid])->fetch_assoc();
         if(!$row) return 'stale';
 
         if($cups === null){
@@ -654,13 +676,24 @@ Class Roulette {
         } else {
             if($this->ops->j($row, 'roulette_cups', null) !== $cups) return 'stale';
             if(!$available){
-                // A different player already won. Consume this cup once and give the usual consolation.
-                $exp = intval($row['exp']) + 1000;
-                $level = max(0, (int)floor((-1 + sqrt(1 + $exp / 5)) / 2));
-                if(!$link->execute_query("UPDATE `$table` SET `roulette_cups`=NULL, `exp`=?, `level`=? WHERE `id`=?", [$exp, $level, $uid])){
+                $replacement = $this->CUP_POOL[array_rand($this->CUP_POOL)];
+                $user = $row;
+                $user['roulette_cups'] = null;
+                [$keys] = $this->_applyCupReward($user, $replacement['type'], $replacement['amt']);
+                $set = ['`roulette_cups`=NULL'];
+                $values = [];
+                if(in_array('exp', $keys, true)){
+                    $user['level'] = max(0, (int)floor((-1 + sqrt(1 + intval($user['exp']) / 5)) / 2));
+                    $keys[] = 'level';
+                }
+                foreach($keys as $key){
+                    $set[] = "`$key`=?";
+                    $values[] = $user[$key];
+                }
+                $values[] = $uid;
+                if(!$link->execute_query("UPDATE `$table` SET ".implode(',', $set)." WHERE `id`=?", $values)){
                     throw new RuntimeException('roulette_keyring_consolation');
                 }
-                $user['exp'] = $exp;
                 return 'consolation';
             }
             $saved = $link->execute_query("UPDATE `$table` SET `roulette_cups`=NULL, `keyring_owner`=1 WHERE `id`=?", [$uid]);
@@ -906,7 +939,8 @@ Class Roulette {
             if(!$link) return $this->ops->fail(99);
             try {
                 if(!$link->begin_transaction()) throw new RuntimeException('roulette_keyring_begin');
-                $outcome = $this->_tryClaimKeyring($link, $user, $cups);
+                $replacement = null;
+                $outcome = $this->_tryClaimKeyring($link, $user, $cups, false, $replacement);
                 if(!$link->commit()) throw new RuntimeException('roulette_keyring_commit');
             } catch(Throwable $e){
                 $link->rollback();
@@ -922,9 +956,12 @@ Class Roulette {
                 $this->ops->ok(['type' => 'keyring', 'amt' => 1, 'otherKushIdx' => $otherKushIdx,
                     'patch' => $this->ops->patchCurrencies($user, ['keyring_owner'])]);
             } else {
-                $this->ops->ok(['type' => 'exp', 'amt' => 1000, 'missed_keyring' => true, 'otherKushIdx' => $otherKushIdx,
-                    'patch' => $this->ops->patchCurrencies($user, ['exp']),
-                    'clientRewards' => [['type'=>'battlepass_xp','amt'=>10]]]);
+                $type = $replacement['type']; $amt = $replacement['amt'];
+                $keys = ['exp','cigarettes','roulette_spichki','blue_points','weapons','ammo_auto','ammo_gun','ammo_machete'];
+                if($type === 'cig') RaznaryadkaProgress::report($this->ops, 'sukhari', $amt);
+                $this->ops->ok(['type' => $type, 'amt' => $amt, 'consolation' => true, 'missed_keyring' => true, 'otherKushIdx' => $otherKushIdx,
+                    'patch' => $this->ops->patchCurrencies($user, $keys),
+                    'clientRewards' => $type === 'exp' ? [['type'=>'battlepass_xp','amt'=>max(1,intval(floor($amt/100)))]] : []]);
             }
             return;
         }
@@ -936,24 +973,7 @@ Class Roulette {
         // конкретный тип+сумму вместо захардкоженного "+50".
         list($type, $amt) = explode(':', $reward);
         $amt = intval($amt);
-        $patchKeys = [];
-        $clientRewards = [];
-        if($type === 'cig'){ $this->ops->add($user, 'cigarettes', $amt); $patchKeys[] = 'cigarettes'; }
-        else if($type === 'roulette_spichki'){ $this->ops->add($user, 'roulette_spichki', $amt); $patchKeys[] = 'roulette_spichki'; }
-        else if($type === 'exp'){
-            $this->ops->add($user, 'exp', $amt); $patchKeys[] = 'exp';
-            $clientRewards[] = ['type'=>'battlepass_xp', 'amt'=>max(1, intval(floor($amt / 100)))];
-        }
-        else if($type === 'blue_points'){ $this->ops->add($user, 'blue_points', $amt); $patchKeys[] = 'blue_points'; }
-        else if($type === 'auto' || $type === 'gun' || $type === 'machete'){
-            // 11.10.2026: больше НЕ clientReward (см. большой коммент у _grantWeaponReward()
-            // выше) — та же причина, по которой это уже закрыто у poker.php.resolve():
-            // users.save() отклоняет РОСТ ammo_*/weapons, clientReward+weapons.grantAmmo()
-            // молча терял награду при следующем автосейве.
-            $this->_grantWeaponReward($user, $type, $amt);
-            $patchKeys[] = 'weapons'; $patchKeys[] = 'ammo_' . $type;
-        }
-        else { $clientRewards[] = ['type'=>$type, 'amt'=>$amt]; }
+        [$patchKeys, $clientRewards] = $this->_applyCupReward($user, $type, $amt);
         if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
         // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
         // источников"): утешительный приз мини-игры стаканчиков тоже может быть сигаретами.

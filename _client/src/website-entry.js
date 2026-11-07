@@ -5,7 +5,11 @@ import siteRubCatalog from '../../server/json/site_prices.json';
 import {installSitePayments} from './modules/site-payments.js';
 (async()=>{
  const status=await fetch('/auth/status',{cache:'no-store'}).then(r=>r.json());
- if(!status.authenticated)throw new Error('Сначала войдите на сайт.');
+ const rewardParams=new URLSearchParams([...new URLSearchParams(location.search)].filter(([k])=>['reward','platform'].includes(k)));
+ if(!status.authenticated||(rewardParams.has('reward')&&rewardParams.get('platform')!==status.platform)){
+  location.replace('/'+(rewardParams.size?'?'+rewardParams:''));
+  return;
+ }
  const r=await fetch('/auth/bootstrap',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({csrf:status.csrf,...Object.fromEntries([...new URLSearchParams(location.search)].filter(([k])=>['reward','platform'].includes(k)))})});
  const session=await r.json();
  if(!r.ok||!['site','vk','ok'].includes(session.platform)||!['test','prod'].includes(session.environment)||!/^[1-9][0-9]{0,9}$/.test(session.player_id)||!(session.platform==='site'?/^[a-f0-9]{64}$/:/^[a-f0-9]{32}$/).test(session.token)||!/^[a-f0-9]{32}$/.test(session.req_key))throw new Error('Не удалось подтвердить вход.');

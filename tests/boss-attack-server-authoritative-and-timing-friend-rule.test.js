@@ -149,7 +149,7 @@ console.log('\nTest 6: клиент — _attack() шлёт намерение с
     const start = combatJs.indexOf('proto._attack = function');
     const end   = combatJs.indexOf('\n    };', start);
     const body  = combatJs.slice(start, end);
-    assert(/TS\.php\('bosses\.attack', \{ boss_id: idx, diff_idx: this\._diffIdx, weapon_id: eqWpn\.id, mult: mult \}/.test(body),
+    assert(/TS\.php\('bosses\.attack', \{ boss_id: idx, diff_idx: diffIdxAtAttack, weapon_id: eqWpn\.id, mult: mult \}/.test(body),
         '_attack() шлёт boss_id/diff_idx/weapon_id/mult — намерение, не готовый урон');
     assert(!/Math\.random\(\)/.test(body), 'клиент больше не бросает крит сам (Math.random() убран из _attack())');
     assert(!/const BASE_DMG = /.test(body), 'клиентская таблица BASE_DMG убрана — база урона больше не хранится на клиенте');

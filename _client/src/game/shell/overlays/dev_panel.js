@@ -1127,6 +1127,7 @@ export function attachDevPanel(proto){
             // оставлял бы прокачанные скиллы и зависшие игровые сессии нетронутыми в БД.
             TS.php('users.resetSession', {}, (r)=>{
                 if(r && r.patch) applyPatch(r.patch);
+                if(window.achievements) achievements._loadFromUdata();
                 console.log('[devPanel._resetAccount] server-only сессии (скиллы/покер/зарики/блэкджек/ящик/рулетка-кубки) сброшены:', JSON.stringify(r));
             }, (err)=>{
                 console.error('[devPanel._resetAccount] не удалось сбросить server-only сессии:', JSON.stringify(err));

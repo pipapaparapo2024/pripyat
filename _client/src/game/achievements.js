@@ -746,7 +746,7 @@ export default class Achievements {
 
 	_loadFromUdata(){
 		console.log('[achievements._loadFromUdata] udata[\'achievements\'] сырое:', udata && udata['achievements']);
-		if(!udata || !udata['achievements']) return;
+		if(!udata || !udata['achievements']){ this.earned = {}; return; }
 		try{
 			this.earned = helper.safeParseJSON(udata['achievements'], {}) || {};
 			console.log('[achievements._loadFromUdata] загружено earned.length:', Object.keys(this.earned).length,

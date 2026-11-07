@@ -861,6 +861,10 @@
                 // whitelist и поэтому срабатывает, а личный сброс идёт через этот же users.save(),
                 // где whitelist теперь молча отбрасывает max_energy — старое накопленное значение
                 // (бонусы шмота/скиллов/банды до сброса) оставалось висеть нетронутым навсегда.
+                'dice_points'            => '0',
+                'blue_points'            => '0',
+                'poker_chips'            => '0',
+                'skill_points'           => '0',
                 'max_energy'             => '50',
                 'energy'                 => '50',
                 'energy_time'            => time(),
@@ -938,7 +942,7 @@
             }
 
             $this->registry['tools']->output(['ok' => 1,
-                'patch' => $this->ops->patchCurrencies($update, ['energy', 'energy_time', 'max_energy'])]);
+                'patch' => $this->ops->patchCurrencies($update, ['energy', 'energy_time', 'max_energy', 'dice_points', 'blue_points', 'poker_chips', 'skill_points', 'achievements', 'achievement_stars', 'ach_score'])]);
         }
 
         // 19.09.2026 (репорт "оружие/патроны не сохраняются" — разбор показал: dev-панель

@@ -77,7 +77,7 @@ const weaponCaseSrc = rollSlotSrc.slice(rollSlotSrc.indexOf("case 'auto': case '
 check(!/\$clientRewards\[\] = \$slot;/.test(weaponCaseSrc),
     '_rollSlot() auto/gun/machete case no longer pushes the raw weapon slot as a clientReward');
 
-const pickCupSrc = roulette.slice(roulette.indexOf('function pickCup()'));
+const pickCupSrc = roulette.slice(roulette.indexOf('private function _applyCupReward('));
 check(/\$this->_grantWeaponReward\(\$user, \$type, \$amt\);/.test(pickCupSrc),
     "pickCup()'s consolation branch routes auto/gun/machete through _grantWeaponReward()");
 check(!/\$clientRewards\[\] = \['type'=>\$type, 'amt'=>\$amt\];\s*\/\/ auto\/gun\/machete/.test(roulette),

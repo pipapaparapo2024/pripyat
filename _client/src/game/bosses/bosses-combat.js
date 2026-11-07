@@ -156,7 +156,9 @@ export function attachBossesCombat(proto){
         // сервера, тихо затрёт её. suspendPlayerSave()/resumePlayerSave() (player-save.js)
         // перекрывают именно это окно — см. большой комментарий там же.
         if(window.suspendPlayerSave) suspendPlayerSave('boss_attack');
-        TS.php('bosses.attack', { boss_id: idx, diff_idx: this._diffIdx, weapon_id: eqWpn.id, mult: mult }, (res) => {
+        const diffIdxAtAttack = this._diffIdx;
+        this._fightHpRevision = (this._fightHpRevision || 0) + 1;
+        TS.php('bosses.attack', { boss_id: idx, diff_idx: diffIdxAtAttack, weapon_id: eqWpn.id, mult: mult }, (res) => {
             this._attackInFlight = false;
             console.log('[bosses-combat._attack] ← ответ сервера: урон='+res.damage+' крит='+res.critical+' hp='+res.hp+'/'+res.maxHp);
             // 23.09.2026 (по прямому указанию, превентивно — тот же класс логирования, что у
@@ -174,7 +176,10 @@ export function attachBossesCombat(proto){
             if(window.resumePlayerSave) resumePlayerSave('boss_attack');
             if(window.weapons) weapons._loadFromUdata(); // подтягивает новый qty оружия из свежего patch
             this._loadFromUdata(); // подтягивает freeWpnCdMs и т.п. из свежего bosses_data
-            this._setHp(idx, res.hp); // производный HP с сервера — ПОСЛЕ _loadFromUdata(), чтобы не затёрлось
+            // bosses_data may contain a previous selection. Apply HP to the fight that sent the hit.
+            this._diffIdx = diffIdxAtAttack;
+            this._setHp(idx, res.hp);
+            this._fightHpRevision = (this._fightHpRevision || 0) + 1;
 
             // Общий кулдаун — удар ЛЮБЫМ бесплатным оружием ставит на откат ВСЕ три (см.
             // _freeWpnSharedLastUse() выше), не только то, которым ударили.
@@ -701,8 +706,13 @@ export function attachBossesCombat(proto){
             return;
         }
         const startMsAtCall = this._bossStartMs[diffIdx][bossIdx];
+        const revisionAtCall = this._fightHpRevision || 0;
         TS.php('bosses.friendsDamage', { boss_id: bossIdx, diff_idx: diffIdx }, (e)=>{
             if(this._diffIdx !== diffIdx || this._bossStartMs[diffIdx][bossIdx] !== startMsAtCall) return;
+            if(this._attackInFlight || (this._fightHpRevision || 0) !== revisionAtCall){
+                if(callback) callback();
+                return;
+            }
             const hp = Math.max(0, parseInt(e && e.hp) || 0);
             const prevHp = this._hp(bossIdx);
             console.log('[bosses._syncFriendsDamage] boss='+bossIdx+' diff='+diffIdx+' prevHp='+prevHp+' → hp='+hp);

@@ -7,6 +7,7 @@ $db = new mysqli('localhost', 'root', '', 'stalker_test', 0, '/run/mysqld/mysqld
 $db->query('CREATE TEMPORARY TABLE roulette_state (id INT PRIMARY KEY, keyring_cycle_ends_at INT NOT NULL) ENGINE=InnoDB');
 $db->query("CREATE TEMPORARY TABLE users (
     id INT PRIMARY KEY, blue_points INT, roulette_cups TEXT, exp INT, level INT,
+    cigarettes INT DEFAULT 0, roulette_spichki INT DEFAULT 0, ammo_auto INT DEFAULT 0, ammo_gun INT DEFAULT 0, ammo_machete INT DEFAULT 0, weapons TEXT,
     keyring_owner INT DEFAULT 0, dev_force_jackpot INT DEFAULT 0, dev_force_roulette VARCHAR(4) DEFAULT ''
 ) ENGINE=InnoDB");
 $db->query('INSERT INTO roulette_state VALUES (1,0)');
@@ -14,8 +15,9 @@ $cups = ['keyring','exp:1000'];
 foreach([1,2,3,4] as $id){
     $db->execute_query('INSERT INTO users (id,blue_points,roulette_cups,exp,level) VALUES (?,2,?,10,1)', [$id,json_encode($cups)]);
 }
-$claim = function(int $id, ?array $expectedCups, bool $forced = false) use ($db): string {
+$claim = function(int $id, ?array $expectedCups, ?array $pool = null, bool $forced = false) use ($db): string {
     $roulette = new Roulette(new ArrayObject(['uid'=>$id,'utb'=>'users']));
+    if($pool !== null) (new ReflectionProperty(Roulette::class, 'CUP_POOL'))->setValue($roulette, [$pool]);
     $method = new ReflectionMethod(Roulette::class, '_tryClaimKeyring');
     $user = [];
     $db->begin_transaction();
@@ -36,10 +38,22 @@ $check = function(bool $result, string $message){
 $check($claim(1,null)==='awarded' && (int)$player(1)['keyring_owner']===1 && (int)$player(1)['blue_points']===1, 'Wheel prize was not saved with the spin cost');
 $pause = $cooldown();
 $check($pause >= time()+29*86400, 'Wheel did not start the shared cooldown');
-$check($claim(2,$cups)==='consolation' && (int)$player(2)['exp']===1010 && !(int)$player(2)['keyring_owner'], 'Previously opened cups bypassed the cooldown');
-$check($claim(2,$cups)==='stale' && (int)$player(2)['exp']===1010, 'Repeated cup paid twice');
-$check($claim(3,null,true)==='awarded' && $cooldown()===$pause, 'Developer test changed the public cooldown');
+$check($claim(2,$cups,['type'=>'exp','amt'=>100000])==='consolation' && (int)$player(2)['exp']===100010 && !(int)$player(2)['keyring_owner'], 'Previously opened cups bypassed the cooldown');
+$check($claim(2,$cups,['type'=>'exp','amt'=>100000])==='stale' && (int)$player(2)['exp']===100010, 'Repeated cup paid twice');
+$check($claim(3,null,null,true)==='awarded' && $cooldown()===$pause, 'Developer test changed the public cooldown');
 
+$pool = (new ReflectionProperty(Roulette::class,'CUP_POOL'))->getValue(new Roulette(new ArrayObject()));
+foreach($pool as $i=>$prize){
+    $id=100+$i;
+    $db->execute_query('INSERT INTO users (id,blue_points,roulette_cups,exp,level) VALUES (?,2,?,10,1)', [$id,json_encode($cups)]);
+    $check($claim($id,$cups,$prize)==='consolation', 'Replacement did not use the normal pool');
+    $field=['auto'=>'ammo_auto','gun'=>'ammo_gun','machete'=>'ammo_machete','cig'=>'cigarettes','exp'=>'exp','blue_points'=>'blue_points','roulette_spichki'=>'roulette_spichki'][$prize['type']];
+    $baseline=$field==='exp'?10:($field==='blue_points'?2:0);
+    $after=$player($id);
+    $check((int)$after[$field]===$baseline+$prize['amt'] && $after['roulette_cups']===null && (int)$after['keyring_owner']===0, 'Replacement was lost or issued a keyring');
+    $check($claim($id,$cups,$prize)==='stale' && (int)$player($id)[$field]===(int)$after[$field], 'Replacement was issued twice');
+    $check($cooldown()===$pause, 'Replacement changed the cooldown');
+}
 $db->query('UPDATE roulette_state SET keyring_cycle_ends_at=0');
 $check($claim(4,$cups)==='awarded' && $player(4)['roulette_cups']===null && (int)$player(4)['keyring_owner']===1 && $cooldown()>0, 'A valid cup did not save its prize and cooldown');
 $db->query('UPDATE roulette_state SET keyring_cycle_ends_at=0');

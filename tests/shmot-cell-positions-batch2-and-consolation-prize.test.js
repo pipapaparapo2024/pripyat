@@ -60,7 +60,7 @@ console.log('\n2а) roulette.php.pickCup() — обычный исход сно�
 {
     const src = read('server/core/controllers/roulette.php');
     const idx = src.indexOf("if(\$reward === 'keyring'){");
-    const tail = src.slice(idx);
+    const tail = src.slice(src.indexOf('private function _applyCupReward('));
     assert(!/\$consolationAmount = 50;/.test(tail), 'фиксированная сумма 50 рублей больше не используется');
     assert(/list\(\$type, \$amt\) = explode\(':', \$reward\);/.test(tail), 'реальный тип+сумма разбираются из $reward (то, что openMinigame() заранее разложил)');
     assert(/\$this->ops->add\(\$user, 'cigarettes', \$amt\);/.test(tail), 'сигареты начисляются напрямую');

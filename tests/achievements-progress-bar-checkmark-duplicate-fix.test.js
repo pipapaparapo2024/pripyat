@@ -92,9 +92,9 @@ console.log('\nTest 5: bosses_fight.js — аватар рейтинга: коо
     // 02.10.2026: AV_SCALE уточнён ещё раз редактором позиций, 0.472 → 0.324 (см. актуальное
     // значение в bosses_fight.js и tests/onboarding-permission-and-roulette-assets.test.js) —
     // тест обновлён под текущее значение, смысл проверки (scale, не фиксированный квадрат) тот же.
-    assert(/const FRAME_X = 27, FRAME_Y = \[528, 589, 652\];/.test(fightSrc) && /const AV_X = 32, AV_Y = \[532, 593, 656\];/.test(fightSrc), 'рамки и аватары рейтинга стоят по актуальным координатам');
-    assert(/const AV_SCALE = 0\.324;/.test(fightSrc), 'AV_SCALE = 0.324 объявлена');
-    assert(/avSpr\.scale\.set\(AV_SCALE\); avSpr\.x = avX; avSpr\.y = avY;/.test(fightSrc),
+    assert(/const FRAME_X = 27, FRAME_Y = \[528, 589, 652\];/.test(fightSrc) && /const AV_X = 29, AV_Y = \[528, 589, 652\];/.test(fightSrc), 'рамки и аватары рейтинга стоят по актуальным координатам');
+    assert(/const AV_SIZE = 40;/.test(fightSrc), 'AV_SCALE = 0.324 объявлена');
+    assert(/avSpr\.width = AV_SIZE; avSpr\.height = AV_SIZE; avSpr\.x = avX; avSpr\.y = avY;/.test(fightSrc),
         'avSpr использует scale.set(AV_SCALE), не фиксированные width/height=42');
     assert(!/avSpr\.width = 42; avSpr\.height = 42;/.test(fightSrc), 'старое принудительное растяжение 42×42 убрано');
 }

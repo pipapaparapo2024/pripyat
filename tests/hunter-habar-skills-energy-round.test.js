@@ -189,8 +189,8 @@ console.log('\nTest 7: боевой экран — координаты HP-те�
     // (было x:33,y:536,scale:0.500), та же дельта (+4/+5) перенесена на строки 1/2.
     // 02.10.2026: AV_SCALE уточнён ещё раз редактором позиций, 0.472 → 0.324 (актуальное
     // значение — см. bosses_fight.js и tests/onboarding-permission-and-roulette-assets.test.js).
-    assert(/const FRAME_X = 27, FRAME_Y = \[528, 589, 652\];/.test(fight) && /const AV_X = 32, AV_Y = \[532, 593, 656\];/.test(fight), 'рамка и фото рейтинга: актуальные координаты');
-    assert(/const AV_SCALE = 0\.324;/.test(fight), 'avSpr масштабируется через AV_SCALE=0.324, не растягивается в фиксированный квадрат');
+    assert(/const FRAME_X = 27, FRAME_Y = \[528, 589, 652\];/.test(fight) && /const AV_X = 29, AV_Y = \[528, 589, 652\];/.test(fight), 'рамка и фото рейтинга: актуальные координаты');
+    assert(/const AV_SIZE = 40;/.test(fight), 'avSpr масштабируется через AV_SCALE=0.324, не растягивается в фиксированный квадрат');
     assert(/const NAME_X = 92,\s*NAME_Y = \[535, 597, 659\];/.test(fight), 'плейсхолдер имени "---": единый X=92, Y по строкам 535/597/659');
     // 03.10.2026 (редактор позиций): LBL_X 257→256, VAL_X 281→282, VAL_Y [560,620,680]→[558,618,678],
     // плюс масштаб имени/подписи/значения (NAME_SCALE/LBL_SCALE/VAL_SCALE).

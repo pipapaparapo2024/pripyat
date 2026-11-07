@@ -55,7 +55,7 @@ console.log('\nTest 3: урон от друзей больше не имеет 6
     const start = combatSrc.indexOf('proto._attack = function');
     const end   = combatSrc.indexOf('\n    };', start);
     const body  = combatSrc.slice(start, end);
-    assert(/TS\.php\('bosses\.attack', \{ boss_id: idx, diff_idx: this\._diffIdx, weapon_id: eqWpn\.id, mult: mult \}/.test(body),
+    assert(/TS\.php\('bosses\.attack', \{ boss_id: idx, diff_idx: diffIdxAtAttack, weapon_id: eqWpn\.id, mult: mult \}/.test(body),
         '_attack() шлёт удар одним запросом на bosses.attack (без отдельного дебаунса на сохранение)');
 }
 

@@ -112,7 +112,7 @@ console.log('\nTest 5: Связка ключей — бинарная досту
 
 console.log('\nTest 6: pickCup — Связка выдаётся напрямую (без claimKeyring), стаканчики одноразовые');
 {
-    assert(controllerSrc.includes('$outcome = $this->_tryClaimKeyring($link, $user, $cups);'),
+    assert(controllerSrc.includes('$outcome = $this->_tryClaimKeyring($link, $user, $cups, false, $replacement);'),
         'pickCup uses the same locked claim as the wheel');
     assert(/missed_keyring/.test(controllerSrc), 'A cup that lost the shared race receives consolation');
     assert(/\$user\['roulette_cups'\] = null;/.test(controllerSrc), 'стаканчики очищаются после выбора — повторный pickCup ничего не даст');
