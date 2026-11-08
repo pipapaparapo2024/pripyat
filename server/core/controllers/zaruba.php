@@ -134,33 +134,43 @@
             if($targetId <= 0) return $this->ops->fail(54);
             if($targetId === intval($this->registry['uid'])) return $this->ops->fail(90);
 
-            $user = $this->ops->loadUser();
-            if(!$user) return $this->ops->fail(99);
+            $uid = intval($this->registry['uid']);
+            $table = $this->registry['utb'];
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return $this->ops->fail(99);
 
-            $cooldowns   = $this->ops->j($user, 'gym_pump_cooldowns', []);
-            $cooldownMs  = 24 * 3600 * 1000;
-            $lastPumpMs  = intval($cooldowns[$targetId] ?? 0);
-            $nowMs       = time() * 1000;
-            if($lastPumpMs > 0 && ($nowMs - $lastPumpMs) < $cooldownMs) return $this->ops->fail(92);
+            try {
+                $link->begin_transaction();
+                $rows = $link->execute_query("SELECT id,str_xp_total,gym_pump_cooldowns,gym_invites_sent FROM $table WHERE id IN (?,?) ORDER BY id FOR UPDATE", [$uid, $targetId])->fetch_all(MYSQLI_ASSOC);
+                $players = array_column($rows, null, 'id');
+                if(!isset($players[$uid], $players[$targetId])){
+                    $link->rollback();
+                    return $this->ops->fail(isset($players[$uid]) ? 91 : 99);
+                }
+                $user = $players[$uid];
+                $cooldowns = $this->ops->j($user, 'gym_pump_cooldowns', []);
+                $nowMs = time() * 1000;
+                if($nowMs - intval($cooldowns[$targetId] ?? 0) < 86400000){
+                    $link->rollback();
+                    return $this->ops->fail(92);
+                }
 
-            $targetRow = $this->registry['udb']->getData(
-                $this->registry['utb'], ['id', 'nick', 'str_xp_total'], 'id=' . $targetId
-            );
-            if(isset($targetRow['error']) && $targetRow['error']) return $this->ops->fail(91);
-
-            $newStrength = intval($targetRow['str_xp_total'] ?? 0) + 1;
-            // Цель может быть офлайн — прямой udb-write, тот же приём, что был у старого fight().
-            $this->registry['udb']->saveData($this->registry['utb'], ['id' => $targetId, 'str_xp_total' => $newStrength]);
-
-            $cooldowns[$targetId] = $nowMs;
-            $user['gym_pump_cooldowns'] = json_encode($cooldowns);
-            // 04.10.2026 (по прямому указанию — "«Сходи в качалку» выполняет за позыв через
-            // базу игрока в качалку «позвать в качалку»"): достижения категории 'gym' раньше
-            // считали ЛИЧНЫЕ тренировки (train_count, base.js) — теперь считают, сколько раз
-            // ИНИЦИАТОР позвал ДРУГИХ игроков в качалку (растёт у визитёра, не у цели — Сила
-            // цели считается отдельно, см. $newStrength выше).
-            $user['gym_invites_sent'] = $this->ops->i($user, 'gym_invites_sent') + 1;
-            if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
+                $newStrength = intval($players[$targetId]['str_xp_total']) + 1;
+                $cooldowns[$targetId] = $nowMs;
+                $user['gym_pump_cooldowns'] = json_encode($cooldowns);
+                $user['gym_invites_sent'] = $this->ops->i($user, 'gym_invites_sent') + 1;
+                if(!$link->execute_query("UPDATE $table SET str_xp_total=? WHERE id=?", [$newStrength, $targetId])
+                    || !$link->execute_query("UPDATE $table SET gym_pump_cooldowns=?,gym_invites_sent=? WHERE id=?", [$user['gym_pump_cooldowns'], $user['gym_invites_sent'], $uid])
+                    || !$link->commit()){
+                    $link->rollback();
+                    return $this->ops->fail(99);
+                }
+            } catch(Throwable $e){
+                $link->rollback();
+                return $this->ops->fail(99);
+            } finally {
+                $link->close();
+            }
 
             // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт задания
             // "Позвать в качалку N раз" — звать ПОСЛЕ собственного saveUser() выше.

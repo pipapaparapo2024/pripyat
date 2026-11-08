@@ -84,9 +84,7 @@ console.log('\nTest 4: achievements.js.onBossKill() больше НЕ дубли
         'onBossKill() больше не перечитывает и не инкрементирует udata[\'bosses_data\'].killsTotal — раньше это задваивало счётчик побед');
     assert(!/JSON\.parse\(udata\['bosses_data'\] \|\| '\{\}'\)/.test(body),
         'onBossKill() больше не парсит bosses_data целиком ради killsTotal — сервер уже прислал актуальное значение через applyPatch');
-    // solo_kills — отдельный, чисто клиентский счётчик, сервер его не трогает, оставлен как был.
-    assert(/if\(isSolo\)\{/.test(body) && /udata\['solo_kills'\]/.test(body),
-        'solo_kills по-прежнему считается на клиенте — сервер это поле не пишет');
+    assert(!body.includes("udata['solo_kills']"), 'клиент не повторяет серверное начисление одиночной победы');
 }
 
 console.log('\nTest 5: bosses.php.claimKill() действительно применяет killsTotal через patch ДО вызова клиентского onBossKill');

@@ -39,10 +39,8 @@ console.log('\nTest 1: recordKill() гвардирует UPDATE по време�
     const end = bossesPhp.indexOf('function startFight', start);
     const body = bossesPhp.slice(start, end);
     assert(body.includes('ON DUPLICATE KEY UPDATE'), 'INSERT ... ON DUPLICATE KEY UPDATE сохранён');
-    assert(/`user_id`\s*=\s*IF\(\$now >= `killed_at`, \$uid, `user_id`\)/.test(body),
-        'user_id обновляется только если новый $now не старше уже сохранённого killed_at');
-    assert(/`killed_at`\s*=\s*IF\(\$now >= `killed_at`, \$now, `killed_at`\)/.test(body),
-        'killed_at обновляется по тому же условию, что и user_id (согласованно)');
+    assert(body.includes('user_id=IF(? >= killed_at, ?, user_id)'), 'старая отметка не заменяет нового победителя');
+    assert(body.includes('killed_at=GREATEST(?,killed_at)'), 'время победы не идёт назад');
     assert(!/UPDATE `user_id`=\$uid, `killed_at`=\$now/.test(body),
         'старый безусловный UPDATE (без гварда) больше не встречается');
 }

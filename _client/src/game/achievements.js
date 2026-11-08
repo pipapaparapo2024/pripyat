@@ -558,85 +558,11 @@ export default class Achievements {
 
 	onDvorLevel(game, level){ this._checkAll(); }
 
-	onDvorGame(gameType, data){
-		// data: {combo, spichki}
-		if(gameType === 'cards'){
-			udata['cards_games'] = (parseInt(udata['cards_games'] || 0) + 1).toString();
-			if(data && data.combo){
-				let c = {};
-				c = helper.safeParseJSON(udata['cards_combos'], {});
-				// 28.10.2026 (баг найден по репорту — "выбил десятки+девятки в блэкджеке,
-				// 'Десятки' не засчиталась"): PHP json_encode() ПУСТОГО ассоциативного массива
-				// всегда даёт "[]", не "{}" (PHP не различает пустой объект/массив) — как только
-				// cards_combos хоть раз уходил на сервер и возвращался обратно пустым (users.get/
-				// patch), клиент получал JS-МАССИВ, а не объект. safeParseJSON() отдаёт его как
-				// есть (typeof 'object'), и c[data.combo]=... на массиве просто вешает нечисловое
-				// свойство — JSON.stringify(массив) ЕГО ИГНОРИРУЕТ целиком, т.е. запись тихо
-				// терялась КАЖДЫЙ раз. Живой пример (uid 382448269, прод): cards_combos хранился
-				// как массив из 100 элементов, 'tt' никогда не записывался, а 'crd_88'/'crd_99'
-				// оказались засчитаны СЛУЧАЙНО — PHP совпадает числовую строку '88'/'99' с
-				// числовым индексом массива, в котором как раз стояли значения на этих позициях
-				// (остаток ещё более старых данных, не реальный счёт побед). Проверено на сервере
-				// 142 аккаунта на проде/110 на тесте уже имеют cards_combos в виде массива (у
-				// большинства — просто "[]", т.е. следующая же их победа молча терялась бы).
-				// Фикс — считать массив тем же, что и пустой объект, ПЕРЕД мутацией; старые
-				// случайно попавшие в массив числовые позиции отбрасываются (это не были
-				// реальные счётчики комбинаций).
-				if(Array.isArray(c)) c = {};
-				c[data.combo] = (c[data.combo] || 0) + 1;
-				udata['cards_combos'] = JSON.stringify(c);
-			}
-		}
-		if(gameType === 'poker'){
-			udata['poker_games'] = (parseInt(udata['poker_games'] || 0) + 1).toString();
-			if(data && data.combo){
-				let c = {};
-				c = helper.safeParseJSON(udata['poker_combos'], {});
-				// 28.10.2026: тот же класс бага, что у cards_combos выше (см. комментарий там) —
-				// poker_combos подвержен ровно той же PHP-пустой-массив/объект неоднозначности.
-				if(Array.isArray(c)) c = {};
-				c[data.combo] = (c[data.combo] || 0) + 1;
-				udata['poker_combos'] = JSON.stringify(c);
-			}
-			// poker_spichki comes exclusively from the poker.resolve() server patch.
-		}
-		if(gameType === 'roulette'){
-			udata['roulette_games'] = (parseInt(udata['roulette_games'] || 0) + 1).toString();
-			// 28.09.2026 (репорт — "спички рулетки выдаются вдвойне"): roulette_spichki уже
-			// начисляется сервером (roulette.php._rollSlot()) и приходит в udata через
-			// applyPatch(res.patch) ДО этого вызова (см. dvor-roulette.js._spinRoulette() /
-			// dvor-roulette-screen.js._resolveRouletteNewScreen()). Эта строка складывала
-			// reward.sp ЕЩЁ РАЗ поверх уже актуального серверного значения — тот же класс бага,
-			// что уже был закрыт для poker_spichki (см. комментарий у 'poker' выше), просто
-			// руки до roulette_spichki тогда не дошли. Убрано целиком; roulette_spichki
-			// приходит исключительно из ответа roulette.spin().
-		}
+	onDvorGame(){
 		this._checkAll();
 	}
 
-	onBossKill(idx, isSolo, fightMs){
-		// 22.09.2026 (баг "считает 1 победу за 2", по прямому указанию): killsTotal сюда
-		// приходит УЖЕ увеличенным сервером — bosses.php.claimKill() инкрементирует его и
-		// применяется через applyPatch(res.patch) ДО вызова onBossKill (см.
-		// bosses-combat.js._onDefeat). Повторный +1 здесь же задваивал счётчик. Инкремент
-		// убран целиком — killsTotal больше нигде на клиенте не пишется.
-
-		if(isSolo){
-			try{
-				const arr = helper.safeParseJSON(udata['solo_kills'], null) || new Array(8).fill(0);
-				arr[idx] = (arr[idx] || 0) + 1;
-				udata['solo_kills'] = JSON.stringify(arr);
-			} catch(e){}
-		}
-
-		if(fightMs <= 3600000){
-			try{
-				const arr = helper.safeParseJSON(udata['speed_kills'], null) || new Array(8).fill(0);
-				arr[idx] = (arr[idx] || 0) + 1;
-				udata['speed_kills'] = JSON.stringify(arr);
-			} catch(e){}
-		}
-
+	onBossKill(){
 		this._checkAll();
 	}
 

@@ -39,7 +39,7 @@ console.log('\nTest 1: регресс-гвард — bosses_data по-прежн
 {
     const m = usersPhp.match(/\$allowed = \[([\s\S]*?)\];/);
     assert(!!m, '$allowed массив найден');
-    assert(m && /'bosses_data'/.test(m[1]), "'bosses_data' в whitelist (client-writable) — исходная причина риска гонки по-прежнему актуальна для НЕ-защищённых полей (freeWpnCdMs/hpByDiff/bossStartMs и т.п.)");
+    assert(m && !/'bosses_data'/.test(m[1].split('\n').filter(line => !line.trim().startsWith('//')).join('\n')), 'боевой снимок исключён из клиентского сохранения');
     // 09.10.2026 (отдельный аудит — "переживаю что игроки могут читерить", НЕ связан с этим
     // race-фиксом напрямую): bosses_data ТЕПЕРЬ имеет guard (_sanitizeBossesData), но защищает
     // только keys/dailyKills/killsTotal/medalKills от ПОДДЕЛКИ произвольным значением — остальные

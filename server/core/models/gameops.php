@@ -7,6 +7,7 @@ Class Gameops {
     private $loadedStash = [];
     private $loadedHabar = [];
     private $loadedWeapons = null;
+    private $loadedProtected = [];
 
     function __construct($registry){
         $this->registry = $registry;
@@ -21,6 +22,12 @@ Class Gameops {
     function loadUser($fields = ['*']){
         $user = $this->registry['udb']->getData($this->registry['utb'], $fields, 'id='.$this->registry['uid']);
         if(isset($user['error']) && $user['error']) return null;
+        $this->loadedProtected = array_intersect_key($user, array_flip([
+            'str_xp_total','gym_pump_cooldowns','gym_invites_sent','login_streak','last_login_day',
+            'dice_free_ts','dvor_daily','base_bg_owned','base_bg_active','bosses_data',
+            'boss_kills_0','boss_kills_1','boss_kills_2','solo_kills','speed_kills',
+            'cards_games','cards_combos','poker_games','poker_combos','roulette_games','roulette_cups',
+        ]));
         $this->loadedWeapons = $user['weapons'] ?? null;
         $this->loadedHabar = [];
         foreach(['habar_bought','habar_bought_ts','habar_days_collected','habar_last_collect_ts'] as $key){
@@ -51,6 +58,9 @@ Class Gameops {
     // добавляем в $update — держит DB level в согласии с exp при любом сохранении, без
     // отдельного вызова в каждом контроллере.
     function saveUser($update){
+        foreach($this->loadedProtected as $key => $old){
+            if(array_key_exists($key, $update) && $update[$key] === $old) unset($update[$key]);
+        }
         if($this->loadedWeapons !== null && array_key_exists('weapons',$update) && $this->sameJsonState($update['weapons'],$this->loadedWeapons)) unset($update['weapons']);
         // An unrelated full-row save must not restore dates/cooldowns from an old snapshot.
         foreach($this->loadedHabar as $key=>$old){

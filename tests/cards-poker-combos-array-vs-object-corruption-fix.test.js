@@ -45,63 +45,14 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
 
-console.log('\nTest 1 (vm, реальное исполнение): achievements.js.onDvorGame() — массив cards_combos/poker_combos превращается в {} ПЕРЕД мутацией');
-{
-    const achSrc = readSrc('_client/src/game/achievements.js');
-    let src = achSrc.replace(/^import .*$\n?/gm, '');
-    src = src.replace('export default class Achievements', 'class Achievements');
-    src += '\nmodule.exports = Achievements;\n';
-
-    const sandboxUdata = {};
-    function flushPlayerSave(reason, onDone){ if(typeof onDone === 'function') onDone(); return true; }
-    function applyPatch(patch){ Object.assign(sandboxUdata, patch); }
-    function collapseNewlyEarnedForPopup(arr){ return arr; }
-    function attachAchievementPopup(proto){ proto._openAchievementPopup = function(){}; }
-    const TS = { php(){} };
-    const helperStub = {
-        safeParseJSON(value, fallback){
-            if(value == null) return fallback;
-            if(typeof value === 'object') return value;
-            try{ return JSON.parse(value); } catch(e){ return fallback; }
-        }
-    };
-    const sandbox = {
-        console, window: { TS }, TS, helper: helperStub, udata: sandboxUdata,
-        flushPlayerSave, applyPatch, collapseNewlyEarnedForPopup, attachAchievementPopup,
-        module: { exports: {} },
-    };
-    vm.createContext(sandbox);
-    vm.runInContext(readSrc('_client/src/modules/weapon-progress.js').replace('export function','function'), sandbox);
-    vm.runInContext(src, sandbox);
-    const Achievements = sandbox.module.exports;
-    const inst = new Achievements();
-
-    // Симулируем живой баг: cards_combos уже испорчен в список (та же форма, что uid 382448269).
-    const corrupted = new Array(100).fill(null);
-    corrupted[88] = 1;
-    sandboxUdata['cards_combos'] = JSON.stringify(corrupted);
-    inst.onDvorGame('cards', { combo: 'tt' });
-
-    const result = JSON.parse(sandboxUdata['cards_combos']);
-    assert(!Array.isArray(result), 'cards_combos после onDvorGame() — ОБЪЕКТ, не массив (раньше оставался бы массивом навсегда)');
-    assert(result.tt === 1, 'новая победа "tt" реально записана (раньше JSON.stringify() молча отбросил бы это свойство на массиве)');
-
-    // poker_combos — та же защита.
-    const corruptedPoker = new Array(50).fill(null);
-    corruptedPoker[12] = 3;
-    sandboxUdata['poker_combos'] = JSON.stringify(corruptedPoker);
-    inst.onDvorGame('poker', { combo: 'rf' });
-    const resultPoker = JSON.parse(sandboxUdata['poker_combos']);
-    assert(!Array.isArray(resultPoker), 'poker_combos после onDvorGame() — ОБЪЕКТ, не массив');
-    assert(resultPoker.rf === 1, 'новая победа "rf" реально записана в poker_combos');
+console.log('\nСохранение комбинаций на сервере');
+for (const game of ['blackjack', 'poker']) {
+    const src = readSrc('server/core/controllers/' + game + '.php');
+    assert(src.includes('if(array_is_list($combos)) $combos = [];'), game + ' отбрасывает повреждённый список');
+    assert(src.includes('json_encode($combos, JSON_FORCE_OBJECT)'), game + ' сохраняет комбинации объектом');
 }
-
-console.log('\nTest 2 (regex-гвард): Array.isArray-проверки реально присутствуют в коде для обоих полей');
-{
-    const achSrc = readSrc('_client/src/game/achievements.js');
-    const matches = achSrc.match(/if\(Array\.isArray\(c\)\) c = \{\};/g) || [];
-    assert(matches.length === 2, `ровно 2 проверки Array.isArray (cards_combos + poker_combos), найдено ${matches.length}`);
-}
+const achSrc = readSrc('_client/src/game/achievements.js');
+assert(!/udata\['(?:cards|poker)_combos'\]\s*=/.test(achSrc), 'браузер не сохраняет комбинации');
 
 const phpBin = findPhpBin();
 if (!phpBin) {

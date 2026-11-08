@@ -59,3 +59,38 @@ echo (isset($update['health']) && $update['health'] === 90 ? "PASS" : "FAIL") . 
 
 echo "=== Test 3: запрос не упал целиком (ok, не error) — отклонение отдельных полей не ломает весь save() ===\n";
 echo ($tools->lastOutput !== null && $tools->lastError === null ? "PASS" : "FAIL") . ": save() вернул успех, не ошибку\n";
+
+echo "=== Защита полей игровой экономики ===\n";
+$protected = ['dice_free_ts','dvor_daily','str_xp_total','login_streak','last_login_day',
+    'cards_games','cards_combos','poker_games','poker_combos','roulette_games',
+    'solo_kills','speed_kills','bosses_data','base_bg_owned','base_bg_active','boss_kills_0','boss_kills_1','boss_kills_2'];
+$registry['user_params']['udata_json'] = json_encode(array_fill_keys($protected, 999) + ['snd_vol'=>0.5]);
+(new Users($registry))->save();
+foreach($protected as $field){
+    echo (!array_key_exists($field, $udb->lastSaveUpdate) ? "PASS" : "FAIL") . ": $field защищено от записи клиентом\n";
+}
+echo (isset($udb->lastSaveUpdate['snd_vol']) ? "PASS" : "FAIL") . ": настройки продолжают сохраняться\n";
+
+class ProfileUdb extends FakeUdb {
+    public $cups;
+    function getData($tb, $cols, $cond, $multi = false){
+        if($multi) return [];
+        return ['id'=>777,'energy_time'=>time(),'last_login_day'=>gmdate('Y-m-d'),'friends'=>'',
+            'roulette_cups'=>json_encode($this->cups),'poker_session'=>'{"hidden":true}','coins'=>53];
+    }
+}
+
+echo "=== Загрузка профиля не раскрывает призы и не переписывает баланс ===\n";
+$profileDb = new ProfileUdb();
+$registry['udb'] = $profileDb;
+$registry['user_params'] = ['users'=>'skip'];
+foreach([['__prize_choice__'], ['kush','keyring','a','b','c','d','e','f','g']] as $cups){
+    $profileDb->cups = $cups;
+    (new Users($registry))->get();
+    $public = $tools->lastOutput['udata'];
+    $visible = is_array($public['roulette_cups']) ? $public['roulette_cups'] : json_decode($public['roulette_cups'], true);
+    $expected = count($cups) === 1 ? $cups : array_fill(0, 9, '');
+    echo ($visible === $expected ? "PASS" : "FAIL") . ": состояние рулетки восстанавливается без раскрытия призов\n";
+    echo (!isset($public['poker_session']) ? "PASS" : "FAIL") . ": состояние покера остаётся на сервере\n";
+    echo ($profileDb->lastSaveUpdate === null && $public['coins'] === 53 ? "PASS" : "FAIL") . ": профиль отдаёт баланс без записи снимка\n";
+}

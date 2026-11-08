@@ -184,8 +184,8 @@ console.log('\nTest 5: server/bosses.php — killers()/recordKill() исполь
     // 30.09.2026 (прогон перед деплоем): 29.09.2026 безусловный UPSERT заменили на условный
     // (IF($now >= killed_at, ...)) — защита от гонки, когда более старый запрос "последний
     // вышел с попапа" долетает до сервера ПОСЛЕ более нового и не должен его перезаписывать.
-    assert(/ON DUPLICATE KEY UPDATE\s*\n\s*`user_id` = IF\(\$now >= `killed_at`, \$uid, `user_id`\),\s*\n\s*`killed_at` = IF\(\$now >= `killed_at`, \$now, `killed_at`\)/.test(phpSrc),
-        'recordKill() перезаписывает last-killer при каждой новой победе, с защитой от гонки по времени (условный UPSERT по boss_id)');
+    assert(phpSrc.includes('ON DUPLICATE KEY UPDATE user_id=IF(? >= killed_at, ?, user_id), killed_at=GREATEST(?,killed_at)'),
+        'подтверждённая победа обновляет последнего победителя с проверкой времени');
 }
 
 // ── Summary ────────────────────────────────────────────────────────────────

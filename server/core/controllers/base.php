@@ -128,7 +128,7 @@ Class Base {
         // параллельных клика train() могли оба прочитать energy устаревшей, оба пройти
         // spendEnergy() и списать энергию ЛОКАЛЬНО — лишняя тренировка проходит бесплатно
         // (lost update на energy/base_stats[idx].xp).
-        $lockCols = ['base_stats', 'train_count'];
+        $lockCols = ['base_stats', 'train_count', 'str_xp_total'];
         $link = $this->_rawLink();
         $lockedUser = $user;
         if($link){
@@ -163,7 +163,9 @@ Class Base {
         // этим ачивкам/заданиям не двигался вовсе, пока он отдельно не тратил энергию в Зоне.
 
         $lockedUser['train_count'] = $this->ops->i($lockedUser, 'train_count') + 1;
-        $s['xp'] = intval($s['xp']) + 40 + mt_rand(0,19);
+        $gainedXp = 40 + mt_rand(0,19);
+        $s['xp'] = intval($s['xp']) + $gainedXp;
+        if($idx === 0) $this->ops->add($lockedUser, 'str_xp_total', $gainedXp);
         if($s['xp'] >= intval($s['xp_next']) && intval($s['level']) < 50){
             $s['xp'] -= intval($s['xp_next']);
             $s['level'] = intval($s['level']) + 1;
@@ -192,7 +194,7 @@ Class Base {
         // отменено). Это НЕ регрессия общего energy_spent (ачивки/старые zadaniya.js по-прежнему
         // учитывают качалку через $lockedUser['energy_spent'] выше, см. комментарий 23.09.2026) —
         // отменяется только server-authoritative хук report('energy', ...) этой конкретной фичи.
-        $this->ops->ok(['patch' => $this->ops->patchCurrencies($user)]);
+        $this->ops->ok(['patch' => $this->ops->patchCurrencies($user) + ['str_xp_total' => $user['str_xp_total']]]);
     }
 
     function relocate(){

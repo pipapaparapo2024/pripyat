@@ -161,7 +161,7 @@ assertLockedUserContract(
 console.log('\nTest 11: base.php.train() лочит base_stats/energy/energy_time/energy_spent/train_count, двухветочный контракт');
 {
     const body=sliceFn(basePhp, 'function train(){', 'function relocate');
-    assert(body.includes("$lockCols = ['base_stats', 'train_count'];"), 'train блокирует только свои счётчики, без энергии');
+    assert(body.includes("$lockCols = ['base_stats', 'train_count', 'str_xp_total'];"), 'train блокирует только свои счётчики, без энергии');
     assert(body.includes('FOR UPDATE') && body.includes('$link->commit()'), 'изменение тренировки защищено транзакцией');
     assert(body.includes('if(!$link && !$this->ops->saveUser(array_intersect_key($lockedUser,array_flip($lockCols))))'), 'без прямого соединения сохраняются только поля тренировки');
 }

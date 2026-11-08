@@ -44,15 +44,13 @@ console.log('\nTest 2: pump() — валидация, кулдаун 24ч на �
         'нельзя качнуть самого себя → код 90');
     assert(/\$cooldowns\s*= \$this->ops->j\(\$user, 'gym_pump_cooldowns', \[\]\);/.test(body),
         'читает кулдауны из НОВОГО служебного поля gym_pump_cooldowns (отдельного от zaruba_cooldowns)');
-    assert(/\$cooldownMs\s*= 24 \* 3600 \* 1000;/.test(body), 'кулдаун 24 часа на пару (визитёр, цель)');
-    assert(/if\(\$lastPumpMs > 0 && \(\$nowMs - \$lastPumpMs\) < \$cooldownMs\) return \$this->ops->fail\(92\);/.test(body),
-        'повторный клик на ту же цель раньше 24ч отклоняется кодом 92');
-    assert(/if\(isset\(\$targetRow\['error'\]\) && \$targetRow\['error'\]\) return \$this->ops->fail\(91\);/.test(body),
-        'несуществующая цель → код 91');
-
-    assert(/\$newStrength = intval\(\$targetRow\['str_xp_total'\] \?\? 0\) \+ 1;/.test(body), 'сила цели растёт ровно на +1');
-    assert(/\$this->registry\['udb'\]->saveData\(\$this->registry\['utb'\], \['id' => \$targetId, 'str_xp_total' => \$newStrength\]\);/.test(body),
-        'цель обновляется напрямую через udb (может быть офлайн) — не через self-only Gameops::saveUser');
+    assert(body.includes('if($nowMs - intval($cooldowns[$targetId] ?? 0) < 86400000)'), 'кулдаун 24 часа на пару');
+    assert(body.includes('return $this->ops->fail(92);'), 'повторный вызов отклоняется кодом 92');
+    assert(body.includes('isset($players[$uid]) ? 91 : 99'), 'отсутствующая цель даёт код 91');
+    assert(body.includes("$newStrength = intval($players[$targetId]['str_xp_total']) + 1;"), 'сила цели растёт ровно на единицу');
+    assert(body.includes('ORDER BY id FOR UPDATE') && body.includes('SET str_xp_total=? WHERE id=?') &&
+        body.includes('SET gym_pump_cooldowns=?,gym_invites_sent=? WHERE id=?') && body.includes('$link->commit()'),
+        'обе строки изменяются в одной транзакции');
     assert(/\$cooldowns\[\$targetId\] = \$nowMs;/.test(body), 'кулдаун записывается по конкретному target_id');
     assert(/\$user\['gym_pump_cooldowns'\] = json_encode\(\$cooldowns\);/.test(body), 'кулдаун сохраняется в СВОЙ аккаунт (визитёра), не в аккаунт цели');
 }

@@ -725,31 +725,37 @@ require_once __DIR__ . '/../models/weaponprogress.php';
         // Записывает, что ТЕКУЩИЙ игрок только что убил boss_id — вызывается один раз при
         // каждой победе (bosses-combat.js._onDefeat), fire-and-forget с клиента.
         function recordKill(){
-            $bossId = isset($this->registry['user_params']['boss_id']) ? intval($this->registry['user_params']['boss_id']) : -1;
-            if($bossId < 0 || $bossId > 7) return $this->registry['tools']->output(['ok' => false]);
-
-            $link = $this->_rawLink();
-            if(!$link) return $this->registry['tools']->output(['ok' => false]);
-
+            $bossId = intval($this->registry['user_params']['boss_id'] ?? -1);
+            if($bossId < 0 || $bossId > 7) return $this->ops->fail(54);
             $uid = intval($this->registry['uid']);
-            $now = time();
-            // 29.09.2026 (баг найден по прямому указанию — "рамка УБИВШИЙ иногда показывает не
-            // того игрока"): recordKill() — fire-and-forget с клиента (bosses-combat.js._onDefeat.
-            // _doRedirect), несколько игроков могут закрыть попап победы над одним боссом
-            // примерно одновременно — их запросы могут долететь до сервера НЕ в том порядке, в
-            // котором реально были отправлены (обычная сетевая гонка). UPDATE раньше был
-            // безусловным — более СТАРЫЙ по времени killed_at, доехавший ПОСЛЕ более нового,
-            // тихо перезаписывал его поверх. Задуманное поведение "последний закрывший попап
-            // побеждает" (см. коммент в bosses-combat.js) должно определяться по ВРЕМЕНИ ($now),
-            // а не по порядку доставки запроса — гвард ниже игнорирует запрос, если в БД уже
-            // лежит запись с более поздним (или тем же) killed_at.
-            $link->query("INSERT INTO `boss_last_kill` (`boss_id`, `user_id`, `killed_at`) VALUES ($bossId, $uid, $now)
-                ON DUPLICATE KEY UPDATE
-                    `user_id` = IF($now >= `killed_at`, $uid, `user_id`),
-                    `killed_at` = IF($now >= `killed_at`, $now, `killed_at`)");
-            $link->close();
-
-            $this->registry['tools']->output(['ok' => true]);
+            $table = $this->registry['utb'];
+            $link = $this->_rawLink();
+            if(!$link) return $this->ops->fail(99);
+            try {
+                $link->begin_transaction();
+                $row = $link->execute_query("SELECT bosses_data FROM $table WHERE id=? FOR UPDATE", [$uid])->fetch_assoc();
+                $data = $this->_decodeBossesData($row['bosses_data'] ?? null);
+                if(empty($data['pendingKillBadge'][$bossId])){
+                    $link->rollback();
+                    return $this->ops->fail(52);
+                }
+                unset($data['pendingKillBadge'][$bossId]);
+                $now = time();
+                $badgeSaved = $link->execute_query("INSERT INTO boss_last_kill (boss_id,user_id,killed_at) VALUES (?,?,?)
+                    ON DUPLICATE KEY UPDATE user_id=IF(? >= killed_at, ?, user_id), killed_at=GREATEST(?,killed_at)",
+                    [$bossId,$uid,$now,$now,$uid,$now]);
+                $receiptSaved = $badgeSaved && $link->execute_query("UPDATE $table SET bosses_data=? WHERE id=?", [json_encode($data),$uid]);
+                if(!$receiptSaved || !$link->commit()){
+                    $link->rollback();
+                    return $this->ops->fail(99);
+                }
+            } catch(Throwable $e){
+                $link->rollback();
+                return $this->ops->fail(99);
+            } finally {
+                $link->close();
+            }
+            $this->ops->ok(['ok'=>true]);
         }
 
         // ── SERVER-AUTHORITATIVE СТАРТ БОЯ (17.09.2026, ответ на прямой вопрос: "таймер боя
@@ -895,6 +901,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $data['dailyKills'][$bossId] = intval($data['dailyKills'][$bossId]) + 1;
 
                 $data['bossStartMs'][$diffIdx][$bossId] = $now;
+                $data['diffIdx'] = $diffIdx;
 
                 // "С чистого листа" фиксируем очки скиллов на сервере (тот же смысл, что
                 // client-side skills.beginSession() раньше делал сам) — sessionStartPoints нужен
@@ -1828,6 +1835,14 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $this->ops->add($user, 'cigarettes', $earnedCig);
             $this->ops->add($user, 'exp', $earnedExp);
 
+            foreach(['solo_kills' => $diffIdx === 3, 'speed_kills' => $elapsed <= 3600000] as $field => $countKill){
+                if(!$countKill) continue;
+                $kills = $this->ops->j($user, $field, []);
+                $kills = array_pad(array_slice($kills, 0, 8), 8, 0);
+                $kills[$bossId] = intval($kills[$bossId]) + 1;
+                $user[$field] = json_encode($kills);
+            }
+
             $user['bosses_killed'] = $this->ops->i($user, 'bosses_killed') + 1;
             // boss_kills_0/1/2 — единственные реальные колонки БД (нужны только 3 конкретным
             // заданиям в zadaniya.js); для остальных боссов колонки просто не существует —
@@ -2014,6 +2029,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
 
             if(!isset($data['bossStartMs']) || !is_array($data['bossStartMs'])) $data['bossStartMs'] = [];
             if(!isset($data['bossStartMs'][$diffIdx]) || !is_array($data['bossStartMs'][$diffIdx])) $data['bossStartMs'][$diffIdx] = array_fill(0, 8, 0);
+            $data['pendingKillBadge'][$bossId] = true;
             $data['bossStartMs'][$diffIdx][$bossId] = 0;
 
             if(!isset($data['friendDmgApplied']) || !is_array($data['friendDmgApplied'])) $data['friendDmgApplied'] = [];
@@ -2101,7 +2117,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             if($earnedCig > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $earnedCig);
 
             $patch = $this->ops->patchCurrencies($user, [
-                'coins','cigarettes','stew','exp','bosses_killed','boss_kills_0','boss_kills_1','boss_kills_2',
+                'coins','cigarettes','stew','exp','bosses_killed','boss_kills_0','boss_kills_1','boss_kills_2','solo_kills','speed_kills',
                 'ryukzak_points','hata_progress','bosses_data','skills_levels','shmot','max_energy',
                 // 22.09.2026: shmot_fragments — прогресс сборки персональных вещей боссов по
                 // частям (см. блок дропа выше) — клиент должен видеть накопленный прогресс

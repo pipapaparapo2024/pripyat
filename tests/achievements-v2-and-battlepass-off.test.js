@@ -87,20 +87,15 @@ console.log('\nTest 2: новые счётчики достижений заве
     assert(/\$user\['votes_spent'\] = \$registry\['tools'\]->summ\(\$user\['votes_spent'\] \?\? 0, \$votes\);/.test(payPhpSrc),
         'votes_spent начисляет вебхук universal_pay.php той же записью, что и валюту');
 
-    // str_xp_total — только для "Сила" (idx===0)
-    // 27.09.2026 (base.js._trainStat переведён на честный запрос-ответ — см.
-    // tests/base-server-authoritative-upgrade-and-train.test.js): проверка раньше искала
-    // однострочный if(idx===0) udata[...]=...; — код теперь блочный (if(idx===0){ const
-    // gainedXp=...; udata[...]=...; }, внутри колбэка ответа сервера), сам инвариант
-    // (str_xp_total копится только для idx===0) не изменился, обновлено под новую форму.
-    assert(/if\(idx === 0\)\{[\s\S]{0,200}udata\['str_xp_total'\] = \(parseInt\(udata\['str_xp_total'\] \|\| 0\) \+ gainedXp\)\.toString\(\);/.test(baseSrc),
-        'str_xp_total копится ТОЛЬКО для характеристики "Сила" (idx 0), не для всех трёх');
-
-    // login_streak — реальный стрик, не days_played
-    assert(/_updateLoginStreak\(\)\{/.test(preloaderSrc), '_updateLoginStreak найден в preloader.js');
-    assert(/if\(diffDays === 1\)\{\s*\n\s*udata\['login_streak'\] = String\(\(parseInt\(udata\['login_streak'\] \|\| 0\)\) \+ 1\);/.test(preloaderSrc),
-        'стрик увеличивается только при РОВНО +1 дне от последнего входа');
-    assert(/udata\['login_streak'\] = '1';/.test(preloaderSrc), 'разрыв (пропущенный день) сбрасывает стрик на 1, а не обнуляет');
+    const basePhp = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'controllers', 'base.php'), 'utf-8');
+    const db = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'models', 'database.php'), 'utf-8');
+    assert(basePhp.includes("if($idx === 0) $this->ops->add($lockedUser, 'str_xp_total', $gainedXp)"),
+        'только серверная тренировка силы обновляет её счётчик');
+    assert(!baseSrc.includes("udata['str_xp_total'] ="), 'клиент не прибавляет силу повторно');
+    assert(!preloaderSrc.includes("udata['login_streak'] ="), 'клиент не вычисляет серию входов');
+    assert(db.includes('login_streak=IF(last_login_day=?, COALESCE(login_streak,0)+1, 1)'),
+        'сервер продолжает серию только после вчерашнего входа');
+    assert(db.includes("COALESCE(last_login_day,'') < ?"), 'повторный вход в тот же день не меняет серию');
 }
 
 console.log('\nTest 3: server whitelist — критический баг с achievements исправлен');
@@ -129,9 +124,9 @@ console.log('\nTest 3: server whitelist — критический баг с ach
         // тянула за собой users.save со СТАРОЙ валютой и затирала начисление вебхука VK.
         assert(!/'coins_spent'/.test(body), "'coins_spent' НЕ в whitelist — ведёт только сервер");
         assert(!/'votes_spent'/.test(body), "'votes_spent' НЕ в whitelist — начисляет только вебхук universal_pay.php");
-        assert(/'str_xp_total'/.test(body), "'str_xp_total' в whitelist");
-        assert(/'login_streak'/.test(body), "'login_streak' в whitelist");
-        assert(/'last_login_day'/.test(body), "'last_login_day' в whitelist");
+        assert(!/'str_xp_total'/.test(body), "'str_xp_total' доступно для записи только серверу");
+        assert(!/'login_streak'/.test(body), "'login_streak' доступно для записи только серверу");
+        assert(!/'last_login_day'/.test(body), "'last_login_day' доступно для записи только серверу");
     }
     const resetMatch = usersPhpSrc.match(/function resetSession\(\)\{([\s\S]*?)\n        \}/);
     assert(!!resetMatch, 'resetSession() найден');

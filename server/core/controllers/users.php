@@ -117,10 +117,25 @@
                 list($liveEnergy, $liveBaseTime) = $this->ops->energySnapshot($user);
                 $user['energy'] = $liveEnergy;
                 $user['energy_time'] = $liveBaseTime;
-                $this->ops->saveUser(['id' => $this->registry['uid'], 'energy' => $liveEnergy, 'energy_time' => $liveBaseTime]);
+                $this->registry['udb']->initializeEnergy($this->registry['utb'], (int)$this->registry['uid'], $liveBaseTime);
             }
 
-            $user = $this->registry['tools']->refresh($user, [], true);
+            $db = $this->registry['udb'];
+            $today = gmdate('Y-m-d', $time);
+            if(($user['last_login_day'] ?? '') !== $today){
+                $streak = $db->recordLoginDay($this->registry['utb'], (int)$this->registry['uid'], $today, gmdate('Y-m-d', $time - 86400));
+                $user = array_replace($user, $streak);
+            }
+
+            // The browser needs to know whether a round can resume, never its hidden prizes.
+            $cups = $this->ops->j($user, 'roulette_cups', []);
+            if(is_array($cups) && count($cups) === 9){
+                $user['roulette_cups'] = array_fill(0, 9, '');
+            } elseif($cups !== ['__prize_choice__'] && $cups !== ['__prize_choice_dev__']){
+                unset($user['roulette_cups']);
+            }
+            if(is_array($user['bosses_data'] ?? null)) unset($user['bosses_data']['pendingKillBadge']);
+            unset($user['blackjack_session'], $user['dice_session'], $user['poker_session'], $user['yashik_session']);
 
             $this->registry['tools']->output(array('udata'=>$user, 'friends_top'=>$this->friends_top, 'server_time'=>time()));
         }
@@ -341,7 +356,6 @@
                 // тихо затереть свежий счётчик обратно — внешне выглядело как "ачивки трат
                 // (spend_stew) иногда откатываются назад". users.get()/patch по-прежнему отдают
                 // клиенту актуальное значение — whitelist влияет только на save().
-                'bosses_data','zone_income_time','dvor_daily',
                 // Event counters and results are server-owned.
                 'natisk_seen_event_id',
                 // 09.10.2026 (аудит по прямому указанию — "переживаю что игроки могут читерить"):
@@ -405,7 +419,7 @@
                 // по-прежнему отдают клиенту актуальное серверное значение на чтение — whitelist
                 // влияет только на save(). Клиентское удвоение убрано отдельно (achievements.js).
                 'ammo_auto','ammo_gun','ammo_machete',
-                'base_bg_owned','base_bg_active',
+
                 // stash_data is granted/exchanged by server actions, never by autosave.
                 // 25.09.2026 (по прямому указанию, живой репорт — "шмотки не сохраняются" +
                 // "урон без шмоток"): 'shmot' УБРАН из whitelist (было здесь раньше). Owned уже
@@ -421,8 +435,7 @@
                 // 'roulette_winner' убран из whitelist — теперь его пишет ТОЛЬКО сервер
                 // (roulette.php.claimPrize(), полная строка через Gameops::saveUser()), клиент
                 // раньше мог сам вписать сюда произвольное имя/сумму через users.save.
-                'boss_kills_0','boss_kills_1','boss_kills_2',
-                'bj_games','dice_games',
+
                 // 26.09.2026 (баг найден по прямому указанию — "после повторного сбора хабара
                 // урон седого откатывается на старый остаток вместо свежей выдачи"): 'sedoy_dmg_total'
                 // и 'sedoy_dmg_left' УБРАНЫ из whitelist — оба поля уже полностью server-authoritative
@@ -463,7 +476,7 @@
                 // Заодно закрыта анти-чит дыра: раньше любой игрок мог одним users.save
                 // выставить себе votes_spent и забрать все достижения категории "донат" без
                 // единого реально потраченного голоса.
-                'str_xp_total','login_streak','last_login_day',
+
                 // 25.09.2026 (аудит по прямому указанию — "проверь, сохраняются ли очки/уровень
                 // рюкзака, прописана ли логика на сервере"): ryukzak_points УБРАН отсюда — с
                 // 21.09.2026 (см. bosses.php.claimKill()/ryukzak.php.open()) он единственный
@@ -491,8 +504,7 @@
                 // дней/начисление) считает сервер (habar.php.collectDay()), эти 3 поля читает и
                 // пишет только он через Gameops::loadUser()/saveUser() — см. habar.js._collectDay().
                 'boss_keys','tatu','nick',
-                'cards_games','cards_combos','poker_games','poker_combos','roulette_games',
-                'solo_kills','speed_kills',
+
                 // 25.09.2026 (дыра найдена по прямому указанию — аудит "Связки ключей"):
                 // keyring_owner УБРАН из whitelist. Это постоянный предмет "нападай на любого
                 // босса без ключей, сколько угодно раз" — пока оно было здесь, любой игрок мог
@@ -504,10 +516,7 @@
                 // «Рамка уважения» на карточках локаций (16.09.2026) — личный накопленный счётчик
                 // уважения по каждой из 5 локаций (сверяется с глобальным рекордом в отдельной
                 // таблице zone_respect_leader, см. server/core/controllers/zone.php).
-                
-                // Бесплатный ежедневный бросок в зариках (16.09.2026, возвращён по прямому
-                // указанию) — таймштамп последнего использования, см. dvor-dice-game.js.
-                'dice_free_ts',
+
                 // 24.09.2026 (по прямому указанию — "настройки звука/музыки не сохраняются после
                 // перезагрузки"): раньше window._sndVol/_musVol жили только в памяти вкладки
                 // (sound.js), нигде не персистились. Обычная косметическая настройка, не

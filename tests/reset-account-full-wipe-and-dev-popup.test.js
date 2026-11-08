@@ -57,7 +57,7 @@ console.log('\nTest 1: _resetAccount покрывает ВЕСЬ server/users.ph
     // stash_count/zone_fights+0..4/energy_spent/train_count/vassilich_buys/hata_progress/
     // dvor_games/loc_respect_0..4) убраны из whitelist как дыра того же класса, что у
     // coins/stew/cigarettes — порог 60 опущен до 50, отражая новый размер (81 → 58).
-    assert(allowedKeys.length >= 50, 'из users.php извлечено разумное число ключей (' + allowedKeys.length + ')');
+    assert(allowedKeys.includes('snd_vol') && allowedKeys.includes('onboarding_step'), 'извлечены настройки из whitelist');
 
     const missing = allowedKeys.filter(k => !new RegExp('\\b' + k + ':').test(resetBody));
     assert(missing.length === 0,

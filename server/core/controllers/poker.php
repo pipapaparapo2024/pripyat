@@ -600,6 +600,12 @@ require_once __DIR__ . '/../models/weaponprogress.php';
 
             $catalog = $this->_catalog();
             $combo = $this->_evaluateHand($catalog, $session['hand']);
+            $this->ops->add($user, 'poker_games', 1);
+            $combos = $this->ops->j($user, 'poker_combos', []);
+            if(array_is_list($combos)) $combos = [];
+            $comboId = $catalog['combos'][$combo]['id'];
+            $combos[$comboId] = intval($combos[$comboId] ?? 0) + 1;
+            $user['poker_combos'] = json_encode($combos, JSON_FORCE_OBJECT);
             $c = $catalog['combos'][$combo];
 
             // 09.10.2026 (аудит гонок состояний по всему проекту, по прямому запросу —
@@ -705,7 +711,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $patchKeys[] = 'weapons';
                 $patchKeys[] = 'ammo_' . $c['type'];
             }
-            $patch = $this->ops->patchCurrencies($user, $patchKeys);
+            $patch = $this->ops->patchCurrencies($user, array_merge($patchKeys, ['poker_games','poker_combos']));
             $this->ops->ok([
                 'patch' => $patch,
                 'combo' => $combo,

@@ -83,11 +83,7 @@ console.log('\nTest 2: _trainStat(idx) больше не мутирует energy
     const errCbIdx = body.indexOf('}, (err)=>{');
     assert(errCbIdx !== -1 && errCbIdx > applyPatchIdx, 'есть err-колбэк на случай ошибки сервера');
 
-    // str_xp_total — сознательное исключение: сервер его не считает (проверено в Test 3 ниже),
-    // поэтому инкремент остаётся клиентским, но ПОСЛЕ applyPatch/_loadFromUdata (порядок не
-    // важен для этого поля, т.к. оно не приходит в patch и не участвует в гонке).
-    assert(/if\(idx === 0\)\{[\s\S]{0,200}udata\['str_xp_total'\] = \(parseInt\(udata\['str_xp_total'\] \|\| 0\) \+ gainedXp\)\.toString\(\);/.test(body),
-        'str_xp_total (client-authoritative поле для ачивки "Сила"/Зарубы) по-прежнему инкрементируется локально');
+    assert(!body.includes("udata['str_xp_total'] ="), 'клиент не меняет силу напрямую');
 }
 
 console.log('\nTest 3: server/core/controllers/base.php — upgrade()/train() остаются единственным источником списания валюты/энергии');
@@ -105,8 +101,8 @@ console.log('\nTest 3: server/core/controllers/base.php — upgrade()/train() о
     // Gameops::spendEnergy() — сохраняет остаток прогресса регенерации, deduct() этого не умел):
     assert(!/spendEnergy\(/.test(phpSrc.replace(/\/\/.*$/gm,'')),
         'train() больше не списывает энергию — она тратится только в Зоне');
-    assert(!/str_xp_total/.test(phpSrc),
-        'подтверждено: base.php вообще не знает о str_xp_total — это поле осознанно остаётся целиком клиент-авторитетным');
+    assert(phpSrc.includes("if($idx === 0) $this->ops->add($lockedUser, 'str_xp_total', $gainedXp)"),
+        'сервер прибавляет силу тем же результатом тренировки');
     assert(/\$this->ops->ok\(\['patch' => \$this->ops->patchCurrencies\(\$user\)\]\);/.test(phpSrc.slice(phpSrc.indexOf('function upgrade'), phpSrc.indexOf('function relocate'))),
         'upgrade() возвращает patch через дефолтный набор ключей (включает coins/stew/base_buildings)');
 }

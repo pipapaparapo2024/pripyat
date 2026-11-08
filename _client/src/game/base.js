@@ -309,14 +309,6 @@ export default class Base{
 			if(window.resumePlayerSave) resumePlayerSave('base_train');
 			this._loadFromUdata();
 
-			// Ачивка "Сила" — только для характеристики idx===0 ("Сила"), суммарный XP,
-			// когда-либо вложенный именно в неё (не текущий s.xp — тот обнуляется на каждом
-			// level-up, а достижение про накопленное "иметь N силы" за всё время). См. коммент
-			// у функции — сервер это поле не считает, инкремент целиком клиентский.
-			if(idx === 0){
-				const gainedXp = 40 + Math.floor(Math.random()*20);
-				udata['str_xp_total'] = (parseInt(udata['str_xp_total'] || 0) + gainedXp).toString();
-			}
 
 			if(window.achievements) achievements._checkAll(); // Качалка/Сила/энергия — уже из patch
 			const ns = this.stats[idx];

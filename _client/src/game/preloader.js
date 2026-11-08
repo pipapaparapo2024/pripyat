@@ -212,7 +212,6 @@ export default class Preloader{
 		// неполученные (чёрно-белыми) сразу после захода в игру.
 		if(window.shmot && typeof shmot._loadFromUdata === 'function') shmot._loadFromUdata();
 
-		this._updateLoginStreak();
 
 		startupRequest(() => runtime().getCurrentUser()).then(info => {
 			window.vk_user_info = info;
@@ -392,36 +391,6 @@ export default class Preloader{
 		}, () => { if(done) done(false); });
 	}
 
-	// Ачивка "Заход в игру без перерыва" — реальный стрик подряд идущих календарных дней,
-	// не "дней с момента регистрации" (то, чем de-facto является udata['days_played'] в
-	// svod.js — просто floor((now-create_time)/86400), растёт даже если игрок вообще не
-	// заходил). Считается ОДИН раз за сессию, здесь — сразу как только udata доступна.
-	_updateLoginStreak(){
-		if(!udata) return;
-		const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD', UTC
-		const lastStr  = udata['last_login_day'] || '';
-		if(lastStr === todayStr){
-			console.log('[preloader._updateLoginStreak] уже заходили сегодня (' + todayStr + '), стрик не трогаем:', udata['login_streak']);
-			return;
-		}
-		let diffDays = null;
-		if(lastStr){
-			const lastMs  = Date.parse(lastStr + 'T00:00:00Z');
-			const todayMs = Date.parse(todayStr + 'T00:00:00Z');
-			diffDays = Math.round((todayMs - lastMs) / 86400000);
-		}
-		if(diffDays === 1){
-			udata['login_streak'] = String((parseInt(udata['login_streak'] || 0)) + 1);
-		} else {
-			// Первый вход вообще, либо разрыв (пропущен день, либо часы съехали) — стрик с 1.
-			udata['login_streak'] = '1';
-		}
-		udata['last_login_day'] = todayStr;
-		console.log('[preloader._updateLoginStreak] сегодня:', todayStr, '| было:', lastStr || '(нет)',
-			'| разница дней:', diffDays, '| новый стрик:', udata['login_streak']);
-	}
-
-	
 
 	onError(e){
         if(e && Number(e.code) === 8){

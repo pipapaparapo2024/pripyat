@@ -420,6 +420,8 @@ Class Roulette {
             $user['dev_force_roulette'] = '';
         }
 
+        $this->ops->add($user, 'roulette_games', 1);
+
         $link = $this->_rawLink();
         if(!$link){
             if($devForceIdx === 0) return $this->ops->fail(99);
@@ -435,7 +437,7 @@ Class Roulette {
                 'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
                 'rawLinkFailed' => true, 'slotTrace' => $slotTrace, 'slotResult' => $slotResult];
             error_log('[roulette.spin] ' . json_encode($debug) . ' !!! _rawLink() НЕ ПОДКЛЮЧИЛСЯ — крутили без джекпота/связки !!!');
-            $patchKeysFallback = ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games'];
+            $patchKeysFallback = ['roulette_games', 'blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games'];
             // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
             // в $user, нужно включить их в patch, иначе клиент узнает о них только при
             // следующей полной перезагрузке udata.
@@ -526,7 +528,7 @@ Class Roulette {
             RaznaryadkaProgress::report($this->ops, 'sukhari', intval($slotResult['reward']['amt'] ?? 0));
         }
 
-        $patchKeysSpin = ['blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games', 'keyring_owner'];
+        $patchKeysSpin = ['roulette_games', 'blue_points', 'coins', 'coins_earned', 'exp', 'cigarettes', 'roulette_spichki', 'dvor_games', 'keyring_owner'];
         // 11.10.2026: см. _grantWeaponReward() выше — auto/gun/machete теперь пишутся прямо
         // в $user, нужно включить их в patch, иначе клиент узнает о них только при следующей
         // полной перезагрузке udata.
@@ -659,8 +661,9 @@ Class Roulette {
         if($cups === null){
             if(!$available || intval($row['blue_points']) < 1) return 'stale';
             $user['blue_points'] = intval($row['blue_points']) - 1;
-            $saved = $link->execute_query("UPDATE `$table` SET `keyring_owner`=1, `blue_points`=?, `dev_force_jackpot`=?, `dev_force_roulette`=? WHERE `id`=?",
-                [$user['blue_points'], intval($user['dev_force_jackpot'] ?? 0), $user['dev_force_roulette'] ?? '', $uid]);
+            $user['roulette_games'] = intval($row['roulette_games'] ?? 0) + 1;
+            $saved = $link->execute_query("UPDATE `$table` SET `keyring_owner`=1, `blue_points`=?, `roulette_games`=?, `dev_force_jackpot`=?, `dev_force_roulette`=? WHERE `id`=?",
+                [$user['blue_points'], $user['roulette_games'], intval($user['dev_force_jackpot'] ?? 0), $user['dev_force_roulette'] ?? '', $uid]);
         } else {
             if($this->ops->j($row, 'roulette_cups', null) !== $cups) return 'stale';
             if(!$available){

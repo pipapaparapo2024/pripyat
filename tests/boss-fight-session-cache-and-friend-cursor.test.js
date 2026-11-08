@@ -66,7 +66,7 @@ console.log('\nTest 2: boss_fight_session НЕ в whitelist $allowed users.php �
     const allowedEnd   = usersPhp.indexOf('\n            ];', allowedStart);
     const allowedBody  = usersPhp.slice(allowedStart, allowedEnd);
     assert(!/boss_fight_session/.test(allowedBody), 'boss_fight_session отсутствует в $allowed — users.save() не может его подделать');
-    assert(/'bosses_data'/.test(allowedBody), 'sanity: bosses_data по-прежнему в whitelist (это и есть причина, почему кэш HP не мог туда переехать)');
+    assert(!/'bosses_data'/.test(allowedBody), 'боевой снимок записывает только сервер');
 }
 
 console.log('\nTest 3: сброс аккаунта (resetSession/_defaultResetUdata) обнуляет boss_fight_session — тот же класс server-only поля, что skills_levels/dice_session/...');

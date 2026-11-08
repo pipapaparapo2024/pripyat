@@ -10,6 +10,22 @@
             $stmt->close();
             return $updated;
         }
+        function initializeEnergy($table, int $uid, int $baseTime): void {
+            $stmt = $this->link->prepare("UPDATE $table SET energy_time=? WHERE id=? AND COALESCE(energy_time,0)<=0");
+            $stmt->bind_param('ii', $baseTime, $uid);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        function recordLoginDay($table, int $uid, string $today, string $yesterday): array {
+            $stmt = $this->link->prepare("UPDATE $table SET login_streak=IF(last_login_day=?, COALESCE(login_streak,0)+1, 1), last_login_day=? WHERE id=? AND COALESCE(last_login_day,'') < ?");
+            $stmt->bind_param('ssis', $yesterday, $today, $uid, $today);
+            $stmt->execute();
+            $stmt->close();
+            $row = $this->getData($table, ['login_streak','last_login_day'], 'id='.$uid);
+            return array_intersect_key($row, ['login_streak'=>true, 'last_login_day'=>true]);
+        }
+
 		private $link; //коннект к MySQL
 		private $permis;
 		private $results;

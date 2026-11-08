@@ -515,6 +515,16 @@
             // это сам за клиента при каждом завершённом резолве.
             $user['dvor_games'] = $this->ops->i($user, 'dvor_games') + 1;
 
+            $this->ops->add($user, 'cards_games', 1);
+            $codes = ['туз'=>'aa', 'король'=>'kk', 'дама'=>'qq', 'валет'=>'jj', 'десятка'=>'tt', 'девятка'=>'99', 'восьмерка'=>'88', 'семерка'=>'77'];
+            if(isset($codes[$bestRank])){
+                $combos = $this->ops->j($user, 'cards_combos', []);
+                if(array_is_list($combos)) $combos = [];
+                $code = $codes[$bestRank];
+                $combos[$code] = intval($combos[$code] ?? 0) + 1;
+                $user['cards_combos'] = json_encode($combos, JSON_FORCE_OBJECT);
+            }
+
             $session['active'] = null;
             $user['blackjack_session'] = json_encode($session, JSON_UNESCAPED_UNICODE);
             if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
@@ -556,7 +566,7 @@
                 . ($isPremiumWin && !$forcedKey ? ' !!! ПРЕМИУМ-ПАРА БЕЗ FORCEDKEY — ЭТО ТА САМАЯ ДЫРА !!!' : '')
                 . ($debug['saveVerifyMismatch'] ? ' !!! ЗАПИСАННОЕ И ПРОЧИТАННОЕ ОБРАТНО ЗНАЧЕНИЕ РАЗОШЛИСЬ !!!' : ''));
 
-            $patch = $this->ops->patchCurrencies($user, ['cigarettes', 'respect', 'exp', 'dvor_games', 'shmot', 'max_energy']);
+            $patch = $this->ops->patchCurrencies($user, ['cigarettes', 'respect', 'exp', 'dvor_games', 'shmot', 'max_energy', 'cards_games', 'cards_combos']);
             $this->ops->ok([
                 'patch'        => $patch,
                 'hand'         => $hand,

@@ -60,9 +60,10 @@ console.log('\nTest 2: get() бутстрапит energy_time, когда он <
         'проверяет именно energy_time<=0 (а не energy — бутстрап анкера, не самой валюты)');
     assert(/\$this->ops->energySnapshot\(\$user\)/.test(body),
         'использует ту же формулу энергии, что и spendEnergy() — единый источник истины');
-    assert(/\$this->ops->saveUser\(\[.*'energy'.*'energy_time'.*\]\)/.test(body) ||
-           /\$this->ops->saveUser\(\[.*'energy_time'.*'energy'.*\]\)/.test(body),
-        'бутстрап СРАЗУ сохраняется в БД (не только в локальную переменную $user) — иначе бага повторится на каждой перезагрузке');
+    assert(body.includes('->initializeEnergy('), 'загрузка профиля отдельно инициализирует время энергии');
+    const db = fs.readFileSync(path.join(__dirname, '..', 'server', 'core', 'models', 'database.php'), 'utf-8');
+    assert(db.includes('SET energy_time=? WHERE id=? AND COALESCE(energy_time,0)<=0'),
+        'параллельный запрос не перезаписывает уже установленную метку или баланс');
 
     // Бутстрап должен идти ДО финального refresh()/output(), чтобы игрок увидел уже
     // исправленное значение на этой же самой загрузке, не только со следующей.
