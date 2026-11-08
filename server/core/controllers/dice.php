@@ -283,6 +283,32 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             return $rolls;
         }
 
+        // Сокращаем частоту только пар 3 и 5. Другие показанные кости при перебросе
+        // сохраняются. Замена на отсутствующую грань не создаёт ещё одну комбинацию.
+        private function _reduceFarmPairs(array $rolls, ?int $selectedIdx = null): array {
+            foreach([3, 5] as $face){
+                $matches = array_keys($rolls, $face, true);
+                if(count($matches) !== 2) continue;
+                if($selectedIdx !== null && !in_array($selectedIdx, $matches, true)) continue;
+                if(mt_rand(0, 1) === 0) continue;
+
+                $replaceIdx = $selectedIdx ?? $matches[array_rand($matches)];
+                $available = array_values(array_diff([1, 2, 4, 6], $rolls));
+                $rolls[$replaceIdx] = $available[array_rand($available)];
+            }
+            return $rolls;
+        }
+
+        private function _boostThirdThree(array $rolls, int $selectedIdx): array {
+            $kept = $rolls;
+            unset($kept[$selectedIdx]);
+            if(count(array_keys($kept, 3, true)) === 2 && $rolls[$selectedIdx] !== 3){
+                // 19% + 81% × 1/27 = 22% при штатных весах. Две тройки уже лежат на столе.
+                if(mt_rand(1, 27) === 1) $rolls[$selectedIdx] = 3;
+            }
+            return $rolls;
+        }
+
         // Начало новой партии: проверяет/списывает стоимость (бесплатный ежедневный бросок ИЛИ
         // 1 красный поинт), бросает 4 взвешенных кубика (см. _weightedDie()/_reducePremiumRoll(),
         // pity-гарантии больше нет — см. дата-комментарий 02.10.2026 в начале файла), сохраняет
@@ -367,6 +393,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                     $this->_weightedDie($catalog, $rollTrace),
                 ];
                 $rolls = $this->_reducePremiumRoll($rolls, $catalog, $rollTrace);
+                $rolls = $this->_reduceFarmPairs($rolls);
             }
 
             $swapsAllowed = $this->_swapsAllowed($user, $catalog);
@@ -433,6 +460,8 @@ require_once __DIR__ . '/../models/weaponprogress.php';
 
             $active['rolls'][$idx] = $v;
             $active['rolls'] = $this->_reducePremiumRoll($active['rolls'], $catalog, $rollTrace, $idx);
+            $active['rolls'] = $this->_reduceFarmPairs($active['rolls'], $idx);
+            $active['rolls'] = $this->_boostThirdThree($active['rolls'], $idx);
             $v = $active['rolls'][$idx];
             $active['swapsUsed']   = intval($active['swapsUsed']) + 1;
             $session['active']     = $active;
