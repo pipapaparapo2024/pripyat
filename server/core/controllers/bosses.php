@@ -1948,12 +1948,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // boss-personal-shmot-drop-pool.test.js). Роллится только для обычного (0) и соло
             // (3) — единственные играбельные режимы.
             //
-            // Шансы (по прямому указанию, уточнение того же дня):
-            //  - соло-вещи (любой босс) — 100%, 1 килл = 1 вещь, пока не собрана.
-            //  - фрагменты сета "ссср" (Панама-Охотник/Футболка-Счастливчик/Шорты-Ястреб,
-            //    обычный режим, fragment_items[id]=20) — 100%, +1 часть за КАЖДОЕ убийство.
-            //  - остальные вещи обычного режима (Меченный/Крыс/Баркут/Борода/Жгут, где по
-            //    несколько "цельных" вещей сразу) — boss_shmot_normal_chance_pct (50%).
+            // Персональный дроп: 50% как для цельных вещей, так и для одного фрагмента.
             $bossShmotItemId  = null; // полная вещь выдана ИМЕННО в этом убийстве (id) — для попапа
             $bossShmotFragment = null; // {id, have, need} — фрагмент добавлен, вещь ещё не собрана
             if($diffIdx === 0 || $diffIdx === 3){
@@ -1972,15 +1967,12 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                     if(!empty($available)){
                         $wonId    = $available[array_rand($available)];
                         $needFrag = intval($fragmentItems[strval($wonId)] ?? 0);
-                        // Соло и фрагменты — 100% (без броска); "цельные" вещи обычного режима —
-                        // по проценту (или мгновенно, если включён dev_force_drops).
-                        $isSolo = $diffIdx === 3;
                         $normalRoll = mt_rand(1, 100);
-                        $roll = $isSolo || $needFrag > 0 || $devForceDrops
-                            || $normalRoll <= intval($catalog['boss_shmot_normal_chance_pct'] ?? 100);
+                        $chancePct = intval($catalog['boss_shmot_normal_chance_pct'] ?? 50);
+                        $roll = $devForceDrops || $normalRoll <= $chancePct;
                         $claimDebug['bossPersonalPoolDrop'] = [
-                            'wonId' => $wonId, 'needFrag' => $needFrag, 'isSolo' => $isSolo,
-                            'normalRoll' => $normalRoll, 'chancePct' => intval($catalog['boss_shmot_normal_chance_pct'] ?? 100),
+                            'wonId' => $wonId, 'needFrag' => $needFrag, 'isSolo' => $diffIdx === 3,
+                            'normalRoll' => $normalRoll, 'chancePct' => $chancePct,
                             'hit' => $roll,
                         ];
                         if($roll){

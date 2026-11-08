@@ -59,7 +59,7 @@ console.log('\nTest 3: poker.php.openBag() — stash_data в $lockFields + вы�
     const start = pokerPhp.indexOf('function openBag()');
     const end = pokerPhp.indexOf('function _catalog()', start);
     const body = pokerPhp.slice(start, end);
-    assert(/\$lockFields = \['stash_count', 'stash_data', 'shmot', 'max_energy'\];/.test(body), '\'stash_data\' добавлен в $lockFields');
+    assert(/\$lockFields = \['stash_count', 'stash_data', 'shmot', 'shmot_fragments', 'max_energy'\];/.test(body), '\'stash_data\' добавлен в $lockFields');
     assert(/'stash' => mt_rand\(5, 15\)/.test(body), 'диапазон награды stash (5-15) не менялся этой правкой');
     assert(/\$this->ops->add\(\$user, 'stash_count', \$reward\['stash'\]\);/.test(body), 'старая строка инкремента stash_count сохранена');
     assert(/ZanachkiModel::grantRandomCards\(\$this->ops, \$user, \$reward\['stash'\]\);/.test(body), 'добавлен вызов grantRandomCards() с тем же количеством ($reward[\'stash\'])');
@@ -71,7 +71,7 @@ console.log('\nTest 4: roulette.php.openCase() — stash_data в $lockFields + �
     const start = roulettePhp.indexOf('function openCase()');
     const end = roulettePhp.indexOf('function buyPoints()', start);
     const body = roulettePhp.slice(start, end);
-    assert(/\$lockFields = \['stash_count', 'stash_data', 'shmot', 'max_energy'\];/.test(body), '\'stash_data\' добавлен в $lockFields');
+    assert(/\$lockFields = \['stash_count', 'stash_data', 'shmot', 'shmot_fragments', 'max_energy'\];/.test(body), '\'stash_data\' добавлен в $lockFields');
     assert(/'stash' => mt_rand\(5, 15\)/.test(body), 'диапазон награды stash (5-15) не менялся этой правкой');
     assert(/\$this->ops->add\(\$user, 'stash_count', \$reward\['stash'\]\);/.test(body), 'старая строка инкремента stash_count сохранена');
     assert(/ZanachkiModel::grantRandomCards\(\$this->ops, \$user, \$reward\['stash'\]\);/.test(body), 'добавлен вызов grantRandomCards() с тем же количеством ($reward[\'stash\'])');

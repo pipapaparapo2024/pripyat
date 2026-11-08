@@ -65,7 +65,7 @@ console.log('\nTest 2: dvor-poker-bag.js — открытие сумки теп�
     // .test.js) — сигнатура вызова выросла ещё раз, до (reward, clientRewards, hasTatu).
     // 20.10.2026: сигнатура выросла ещё раз, до (reward, clientRewards, hasTatu, shmotItemId) —
     // наведение на выпавшую шмотку в попапе награды показывает её название.
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(reallyBody), '_reallyOpenPokerBag() открывает экран результата после списания, передавая готовую награду и id шмотки от сервера');
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId, res\.shmotFragment\);/.test(reallyBody), '_reallyOpenPokerBag() открывает экран результата после списания, передавая готовую награду и id шмотки от сервера');
 }
 
 console.log('\nTest 3: dvor-roulette-buy.js — открытие кейса тоже требует подтверждения с указанием стоимости');

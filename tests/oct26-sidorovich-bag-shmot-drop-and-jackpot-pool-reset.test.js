@@ -68,24 +68,24 @@ const ryukzakJsSrc = read('_client/src/game/shell/overlays/ryukzak.js');
 const minigameSrc  = read('_client/src/game/dvor/dvor-roulette-minigame.js');
 const orchSrc      = read('_client/src/game/dvor/dvor-roulette.js');
 
-console.log('\nTest 1: ryukzak.php.open() — дроп шмотки из рюкзака Сидоровича (15% на уровне 20, источник sidorovich_bag)');
+console.log('\nTest 1: ryukzak.php.open() — дроп шмотки из рюкзака Сидоровича (гарантированный фрагмент с 20-го уровня, источник sidorovich_bag)');
 {
     const openStart = ryukzakSrc.indexOf('function open(){');
     assert(openStart !== -1, 'open() найден');
     const saveIdx = ryukzakSrc.indexOf('if(!$this->ops->saveUser($user)){', openStart);
     const body = ryukzakSrc.slice(openStart, saveIdx);
-    assert(/\$hasShmot = false; \$shmotItemId = null;/.test(body), 'переменные инициализированы на безопасные дефолты (ничего не выпало)');
-    assert(/if\(\$level >= 20 && mt_rand\(1, 100\) <= 15\)\{/.test(body), 'гейт level>=20 (топ-тир рюкзака) И 15% ролл — 1-в-1 перенос старой (отключённой) логики тату');
-    assert(/\$shmotItemId = \$this->ops->grantShmotFromSource\(\$user, 'sidorovich_bag'\);/.test(body), 'выдаёт предмет из источника sidorovich_bag (5 предметов в каталоге, были недостижимы ДО этой правки)');
-    assert(/\$hasShmot = \$shmotItemId !== null;/.test(body), 'hasShmot честно отражает результат grantShmotFromSource (null, если пул уже выбит целиком)');
+    assert(/\$shmotFragment = null;/.test(body), 'переменные инициализированы на безопасные дефолты (ничего не выпало)');
+    assert(/\$canDropFragment = \$level >= 20 && mt_rand\(1, 100\) <= 10;/.test(body), '10% шанс фрагмента с 20-го уровня рюкзака');
+    assert(/\$shmotFragment = \$this->ops->grantBagFragment\(\$user, 'sidorovich_bag'\);/.test(body), 'выдаёт предмет из источника sidorovich_bag (5 предметов в каталоге, были недостижимы ДО этой правки)');
+    assert(/\$hasShmot = \$shmotItemId !== null;/.test(ryukzakSrc.slice(saveIdx)), 'hasShmot честно отражает результат grantShmotFromSource (null, если пул уже выбит целиком)');
 
     const patchIdx = ryukzakSrc.indexOf('$patch = $this->ops->patchCurrencies($user, [', openStart);
     const patchBody = ryukzakSrc.slice(patchIdx, ryukzakSrc.indexOf(']);', patchIdx) + 3);
-    assert(/'shmot', 'max_energy',/.test(patchBody), "'shmot'/'max_energy' добавлены в patch — иначе клиент не узнал бы о новой шмотке/бонусе энергии без полной перезагрузки udata");
+    assert(/'shmot', 'shmot_fragments', 'max_energy',/.test(patchBody), "'shmot'/'max_energy' добавлены в patch — иначе клиент не узнал бы о новой шмотке/бонусе энергии без полной перезагрузки udata");
 
     const okIdx = ryukzakSrc.indexOf("\$this->ops->ok(['patch' => \$patch, 'reward' => \$reward", openStart);
     assert(okIdx !== -1, "ok()-ответ найден");
-    assert(/'hasShmot' => \$hasShmot, 'shmotItemId' => \$shmotItemId\]\);/.test(ryukzakSrc.slice(okIdx, okIdx + 200)),
+    assert(/'hasShmot' => \$hasShmot, 'shmotItemId' => \$shmotItemId, 'shmotFragment' => \$shmotFragment\]\);/.test(ryukzakSrc.slice(okIdx, okIdx + 200)),
         'hasShmot/shmotItemId уходят в ответ клиенту (не только в error_log)');
 }
 
@@ -100,17 +100,18 @@ console.log('\nTest 3: roulette.php.openCase() — дроп шмотки под�
     const openCaseStart = rouletteSrc.indexOf('function openCase(){');
     const nextFn = rouletteSrc.indexOf('\n    function ', openCaseStart + 10);
     const body = rouletteSrc.slice(openCaseStart, nextFn);
-    assert(/\$tatuChancePct = 10;/.test(body), 'шанс поднят с 0 до 10%');
-    assert(/grantShmotFromSource\(\$user, 'roulette_bag'\)/.test(body), "источник исправлен на 'roulette_bag' — ТОЛЬКО он реально существует в каталоге (не 'roulette')");
+    assert(!/\$tatuChancePct/.test(body), 'Фрагмент сумки рулетки гарантирован до завершения сета');
+    assert(/grantBagFragment\(\$user, 'roulette_bag'\)/.test(body), "источник исправлен на 'roulette_bag' — ТОЛЬКО он реально существует в каталоге (не 'roulette')");
     assert(!/grantShmotFromSource\(\$user, 'roulette'\)/.test(body), "старый несостыкованный источник 'roulette' (без _bag) не остался рядом");
 }
 
-console.log('\nTest 4: poker.php.openBag() — дроп шмотки поднят до 10%, источник не трогали (уже был корректен)');
+console.log('\nTest 4: poker.php.openBag() — гарантированный фрагмент Ветерана');
 {
-    const openBagStart = pokerSrc.indexOf('$tatuChancePct = 10;');
-    assert(openBagStart !== -1, 'шанс поднят с 0 до 10%');
-    const body = pokerSrc.slice(openBagStart, openBagStart + 200);
-    assert(/grantShmotFromSource\(\$user, 'poker'\)/.test(body), "источник остался 'poker' — этот пул уже был непустым (5 предметов) до правки");
+    const start = pokerSrc.indexOf('function openBag(){');
+    const end = pokerSrc.indexOf('private function _catalog()', start);
+    const body = pokerSrc.slice(start, end);
+    assert(/\$shmotFragment = mt_rand\(1, 100\) <= 10 \? \$this->ops->grantBagFragment\(\$user, 'poker_bag'\) : null;/.test(body), '10% шанс фрагмента из пула Ветерана');
+    assert(!/\$tatuChancePct/.test(body), 'Порог 10% удалён из сумки покера');
 }
 
 console.log('\nTest 5: джекпот — все фолбэки/дефолты jackpot_pool переведены с 3000 на 0 (сервер и клиент)');

@@ -174,7 +174,7 @@ console.log('\nTest 11: popups/reward.js — богатая карточка д�
 console.log('\nTest 12: dvor-roulette-buy.js — передаёт shmotItem (полный предмет каталога) в reward.js');
 {
     const src = norm(path.join(root, '_client/src/game/dvor/dvor-roulette-buy.js'));
-    assert(/rewards\.push\(\{type:'shmot', amount:1, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(src),
+    assert(/rewards\.push\(\{type:'shmot', amount:1, amountLabel:[^,]+, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(src),
         'rewards.push() включает shmotItem (не только name)');
 }
 

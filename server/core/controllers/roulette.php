@@ -160,7 +160,7 @@ Class Roulette {
         // общим сохранением ниже мог затереть начисленную здесь награду устаревшим снимком (тот
         // же класс гонки, что чинили в rewardlinks.php/poker.php — см. комментарий там же, это
         // зеркальная пара poker.php::openBag(), один и тот же баг в обоих копипастах).
-        $lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];
+        $lockFields = ['stash_count', 'stash_data', 'shmot', 'shmot_fragments', 'max_energy'];
         $link = $this->_rawLink();
         if($link){
             $link->begin_transaction();
@@ -168,7 +168,7 @@ Class Roulette {
             $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
             $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
             if($lockRow !== null){
-                foreach($lockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+                foreach($lockFields as $f) $user[$f] = $lockRow[$f];
             }
         }
         $lockBefore = [];
@@ -190,24 +190,9 @@ Class Roulette {
         $this->ops->add($user, 'coins', $reward['coins']);
         $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $reward['coins'];
 
-        // Шмотка из кейса — раньше решалось и СОХРАНЯЛОСЬ на клиенте
-        // (dvor._give('shmot',1) → shmot.giveRandom() → users.save), которое
-        // users.php._sanitizeShmot() молча отклоняет (users.save не может сам выставить
-        // owned=true) — приз никогда реально не доходил до игрока. Теперь решение и запись —
-        // на сервере, тем же grantShmotFromSource(), что и у боссов (bosses.php.claimKill()).
-        // 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них будут
-        // шмотки, включи шанс 10%"): шанс был 0 (дроп тату отключён в бете) — поднят до 10%.
-        // ⚠️ Источник ТАКЖЕ переименован 'roulette' → 'roulette_bag' — в shmot_items.json
-        // ВСЕГДА существовал только пул 'roulette_bag' (5 предметов, id 111-115), а 'roulette'
-        // (без _bag) не содержал НИ ОДНОГО предмета — даже при ненулевом шансе grantShmotFromSource
-        // нашёл бы пустой пул и тихо вернул null. Это было безвредно, пока шанс был 0; при
-        // переходе на 10% стало бы реальной несостыковкой (игрок выигрывает ролл, но ничего не
-        // получает) — исправлено в той же правке, где шанс включается.
-        // Имена переменных ($tatuChancePct/$tatuItemId/$hasTatu) и ключи ответа ('hasTatu')
-        // оставлены как есть — переименование потребовало бы править и клиент (dvor-roulette-
-        // buy.js), а смысл поля не изменился (выпала шмотка — да/нет), только источник награды.
-        $tatuChancePct = 10;
-        $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'roulette_bag') : null;
+        // Сумка с шансом 10% даёт один фрагмент случайной несобранной вещи «Следопыта».
+        $shmotFragment = mt_rand(1, 100) <= 10 ? $this->ops->grantBagFragment($user, 'roulette_bag') : null;
+        $tatuItemId = $shmotFragment['id'] ?? null;
         $hasTatu = $tatuItemId !== null;
 
         $lockedUpdates = [];
@@ -234,16 +219,16 @@ Class Roulette {
 
         $debug = ['fn' => 'openCase', 'uid' => abs(intval($this->registry['uid'])),
             'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true), 'cost' => $cost, 'reward' => $reward,
-            'hasTatu' => $hasTatu, 'tatuItemId' => $tatuItemId];
+            'hasTatu' => $hasTatu, 'tatuItemId' => $tatuItemId, 'shmotFragment' => $shmotFragment];
         error_log('[roulette.openCase] ' . json_encode($debug));
 
-        $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'max_energy']);
+        $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'shmot_fragments', 'max_energy']);
         $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
         // 20.10.2026 (по прямому указанию — "сделай так, чтобы при наведении писалась шмотка
         // которая выпала"): tatuItemId раньше уходил только в $debug (error_log) — клиент не мог
         // узнать, КАКОЙ именно предмет выпал, чтобы показать название по наведению (как уже
         // сделано для баннера "шанс на шмотку" в рюкзаке). Теперь отдаётся и в основном ответе.
-        $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'clientRewards' => $clientRewards, 'debug' => $debug]);
+        $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'shmotFragment' => $shmotFragment, 'clientRewards' => $clientRewards, 'debug' => $debug]);
     }
 
     // 26.09.2026 (по прямому указанию — аудит "покупка поинтов зариков/рулетки за рубли

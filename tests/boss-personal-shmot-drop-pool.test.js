@@ -118,12 +118,12 @@ console.log('\nTest 3: claimKill() — второй, независимый бл
     // 22.09.2026 (уточнение шансов, тот же день): соло и фрагменты — 100% (без броска),
     // "цельные" вещи обычного режима — по проценту boss_shmot_normal_chance_pct (50%), либо
     // мгновенно при включённом dev_force_drops.
-    assert(/\$isSolo = \$diffIdx === 3;/.test(body), 'явно вычисляет "это соло-убийство?"');
+    assert(/\$chancePct = intval\(\$catalog\['boss_shmot_normal_chance_pct'\] \?\? 50\);/.test(body), 'по умолчанию применяет порог 50%');
     // 23.09.2026: бросок вынесен в отдельную $normalRoll переменную (логируется в debug-ответе
     // как claimDebug.bossPersonalPoolDrop) — сама формула/порядок условий не изменились.
     assert(/\$normalRoll = mt_rand\(1, 100\);/.test(body) &&
-        /\$roll = \$isSolo \|\| \$needFrag > 0 \|\| \$devForceDrops\s*\n\s*\|\| \$normalRoll <= intval\(\$catalog\['boss_shmot_normal_chance_pct'\] \?\? 100\);/.test(body),
-        'соло ИЛИ фрагмент ИЛИ dev-флаг — гарантированно (100%); иначе — по проценту boss_shmot_normal_chance_pct');
+        /\$roll = \$devForceDrops \|\| \$normalRoll <= \$chancePct;/.test(body),
+        'единый порог дропа для соло, обычного режима и фрагментов, с отдельным dev-флагом');
 
     assert(/\$have = intval\(\$fragState\[strval\(\$wonId\)\] \?\? 0\) \+ 1;/.test(body), 'фрагментная вещь: +1 к накопленному прогрессу за срабатывание (гарантированному, не по шансу)');
     assert(/if\(\$have >= \$needFrag\)\{/.test(body), 'при достижении нужного числа частей — вещь становится owned=true');
@@ -150,7 +150,7 @@ console.log('\nTest 3c: claimKill() — dev_force_drops форсирует 100% 
     assert(generalStart !== -1, '$devForceDrops вычисляется один раз в начале блока дропа');
     assert(!/commonDropRoll/.test(bossesPhp) && !/commonDropHit/.test(bossesPhp) && !/shmot_drop_chance_pct/.test(bossesPhp),
         'общий пул (id0-40) и его отдельный бросок не существуют — удалены ревизией 01.10.2026, не только замаскированы');
-    assert(/\$roll = \$isSolo \|\| \$needFrag > 0 \|\| \$devForceDrops\s*\n\s*\|\| \$normalRoll <= intval\(\$catalog\['boss_shmot_normal_chance_pct'\] \?\? 100\);/.test(bossesPhp),
+    assert(/\$roll = \$devForceDrops \|\| \$normalRoll <= \$chancePct;/.test(bossesPhp),
         'персональный (боссовый) пул: dev_force_drops в OR перед обычным броском — форсирует 100% без изменения формулы шанса');
 }
 
@@ -212,11 +212,7 @@ console.log('\nTest 8: тултип магазина шмоток показыв
     const start = shopSrc.indexOf('proto._showShopTip = function');
     const end   = shopSrc.indexOf('\n    };', start);
     const body  = shopSrc.slice(start, end);
-    assert(/if\(item\.fragments && !item\.owned\)\{/.test(body), 'проверяет именно фрагментные ещё-не-собранные вещи');
-    // 25.09.2026 (регресс найден повторным прогоном тестов): тултип переделан со списка строк
-    // (lines.push) на светлую карточку-референс — прогресс сборки теперь дописывается в
-    // reqText ("Требования:" карточки), тем же текстом "Собрано частей: N/20".
-    assert(/reqText \+= '\\nСобрано частей: ' \+ have \+ '\/' \+ item\.fragments;/.test(body), 'показывает "N/20 частей" (теперь в блоке "Требования:" карточки)');
+    assert(/formatShmotFragments\(item, this\.fragmentsProgress\)/.test(body), 'Тултип использует фактический прогресс сборки');
 }
 
 console.log('\nTest 9: миграция БД для новой колонки shmot_fragments существует');

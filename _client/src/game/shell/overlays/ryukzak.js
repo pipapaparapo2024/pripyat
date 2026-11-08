@@ -112,7 +112,7 @@ export function attachRyukzak(proto){
 			while(shmotTipCard.children.length) shmotTipCard.removeChildAt(0);
 			// showRequirements:false — у баннера рюкзака нижней строки с условием получения быть
 			// не должно (в отличие от попапа награды сумки/кейса, где она нужна), см. shmot-tooltip.js.
-			const { card } = buildShmotTooltipCard(shmotItemNow, { showRequirements: false });
+			const { card } = buildShmotTooltipCard(shmotItemNow);
 			shmotTipCard.addChild(card);
 			shmotTipCard.x = shmotBanner.x + shmotBanner.width + 8;
 			shmotTipCard.y = shmotBanner.y;
@@ -395,12 +395,13 @@ export function attachRyukzak(proto){
 					// жёстко false. shmot._loadFromUdata() нужен ДО поиска по id — applyPatch()
 					// выше уже обновил udata['shmot'], но shmot.items (owned/equipped) сам себя
 					// не перечитывает.
-					if(res.patch.shmot !== undefined && window.shmot && typeof shmot._loadFromUdata === 'function') shmot._loadFromUdata();
+					if((res.patch.shmot !== undefined || res.patch.shmot_fragments !== undefined) && window.shmot && typeof shmot._loadFromUdata === 'function') shmot._loadFromUdata();
 					const shmotItemId = (res.shmotItemId !== undefined && res.shmotItemId !== null) ? parseInt(res.shmotItemId) : null;
 					hasShmotNow  = !!res.hasShmot && shmotItemId !== null;
 					shmotItemNow = (hasShmotNow && window.shmot) ? (shmot.items || []).find(it => it.id === shmotItemId) || null : null;
 					shmotBanner.visible = hasShmotNow;
-					shmotNameTxt.text = shmotItemNow ? (shmotItemNow.name || '') : '';
+					shmotNameTxt.text = res.shmotFragment ? '+1 фрагмент · ' + res.shmotFragment.have + '/' + res.shmotFragment.need
+						: shmotItemNow ? (shmotItemNow.name || '') : '';
 					shmotNameTxt.visible = hasShmotNow;
 					const r = res.reward;
 					_renderRewardIcons(r);

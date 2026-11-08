@@ -142,7 +142,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // запрос к любому из них между чтением выше и общим сохранением ниже мог затереть
             // начисленную здесь награду устаревшим снимком (тот же класс гонки, что чинили в
             // rewardlinks.php/poker.php::resolve() — см. комментарий там). Берём тот же лок.
-            $lockFields = ['stash_count', 'stash_data', 'shmot', 'max_energy'];
+            $lockFields = ['stash_count', 'stash_data', 'shmot', 'shmot_fragments', 'max_energy'];
             $link = $this->_rawLink();
             if($link){
                 $link->begin_transaction();
@@ -150,7 +150,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $lockRes = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=" . intval($this->registry['uid']) . " FOR UPDATE");
                 $lockRow = ($lockRes && $lockRes->num_rows > 0) ? $lockRes->fetch_assoc() : null;
                 if($lockRow !== null){
-                    foreach($lockFields as $f) if($lockRow[$f] !== null) $user[$f] = $lockRow[$f];
+                    foreach($lockFields as $f) $user[$f] = $lockRow[$f];
                 }
             }
             $lockBefore = [];
@@ -172,17 +172,9 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $this->ops->add($user, 'coins', $reward['coins']);
             $user['coins_earned'] = $this->ops->i($user, 'coins_earned') + $reward['coins'];
 
-            // Шмотка из сумки — раньше решалось и СОХРАНЯЛОСЬ на клиенте
-            // (dvor._give('shmot',1) → shmot.giveRandom() → users.save), которое
-            // users.php._sanitizeShmot() молча отклоняет (users.save не может сам
-            // выставить owned=true) — приз никогда реально не доходил до игрока. Теперь
-            // решение и запись — на сервере, тем же grantShmotFromSource(), что и у боссов
-            // (bosses.php.claimKill()). 26.10.2026 (по прямому указанию — "тату пока отложили
-            // в сторону, вместо них будут шмотки, включи шанс 10%"): был 0 (дроп тату отключён
-            // в бете), источник 'poker' в каталоге уже содержит 5 реальных предметов — поднятие
-            // шанса безопасно без дополнительных правок источника (в отличие от roulette.php).
-            $tatuChancePct = 10;
-            $tatuItemId = (mt_rand(1, 100) <= $tatuChancePct) ? $this->ops->grantShmotFromSource($user, 'poker') : null;
+            // Сумка с шансом 10% даёт один фрагмент случайной несобранной вещи «Ветерана».
+            $shmotFragment = mt_rand(1, 100) <= 10 ? $this->ops->grantBagFragment($user, 'poker_bag') : null;
+            $tatuItemId = $shmotFragment['id'] ?? null;
             $hasTatu = $tatuItemId !== null;
 
             $lockedUpdates = [];
@@ -214,11 +206,11 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             ];
             error_log('[poker.openBag] ' . json_encode($debug));
 
-            $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'max_energy']);
+            $patch = $this->ops->patchCurrencies($user, ['roulette_spichki', 'exp', 'cigarettes', 'stash_count', 'stash_data', 'coins', 'coins_earned', 'shmot', 'shmot_fragments', 'max_energy']);
             $clientRewards = [['type' => 'battlepass_xp', 'amt' => max(1, intval(floor($reward['exp'] / 100)))]];
             // 20.10.2026 (та же правка, что у roulette.php.openCase() — "наведение должно
             // показывать название выпавшей шмотки"): tatuItemId раньше уходил только в $debug.
-            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'clientRewards' => $clientRewards, 'debug' => $debug]);
+            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasTatu' => $hasTatu, 'shmotItemId' => $tatuItemId, 'shmotFragment' => $shmotFragment, 'clientRewards' => $clientRewards, 'debug' => $debug]);
         }
 
         private function _catalog(){

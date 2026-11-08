@@ -13,6 +13,13 @@
  * от попапа награды сумки/кейса, где она нужна) — opts.showRequirements=false отключает блок
  * целиком, остальная карточка (имя/бонус/сет) не меняется.
  */
+export function formatShmotFragments(item, progress){
+    const need = Number(item.fragments);
+    if(!(need > 0)) return '';
+    const have = item.owned ? need : Math.min(need, Math.max(0, Number(progress?.[item.id]) || 0));
+    return 'Фрагменты: ' + have + '/' + need + (item.owned ? ' · собрано' : ' · не собрано');
+}
+
 export function buildShmotTooltipCard(item, opts){
     const showRequirements = !opts || opts.showRequirements !== false;
     const card = new PIXI.Container();
@@ -72,10 +79,8 @@ export function buildShmotTooltipCard(item, opts){
         y += reqLbl.height + 4;
 
         let reqText = item.source || '?';
-        if(item.fragments && !item.owned){
-            const have = (window.shmot && shmot.fragmentsProgress && shmot.fragmentsProgress[item.id]) || 0;
-            reqText += '\nСобрано частей: ' + have + '/' + item.fragments;
-        }
+        const fragmentText = formatShmotFragments(item, window.shmot?.fragmentsProgress);
+        if(fragmentText) reqText += '\n' + fragmentText;
         const INDENT = 14;
         const reqVal = new PIXI.Text(reqText,
             Object.assign({}, valStyle, { wordWrap:true, wordWrapWidth: CONTENT_W - INDENT }));

@@ -70,7 +70,7 @@ console.log("\nTest 3: modules/reward-link.js — s.itemId (rewardlinks.claim su
 console.log('\nTest 4: dvor-roulette-buy.js (образец) — не регрессировал, по-прежнему передаёт shmotItem');
 {
     const src = norm(path.join(root, '_client/src/game/dvor/dvor-roulette-buy.js'));
-    assert(/rewards\.push\(\{type:'shmot', amount:1, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(src),
+    assert(/rewards\.push\(\{type:'shmot', amount:1, amountLabel:[^,]+, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(src),
         'эталонный call site не тронут');
 }
 

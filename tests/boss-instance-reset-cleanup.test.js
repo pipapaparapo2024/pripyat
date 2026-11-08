@@ -30,9 +30,9 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const usersPhp = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
 
-const massBody=usersPhp.slice(usersPhp.indexOf('function resetAllPlayers()'),usersPhp.indexOf('private function _defaultResetUdata()'));
-assert(/return \$this->registry\['tools'\]->error\(403\)/.test(massBody), 'Массовый сброс всегда запрещён');
-assert(!/DELETE|DROP|UPDATE|CREATE TABLE/.test(massBody), 'Массовый сброс не выполняет SQL');
+assert(!/function\s+resetAllPlayers\s*\(/.test(usersPhp), 'Массовый сброс удалён из контроллера');
+assert(!/['"]resetAllPlayers['"]/.test(usersPhp), 'Маршрут массового сброса удалён из списка разрешённых');
+
 console.log('\nTest 3: resetSession() (сброс ОДНОГО аккаунта) чистит свои boss_damage_log/boss_instance_claims по uid');
 {
     const start = usersPhp.indexOf('function resetSession()');

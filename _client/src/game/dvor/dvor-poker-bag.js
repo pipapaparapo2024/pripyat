@@ -114,7 +114,7 @@ export function attachPokerBag(proto){
                 return;
             }
             applyPatch(res.patch);
-            if(res.patch.shmot !== undefined && window.shmot && typeof shmot._loadFromUdata === 'function'){
+            if((res.patch.shmot !== undefined || res.patch.shmot_fragments !== undefined) && window.shmot && typeof shmot._loadFromUdata === 'function'){
                 shmot._loadFromUdata();
             }
             // Идентичная ситуация с сумкой покера: обновляем постоянный счётчик спичек
@@ -122,7 +122,7 @@ export function attachPokerBag(proto){
             this._updatePokerUI();
             if(win.parent) win.parent.removeChild(win);
             this._pokerBagWin = null;
-            this._openPokerBagOpenedScreen(res.reward, res.clientRewards || [], !!res.hasTatu, res.shmotItemId);
+            this._openPokerBagOpenedScreen(res.reward, res.clientRewards || [], !!res.hasTatu, res.shmotItemId, res.shmotFragment);
         }, (err) => {
             this._pokerBagReqInFlight = false;
             console.error('[dvor-poker-bag._reallyOpenPokerBag] ← ошибка сервера:', JSON.stringify(err));
@@ -142,7 +142,7 @@ export function attachPokerBag(proto){
     // выдавалось прямо здесь клиентским вызовом dvor._give с типом шмотки (client-writable
     // users.save, который users.php._sanitizeShmot() молча отклонял — приз не доходил до игрока).
     // Шанс дропа тату по-прежнему 0 (выключено в бете) — см. константу в poker.php.
-    proto._openPokerBagOpenedScreen = function(reward, clientRewards, hasTatu, shmotItemId){
+    proto._openPokerBagOpenedScreen = function(reward, clientRewards, hasTatu, shmotItemId, shmotFragment){
         if(this._pokerBagOpenedWin && this._pokerBagOpenedWin.parent)
             this._pokerBagOpenedWin.parent.removeChild(this._pokerBagOpenedWin);
 
@@ -205,7 +205,7 @@ export function attachPokerBag(proto){
         // при scale≠1) итоговый размер 25-2=23 задан сразу в размере шрифта, без отдельного
         // scale — тот самый способ, которым просил чинить дизайнер.
         { const tatuStyle = Object.assign({}, AMT_STYLE, { fontSize: 23 });
-            const tatu = new PIXI.Text(hasTatu ? '1' : 'нету', tatuStyle);
+            const tatu = new PIXI.Text(hasTatu ? (shmotFragment ? '+1 фрагмент' : '1') : 'нету', tatuStyle);
             tatu.anchor.set(0.5, 0.5);
             tatu.x = 899; tatu.y = 411 + 2;
             tatu.rotation = -10 * Math.PI / 180;

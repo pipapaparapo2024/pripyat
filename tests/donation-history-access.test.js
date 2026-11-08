@@ -1,1 +1,17 @@
-const {execFileSync}=require('node:child_process');const {findPhpBin}=require('./_php_bin.js');const path=require('node:path');process.stdout.write(execFileSync(findPhpBin(),[path.join(__dirname,'_php_fixtures/donation-history-access.php')],{encoding:'utf8'}));
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const {execFileSync} = require('node:child_process');
+const {findPhpBin} = require('./_php_bin.js');
+const path = require('node:path');
+const php = findPhpBin();
+const root = path.join(__dirname, '..');
+const run = (...args) => execFileSync(php, args, {cwd:root, encoding:'utf8'});
+process.stdout.write(run(path.join(__dirname, '_php_fixtures/donation-history-access.php')));
+const status = 'register_shutdown_function(static fn()=>print(" HTTP ".http_response_code()));';
+assert.equal(run('-r', status + '$_SERVER["REQUEST_URI"]="/auth/status?donations=1";$_GET["donations"]="1";require "website/app/sitehttp.php";'), '{"error":"route_not_found"} HTTP 404');
+assert.match(run('-r', status + '$_SERVER["HTTP_REMOTE_USER"]="admin";$_SERVER["HTTP_PRIPYAT_REWARDS_PURCHASES"]="1";require "website/app/rewardspurchases.php";'), /Доступ закрыт\. HTTP 403$/);
+const nginx = fs.readFileSync(path.join(root, 'tools/nginx_rewards_purchases.conf'), 'utf8');
+assert.match(nginx, /location = \/rewards-admin\/purchases\.php \{[^}]*auth_basic_user_file \/etc\/nginx\/\.htpasswd-pripyat-rewards-test;[^}]*fastcgi_param PRIPYAT_REWARDS_PURCHASES 1;/s);
+assert.match(nginx, /location \^~ \/donations\/ \{ return 404; \}/);
+assert.match(fs.readFileSync(path.join(root,'rewards-admin/index.php'),'utf8'), /href="purchases\.php">История покупок/);
+console.log('PASS: old report API closed; direct access and spoofed headers denied');

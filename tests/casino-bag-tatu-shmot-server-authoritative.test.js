@@ -55,11 +55,11 @@ console.log('\nTest 1: poker.php.openBag() — тату решает и выда
     assert(start !== -1, 'метод openBag() существует');
     const body = pokerPhp.slice(start, end);
 
-    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'poker'\) : null;/.test(body),
+    assert(/\$shmotFragment = mt_rand\(1, 100\) <= 10 \? \$this->ops->grantBagFragment\(\$user, 'poker_bag'\) : null;/.test(body),
         'ролл и выдача тату целиком на сервере через Gameops::grantShmotFromSource(\'poker\')');
     assert(/\$hasTatu = \$tatuItemId !== null;/.test(body), 'hasTatu вычисляется из реального результата выдачи, а не просто из ролла (пустой пул источника не считается выигрышем)');
-    assert(/\$tatuChancePct = 10;/.test(body), 'шанс дропа шмотки поднят до 10% (26.10.2026, по прямому указанию)');
-    assert(/grantShmotFromSource\(\$user, 'poker'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantShmotFromSource'),
+    assert(!/\$tatuChancePct/.test(body), 'Каждая сумка покера даёт фрагмент до завершения сета');
+    assert(/grantBagFragment\(\$user, 'poker_bag'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantBagFragment'),
         'выдача тату происходит ДО saveUser() — попадает в ту же атомарную запись, что и остальная награда сумки');
     assert(/patchCurrencies\(\$user, \[[^)]*'shmot'/.test(body), 'patch включает поле shmot — клиент увидит новую вещь через applyPatch(), не только валюту');
     assert(/\$this->ops->ok\(\['patch' => \$patch, 'reward' => \$reward, 'hasTatu' => \$hasTatu,/.test(body), 'ответ содержит hasTatu — клиент больше не решает это сам');
@@ -72,11 +72,11 @@ console.log('\nTest 2: roulette.php.openCase() — тату решает и вы
     assert(start !== -1, 'метод openCase() существует');
     const body = roulettePhp.slice(start, end);
 
-    assert(/\$tatuItemId = \(mt_rand\(1, 100\) <= \$tatuChancePct\) \? \$this->ops->grantShmotFromSource\(\$user, 'roulette_bag'\) : null;/.test(body),
+    assert(/\$shmotFragment = mt_rand\(1, 100\) <= 10 \? \$this->ops->grantBagFragment\(\$user, 'roulette_bag'\) : null;/.test(body),
         'ролл и выдача тату целиком на сервере через Gameops::grantShmotFromSource(\'roulette_bag\') — переименовано с несостыкованного \'roulette\' (пустой пул)');
     assert(/\$hasTatu = \$tatuItemId !== null;/.test(body), 'hasTatu вычисляется из реального результата выдачи');
-    assert(/\$tatuChancePct = 10;/.test(body), 'шанс дропа шмотки поднят до 10% (26.10.2026, по прямому указанию)');
-    assert(/grantShmotFromSource\(\$user, 'roulette_bag'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantShmotFromSource'),
+    assert(!/\$tatuChancePct/.test(body), 'Каждая сумка рулетки даёт фрагмент до завершения сета');
+    assert(/grantBagFragment\(\$user, 'roulette_bag'\)/.test(body) && body.indexOf('saveUser') > body.indexOf('grantBagFragment'),
         'выдача тату происходит ДО saveUser()');
     assert(/patchCurrencies\(\$user, \[[^)]*'shmot'/.test(body), 'patch включает поле shmot');
     assert(/\$this->ops->ok\(\['patch' => \$patch, 'reward' => \$reward, 'hasTatu' => \$hasTatu,/.test(body), 'ответ содержит hasTatu');
@@ -87,11 +87,11 @@ console.log('\nTest 3: dvor-poker-bag.js — hasTatu берётся из отв�
     assert(!/this\._give\(['"]shmot['"]/.test(pokerBagJs), 'this._give(\'shmot\', ...) удалён целиком — больше нет client-writable записи владения шмоткой');
     assert(!/const hasTatu = false;/.test(pokerBagJs), 'клиентский хардкод hasTatu удалён — решение теперь только у сервера');
     // 20.10.2026: сигнатура выросла до (reward, clientRewards, hasTatu, shmotItemId).
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(pokerBagJs),
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId, res\.shmotFragment\);/.test(pokerBagJs),
         'hasTatu и shmotItemId прокидываются из ответа сервера в экран результата');
-    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu, shmotItemId\)\{/.test(pokerBagJs),
+    assert(/proto\._openPokerBagOpenedScreen = function\(reward, clientRewards, hasTatu, shmotItemId, shmotFragment\)\{/.test(pokerBagJs),
         '_openPokerBagOpenedScreen принимает hasTatu и shmotItemId параметрами, а не вычисляет сам');
-    assert(/if\(res\.patch\.shmot !== undefined && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(pokerBagJs),
+    assert(/if\(\(res\.patch\.shmot !== undefined \|\| res\.patch\.shmot_fragments !== undefined\) && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(pokerBagJs),
         'после applyPatch клиент перечитывает shmot из udata (тот же паттерн, что dvor-blackjack.js/dvor-poker-game.js/dvor-dice.js)');
 }
 
@@ -100,9 +100,9 @@ console.log('\nTest 4: dvor-roulette-buy.js — hasTatu берётся из от
     assert(!/this\._give\(['"]shmot['"]/.test(rouletteBuyJs), 'this._give(\'shmot\', ...) удалён целиком');
     assert(!/const hasTatu = false;/.test(rouletteBuyJs), 'клиентский хардкод hasTatu удалён');
     // 20.10.2026: сигнатура выросла до (hasTatu, reward, clientRewards, shmotItemId).
-    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId\);/.test(rouletteBuyJs),
+    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId, res\.shmotFragment\);/.test(rouletteBuyJs),
         'hasTatu и shmotItemId прокидываются из ответа сервера в экран результата');
-    assert(/if\(res\.patch\.shmot !== undefined && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(rouletteBuyJs),
+    assert(/if\(\(res\.patch\.shmot !== undefined \|\| res\.patch\.shmot_fragments !== undefined\) && window\.shmot && typeof shmot\._loadFromUdata === 'function'\)\{\s*shmot\._loadFromUdata\(\);/.test(rouletteBuyJs),
         'после applyPatch клиент перечитывает shmot из udata');
 }
 

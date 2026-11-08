@@ -52,4 +52,4 @@ const energyPopup = read('_client/src/game/shell/popups/energy_buy.js');
 });
 console.log('OK sedoy/dev/roulette/medals');
 
-if(!/function resetAllPlayers\(\)\{\s*return \$this->registry\['tools'\]->error\(403\)/.test(users))throw new Error('Массовый сброс должен быть запрещён');
+if(/function\s+resetAllPlayers\s*\(/.test(users))throw new Error('Массовый сброс должен отсутствовать');

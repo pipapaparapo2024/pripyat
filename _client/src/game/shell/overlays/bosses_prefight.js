@@ -1,3 +1,4 @@
+import { formatShmotFragments } from '../shmot-tooltip.js';
 /** Промежуточный экран: задний фон боевка.png + иконка босса + режимы + кнопка НАПАСТЬ. */
 import { BOSS_SHMOT_REWARD_IMAGE, BOSS_SHMOT_NOT_OBTAINED } from '../../../modules/boss-shmot-images.js';
 
@@ -301,10 +302,8 @@ export function attachBossPreFight(proto){
                 reqText = 'Цена: ' + item.price.a + ' ' + unit;
             } else {
                 reqText = item.source || '?';
-                if(item.fragments && !item.owned){
-                    const have = (shmot.fragmentsProgress && shmot.fragmentsProgress[item.id]) || 0;
-                    reqText += '\nСобрано частей: ' + have + '/' + item.fragments;
-                }
+                const fragmentText = formatShmotFragments(item, shmot.fragmentsProgress);
+                if(fragmentText) reqText += '\n' + fragmentText;
             }
             const INDENT = 14;
             const reqVal = new PIXI.Text(reqText,

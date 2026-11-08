@@ -5,22 +5,12 @@ final class SiteDonations {
   if(!in_array($d['database']??'',['stalker','stalker_ok','stalker_site_test'],true))throw new RuntimeException('invalid_database');
   return new PDO('mysql:host=127.0.0.1;port=3306;dbname='.$d['database'].';charset=utf8mb4',$d['user'],$d['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);
  }
- public static function authorize(array $session,array $config): void {
-  if(($config['access']['enabled']??false)!==true)throw new DomainException('login_required');
-  if(isset($session['site_authenticated'])){
-   $auth=$session['site_authenticated'];if(($auth['expires_at']??0)<=time())throw new DomainException('login_required');
-   require_once __DIR__.'/siteroles.php';
-   $db=self::connect($config['database']);$q=$db->prepare('SELECT email,auth_version FROM site_accounts WHERE player_id=? AND disabled_at IS NULL AND email_verified_at IS NOT NULL');$q->execute([(int)$auth['player_id']]);$a=$q->fetch(PDO::FETCH_ASSOC);
-   if(!$a||(int)$a['auth_version']!==(int)$auth['auth_version']||!in_array('developer',SiteRoles::forEmail($a['email'],$config),true))throw new DomainException('access_denied');
-  }else{
-   if(!isset($session['social_verified']))throw new DomainException('login_required');
-   require_once __DIR__.'/socialidentity.php';
-   $i=SocialIdentity::resolve($session['social_verified'],$config);
-   if(!in_array('developer',SocialIdentity::roles($i['platform'],$i['external']),true))throw new DomainException('access_denied');
+ public static function readForRewardsAdmin(array $server, callable $loadConfig): array {
+  if(($server['PRIPYAT_REWARDS_PURCHASES']??null)!=='1'
+      || !is_string($server['REMOTE_USER']??null) || trim($server['REMOTE_USER'])===''){
+   throw new DomainException('admin_login_required');
   }
- }
- public static function read(array $session,array $config): array {
-  self::authorize($session,$config);
+  $config=$loadConfig();
   require_once __DIR__.'/siteroles.php';
   require_once __DIR__.'/socialidentity.php';
   $file='/var/lib/pripyat-site-test/donations-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}

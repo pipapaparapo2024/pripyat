@@ -309,6 +309,25 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             return $rolls;
         }
 
+        private function _rerollProtectedTriple(array $rolls, int $idx, array $catalog, array &$trace): ?int {
+            $face = (int)$rolls[$idx];
+            if(!in_array($face, [3, 5], true) || count(array_keys(array_map('intval', $rolls), $face, true)) !== 3){
+                return null;
+            }
+            if(mt_rand(1, 10) !== 1) return $face;
+
+            $weights = $catalog['die_weights'] ?? [1, 1, 1, 1, 1, 1];
+            if(!is_array($weights) || count($weights) !== 6) $weights = [1, 1, 1, 1, 1, 1];
+            $weights = array_values($weights);
+            $weights[$face - 1] = 0;
+            if(array_sum($weights) <= 0){
+                $weights = [1, 1, 1, 1, 1, 1];
+                $weights[$face - 1] = 0;
+            }
+            $catalog['die_weights'] = $weights;
+            return $this->_weightedDie($catalog, $trace);
+        }
+
         // Начало новой партии: проверяет/списывает стоимость (бесплатный ежедневный бросок ИЛИ
         // 1 красный поинт), бросает 4 взвешенных кубика (см. _weightedDie()/_reducePremiumRoll(),
         // pity-гарантии больше нет — см. дата-комментарий 02.10.2026 в начале файла), сохраняет
@@ -456,12 +475,16 @@ require_once __DIR__ . '/../models/weaponprogress.php';
 
             $rollsBefore = $active['rolls'];
             $rollTrace = [];
-            $v = $this->_weightedDie($catalog, $rollTrace);
-
-            $active['rolls'][$idx] = $v;
-            $active['rolls'] = $this->_reducePremiumRoll($active['rolls'], $catalog, $rollTrace, $idx);
-            $active['rolls'] = $this->_reduceFarmPairs($active['rolls'], $idx);
-            $active['rolls'] = $this->_boostThirdThree($active['rolls'], $idx);
+            $protectedFace = $this->_rerollProtectedTriple($rollsBefore, $idx, $catalog, $rollTrace);
+            if($protectedFace !== null){
+                $active['rolls'][$idx] = $protectedFace;
+            }else{
+                $v = $this->_weightedDie($catalog, $rollTrace);
+                $active['rolls'][$idx] = $v;
+                $active['rolls'] = $this->_reducePremiumRoll($active['rolls'], $catalog, $rollTrace, $idx);
+                $active['rolls'] = $this->_reduceFarmPairs($active['rolls'], $idx);
+                $active['rolls'] = $this->_boostThirdThree($active['rolls'], $idx);
+            }
             $v = $active['rolls'][$idx];
             $active['swapsUsed']   = intval($active['swapsUsed']) + 1;
             $session['active']     = $active;

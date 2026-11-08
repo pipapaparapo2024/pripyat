@@ -46,7 +46,7 @@ console.log('\nTest 2: _showBossShmotTip(itemId) — тот же набор по
         'прогресс сета читается через shmot._setProgress (общий метод, не задублирован)');
     assert(/const reqLbl = new PIXI\.Text\('Требования:', lblStyle\);/.test(body), '"Требования:" секция присутствует');
     assert(/reqText = 'Цена: ' \+ item\.price\.a \+ ' ' \+ unit;/.test(body), 'покупные вещи — "Цена: N единиц"');
-    assert(/const have = \(shmot\.fragmentsProgress && shmot\.fragmentsProgress\[item\.id\]\) \|\| 0;/.test(body),
+    assert(/formatShmotFragments\(item, shmot\.fragmentsProgress\)/.test(body),
         'дроп-вещи с фрагментами — прогресс сборки читается из shmot.fragmentsProgress (тот же источник, что и в магазине)');
 }
 

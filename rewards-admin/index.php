@@ -133,7 +133,7 @@ if($res) while($row = $res->fetch_assoc()) $recent[] = $row;
     <div class="wrap">
         <nav>
             <h1>Наградные ссылки</h1>
-            <div><a href="logs.php?platform=<?= urlencode(reward_platform()) ?>">Логи получений</a></div>
+            <div><a href="logs.php?platform=<?= urlencode(reward_platform()) ?>">Логи получений</a> · <a href="purchases.php">История покупок</a></div>
         </nav>
 
         <?php foreach($generatedUrls as $platform=>$result): ?>

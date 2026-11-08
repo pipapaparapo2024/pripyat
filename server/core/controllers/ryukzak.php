@@ -234,20 +234,11 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $user['weapons'] = $finalWeaponsJson;
             }
 
-            // 26.10.2026 (по прямому указанию — "тату пока отложили в сторону, вместо них
-            // будут шмотки, перенеси шанс и логику тату на шмотки с рюкзака"): старая клиентская
-            // (отключённая в бете) логика тату была — только на максимальном уровне рюкзака (20
-            // из 20), шанс 15% (см. ryukzak.js, исторический комментарий "level >= 20 &&
-            // Math.random() < 0.15"). 1-в-1 переносим эти же условие и процент на дроп шмотки,
-            // тем же grantShmotFromSource(), что уже использует tatu-дроп покера/рулетки
-            // (poker.php.openBag()/roulette.php.openCase()) — источник 'sidorovich_bag' в
-            // shmot_items.json (5 предметов, id 101-105), до этой правки был полностью
-            // недостижим никаким кодом.
-            $hasShmot = false; $shmotItemId = null;
-            if($level >= 20 && mt_rand(1, 100) <= 15){
-                $shmotItemId = $this->ops->grantShmotFromSource($user, 'sidorovich_bag');
-                $hasShmot = $shmotItemId !== null;
-            }
+            // Рюкзак 20-го уровня с шансом 10% даёт один фрагмент несобранной вещи «Бродяги».
+            $shmotFragment = null;
+            $canDropFragment = $level >= 20 && mt_rand(1, 100) <= 10;
+            $fragmentFields = ['shmot', 'shmot_fragments', 'max_energy'];
+            $fragmentSnapshot = [];
 
             // 25.09.2026 (по прямому указанию — см. большой коммент у класса): обнуляем очки
             // СРАЗУ после розыгрыша награды текущего уровня, в той же записи в БД.
@@ -261,7 +252,24 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $rpLink = $this->_rawLink();
             if($rpLink){
                 $rpLink->begin_transaction();
-                $rpLink->query("SELECT `ryukzak_points` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
+                $lockedRow = $rpLink->query("SELECT `ryukzak_points`, `shmot`, `shmot_fragments`, `max_energy` FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE")->fetch_assoc();
+                if(!$lockedRow){
+                    $rpLink->rollback();
+                    $rpLink->close();
+                    return $this->ops->fail(99);
+                }
+                foreach($fragmentFields as $field) $user[$field] = $lockedRow[$field];
+                if($canDropFragment){
+                    $shmotFragment = $this->ops->grantBagFragment($user, 'sidorovich_bag');
+                    if($shmotFragment !== null){
+                        $rpLink->execute_query("UPDATE `{$this->registry['utb']}` SET `shmot`=?, `shmot_fragments`=?, `max_energy`=? WHERE `id`=?",
+                            [$user['shmot'], $user['shmot_fragments'], $user['max_energy'], $uid]);
+                    }
+                }
+                foreach($fragmentFields as $field){
+                    $fragmentSnapshot[$field] = $user[$field];
+                    unset($user[$field]);
+                }
                 $rpLink->query("UPDATE `{$this->registry['utb']}` SET `ryukzak_points`='0' WHERE `id`=$uid");
                 $rpLink->commit();
                 $rpLink->close();
@@ -269,12 +277,16 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 // Фолбэк без лока (не удалось открыть отдельное соединение) — лучше редкий
                 // шанс гонки, чем полностью заблокированное открытие рюкзака.
                 $user['ryukzak_points'] = 0;
+                if($canDropFragment) $shmotFragment = $this->ops->grantBagFragment($user, 'sidorovich_bag');
             }
 
             if(!$this->ops->saveUser($user)){
                 error_log('[Ryukzak.open] saveUser() вернул false после начисления награды | uid=' . $uid . ' level=' . $level);
                 return $this->ops->fail(99);
             }
+            foreach($fragmentSnapshot as $field => $value) $user[$field] = $value;
+            $shmotItemId = $shmotFragment['id'] ?? null;
+            $hasShmot = $shmotItemId !== null;
             // $user['weapons'] уже выставлен ВЫШЕ (до saveUser()), если лок не удался — здесь
             // присваиваем только в "залоченном" случае, когда запись уже ушла отдельным UPDATE.
             if($wpLink) $user['weapons'] = $finalWeaponsJson;
@@ -291,7 +303,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $patch = $this->ops->patchCurrencies($user, [
                 'stew', 'stew_spent', 'cigarettes', 'coins', 'exp', 'bosses_data',
                 'ammo_machete', 'ammo_gun', 'ammo_auto', 'ryukzak_points', 'weapons',
-                'shmot', 'max_energy',
+                'shmot', 'shmot_fragments', 'max_energy',
             ]);
             $reward = [
                 'level' => $level, 'cig' => intval($tier['cig']), 'c' => intval($tier['c']),
@@ -301,7 +313,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             error_log('[Ryukzak.open] выдана награда уровня ' . $level . ' | uid=' . $uid .
                 ' pointsBefore=' . $points . ' pointsAfter=0 | reward=' . json_encode($reward, JSON_UNESCAPED_UNICODE) .
                 ' | hasShmot=' . ($hasShmot ? 'true' : 'false') . ' shmotItemId=' . json_encode($shmotItemId));
-            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasShmot' => $hasShmot, 'shmotItemId' => $shmotItemId]);
+            $this->ops->ok(['patch' => $patch, 'reward' => $reward, 'hasShmot' => $hasShmot, 'shmotItemId' => $shmotItemId, 'shmotFragment' => $shmotFragment]);
         }
     }
 ?>

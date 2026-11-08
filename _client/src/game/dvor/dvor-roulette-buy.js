@@ -225,7 +225,7 @@ export function attachRouletteBuy(proto){
                     // раньше обновлялся только при следующем входе в рулетку. Обновляем его
                     // сразу после серверного списания 150 спичек.
                     this._updateRouletteUI();
-                    if(res.patch.shmot !== undefined && window.shmot && typeof shmot._loadFromUdata === 'function'){
+                    if((res.patch.shmot !== undefined || res.patch.shmot_fragments !== undefined) && window.shmot && typeof shmot._loadFromUdata === 'function'){
                         shmot._loadFromUdata();
                     }
                     if(win.parent) win.parent.removeChild(win);
@@ -236,7 +236,7 @@ export function attachRouletteBuy(proto){
                     // client-writable users.save, который users.php._sanitizeShmot() молча
                     // отклонял (приз не доходил до игрока). Шанс дропа по-прежнему 0 (выключено
                     // в бете) — см. константу в roulette.php.
-                    this._openRouletteCaseOpenedScreen(!!res.hasTatu, res.reward, res.clientRewards || [], res.shmotItemId);
+                    this._openRouletteCaseOpenedScreen(!!res.hasTatu, res.reward, res.clientRewards || [], res.shmotItemId, res.shmotFragment);
                 }, (err) => {
                     this._roulCaseReqInFlight = false;
                     if(window.resumePlayerSave) resumePlayerSave('roulette_open_case');
@@ -261,7 +261,7 @@ export function attachRouletteBuy(proto){
     // 23.09.2026 (перенос награды кейса на сервер — см. roulette.php.openCase()): exp/cig/
     // stash/coins теперь приходят готовыми от сервера (уже начислены через applyPatch до
     // открытия этого экрана) — эта функция только ОТОБРАЖАЕТ их, не катает случайность сама.
-    proto._openRouletteCaseOpenedScreen = function(hasTatu, reward, clientRewards, shmotItemId){
+    proto._openRouletteCaseOpenedScreen = function(hasTatu, reward, clientRewards, shmotItemId, shmotFragment){
         const BASE = './images/';
         const win = new PIXI.Container();
         win.interactive = true;
@@ -308,7 +308,16 @@ export function attachRouletteBuy(proto){
         // файлов"): x:520,y:260 (было 580,270), явный размер 226×93.
         resultBanner.x = 520; resultBanner.y = 260;
         resultBanner.width = 226; resultBanner.height = 93;
-        win.addChild(resultBanner);
+        if(shmotFragment){
+            const fragmentText = new PIXI.Text('+1 фрагмент · ' + shmotFragment.have + '/' + shmotFragment.need, {
+                fontFamily: 'Southbank LT', fontSize: 24, fill: '#e7c685', align: 'center',
+            });
+            fragmentText.anchor.set(0.5);
+            fragmentText.position.set(633, 306);
+            win.addChild(fragmentText);
+        }else{
+            win.addChild(resultBanner);
+        }
 
         // 18.10.2026 (по прямому указанию — новый файл, редактор позиций x:621,y:470): заменяет
         // старый "рулетка открытый кейс кнопка забрать.png" (было x:640,y:490).
@@ -350,7 +359,7 @@ export function attachRouletteBuy(proto){
                 // магазине шмоток"): передаём полный предмет каталога, не только имя — popups/
                 // reward.js строит по нему богатую карточку (buildShmotTooltipCard), если она
                 // есть, иначе падает назад на простой тултип по name.
-                rewards.push({type:'shmot', amount:1, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem});
+                rewards.push({type:'shmot', amount:1, amountLabel: shmotFragment ? '+1 фрагмент' : undefined, name: shmotItem ? shmotItem.name : 'Элемент шмотки', shmotItem});
             }
             if(window.iface) iface._showRewardPopup(rewards);
             if(win.parent) win.parent.removeChild(win);

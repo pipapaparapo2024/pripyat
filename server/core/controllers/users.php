@@ -34,7 +34,7 @@
             // Gameops-контроллерах (см. CLAUDE.md, правило №9).
             $this->ops = new Gameops($registry);
 
-            $this->permits = ['cacheAvatar', 'get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devGrantEnergy', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'resetAllPlayers', 'devGetLogs'];
+            $this->permits = ['cacheAvatar', 'get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devGrantEnergy', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'devGetLogs'];
         }
         function cacheAvatar(){
             $url=$this->registry['user_params']['url']??null;$platform=$this->registry['platform']??'';
@@ -1407,22 +1407,11 @@
                 'keyringIdx' => $keyringIdx !== false ? intval($keyringIdx) : null]);
         }
 
-        // 23.09.2026 (по прямому указанию — сначала одноразовый server/reset_all_players_23092026.php
-        // выполнен вручную и удалён с сервера, теперь постоянная кнопка "СБРОС У ВСЕХ" в dev-
-        // панели на будущее, т.к. понадобится ещё не раз за время тестирования). Полный сброс
-        // ВСЕХ существующих игроков до состояния нового аккаунта — ТЕ ЖЕ дефолты, что и у
-        // resetAccount() в dev_panel.js на клиенте (см. _defaultResetUdata() ниже, скопировано
-        // 1:1 оттуда), просто применённые ко всем id разом одним проходом, а не через
-        // users.save() текущего игрока.
-        //
-        // Пароль — единственная защита: DEV-кнопка в HUD видна и кликабельна ЛЮБОМУ игроку
-        // (interface.js, ничем не ограничена), поэтому проверка обязана быть здесь, на сервере,
-        // а не только в клиентском prompt() (тот тривиально обходится вызовом TS.php напрямую
-        // из консоли, минуя проверку). Простое сравнение строки — тот же уровень защиты, что и
-        // у key= в одноразовых migrate*.php/reset_all_players*.php скриптах этого проекта,
-        // осознанно не усложняем (тестовая стадия, 5-6 игроков).
-        function resetAllPlayers(){
-            return $this->registry['tools']->error(403);
+        private function _rawLink(){
+            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
+            if($link->connect_error) return null;
+            $link->set_charset('utf8mb4');
+            return $link;
         }
 
         private function _defaultResetUdata(){

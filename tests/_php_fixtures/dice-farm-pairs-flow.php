@@ -41,4 +41,20 @@ assertFlow((int)$ops->user['exp'] === 1000 && (int)$ops->user['coins'] === 0, 'T
 $saved = $ops->user;
 $dice->resolve();
 assertFlow($ops->error === 68 && $ops->user === $saved, 'Reward could be replayed');
+
+foreach ([3, 5] as $face) {
+    for ($chance = 1; $chance <= 10; $chance++) {
+        $rolls = [$face, $face, $face, 2];
+        $ops->user = ['id' => 987654, 'dice_session' => json_encode(['active' => [
+            'rolls' => $rolls, 'swapsAllowed' => 1, 'swapsUsed' => 0, 'forced' => false,
+        ]])];
+        $GLOBALS['diceFlowRolls'] = $chance === 1 ? [1, 1] : [$chance];
+        $dice->reroll();
+        $rolls[2] = $chance === 1 ? 1 : $face;
+        assertFlow($ops->result['rolls'] === $rolls, 'Triple protection changed the wrong face');
+        assertFlow($ops->result['swapsUsed'] === 1 && !$GLOBALS['diceFlowRolls'], 'Triple reroll consumed the wrong draws or swaps');
+        $dice->start();
+        assertFlow($ops->result['resumed'] && $ops->result['rolls'] === $rolls, 'Protected reroll changed on reconnect');
+    }
+}
 echo "PASS: initial roll, reconnect, reroll limit and server rewards\n";

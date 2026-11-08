@@ -1,3 +1,4 @@
+import { formatShmotFragments } from '../shmot-tooltip.js';
 import { applyShopIconCompression } from '../../../modules/shop-icon-compression.js';
 /** Магазин одежды — новый PIXI-экран. */
 
@@ -512,10 +513,8 @@ export function attachShmotShop(proto){
             // 22.09.2026 (дроп персональных вещей боссов, по прямому указанию) — для предметов
             // с фрагментной сборкой показываем реальный накопленный прогресс
             // (this.fragmentsProgress, см. shmot.js._loadFromUdata), а не голый текст источника.
-            if(item.fragments && !item.owned){
-                const have = (this.fragmentsProgress && this.fragmentsProgress[item.id]) || 0;
-                reqText += '\nСобрано частей: ' + have + '/' + item.fragments;
-            }
+            const fragmentText = formatShmotFragments(item, this.fragmentsProgress);
+            if(fragmentText) reqText += '\n' + fragmentText;
         }
         const INDENT = 14;
         const reqVal = new PIXI.Text(reqText,

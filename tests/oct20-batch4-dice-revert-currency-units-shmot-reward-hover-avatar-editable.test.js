@@ -48,20 +48,20 @@ const purchaseSrc  = readSrc('_client/src/game/interface/interface-currency-purc
 
 console.log('\nTest 1: сервер отдаёт shmotItemId в основном ответе (не только в $debug)');
 {
-    assert(/'shmotItemId' => \$tatuItemId, 'clientRewards'/.test(roulettePhp), 'roulette.php.openCase() отдаёт shmotItemId клиенту');
-    assert(/'shmotItemId' => \$tatuItemId, 'clientRewards'/.test(pokerPhp), 'poker.php.openBag() отдаёт shmotItemId клиенту');
+    assert(/'shmotItemId' => \$tatuItemId, 'shmotFragment' => \$shmotFragment, 'clientRewards'/.test(roulettePhp), 'roulette.php.openCase() отдаёт shmotItemId клиенту');
+    assert(/'shmotItemId' => \$tatuItemId, 'shmotFragment' => \$shmotFragment, 'clientRewards'/.test(pokerPhp), 'poker.php.openBag() отдаёт shmotItemId клиенту');
 }
 
 console.log('\nTest 2: клиент передаёт shmotItemId дальше и шлёт reward type:"shmot" (не "tatu") с именем предмета');
 {
-    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId\);/.test(roulBuySrc),
+    assert(/this\._openRouletteCaseOpenedScreen\(!!res\.hasTatu, res\.reward, res\.clientRewards \|\| \[\], res\.shmotItemId, res\.shmotFragment\);/.test(roulBuySrc),
         'dvor-roulette-buy.js прокидывает res.shmotItemId');
     // 24.10.2026: добавлен 4-й параметр shmotItem (полный предмет каталога) — нужен
     // buildShmotTooltipCard() для богатой карточки (имя/бонус/сет/требования), см.
     // tests/oct24-raznaryadka-buyout-popup-and-tooltip.test.js.
-    assert(/rewards\.push\(\{type:'shmot', amount:1, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(roulBuySrc),
+    assert(/rewards\.push\(\{type:'shmot', amount:1, amountLabel:[^,]+, name: shmotItem \? shmotItem\.name : 'Элемент шмотки', shmotItem\}\);/.test(roulBuySrc),
         'dvor-roulette-buy.js отправляет в попап награды type:"shmot" с именем и полным предметом (не "tatu")');
-    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId\);/.test(pokerBagSrc),
+    assert(/this\._openPokerBagOpenedScreen\(res\.reward, res\.clientRewards \|\| \[\], !!res\.hasTatu, res\.shmotItemId, res\.shmotFragment\);/.test(pokerBagSrc),
         'dvor-poker-bag.js прокидывает res.shmotItemId');
     // 20.10.2026 (по прямому указанию, тот же день — "после ЗАБРАТЬ не вылезал попап награды"):
     // попап сумки покера убран целиком (см. tests/reward-popup-suppressed-yashik-ryukzak.test.js

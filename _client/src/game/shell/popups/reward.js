@@ -286,7 +286,7 @@ export function attachRewardPopup(proto){
                 const amtLabel = bossName
                     ? '+' + formatRewardAmount(item.amount) + '\n' + bossName
                     : '+' + formatRewardAmount(item.amount);
-                const amtTxt = new PIXI.Text(amtLabel, {
+                const amtTxt = new PIXI.Text(item.amountLabel ?? amtLabel, {
                     fontFamily: 'Southbank LT', fontSize: bossName ? 24 : 34, fill: '#a58165',
                     dropShadow: true, dropShadowColor: '#000000', dropShadowDistance: 1,
                     align: 'center',

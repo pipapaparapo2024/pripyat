@@ -202,6 +202,33 @@ Class Gameops {
         return $id;
     }
 
+    function grantBagFragment(array &$user, string $source): ?array {
+        // Only these existing bag sets display a 40-fragment requirement in shmot.js.
+        $ids = [
+            'sidorovich_bag' => [101, 102, 103, 104, 105],
+            'poker_bag' => [106, 107, 108, 109, 110],
+            'roulette_bag' => [111, 112, 113, 114, 115],
+        ][$source] ?? [];
+        $need = 40;
+        $state = $this->j($user, 'shmot', []);
+        $progress = $this->j($user, 'shmot_fragments', []);
+        $available = [];
+        foreach($ids as $id){
+            if(empty($state[$id]['owned'])) $available[] = $id;
+        }
+        if(!$available) return null;
+        $id = $available[array_rand($available)];
+        $have = min($need, max(0, (int)($progress[$id] ?? 0)) + 1);
+        if($have === $need){
+            $this->grantShmotById($user, $id);
+            unset($progress[$id]);
+        }else{
+            $progress[$id] = $have;
+        }
+        $user['shmot_fragments'] = json_encode($progress, JSON_THROW_ON_ERROR);
+        return ['id'=>$id, 'have'=>$have, 'need'=>$need, 'completed'=>$have === $need];
+    }
+
     // Выдаёт конкретный серверный предмет. Нужен там, где награда привязана к
     // комбинации (AA/KK/QQ), а не должна выбираться случайно из пула источника.
     function grantShmotById(&$user, $id){
