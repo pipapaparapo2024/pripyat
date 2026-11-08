@@ -97,7 +97,7 @@ console.log('\nTest 6: dvor-roulette-minigame.js теперь берёт сум�
 console.log('\nTest 7: roulette.php.claimPrize() реально возвращает поле amount (источник для клиента из Test 6)');
 {
     const src = read('server/core/controllers/roulette.php');
-    const body = src.slice(src.indexOf('function claimPrize(){'), src.indexOf('function claimPrize(){') + 1500);
+    const body = src.slice(src.indexOf('function claimPrize(){'), src.indexOf('function openMinigame(){',src.indexOf('function claimPrize(){')));
     assert(/'amount'\s*=>\s*500/.test(body), "claimPrize() включает 'amount'=>500 в ответ ok()");
 }
 

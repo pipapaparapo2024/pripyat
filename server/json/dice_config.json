@@ -1,6 +1,6 @@
 {
   "table": [
-    {"v":6,"n":4,"type":"shmot",      "amt":5},
+    {"v":6,"n":4,"type":"shmot",      "amt":1},
     {"v":6,"n":3,"type":"coins",      "amt":100},
     {"v":6,"n":2,"type":"cig",        "amt":10000},
     {"v":5,"n":4,"type":"coins",      "amt":50},

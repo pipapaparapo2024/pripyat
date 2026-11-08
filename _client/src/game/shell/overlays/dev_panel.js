@@ -653,19 +653,9 @@ export function attachDevPanel(proto){
         // ── СБРОС ───────────────────────────────────────────────────
         _section('СБРОС');
         _row('Аккаунт', [
-            {label:'СБРОС ВСЕГО', color:R, action:()=>this._resetAccount()},
+            {label:'СБРОС ВСЕГО', color:R, action:()=>this._resetOwnAccountAtomic()},
         ]);
-        // 23.09.2026 (по прямому указанию, после разового ручного сброса всех тестовых
-        // аккаунтов через одноразовый server/reset_all_players_23092026.php — тот скрипт
-        // выполнен и удалён с сервера, но сама операция понадобится ещё не раз в ходе
-        // тестирования): постоянная кнопка вместо одноразового скрипта на каждый раз.
-        // Кнопка видна ЛЮБОМУ игроку (DEV-кнопка в HUD ничем не ограничена, см.
-        // interface.js) — единственная защита от случайного/злонамеренного нажатия это
-        // серверная проверка пароля в users.resetAllPlayers() (см. users.php), НЕ клиентский
-        // prompt() сам по себе (его тривиально обойти из консоли).
-        _row('Все игроки', [
-            {label:'СБРОС У ВСЕХ', color:R, action:()=>this._resetAllPlayers()},
-        ]);
+        _row('Покупки', [{label:'ИСТОРИЯ',color:O,action:()=>window.open('https://pripyat-game-site.ru/donations/','_blank','noopener')}]);
 
         // ── МИНИ-ИГРЫ / БОЙ (ТЕСТ) ───────────────────────────────────
         // 25.09.2026 (по прямому указанию — "вместо визуальной демки стаканчиков сделай 100%
@@ -986,6 +976,21 @@ export function attachDevPanel(proto){
     // сервер реально обнулил каждую колонку.
     // После сохранения — обязательная перезагрузка страницы: многие модули (weapons/bosses/
     // skills и т.д.) уже держат старые значения в памяти и сами не перечитают udata без reload.
+    proto._resetOwnAccountAtomic = function(){
+        this._showConfirmPopup('Сбросить только свой игровой прогресс?', ()=>{
+            if(this._ownResetPending)return;
+            this._ownResetPending=true;
+            if(window.suspendPlayerSave)window.suspendPlayerSave('dev_reset');
+            TS.php('users.resetSession',{full_reset:true},()=>{
+                window.location.reload();
+            },()=>{
+                this._ownResetPending=false;
+                if(window.resumePlayerSave)window.resumePlayerSave('dev_reset');
+                window.alert('Сброс не выполнен. Попробуйте ещё раз.');
+            });
+        });
+    };
+
     proto._resetAccount = function(){
         if(!window.udata) return;
         this._showConfirmPopup('Полный сброс аккаунта — все данные будут стёрты. Точно?', ()=>{
@@ -1283,20 +1288,7 @@ export function attachDevPanel(proto){
     // и защита от несуществующих колонок). Пароль обязателен и проверяется ТОЛЬКО на сервере —
     // сама кнопка видна любому игроку (DEV-кнопка в HUD ничем не ограничена), так что prompt()
     // здесь — просто способ собрать пароль у того, кто нажал, а не механизм защиты сам по себе.
-    proto._resetAllPlayers = function(){
-        this._showConfirmPopup('Сбросить ВСЕХ игроков (не только себя)? Нужен пароль администратора.', ()=>{
-            const pass = window.prompt('Пароль администратора:');
-            if(!pass) return;
-            if(!window.TS) return;
-            TS.php('users.resetAllPlayers', {password: pass}, (r)=>{
-                console.log('[devPanel._resetAllPlayers] сервер подтвердил сброс всех игроков:', JSON.stringify(r));
-                if(window.notify) notify.showResult({text:'Сброшено игроков: ' + (r && r.players_reset != null ? r.players_reset : '?')}, 1);
-            }, (err)=>{
-                console.error('[devPanel._resetAllPlayers] ошибка:', JSON.stringify(err));
-                if(window.notify) notify.showResult({text: (err && err.code === 403) ? 'Неверный пароль' : 'Ошибка сброса — см. консоль'}, 0);
-            });
-        });
-    };
+
 
     // Выставляет 100 уровень сразу во всех 4 дворовых играх (покер/карты/зарики/рулетка).
     // Покер использует переменную шкалу опыта по брекетам (_pokerExpPerStep) — большого

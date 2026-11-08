@@ -284,6 +284,7 @@
             // _dealRealPair() такого не гарантирует, он лишь СНИЖАЕТ шанс совпадения премиум-
             // рангов, поэтому для этого случая раздаём в обход неё напрямую).
             $devForceBj = strval($user['dev_force_blackjack'] ?? '');
+            if(!$this->ops->isDeveloper()) $devForceBj = '';
             $dealTrace = [];
             if($devForceBj !== '' && $devForceBj !== '__nonpair'){
                 $user['dev_force_blackjack'] = '';

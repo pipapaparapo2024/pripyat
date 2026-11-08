@@ -30,29 +30,9 @@ function assert(cond, msg) {
 const root = path.join(__dirname, '..');
 const usersPhp = fs.readFileSync(path.join(root, 'server', 'core', 'controllers', 'users.php'), 'utf-8');
 
-console.log('\nTest 1: resetAllPlayers() бэкапит boss_instances и boss_instance_claims вместе с остальными боссовыми таблицами');
-{
-    const start = usersPhp.indexOf('function resetAllPlayers()');
-    const end   = usersPhp.indexOf('function _rawLink()', start);
-    const body  = usersPhp.slice(start, end);
-    const backupLoop = body.match(/foreach\(\[([^\]]*)\] as \$t\)\{\s*\$bk = \$t \. '_backup_last_reset'/);
-    assert(!!backupLoop, 'цикл бэкапа с суффиксом _backup_last_reset найден');
-    assert(backupLoop && /'boss_instances'/.test(backupLoop[1]), "'boss_instances' входит в список таблиц для бэкапа");
-    assert(backupLoop && /'boss_instance_claims'/.test(backupLoop[1]), "'boss_instance_claims' входит в список таблиц для бэкапа");
-    assert(backupLoop && /'boss_damage_log'/.test(backupLoop[1]), "'boss_damage_log' по-прежнему в списке (не регрессия)");
-}
-
-console.log('\nTest 2: resetAllPlayers() удаляет boss_instances и boss_instance_claims (не только boss_damage_log)');
-{
-    const start = usersPhp.indexOf('function resetAllPlayers()');
-    const end   = usersPhp.indexOf('function _rawLink()', start);
-    const body  = usersPhp.slice(start, end);
-    const deleteLoop = body.match(/foreach\(\[([^\]]*)\] as \$t\)\{\s*\$link->query\("DELETE FROM `\$t`"\)/);
-    assert(!!deleteLoop, 'цикл DELETE FROM найден');
-    assert(deleteLoop && /'boss_instances'/.test(deleteLoop[1]), "'boss_instances' входит в список таблиц для очистки — главный фикс (раньше HP боя переживало полный сброс)");
-    assert(deleteLoop && /'boss_instance_claims'/.test(deleteLoop[1]), "'boss_instance_claims' входит в список таблиц для очистки");
-}
-
+const massBody=usersPhp.slice(usersPhp.indexOf('function resetAllPlayers()'),usersPhp.indexOf('private function _defaultResetUdata()'));
+assert(/return \$this->registry\['tools'\]->error\(403\)/.test(massBody), 'Массовый сброс всегда запрещён');
+assert(!/DELETE|DROP|UPDATE|CREATE TABLE/.test(massBody), 'Массовый сброс не выполняет SQL');
 console.log('\nTest 3: resetSession() (сброс ОДНОГО аккаунта) чистит свои boss_damage_log/boss_instance_claims по uid');
 {
     const start = usersPhp.indexOf('function resetSession()');

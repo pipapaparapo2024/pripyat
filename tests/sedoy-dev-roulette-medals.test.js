@@ -32,7 +32,7 @@ const panel = read('_client/src/game/shell/overlays/dev_panel.js');
 must(panel, "DEV_UIDS.includes(String(vk_params['vk_user_id']))", 'защита открытия панели на клиенте');
 const users = read('server/core/controllers/users.php');
 must(users, "['1113977365', '382448269', '438953352', '184138040']", 'серверный список DEV UID');
-['devGrantWeapons','devGrantShmot','devGrantCurrency','setDevFlag','setDevCombo','toggleDevKeyring','resetAllPlayers'].forEach(name => {
+['devGrantWeapons','devGrantShmot','devGrantCurrency','setDevFlag','setDevCombo','toggleDevKeyring'].forEach(name => {
   const p = users.indexOf('function ' + name + '(){');
   if(p < 0 || users.indexOf('if(!$this->_requireDevUser()) return;', p) < p || users.indexOf('if(!$this->_requireDevUser()) return;', p) > p + 180) {
     throw new Error(name + ': нет серверной проверки DEV UID');
@@ -51,3 +51,5 @@ const energyPopup = read('_client/src/game/shell/popups/energy_buy.js');
   must(energyPopup, position, 'карточки энергии должны быть сдвинуты на +80/+100');
 });
 console.log('OK sedoy/dev/roulette/medals');
+
+if(!/function resetAllPlayers\(\)\{\s*return \$this->registry\['tools'\]->error\(403\)/.test(users))throw new Error('Массовый сброс должен быть запрещён');

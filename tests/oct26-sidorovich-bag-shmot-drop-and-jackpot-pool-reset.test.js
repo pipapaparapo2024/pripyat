@@ -120,7 +120,7 @@ console.log('\nTest 5: джекпот — все фолбэки/дефолты j
     assert(/'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0\] \+ \$slotResult\)/.test(rouletteSrc), 'фолбэк без _rawLink() в spin() — 0, не 3000');
     assert(/'keyring_available' => false, 'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0\]\);/.test(rouletteSrc), 'фолбэк без _rawLink() в status() — 0, не 3000');
     assert(/\$jackpotPool = \$row \? intval\(\$row\['jackpot_pool'\]\) : 0;/.test(rouletteSrc), 'status(): $row?..:0, не :3000');
-    assert(/if\(!\$row \|\| \$counter <= 0\) throw new RuntimeException\('roulette_state_missing'\)/.test(rouletteSrc), 'Missing state aborts the spin before jackpot evaluation');
+    assert(/if\(!\$row \|\| \(!\$devTestSpin && \$counter <= 0\)\) throw new RuntimeException\('roulette_state_missing'\)/.test(rouletteSrc), 'Missing state aborts the spin before jackpot evaluation');
     assert(/`kush_threshold`=\$newT, `jackpot_pool`=0 WHERE `id`=1/.test(rouletteSrc), 'pickCup(): сброс после РЕАЛЬНОЙ выплаты Куша — на 0, не на 3000');
 
     assert(!/\|\| 3000/.test(orchSrc), 'клиент (dvor-roulette.js) не хардкодит фолбэк 3000 нигде');

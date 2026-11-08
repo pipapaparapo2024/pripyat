@@ -29,8 +29,8 @@ foreach(['vk_ok_user_id'=>'587256562322','vk_ok_app_id'=>'512005669203','vk_app_
 $forged=$okLaunch;$forged['vk_ok_user_id']='587256562322';prodReject(fn()=>NativeProdBoundary::resolve($forged,'ok','73',$okConfig,100000));
 prodReject(fn()=>NativeProdBoundary::resolve($okLaunch,'vk','73',$okConfig,100000));
 $bad=$c;$bad['databases']['stalker']['database']='stalker_test';prodReject(fn()=>NativeProdBoundary::database($bad,'vk'));
-foreach(['users.resetAllPlayers','users.resetSession','users.devUnknown','shmot.devGrantShmot',null,[]] as $method)prodCheck(!NativeProdBoundary::allowsMethod($method),'Dangerous method');
-foreach(['users.get','users.save','shmot.equip','users.devGrantShmot','users.devGetLogs'] as $method)prodCheck(NativeProdBoundary::allowsMethod($method),'Legitimate method');
+foreach(['users.resetAllPlayers','users.devUnknown','shmot.devGrantShmot',null,[]] as $method)prodCheck(!NativeProdBoundary::allowsMethod($method),'Dangerous method');
+foreach(['users.resetSession','users.get','users.save','shmot.equip','users.devGrantShmot','users.devGetLogs'] as $method)prodCheck(NativeProdBoundary::allowsMethod($method),'Legitimate method');
 prodCheck(NativeProdBoundary::allowsAccountMethod('users.devGetLogs','382448269','vk'),'Owner logs unavailable');
 prodCheck(!NativeProdBoundary::allowsAccountMethod('users.devGetLogs','382448269','ok'),'VK owner ID reused as OK identity');
 foreach(['438953352','184138040','1113977365','42'] as $uid)prodCheck(!NativeProdBoundary::allowsAccountMethod('users.devGetLogs',$uid,'vk'),'Owner logs exposed to other accounts');

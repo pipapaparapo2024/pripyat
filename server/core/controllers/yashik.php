@@ -92,6 +92,7 @@
             // дропа шмоток отовсюду") — личный server-only флаг, форсирует гарантированный дроп
             // ниже (общий пул + Потерянный тайник), только для аккаунта с включённым флагом.
             $devForceDrops = !empty($user['dev_force_drops']);
+            if(!$this->ops->isDeveloper()) $devForceDrops = false;
 
             $stash = rand(intval($catalog['stash_min']), intval($catalog['stash_max']));
             $cig   = rand(intval($catalog['cig_min']),   intval($catalog['cig_max']));

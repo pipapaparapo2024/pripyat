@@ -45,8 +45,8 @@ console.log('\nTest 1: dice_config.json 1:1 совпадает с исходно
     // (переписана в терминах нового API, но сама структура каталога проверяется отдельно тестом
     // на этапе разработки — здесь фиксируем актуальное состояние каталога как эталон).
     assert(catalog.table.length === 18, 'каталог содержит 18 строк таблицы наград');
-    assert(catalog.table[0].v === 6 && catalog.table[0].n === 4 && catalog.table[0].type === 'shmot' && catalog.table[0].amt === 5,
-        'первая строка (4×6 → 5 шмоток) верна');
+    assert(catalog.table[0].v === 6 && catalog.table[0].n === 4 && catalog.table[0].type === 'shmot' && catalog.table[0].amt === 1,
+        'первая строка (4×6 → 1 шмотка) верна');
     assert(catalog.table[17].v === 1 && catalog.table[17].n === 2 && catalog.table[17].type === 'cig' && catalog.table[17].amt === 500,
         'последняя строка (2×1 → 500 сигарет) верна');
     assert(catalog.consolation.type === 'cig' && catalog.consolation.amt === 50, 'утешительный приз — 50 сигарет (нет ни одной пары)');

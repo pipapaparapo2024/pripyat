@@ -46,7 +46,7 @@ console.log('\nTest 1: ryukzak.php._grantWeaponReward() портирован 1-�
     const extract = (src) => {
         const start = src.indexOf('private function _grantWeaponReward(&$user, $type, $amount){');
         const end   = src.indexOf('\n        }', start);
-        return src.slice(start, end);
+        return src.slice(start, end).replace(/\r/g, '');
     };
     const pokerFn   = extract(pokerPhp);
     const ryukzakFn = extract(ryukzakPhp);

@@ -12,6 +12,12 @@ Class Gameops {
         $this->registry = $registry;
     }
 
+    function isDeveloper(){
+        if(in_array('developer',$this->registry['roles']??[],true))return true;
+        return in_array($this->registry['platform']??'vk',['vk','ok'],true)
+            && in_array((string)($this->registry['uid']??''),['1113977365','382448269','438953352','184138040'],true);
+    }
+
     function loadUser($fields = ['*']){
         $user = $this->registry['udb']->getData($this->registry['utb'], $fields, 'id='.$this->registry['uid']);
         if(isset($user['error']) && $user['error']) return null;

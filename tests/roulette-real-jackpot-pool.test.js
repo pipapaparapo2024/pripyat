@@ -31,7 +31,7 @@ const spin = phpSrc.slice(phpSrc.indexOf('function spin(){'), phpSrc.indexOf('pr
 assert(phpSrc.includes('VALUES (1, 0) ON DUPLICATE KEY UPDATE'), 'Missing roulette state starts with an empty jackpot pool');
 assert(spin.indexOf('begin_transaction()') < spin.indexOf('_ensureGlobalState($link)') &&
     spin.indexOf('spin_counter`=0') < spin.indexOf('$link->commit()'), 'Counter initialization and jackpot reset use one transaction');
-assert(spin.includes('if(!$row || $counter <= 0)') && spin.includes('$threshold > 0 && $counter >= $threshold'),
+assert(spin.includes('if(!$row || (!$devTestSpin && $counter <= 0))') && spin.includes('$threshold > 0 && $counter >= $threshold'),
     'Missing state or a zero threshold cannot trigger a jackpot');
 
 console.log('\nTest 1: server roulette.php — spin() растит и возвращает jackpot_pool, НЕ сбрасывает его при попадании на сектор');

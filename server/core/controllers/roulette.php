@@ -407,6 +407,7 @@ Class Roulette {
         // игроков, форсировать его ради теста одного аккаунта нельзя. Флаг форсирует исход
         // ИМЕННО этого спина этого игрока и сразу гасится, независимо от реального счётчика.
         $devForceJackpot = $this->ops->i($user, 'dev_force_jackpot') > 0;
+            if(!$this->ops->isDeveloper()) $devForceJackpot = false;
         if($devForceJackpot) $user['dev_force_jackpot'] = 0;
 
         // 25.09.2026 (по прямому указанию — "хочу тестировать все сектора рулетки"):
@@ -415,6 +416,7 @@ Class Roulette {
         // в обход честного mt_rand. НЕ читаем через Gameops::i() — intval('') совпал бы с
         // валидным idx=0 (см. тот же класс бага, разобранный в dice.php).
         $devForceRouletteRaw = strval($user['dev_force_roulette'] ?? '');
+            if(!$this->ops->isDeveloper()) $devForceRouletteRaw = '';
         $devForceIdx = null;
         if($devForceRouletteRaw !== ''){
             // 26.09.2026 (по прямому репорту + живым логам — та же порча, что уже поймана в
@@ -442,7 +444,7 @@ Class Roulette {
             // общей таблицы, но выбор приза без неё всё равно не отрисовать полноценно).
             $slotTrace = [];
             $slotResult = $this->_rollSlot($devForceJackpot, false, $user, $slotTrace, $devForceIdx);
-            if($devForceJackpot || $slotResult['slotIdx'] === 12) $user['roulette_cups'] = json_encode(['__prize_choice__']);
+            if($devForceJackpot || $slotResult['slotIdx'] === 12) $user['roulette_cups'] = json_encode([($devForceJackpot || $devForceIdx !== null) ? '__prize_choice_dev__' : '__prize_choice__']);
             $this->ops->saveUser($user);
             $debug = ['fn' => 'spin', 'uid' => abs(intval($this->registry['uid'])),
                 'time' => date('Y-m-d H:i:s'), 'microtime' => microtime(true),
@@ -462,16 +464,17 @@ Class Roulette {
             return $this->registry['tools']->output(['patch' => $patch, 'jackpot' => ($devForceJackpot || $slotResult['slotIdx'] === 12), 'keyring_available' => false, 'jackpot_pool' => 0, 'spin_counter' => 0, 'spin_threshold' => 0] + $slotResult);
         }
 
+        $devTestSpin = $devForceJackpot || $devForceIdx !== null;
         // Keep the shared row locked through the counter check and cycle reset.
         try {
             if(!$link->begin_transaction() || !$this->_ensureGlobalState($link)) throw new RuntimeException('roulette_state_init');
-            if(!$link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = COALESCE(`jackpot_pool`, 0) + 10 WHERE `id`=1")) throw new RuntimeException("roulette_counter_update");
-            $res = $link->query("SELECT LAST_INSERT_ID() AS c");
+            if(!$devTestSpin && !$link->query("UPDATE `roulette_state` SET `spin_counter` = LAST_INSERT_ID(`spin_counter` + 1), `jackpot_pool` = COALESCE(`jackpot_pool`, 0) + 10 WHERE `id`=1")) throw new RuntimeException("roulette_counter_update");
+            $res = $link->query($devTestSpin ? "SELECT spin_counter AS c FROM roulette_state WHERE id=1" : "SELECT LAST_INSERT_ID() AS c");
             $counter = $res ? intval($res->fetch_assoc()['c']) : 0;
 
             $res2 = $link->query("SELECT `spin_threshold`, `keyring_cycle_ends_at`, `jackpot_pool` FROM `roulette_state` WHERE `id`=1");
             $row = $res2 ? $res2->fetch_assoc() : null;
-            if(!$row || $counter <= 0) throw new RuntimeException('roulette_state_missing');
+            if(!$row || (!$devTestSpin && $counter <= 0)) throw new RuntimeException('roulette_state_missing');
             $threshold = intval($row['spin_threshold']);
             // 29.09.2026 (СРОЧНО, по прямому указанию — см. большой коммент у KEYRING_COOLDOWN_DAYS
             // выше): было жёстко захардкожено true — теперь честно читает 30-дневное окно ожидания
@@ -480,7 +483,7 @@ Class Roulette {
             $keyringAvailable = time() >= intval($row['keyring_cycle_ends_at']);
             $jackpotPool = intval($row['jackpot_pool']);
 
-            $realJackpot = $threshold > 0 && $counter >= $threshold;
+            $realJackpot = !$devTestSpin && $threshold > 0 && $counter >= $threshold;
             $jackpot = $realJackpot || $devForceJackpot || ($devForceIdx === 12);
             $jackpotResetInfo = null;
             if($realJackpot){
@@ -508,7 +511,7 @@ Class Roulette {
                 // Одноразовое серверное право выбрать гарантированные 500р или риск-игру.
                 // Используем уже существующее server-only поле roulette_cups: клиент не может
                 // подделать его через users.save.
-                $user['roulette_cups'] = json_encode(['__prize_choice__']);
+                $user['roulette_cups'] = json_encode([($devForceJackpot || $devForceIdx !== null) ? '__prize_choice_dev__' : '__prize_choice__']);
             }
 
             $keyringSaved = $slotResult['slotIdx'] === 0;
@@ -711,6 +714,7 @@ Class Roulette {
         $user = $this->ops->loadUser();
         if(!$user) return $this->ops->fail(99);
         $state = $this->ops->j($user, 'roulette_cups', null);
+        if($state === ['__prize_choice_dev__'] && $this->ops->isDeveloper()) $state = ['__prize_choice__'];
         if($state !== ['__prize_choice__']) return $this->ops->fail(85);
 
         $user['roulette_cups'] = null;
@@ -741,7 +745,16 @@ Class Roulette {
         $user = $this->ops->loadUser();
         if(!$user) return $this->ops->fail(99);
         $choice = $this->ops->j($user, 'roulette_cups', null);
+        $personalDevChoice = $choice === ['__prize_choice_dev__'] && $this->ops->isDeveloper();
+        if($personalDevChoice) $choice = ['__prize_choice__'];
         if($choice !== ['__prize_choice__']) return $this->ops->fail(85);
+        if($personalDevChoice){
+            $cups=[];
+            for($i=0;$i<9;$i++){$r=$this->CUP_POOL[array_rand($this->CUP_POOL)];$cups[]=$r['type'].':'.$r['amt'];}
+            $user['roulette_cups']=json_encode($cups);
+            if(!$this->ops->saveUser($user))return $this->ops->fail(99);
+            return $this->registry['tools']->output(['ok'=>true]);
+        }
 
         $link = $this->_rawLink();
         if(!$link) return $this->registry['tools']->output(['ok' => false]);

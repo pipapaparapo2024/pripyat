@@ -1902,6 +1902,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
 
             // dev_force_drops остаётся только для персональных пулов боссов ниже.
             $devForceDrops = !empty($user['dev_force_drops']);
+            if(!$this->ops->isDeveloper()) $devForceDrops = false;
             $shmotAmount = 0;
 
             // Финализацию скиллов выполняем ДО захвата shmot-lock ниже. Оба механизма блокируют

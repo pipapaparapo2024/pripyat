@@ -751,6 +751,13 @@
         // Сбрасывает только собственные серверные поля разработчика. ID берётся из registry.
         function resetSession(){
             if(!in_array('developer', $this->registry['roles'] ?? [], true) && !$this->_requireDevUser()) return;
+            if(($this->registry['user_params']['full_reset']??false)===true){
+                require_once __DIR__.'/../models/devplayerreset.php';
+                $link=$this->_rawLink();if(!$link)return $this->registry['tools']->error(99);
+                try{$patch=DevPlayerReset::apply($link,$this->registry['utb'],(int)$this->registry['uid'],$this->_defaultResetUdata());}
+                catch(Throwable $e){$link->close();return $this->registry['tools']->error(99);}
+                $link->close();return $this->registry['tools']->output(['ok'=>1,'patch'=>$patch]);
+            }
             $update = [
                 'id'                  => $this->registry['uid'],
                 'skills_levels'       => null,
@@ -1415,82 +1422,9 @@
         // у key= в одноразовых migrate*.php/reset_all_players*.php скриптах этого проекта,
         // осознанно не усложняем (тестовая стадия, 5-6 игроков).
         function resetAllPlayers(){
-            if(!$this->_requireDevUser()) return;
-            $pass = isset($this->registry['user_params']['password']) ? strval($this->registry['user_params']['password']) : '';
-            if($pass !== '5110') return $this->registry['tools']->error(403);
-
-            $link = $this->_rawLink();
-            if(!$link) return $this->registry['tools']->error(99);
-
-            $utb = $this->registry['utb'];
-
-            // Бэкап поверх ФИКСИРОВАННОГО имени (не создаём новую таблицу на каждый клик) —
-            // защищает от "отменить последний по счёту сброс", не копит десятки backup-таблиц
-            // при повторном использовании кнопки в ходе тестирования.
-            //
-            // 23.09.2026 (репорт "у босса в разы меньше хп, чем должно быть" — разбор показал:
-            // boss_instances (миграция 29, общий HP боевой сессии) сюда добавлена не была, хотя
-            // boss_damage_log/boss_instance_claims уже чистились. Итог — после "СБРОС У ВСЕХ"
-            // ЖИВОЙ инстанс оставался с уже подсевшим current_hp (урон, нанесённый до сброса),
-            // а вся история урона (boss_damage_log) стиралась в ноль. Дальше игроки били заново
-            // с чистого current_hp… нет, с УЖЕ ПОДСЕВШЕГО — рейтинг/личный урон в ответах
-            // attack()/instanceStatus() после сброса считался только по НОВЫМ, честным записям,
-            // но реальный current_hp был занижен на весь "стёртый" урон из прошлого — сумма урона
-            // в рейтинге переставала сходиться с фактическим падением HP. Полный сброс обязан
-            // приводить общие бои в такое же "чистое" состояние, как и всё остальное — поэтому
-            // обе таблицы новой архитектуры добавлены в тот же цикл бэкапа+очистки.
-            foreach([$utb, 'boss_last_kill', 'boss_damage_log', 'boss_instances', 'boss_instance_claims', 'zone_respect_leader'] as $t){
-                $bk = $t . '_backup_last_reset';
-                $link->query("DROP TABLE IF EXISTS `$bk`");
-                $link->query("CREATE TABLE `$bk` AS SELECT * FROM `$t`");
-            }
-
-            // Сверяемся с реальной схемой — пропускаем (не роняем весь UPDATE) любое поле из
-            // дефолтного набора, которого в текущей таблице нет.
-            $existingCols = [];
-            $colRes = $link->query("SHOW COLUMNS FROM `$utb`");
-            while($r = $colRes->fetch_assoc()) $existingCols[$r['Field']] = true;
-
-            $uids = [];
-            $res = $link->query("SELECT id FROM `$utb`");
-            while($row = $res->fetch_assoc()) $uids[] = intval($row['id']);
-
-            $applied = array_intersect_key($this->_defaultResetUdata(), $existingCols);
-
-            $okCount = 0;
-            foreach($uids as $uid){
-                $parts = [];
-                foreach($applied as $k => $v){
-                    $parts[] = ($v === null) ? "`$k`=NULL" : "`$k`='" . $link->real_escape_string($v) . "'";
-                }
-                if($link->query("UPDATE `$utb` SET " . implode(', ', $parts) . " WHERE id=$uid")) $okCount++;
-            }
-
-            foreach(['boss_last_kill', 'boss_damage_log', 'boss_instances', 'boss_instance_claims', 'zone_respect_leader'] as $t){
-                $link->query("DELETE FROM `$t`");
-            }
-
-            $link->close();
-
-            $this->registry['tools']->output(['ok' => 1, 'players_reset' => $okCount, 'total_players' => count($uids)]);
+            return $this->registry['tools']->error(403);
         }
 
-        // Тот же паттерн, что bosses.php._rawLink() — свой mysqli-коннект в обход Database-
-        // обёртки (у неё нет DDL/SHOW COLUMNS/произвольного WHERE по всем строкам), с теми же
-        // registry-credentials.
-        private function _rawLink(){
-            $link = new mysqli($this->registry['server'], $this->registry['user'], $this->registry['pass'], $this->registry['db'], 3306);
-            if($link->connect_error) return null;
-            $link->set_charset('utf8mb4');
-            return $link;
-        }
-
-        // 1:1 копия дефолтного набора _client/src/game/shell/overlays/dev_panel.js._resetAccount()
-        // (+ server-only session-поля users.resetSession() — см. соответствующий комментарий
-        // там же). Единственный источник истины для "что значит сброшенный аккаунт" в проекте —
-        // сознательно НЕ переизобретается заново здесь, чтобы не наступить повторно на грабли,
-        // которые уже чинили 22.09.2026 (gang_id:'0' не '' — INT-колонка; weapons/shmot:'[]' не
-        // '' — иначе json_decode('')→null молча отклоняет поле целиком).
         private function _defaultResetUdata(){
             return [
                 'coins'=>'10','cigarettes'=>'1000','stew'=>'0','exp'=>'0','energy'=>'50','max_energy'=>'50',

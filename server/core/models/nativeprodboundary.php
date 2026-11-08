@@ -34,7 +34,7 @@ final class NativeProdBoundary {
     }
     public static function allowsMethod($method): bool {
         if(!is_string($method)||!preg_match('/^[a-z0-9]+\.[A-Za-z][A-Za-z0-9]*$/D',$method))return false;
-        if(in_array($method,['users.devGetLogs','users.devGrantShmot','users.devGrantWeapons','users.devGrantCurrency','users.devSetRyukzakLevel','users.setDevFlag','users.setDevCombo','users.toggleDevKeyring','users.devPeekRouletteCups'],true))return true;
+        if(in_array($method,['users.resetSession','users.devGetLogs','users.devGrantShmot','users.devGrantWeapons','users.devGrantCurrency','users.devSetRyukzakLevel','users.setDevFlag','users.setDevCombo','users.toggleDevKeyring','users.devPeekRouletteCups'],true))return true;
         return !preg_match('/\.(?:dev|reset|setDev|toggleDev)/i',$method);
     }
     public static function allowsAccountMethod(string $method,string $uid,string $platform,array $launch=[]): bool {

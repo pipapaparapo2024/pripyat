@@ -4,7 +4,7 @@ require __DIR__.'/../../server/core/controllers/users.php';
 foreach(['users.devGrantShmot','users.get','users.save','shmot.buy','shmot.equip'] as $method){
     if(!NativeTestMethodPolicy::allows($method))throw new RuntimeException('Allowed method rejected');
 }
-foreach(['users.resetSession','users.resetAllPlayers','users.devGrantCurrency','users.devGrantShmotExtra','users.setDevFlag','shmot.devGrantShmot','users.DEVGrantShmot',[],null] as $method){
+foreach(['users.resetAllPlayers','users.devGrantCurrency','users.devGrantShmotExtra','users.setDevFlag','shmot.devGrantShmot','users.DEVGrantShmot',[],null] as $method){
     if(NativeTestMethodPolicy::allows($method))throw new RuntimeException('Blocked method accepted');
 }
 $type=new ReflectionClass(Users::class);$controller=$type->newInstanceWithoutConstructor();
@@ -29,3 +29,5 @@ $controller->devGrantShmot();$saved=json_decode($tools->reply['patch']['shmot'],
 if(empty($saved[41]['owned'])||empty($saved[103]['owned'])||$ops->bonuses!==2)throw new RuntimeException('Developer grant failed');
 $controller->devGrantShmot();if($ops->bonuses!==2)throw new RuntimeException('Duplicate grant bonus');
 echo "TEST gateway: выдача шмота проходит только через серверную проверку разработчика; сбросы и другие dev-методы закрыты\n";
+
+if(!NativeTestMethodPolicy::allows('users.resetSession'))throw new Exception('Own developer reset blocked by TEST gateway');

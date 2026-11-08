@@ -344,6 +344,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // поэтому нельзя читать через Gameops::i() (она вернула бы 0 для дефолтного пустого
             // поля, форся 4×6 КАЖДОМУ игроку на КАЖДОМ броске). Проверяем именно пустую строку.
             $devForceDiceRaw = isset($user['dev_force_dice']) ? strval($user['dev_force_dice']) : '';
+            if(!$this->ops->isDeveloper()) $devForceDiceRaw = '';
             $devForceRow = null;
             if($devForceDiceRaw !== ''){
                 $devForceIdx = intval($devForceDiceRaw);

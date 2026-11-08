@@ -1,0 +1,1 @@
+const {execFileSync}=require('node:child_process'),path=require('node:path');const {findPhpBin}=require('./_php_bin.js');process.stdout.write(execFileSync(findPhpBin(),[path.join(__dirname,'_php_fixtures/roulette-dev-isolation.php')],{encoding:'utf8'}));

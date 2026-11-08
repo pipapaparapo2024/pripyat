@@ -438,6 +438,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // _generateHandForCombo() ниже принимает штатно) — гасится сразу, обычный
             // _rollCombo() (pity/веса) не трогаем при активном форсе.
             $devForcePoker = strval($user['dev_force_poker'] ?? '');
+            if(!$this->ops->isDeveloper()) $devForcePoker = '';
             if($devForcePoker !== ''){
                 $user['dev_force_poker'] = '';
                 $targetCombo = $devForcePoker;

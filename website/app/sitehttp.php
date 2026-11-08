@@ -18,6 +18,12 @@ try {
  session_start(['cookie_secure'=>true,'cookie_httponly'=>true,'cookie_samesite'=>'Lax','cookie_path'=>'/','use_strict_mode'=>true]);
  if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(random_bytes(32));
  $path=parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH);
+ if($path==='/auth/status'&&($_SERVER['REQUEST_METHOD']??'')==='GET'&&($_GET['donations']??null)==='1'){
+  if(($_SERVER['HTTP_SEC_FETCH_SITE']??'same-origin')!=='same-origin')siteResult(['error'=>'forbidden'],403);
+  require_once __DIR__.'/sitedonations.php';$config=json_decode(file_get_contents(__DIR__.'/../private/site-runtime.json'),true,32,JSON_THROW_ON_ERROR);$session=$_SESSION;session_write_close();
+  try{$limiter=new SiteRateLimit('/var/lib/pripyat-site-test/limits',$config['rate_secret']);$limiter->consume('donation-history',session_id(),10,300,time());siteResult(SiteDonations::read($session,$config));}
+  catch(DomainException $e){siteResult(['error'=>$e->getMessage()==='rate_limited'?'rate_limited':'access_denied'],$e->getMessage()==='rate_limited'?429:403);}
+ }
  if($path==='/auth/status'&&($_SERVER['REQUEST_METHOD']??'')==='GET'&&($_GET['receipts']??null)==='1'){
   if(($_SERVER['HTTP_SEC_FETCH_SITE']??'same-origin')!=='same-origin')siteResult(['error'=>'forbidden'],403);
   require_once __DIR__.'/sitereceipthistory.php';

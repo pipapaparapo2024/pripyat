@@ -20,7 +20,7 @@ ok(!/while\(\$rolls\[0\]===6/.test(dice), 'Естественный 4×6 не п
 ok(!/pity_t/.test(diceCode), 'dice.php не хранит и не обновляет pity');
 ok(JSON.stringify(diceCfg.die_weights) === JSON.stringify([19, 19, 19, 19, 12, 12]), 'Шестёрка в Зариках имеет вес 12%');
 const diceShmot = diceCfg.table.find(row => row.v === 6 && row.n === 4);
-ok(diceShmot && diceShmot.type === 'shmot' && diceShmot.amt === 5, 'Только 4×6 выдают пять вещей из пула Зариков');
+ok(diceShmot && diceShmot.type === 'shmot' && diceShmot.amt === 1, 'Только 4×6 выдают одну вещь из пула Зариков');
 
 const blackjack = read('server/core/controllers/blackjack.php');
 const blackjackCfg = JSON.parse(read('server/json/blackjack_config.json'));

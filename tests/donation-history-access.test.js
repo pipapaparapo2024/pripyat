@@ -1,0 +1,1 @@
+const {execFileSync}=require('node:child_process');const {findPhpBin}=require('./_php_bin.js');const path=require('node:path');process.stdout.write(execFileSync(findPhpBin(),[path.join(__dirname,'_php_fixtures/donation-history-access.php')],{encoding:'utf8'}));
