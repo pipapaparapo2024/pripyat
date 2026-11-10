@@ -16,12 +16,13 @@
       <h2>Вход в игру</h2>
       <p>Выберите способ входа и начните игру.</p>
       <div class="providers" aria-label="Способы входа">
-        <button data-provider="vk" disabled aria-label="Войти через ВКонтакте" title="ВКонтакте"><span class="provider-vk" aria-hidden="true">VK</span></button><button data-provider="ok" disabled aria-label="Войти через Одноклассники" title="Одноклассники"><svg aria-hidden="true" viewBox="0 0 32 32"><circle cx="16" cy="8" r="5"/><path d="M7 17q9 8 18 0M16 22v2m0 0-7 7m7-7 7 7"/></svg></button><button data-provider="site" disabled aria-label="Войти по email и паролю" title="Email и пароль"><svg aria-hidden="true" viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="20" rx="3"/><path d="m4 8 12 10L28 8"/></svg></button>
+        <button data-provider="vk" disabled aria-label="Войти через ВКонтакте" title="ВКонтакте"><span class="provider-vk" aria-hidden="true">VK</span></button><button data-provider="telegram" disabled aria-label="Войти через Telegram" title="Telegram"><svg aria-hidden="true" viewBox="0 0 32 32"><path d="M29 5 24 27c-.4 1.6-1.3 2-2.7 1.2l-7-5.2-3.4 3.3c-.4.4-.7.7-1.5.7l.5-7.2L23 9.3c.5-.5-.1-.8-.8-.3L6.4 18.5l-6.8-2.1c-1.5-.5-1.5-1.5.3-2.2L26.5 3.7C27.8 3.2 29.4 4 29 5Z" transform="translate(2 0) scale(.92)"/></svg></button><button data-provider="ok" disabled aria-label="Войти через Одноклассники" title="Одноклассники"><svg aria-hidden="true" viewBox="0 0 32 32"><circle cx="16" cy="8" r="5"/><path d="M7 17q9 8 18 0M16 22v2m0 0-7 7m7-7 7 7"/></svg></button><button data-provider="site" disabled aria-label="Войти по email и паролю" title="Email и пароль"><svg aria-hidden="true" viewBox="0 0 32 32"><rect x="3" y="6" width="26" height="20" rx="3"/><path d="m4 8 12 10L28 8"/></svg></button>
       </div>
+      <button type="button" id="vk-login-retry" hidden>Войти заново через ВК</button>
       <p class="note">Через соцсеть вы сможете играть тем же персонажем, что и в её приложении. Обычная регистрация на сайте создаст отдельный аккаунт и прогресс.</p>
     </div>
   </section>
   <footer>Припять · Онлайн-игра · <a href="/requisites/">Реквизиты</a> · <a href="/offer/">Оферта</a> · <a href="/data/">Данные и удаление</a> · <a href="/payment/">Чеки покупок</a></footer>
 </main>
-<script src="/login.js?v=20261104-8" defer></script>
+<script src="/login.js?v=20261109-tg-login" defer></script>
 </html>
