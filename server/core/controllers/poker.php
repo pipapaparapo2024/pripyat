@@ -222,15 +222,12 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             return is_array($raw) ? $raw : null;
         }
 
-        // Уровень покера (для лимита смен карт) — то же самое поле и та же таблица, что уже
-        // используется для Зариков (dice.php._swapsAllowed) — низкий риск, не переносится.
+        // Каждая завершённая партия даёт 1 опыт. Пороги соответствуют кривой покера в Dvor.
         private function _swapsAllowed($user){
-            $raw = $this->ops->j($user, 'dvor_games_data', []);
-            $exp = (is_array($raw) && isset($raw['poker']['exp'])) ? intval($raw['poker']['exp']) : 0;
-            $level = min(100, intval(floor($exp / 10)));
-            if($level >= 100) return 3;
-            if($level >= 60)  return 2;
-            if($level >= 20)  return 1;
+            $exp = $this->ops->i($user, 'poker_games');
+            if($exp >= 1390) return 3;
+            if($exp >= 630) return 2;
+            if($exp >= 140) return 1;
             return 0;
         }
 
