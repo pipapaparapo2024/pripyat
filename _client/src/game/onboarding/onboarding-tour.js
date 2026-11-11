@@ -30,9 +30,10 @@ export function attachOnboardingTour(Onboarding){
         const target = tab.target;
 
         const blocker = new PIXI.Graphics();
-        blocker.beginFill(0x000000, 0.6);
+        blocker.beginFill(0x000000, 0);
         blocker.drawRect(0, 0, 1280, 720);
         blocker.endFill();
+        blocker.hitArea = new PIXI.Rectangle(0, 0, 1280, 720);
         blocker.interactive = true; // глотает клики по всему, кроме зоны ниже
         win.addChild(blocker);
 
@@ -105,9 +106,6 @@ export function attachOnboardingTour(Onboarding){
             this._destroyTourOverlay();
             this._touchOnboardingActivity();
             tab.open();
-            if(tab.key === 'dvor' && window.dvor && typeof dvor._setTutorialCloudHighlight === 'function'){
-                dvor._setTutorialCloudHighlight(true);
-            }
             this._beginGuidedExplanation(tab);
             } finally { this._openingTourKey = null; }
         });
@@ -149,6 +147,7 @@ export function attachOnboardingTour(Onboarding){
         // кнопки редактора позиций (universal_pos_editor.js._ensureEditButton).
 		const _keepOnTop = () => {
 			if(win.parent) win.parent.addChild(win);
+            window.iface?._levelupWin?._raiseForTutorial?.();
 			// Единственное Dev-исключение должно оказаться ВЫШЕ blocker. Весь HUD
 			// остаётся выключенным через interactiveChildren ниже.
 			if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function'){

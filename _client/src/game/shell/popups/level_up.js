@@ -67,7 +67,12 @@ export function attachLevelUpPopup(proto){
 		content.addChild(exitBtn);
 
 		const _close = ()=>{ win.visible = false; };
-		overlay.on('pointerdown', _close);
+		overlay.on('pointerdown', () => { if(shareBtn.interactive) _close(); });
+		win._raiseForTutorial = () => {
+			if(!win.visible || !win.parent) return;
+			shareBtn.interactive = false;
+			win.parent.addChild(win);
+		};
 		setTimeout(_close, 8000);
 
 		this._levelupWin = win;

@@ -142,7 +142,7 @@ export function attachDice(proto){
         const now = Date.now();
         // 19.09.2026 (по прямому указанию): белый цвет в обоих состояниях (было
         // зелёный "доступно"/серый "ждать") — раньше style.fill переключался туда-обратно.
-        if(!lastFree || (now - lastFree) >= FREE_COOLDOWN_MS){
+        if(udata['onboarding_step'] === 'dvor' || !lastFree || (now - lastFree) >= FREE_COOLDOWN_MS){
             this._diceTimerTxt.text = 'БЕСПЛАТНЫЙ БРОСОК';
         } else {
             const remainSec = Math.ceil((FREE_COOLDOWN_MS - (now - lastFree)) / 1000);

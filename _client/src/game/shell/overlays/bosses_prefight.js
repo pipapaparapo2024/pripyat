@@ -391,6 +391,8 @@ export function attachBossPreFight(proto){
         napBtn.interactive = true; napBtn.buttonMode = true;
         napBtn.on('pointerover', ()=>{ _sa(napBtn, 0.8); napBtn.scale.set(1.08); });
         napBtn.on('pointerout', ()=>{ _sa(napBtn, 1); napBtn.scale.set(1); });
+        if(bossIdx === 0) napBtn._tutorialTarget = 'hunter-start';
+        exitBtn._tutorialTarget = 'exit';
         napBtn.on('pointerdown', ()=>{
             // 27.09.2026 (по прямому указанию — перенесено сюда из bosses_select.js.napast_passiv,
             // см. комментарий там же): дневной лимит убийств и зачистка локации раньше проверялись

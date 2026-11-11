@@ -216,7 +216,7 @@ export function attachBossesFight(proto){
 
     // Вынесено из _openBossesFight: собственно построение/показ экрана боя — вызывается сразу
     // (бой уже идёт) либо из колбэка успеха bosses.startFight (новый бой).
-    proto._reallyOpenBossesFight = function(bossIdx){
+    proto._reallyOpenBossesFight = function(bossIdx, tutorialHp = null){
         this._compassHide();
         // Закрываем попап выбора боссов если он открыт — окно закрывается напрямую, минуя
         // свой обычный exitBtn-обработчик, поэтому снимаем и его декларацию ХУДа здесь же
@@ -230,13 +230,18 @@ export function attachBossesFight(proto){
         this.popHud('bossSelect');
         this._onboardingBossScreenTransition = false;
         this._closeBossesFight(); // всегда пересобираем (разные боссы = разный фон)
+        this._tutorialHunterHp = tutorialHp;
         this._buildBossesFight();
         this._updateBossesFight(bossIdx);
+        if(tutorialHp !== null){
+            const auto = this._bossFightWpnSprs.find(item => item.id === 5);
+            if(auto) auto.spr._tutorialTarget = 'hunter-shot';
+        }
         this._bossFightWin.y = -720;
         root.layer2_mc.addChild(this._bossFightWin);
         this.pushHud('bossFight', { down: false });
         if(this.up) root.layer2_mc.addChild(this.up);
-        this._startBossFightTimer();
+        if(tutorialHp === null) this._startBossFightTimer();
         gsap.to(this._bossFightWin, {
             y: 0, duration: 0.55, ease: 'power2.out',
             onComplete: () => { this._spineBossShow(bossIdx); }
@@ -824,7 +829,7 @@ export function attachBossesFight(proto){
                 if(!this._bossFightWin || !this._bossFightWin.parent || this._bossFightBossIdx !== bossIdx) return;
                 this._updateBossFightHpDisplay();
                 this._updateBossFightStats();
-                this._loadBossFightRating(bossIdx);
+                if(this._tutorialHunterHp == null) this._loadBossFightRating(bossIdx);
             };
             if(window.bosses && typeof bosses._syncFriendsDamage === 'function'){
                 bosses._syncFriendsDamage(bossIdx, refresh);
@@ -1075,10 +1080,18 @@ export function attachBossesFight(proto){
             this._sedoyInFlight = false;
             if(window.resumePlayerSave) resumePlayerSave('boss_use_sedoy');
             console.error('[bosses_fight._useSedoyDamage] ← ошибка сервера:', JSON.stringify(err));
+            if(err && err.code === 69){
+                // Сервер отклонил вчерашний остаток после 00:00 МСК — обновляем локальный
+                // профиль, чтобы интерфейс больше не показывал уже сгоревший урон.
+                udata['sedoy_dmg_total'] = '0';
+                udata['sedoy_dmg_left'] = '0';
+                if(window.iface) iface.updateUp();
+            }
             const MSGS = {
                 65: 'Бой не начат — откройте экран боя заново',
                 66: 'Бой уже протух — начните заново',
                 68: 'Седой достаточно помог на сегодня, проси завтра',
+                69: 'Вчерашний остаток урона Седого сгорел в 00:00 по Москве',
                 90: 'Братух, мы же договорились — один на один. Справляйся как-нибудь сам!',
             };
             notify.showResult({text: (err && MSGS[err.code]) || 'Не удалось применить урон Седого'}, 0);
@@ -1109,7 +1122,8 @@ export function attachBossesFight(proto){
     proto._updateBossFightHpDisplay = function(){
         if(!window.bosses) return;
         const idx = this._bossFightBossIdx; const di = this._bossFightDiffIdx;
-        const cur = bosses.hpByDiff[di][idx]; const max = bosses.BOSS_HP[idx][di];
+        const cur = this._tutorialHunterHp ?? bosses.hpByDiff[di][idx];
+        const max = this._tutorialHunterHp == null ? bosses.BOSS_HP[idx][di] : 1000;
         if(this._bossFightHpTxt) this._bossFightHpTxt.text = bosses._fmt(cur) + ' / ' + bosses._fmt(max);
         if(this._bossFightHpBar){
             const pct = max > 0 ? Math.max(0, cur / max) : 0;
@@ -1190,6 +1204,7 @@ export function attachBossesFight(proto){
     // ── АТАКА ─────────────────────────────────────────────────────
 
     proto._attackWithWeapon = function(weapIdx){
+        if(this._tutorialHunterHp != null) return;
         if(!window.bosses){ notify.showResult({text:'Модуль боссов не загружен!'}, 0); return; }
         if(!window.weapons){ notify.showResult({text:'Модуль оружия не загружен!'}, 0); return; }
         const wp = weapons.data[weapIdx];
@@ -1574,6 +1589,7 @@ export function attachBossesFight(proto){
     };
 
     proto._closeBossesFight = function(){
+        this._tutorialHunterHp = null;
         if(this._bossFightTimerInterval){
             clearInterval(this._bossFightTimerInterval);
             this._bossFightTimerInterval = null;

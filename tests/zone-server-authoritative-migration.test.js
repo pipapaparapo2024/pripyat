@@ -217,7 +217,7 @@ console.log('\nTest 12: zone.js — клиент больше НЕ начисл�
 console.log('\nTest 13: zone.js — все 4 метода зовут сервер и применяют applyPatch(res.patch)');
 {
     assert(/import \{ applyPatch \} from '\.\.\/modules\/patch\.js';/.test(zoneJs), 'applyPatch импортирован');
-    assert(/TS\.php\('zone\.fillCheckpoint', \{loc: locIdx, cp: cpIdx\}/.test(zoneJs), '_attack зовёт zone.fillCheckpoint');
+    assert(/TS\.php\('zone\.fillCheckpoint', tutorial \? \{loc: locIdx, cp: cpIdx, tutorial: '1'\} : \{loc: locIdx, cp: cpIdx\}/.test(zoneJs), '_attack зовёт zone.fillCheckpoint, помечая доверенное учебное действие отдельно');
     assert(/TS\.php\('zone\.captureLocation', \{loc: locIdx\}/.test(zoneJs), '_capture зовёт zone.captureLocation');
     assert(/TS\.php\('zone\.upgradeBusiness', \{loc: locIdx, biz: bizIdx\}/.test(zoneJs), '_upgradeBusiness зовёт zone.upgradeBusiness');
     assert(/TS\.php\('zone\.collectIncome', \{loc: locIdx\}/.test(zoneJs), 'collectLocIncome зовёт zone.collectIncome');

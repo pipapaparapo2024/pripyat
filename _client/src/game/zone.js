@@ -164,8 +164,9 @@ export default class Zone{
         // Быстрая клиентская проверка энергии — только для мгновенной обратной связи (открыть
         // попап покупки энергии без похода на сервер). Финальное решение и списание — на
         // сервере; если к моменту ответа энергии внезапно не хватит (гонка), сервер откажет.
-        const energyCost = cp.cell_cost;
-        if(TIMERS.getEnergy() < energyCost){
+        const tutorial = udata['onboarding_step'] === 'zone';
+        const energyCost = tutorial ? 0 : cp.cell_cost;
+        if(!tutorial && TIMERS.getEnergy() < energyCost){
             console.log('[zone._attack] отмена — не хватает энергии | нужно:', energyCost, '| есть:', TIMERS.getEnergy());
             if(window.iface) iface._openEnergyPopup();
             return;
@@ -177,7 +178,7 @@ export default class Zone{
         }
         this._fillInFlight = true;
 
-        console.log('[zone._attack] → сервер | locIdx:', locIdx, 'cpIdx:', cpIdx, 'energyCost:', energyCost,
+        console.log('[zone._attack] → сервер | locIdx:', locIdx, 'cpIdx:', cpIdx, 'energyCost:', energyCost, 'tutorial:', tutorial,
             '| энергия сейчас (клиент, для сверки):', TIMERS.getEnergy());
 
         // 23.09.2026 (баг найден — "прохожу локацию, все точки 5/5, а ВЫПОЛНИТЬ даёт ошибку
@@ -200,7 +201,7 @@ export default class Zone{
         // целиком — тот же приём, что уже есть у bosses.attack/claimKill.
         flushPlayerSave('zone_fill_checkpoint', () => {
         if(window.suspendPlayerSave) suspendPlayerSave('zone_fill_checkpoint');
-        TS.php('zone.fillCheckpoint', {loc: locIdx, cp: cpIdx}, (res) => {
+        TS.php('zone.fillCheckpoint', tutorial ? {loc: locIdx, cp: cpIdx, tutorial: '1'} : {loc: locIdx, cp: cpIdx}, (res) => {
             this._fillInFlight = false;
             console.log('[zone._attack] ← ответ сервера:', JSON.stringify(res));
             if(!res || !res.patch || !res.checkpoint){
@@ -239,7 +240,10 @@ export default class Zone{
             // Аудит 17.09.2026 (репорт "достижения показываются с задержкой"): проверка
             // достижений — САМОЙ ПОСЛЕДНЕЙ, после всех начислений и всплывающих наград, чтобы
             // попап ачивки гарантированно рисовался поверх (тот же порядок, что был раньше).
-            if(window.achievements) achievements.onEnergySpent(energyCost);
+            if(energyCost > 0 && window.achievements) achievements.onEnergySpent(energyCost);
+            if(tutorial && res.tutorialActionNumber){
+                window.dispatchEvent(new Event('pripyat:tutorial-zone-action'));
+            }
             if(window.battlepass) battlepass.addXp(Math.max(1, Math.floor(earned_exp / 5)));
 
             if(res.captured){

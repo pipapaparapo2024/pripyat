@@ -206,6 +206,7 @@ export default class Dvor{
         TS.php('dvor.collectCig', {idx}, (e)=>{
             if(e && e.patch){
                 applyPatch(e.patch);
+                window.dispatchEvent(new Event('pripyat:tutorial-cig-collected'));
                 iface.updateUp();
                 // 21.09.2026 (аудит "достижения появляются с задержкой") — сбор облачков
                 // сигарет во дворе проверяет достижения ПОСЛЕ applyPatch (до ответа сервера
@@ -356,6 +357,7 @@ export default class Dvor{
             spr.on('pointerout', ()=>{ _ss(spr, 1.0); });
             spr.on('pointerdown',  ()=>{ this._setTutorialCloudHighlight(false); spr.scale.set(1.0); this._openGame(c.game); });
             w.addChild(spr);
+            if(c.game === 'dice') spr._tutorialTarget = 'dice-open';
             this._dvorCloudSprites.push(spr);
         }
 
@@ -374,6 +376,7 @@ export default class Dvor{
             spr.on('pointerout', ()=>{ _ss(spr, 1.0); });
             spr.on('pointerdown',  ()=>{ spr.scale.set(1.0); this._collectCig(idx, spr); });
             w.addChild(spr);
+            spr._tutorialTarget = 'cig-collect';
             this._cigSprites.push(spr);
         }
 
@@ -576,9 +579,10 @@ export default class Dvor{
     }
 
     _getLevelInfo(game){
+        if(game === 'poker') return this._pokerLevelInfo(Math.max(0, Number(udata['poker_games']) || 0));
         if(!this._data) return {level:0,cur:0,next:10};
         const exp = this._data[game].exp||0;
-        return game==='poker' ? this._pokerLevelInfo(exp) : this._simpleLevelInfo(exp);
+        return this._simpleLevelInfo(exp);
     }
 
     _addExp(game, n){

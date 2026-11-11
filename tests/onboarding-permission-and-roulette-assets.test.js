@@ -92,9 +92,10 @@ test('Рулетка использует новый лист, карточки 
     roulette.includes("'опыт и уровни описание.png', 967, 153"));
 test('Карточки описаний рулетки находятся под листом рулетки',
     roulette.indexOf("addDescriptionButton('рулетка описание.png'") < roulette.indexOf('win.addChild(bg);'));
-test('На первом шаге обучения Двора все игровые облака пульсируют и увеличиваются',
-    dvor.includes('_setTutorialCloudHighlight(enabled)') && dvor.includes('state.x*(1.03+pulse*0.07)') &&
-    tour.includes("tab.key === 'dvor'") && tour.includes("dvor._setTutorialCloudHighlight(true)"));
+test('Обучение Двора подсвечивает сухарь и зарики последовательно',
+    dvor.includes("spr._tutorialTarget = 'cig-collect'") &&
+    dvor.includes("spr._tutorialTarget = 'dice-open'") &&
+    !tour.includes("dvor._setTutorialCloudHighlight(true)"));
 test('Отладочные надписи колеса и связки ключей не выводятся игроку',
     !roulette.includes("dbgTxt.text = 'колесо | url:") && !shop.includes("dbgTxt.text = 'связка ключей | url:"));
 test('Зарики используют новый фон, который ранне предзагружается',

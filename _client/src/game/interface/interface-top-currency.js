@@ -365,7 +365,7 @@ export function attachTopCurrency(proto){
             // игрока" x:12,y:8,scale:1.333,w:76,h:76): позиция/масштаб уточнены относительно
             // нативных FLA-координат.
             // 20.10.2026 (по прямому указанию — "опусти иконку персонажа вниз на 7 пикселей"): было y=8.
-            up.ava.x = 12; up.ava.y = 15;
+            up.ava.x = 12; up.ava.y = window.__siteRuntime?.platform === 'telegram' ? 10 : 15;
             up.ava.scale.set(1.333);
         }
 

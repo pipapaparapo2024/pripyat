@@ -39,7 +39,7 @@ const achSrc = fs.readFileSync(
 // клиентская реализация) стала мёртвым кодом, оставлена как есть (не вызывается нигде).
 console.log('\nTest 1: заначки выпадают через сервер (zone.php.fillCheckpoint), а не отключены');
 {
-    const m = zoneSrc.match(/TS\.php\('zone\.fillCheckpoint', \{loc: locIdx, cp: cpIdx\}, \(res\) => \{([\s\S]*?)\n        \}\);/);
+    const m = zoneSrc.match(/TS\.php\('zone\.fillCheckpoint', tutorial \? \{loc: locIdx, cp: cpIdx, tutorial: '1'\} : \{loc: locIdx, cp: cpIdx\}, \(res\) => \{([\s\S]*?)\n        \}, \(err\) => \{/);
     assert(!!m, 'zone._attack — колбэк fillCheckpoint найден');
     if(m){
         const body = m[1];

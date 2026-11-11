@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const server = fs.readFileSync('server/core/controllers/dice.php', 'utf8');
+const start = server.slice(server.indexOf('function start()'), server.indexOf('function reroll()'));
+assert.match(start, /onboarding_step'\] \?\? ''\) === 'dvor'/);
+assert.match(start, /if\(\$tutorial && !empty\(\$session\['tutorial_started'\]\)\)/);
+assert.match(start, /\$tutorial \? 0 : \$this->_swapsAllowed/);
+assert.match(start, /if\(\$tutorial\)\{\s*\$session\['tutorial_started'\] = true;\s*\} elseif\(\$freeAvailable\)/);
+assert.ok(start.indexOf("if(is_array($session['active']") < start.indexOf('$tutorial ='));
+assert.ok(start.indexOf("$session['tutorial_started'] = true") < start.indexOf('json_encode($session)'));
+assert.match(start, /tutorialCompleted' => true/);
+const client = fs.readFileSync('_client/src/game/dvor/dvor-dice-game.js', 'utf8');
+assert.match(client, /TS\.php\('dice\.start', tutorial \? \{tutorial: '1'\} : \{\}/);

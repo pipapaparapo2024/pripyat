@@ -751,6 +751,7 @@ export function attachBossResultPopup(proto){
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', () => { exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  () => { exitBtn.scale.set(0.5); });
+        if(opts.tutorial) exitBtn._tutorialTarget = 'hunter-reward';
         exitBtn.on('pointerdown', () => {
             this._closeBossResultPopup();
             if(opts.onClose) opts.onClose();

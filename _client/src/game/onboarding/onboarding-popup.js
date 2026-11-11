@@ -53,6 +53,7 @@ export function attachOnboardingPopup(Onboarding){
         blocker.beginFill(0x000000, 0.6);
         blocker.drawRect(0, 0, 1280, 720);
         blocker.endFill();
+        blocker.hitArea = new PIXI.Rectangle(0, 0, 1280, 720);
         blocker.interactive = true;
         win.addChild(blocker);
 

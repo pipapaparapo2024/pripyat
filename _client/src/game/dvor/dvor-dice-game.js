@@ -47,6 +47,9 @@ export function attachDiceGame(proto){
         TS.php('dice.getSession', {}, (res) => {
             if(!res) return;
             if(!res.active || !Array.isArray(res.rolls)){
+                if(res.tutorialCompleted && udata['onboarding_step'] === 'dvor'){
+                    window.dispatchEvent(new Event('pripyat:tutorial-dice-resolved'));
+                }
                 console.log('[dvor-dice._diceRestoreSession] активного броска нет — обычный простой экран');
                 return;
             }
@@ -95,8 +98,14 @@ export function attachDiceGame(proto){
         // dice.start() списывает dice_points напрямую на сервере — окно запроса нужно перекрыть
         // suspend/resume, та же защита, что уже есть у dvor-poker-game.js/bosses.attack.
         if(window.suspendPlayerSave) suspendPlayerSave('dice_start');
-        TS.php('dice.start', {}, (res) => {
+        const tutorial = udata['onboarding_step'] === 'dvor';
+        TS.php('dice.start', tutorial ? {tutorial: '1'} : {}, (res) => {
             this._diceStarting = false;
+            if(res.tutorialCompleted){
+                if(window.resumePlayerSave) resumePlayerSave('dice_start');
+                window.dispatchEvent(new Event('pripyat:tutorial-dice-resolved'));
+                return;
+            }
             console.log('[dvor-dice._playDiceNewScreen] ← ответ сервера:', JSON.stringify(res));
             logDiceDebug('_playDiceNewScreen (start)', res && res.debug);
             applyPatch(res.patch);
@@ -350,6 +359,7 @@ export function attachDiceGame(proto){
             }
 
             this._finishDiceNewScreen();
+            window.dispatchEvent(new Event('pripyat:tutorial-dice-resolved'));
         }, (err) => {
             this._diceResolving = false;
             if(window.resumePlayerSave) resumePlayerSave('dice_resolve');

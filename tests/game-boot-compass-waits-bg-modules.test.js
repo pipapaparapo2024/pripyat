@@ -116,11 +116,11 @@ console.log('\nTest 7: sanity — _bgModules по-прежнему содерж�
     for (const name of EXPECTED) assert(listed.includes(name), `_bgModules содержит "${name}"`);
 }
 
-console.log('\nTest 8: стартовая пауза 4000мс перед запуском партии сохранена (не трогали — даёт видео/текстурам приоритет первых секунд)');
+console.log('\nTest 8: Telegram запускает загрузку модулей сразу, остальные клиенты сохраняют паузу 4000мс');
 {
     assert(/setTimeout\(\(\) => \{\s*\n\s*console\.log\('\[game-boot\] запускаю параллельную загрузку'/.test(bootSrc),
         'параллельный запуск партии по-прежнему обёрнут в setTimeout(..., ...)');
-    assert(/\}, 4000\);\s*\n\s*\};\s*\n/.test(bootSrc), 'значение задержки — 4000мс, как и было');
+    assert(/\}, isTelegram \? 0 : 4000\);\s*\n\s*\};\s*\n/.test(bootSrc), 'задержка 0мс только для Telegram, 4000мс для остальных клиентов');
 }
 
 console.log(`\n${'─'.repeat(50)}`);

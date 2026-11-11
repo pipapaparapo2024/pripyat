@@ -1,17 +1,19 @@
 import texts from './narration-texts.json';
-const HAND_LAYOUTS = {dvor:[[1194,126,-16]],zone:[[409,394,-91],[1128,584,-150],[1176,109,0],[1187,108,0]],baza:[[896,555,-150],[1188,101,0]],habar:[[1145,113,0]],bosses:[[1149,117,0]],svod:[[1183,105,0]],raznaryadka:[[1187,104,0]],shmot:[[1187,104,0]],sidorovich:[[1186,114,0]]};
+import { applyPatch } from '../../modules/patch.js';
+const HAND_LAYOUTS = {
+    dvor:[[861,334,-150],[1072,343,0],[781,561,-131],[1192,115,0],[1186,115,0]],
+    zone:[[409,394,-91],[1128,584,-150],[1128,584,-150],[1186,111,0],[1186,111,0]],
+    baza:[[896,555,-150],[1188,101,0]],
+    habar:[[1145,113,0]],
+    bosses:[[380,344,-80],[1042,696,-130],[906,662,-150],[1186,108,0]],
+    svod:[[1183,105,0]],raznaryadka:[[1187,104,0]],shmot:[[1187,104,0]],sidorovich:[[1186,114,0]]
+};
 HAND_LAYOUTS.raznaryadka = [[1143,147,0]];
 export function attachGuidedTour(Onboarding){
-    Onboarding.prototype._highlightGuidedDvor = function(tab){
-        if(tab.key !== 'dvor' || !window.dvor || !dvor._lobbyWin || !dvor._lobbyWin.parent || this._highlightedDvorLobby === dvor._lobbyWin) return;
-        this._highlightedDvorLobby = dvor._lobbyWin;
-        dvor._setTutorialCloudHighlight(true);
-    };
     Onboarding.prototype._beginGuidedExplanation = function(tab){
         if(!this._popupWin) this._buildPopup();
         this._popupWin.visible = true;
         this._popupState = 'guided';
-        this._highlightedDvorLobby = null;
         const highlights = new Map();
         let highlightPhase = 0;
         const highlight = sprite => {
@@ -59,7 +61,6 @@ export function attachGuidedTour(Onboarding){
         if(window.iface && typeof iface._bringDevOnboardingFinishButtonToFront === 'function') iface._bringDevOnboardingFinishButtonToFront();
         this._guidedPopupTick = () => {
             highlightPhase+=0.06;
-            this._highlightGuidedDvor(tab);
             if(tab.key==='svod' && window.svod) Object.values(svod._svodTabSprites || {}).forEach(highlight);
             if(tab.key==='sidorovich'){
                 const walk=node=>{if(!node || node===this._popupWin)return;if(node._tutorialExplanationHighlight)highlight(node);for(const child of node.children || [])walk(child);};walk(root);
@@ -99,12 +100,18 @@ export function attachGuidedTour(Onboarding){
         if(window.__siteRuntime && this._currentStep()==='done')return;
         if(tab.key === 'baza' && window.hata){ hata._idx = 0; hata._render(); }
         if(this._guidedPopupTick){ PIXI.Ticker.shared.remove(this._guidedPopupTick); this._guidedPopupTick = null; }
-        const steps = tab.key === 'zone' ? ['cordon','zone-action','exit','exit'] : tab.key === 'baza' ? ['base-next','exit'] : ['exit'];
-        let index = 0, waiting = false, disposed = false;
+        const plans = {
+            zone: ['cordon','zone-action','zone-action','exit','exit'],
+            bosses: ['hunter','hunter-start','hunter-shot','hunter-reward'],
+            dvor: ['cig-collect','dice-open','dice-play','exit','exit'],
+            baza: ['base-next','exit'],
+        };
+        const steps = plans[tab.key] || ['exit'];
+        let index = 0, disposed = false, shots = 0, pending = false;
         const win = new PIXI.Container();
-        const blocker = new PIXI.Graphics(); blocker.beginFill(0,0.45);blocker.drawRect(0,0,1280,720);blocker.endFill();blocker.interactive=true;win.addChild(blocker);
+        const blocker = new PIXI.Graphics(); blocker.beginFill(0,0);blocker.drawRect(0,0,1280,720);blocker.endFill();blocker.hitArea=new PIXI.Rectangle(0,0,1280,720);blocker.interactive=true;win.addChild(blocker);
         const pulse = new PIXI.Graphics(); win.addChild(pulse);
-        const hand = new PIXI.Sprite(PIXI.Texture.from('./images/рука указатель.png'));hand.anchor.set(0.5,0);win.addChild(hand);
+        const hand = new PIXI.Sprite(PIXI.Texture.from('./images/рука указатель.png'));hand.anchor.set(0.5,0);hand.width=124;hand.height=146;hand.visible=false;win.addChild(hand);
         const hit = new PIXI.Graphics();hit.interactive=true;hit.buttonMode=true;win.addChild(hit);
         const find = node => {
             if(!node || node === win || node.visible === false || node.renderable === false) return null;
@@ -120,52 +127,111 @@ export function attachGuidedTour(Onboarding){
         hand._uOnTransform = () => {
             if(handKey) offsets[handKey]={x:hand.x-point.x,y:hand.y-point.y,scale:hand.scale.x || 1,rotation:hand.rotation || 0};
         };
-        const cleanup = () => { disposed = true; restoreFlash(); PIXI.Ticker.shared.remove(tick); if(win.parent) win.parent.removeChild(win);this._guidedCleanup=null; };
+        const cleanup = () => {
+            window.removeEventListener('pripyat:tutorial-cig-collected', onCig);
+            window.removeEventListener('pripyat:tutorial-dice-resolved', onDice);
+            window.removeEventListener('pripyat:tutorial-zone-action', onZoneAction);
+            disposed = true; restoreFlash(); PIXI.Ticker.shared.remove(tick); if(win.parent) win.parent.removeChild(win);this._guidedCleanup=null; };
         const tick = () => {
-            if(waiting || disposed) return;
+            if(disposed) return;
             root.layer2_mc.addChild(win);
+            window.iface?._levelupWin?._raiseForTutorial?.();
             target = find(root);
+            if(!target && steps[index] === 'cig-collect' && window.dvor?._cigSprites?.length &&
+                dvor._getSigState().slice(0,3).every(Boolean)){
+                next();
+                return;
+            }
             hit.visible = hand.visible = pulse.visible = !!target;
             if(flashing !== target){ restoreFlash(); flashing=target; if(target) originalAlpha=target.alpha == null ? 1 : target.alpha; }
-            if(!target) return;
+            if(!target){handKey=null;return;}
             const bounds=target.getBounds();point=root.layer2_mc.toLocal(new PIXI.Point(bounds.x+bounds.width/2,bounds.y+bounds.height/2));
             phase+=0.03;target.alpha=originalAlpha*(0.58+0.42*(Math.sin(phase*3)+1)/2);
-            pulse.clear();pulse.lineStyle(3,0xffffff,1-(phase%1));pulse.drawCircle(point.x,point.y,14+(phase%1)*25);
+            pulse.visible = !['cig-collect','dice-open','dice-play','hunter','hunter-start','hunter-shot'].includes(steps[index]);
+            if(pulse.visible){pulse.clear();pulse.lineStyle(3,0xffffff,1-(phase%1));pulse.drawCircle(point.x,point.y,14+(phase%1)*25);}
             const key=tab.key+':'+index;
-            if(!offsets[key]){
-                const layout=HAND_LAYOUTS[tab.key]?.[index];
-                if(layout) offsets[key]={x:layout[0]-point.x,y:layout[1]-point.y,scale:1,rotation:layout[2]*Math.PI/180};
+            const layout = HAND_LAYOUTS[tab.key]?.[index];
+            if(layout && !offsets[key] && steps[index] !== "hunter-shot"){
+                offsets[key]={x:layout[0]-point.x,y:layout[1]-point.y,scale:1,rotation:layout[2]*Math.PI/180};
             }
-            if(handKey !== key){handKey=key;hand.scale.set(offsets[key]?.scale || 1);hand.rotation=offsets[key]?.rotation || 0;}
-            hand.x=point.x+(offsets[key]?.x || 0);hand.y=point.y+(offsets[key]?.y ?? 10);
+            const offset = offsets[key];
+            if(handKey !== key){
+                handKey=key;
+                hand.scale.set(offset?.scale || 1);
+                hand.rotation=offset?.rotation ?? (layout?.[2] ?? 0)*Math.PI/180;
+            }
+            hand.x=offset ? point.x+offset.x : (layout?.[0] ?? point.x);
+            hand.y=offset ? point.y+offset.y : (layout?.[1] ?? point.y+10);
             hit.clear();hit.beginFill(0,0.001);hit.drawRect(point.x-bounds.width/2,point.y-bounds.height/2,Math.max(32,bounds.width),Math.max(32,bounds.height));hit.endFill();
         };
+        const next = () => {
+            target = null;
+            hand.visible=false;hit.visible=false;pulse.visible=false;handKey=null;
+            index++;
+            if(index >= steps.length){cleanup();this._advanceTour(tab.key);}
+        };
+        const onCig = () => { if(steps[index] === 'cig-collect') next(); };
+        const onDice = () => { if(steps[index] === 'dice-play') next(); };
+        const onZoneAction = () => { if(steps[index] === 'zone-action'){pending=false;next();} };
+        window.addEventListener('pripyat:tutorial-cig-collected', onCig);
+        window.addEventListener('pripyat:tutorial-dice-resolved', onDice);
+        window.addEventListener('pripyat:tutorial-zone-action', onZoneAction);
         hit.on('pointerdown', event => {
-            event.stopPropagation();if(waiting || !target || (window.iface && iface._uEditOn))return;
-            const current=target;
-            if(steps[index] === 'zone-action'){
-                const loc = window.zone && zone.locations && zone.locations[0];
-                const checkpoint = loc && loc.checkpoints.find(cp => cp.filled < cp.cells);
-                const energy = window.TIMERS ? TIMERS.getEnergy() : Number(udata.energy || 0);
-                if(!checkpoint || energy < checkpoint.cell_cost){
-                    index++; tick();
-                    if(window.notify) notify.showResult({text:!checkpoint ? 'Кордон уже зачищен — повторная трата энергии не требуется.' : 'Для действия нужна энергия. Она восстанавливается со временем.'},0);
-                    return;
-                }
+            event.stopPropagation();
+            if(disposed || !target || (window.iface && iface._uEditOn))return;
+            const action = steps[index];
+            if(action === 'zone-action'){
+                if(pending)return;
+                pending=true;
+                this._openingTourKey=tab.key;
+                try{target.emit('pointerdown',event);}
+                finally{this._openingTourKey=null;}
+                return;
             }
-            waiting=true;
-            const fights=Number(udata.zone_fights || 0);
-            this._openingTourKey=tab.key;
-            try{current.emit('pointerdown',event);}finally{this._openingTourKey=null;}
-            const next=()=>{ index++;waiting=false;if(index>=steps.length){cleanup();this._advanceTour(tab.key);} };
-            if(steps[index] === 'zone-action'){
-                const wait=()=>{
+            if(action === 'hunter-start' || action === 'hunter-shot'){
+                if(pending) return;
+                pending = true;
+                if(window.suspendPlayerSave) suspendPlayerSave('tutorial_hunter');
+                TS.php('bosses.tutorialHunter', {shot: action === 'hunter-start' ? 0 : shots + 1}, result => {
+                    pending = false;
+                    applyPatch(result.patch);
+                    if(window.resumePlayerSave) resumePlayerSave('tutorial_hunter');
+                    iface.updateUp();
                     if(disposed) return;
-                    if(Number(udata.zone_fights || 0)>fights){next();return;}
-                    if(window.zone && zone._fillInFlight){setTimeout(wait,100);return;}
-                    waiting=false;
-                };setTimeout(wait,100);
-            }else next();
+                    shots = result.shots;
+                    this._openingTourKey = tab.key;
+                    try{
+                        if(shots === 10){
+                            iface._closeBossPreFight();
+                            iface._closeBossesFight();
+                            iface._showBossResultPopup({bossIdx:0, diffIdx:0, isWin:true, maxHp:1000,
+                                cig:100, exp:25, top:[], tutorial:true});
+                            index = 3;
+                            target = null;
+                        }else if(action === 'hunter-start'){
+                            iface._closeBossPreFight();
+                            iface._reallyOpenBossesFight(0, result.hp);
+                            next();
+                        }else{
+                            iface._tutorialHunterHp = result.hp;
+                            iface._updateBossFightHpDisplay();
+                            iface._flashBossHitScreen();
+                        }
+                    }finally{this._openingTourKey = null;}
+                }, () => {
+                    pending = false;
+                    if(window.resumePlayerSave) resumePlayerSave('tutorial_hunter');
+                    if(window.notify) notify.showResult({text:'Не удалось продолжить бой. Нажмите ещё раз.'},0);
+                });
+                return;
+            }
+            this._openingTourKey = tab.key;
+            try{target.emit(action === 'hunter' ? 'tutorial-select' : 'pointerdown',event);}
+            finally{this._openingTourKey=null;}
+            if(action === 'cig-collect' || action === 'dice-play'){
+                hand.visible=false;hit.visible=false;pulse.visible=false;handKey=null;
+            }
+            if(action !== 'cig-collect' && action !== 'dice-play') next();
         });
         this._guidedCleanup=cleanup;PIXI.Ticker.shared.add(tick);tick();
     };

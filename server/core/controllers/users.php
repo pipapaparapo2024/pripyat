@@ -94,6 +94,13 @@
                 }
             }
 
+            // Остаток Седого уже запрещён сервером после 00:00 МСК (bosses.useSedoy),
+            // но без этой очистки старое число оставалось в профиле и выглядело как перенос.
+            // При каждом собственном users.get очищаем просроченный пул условным UPDATE.
+            // Сверяем дату сбора и оба значения: параллельный новый сбор Хабара не потеряет
+            // свежую награду. При гонке перечитываем актуальные поля перед выдачей профиля.
+            $this->_expireStaleSedoyPool($user);
+
             $user = $this->setFriends($user);
 
             // 28.09.2026 (массовый репорт игроков в VK-чате — "энергия обнуляется после
@@ -244,6 +251,8 @@
             if(!is_array($incoming)){
                 return $this->registry['tools']->error(97);
             }
+
+            if(!empty($this->registry['habar_auto_test'])) unset($incoming['bot_settings'], $incoming['bot_running']);
 
             // Белый список разрешённых к сохранению полей
             $allowed = [
@@ -1421,6 +1430,46 @@
             if($link->connect_error) return null;
             $link->set_charset('utf8mb4');
             return $link;
+        }
+
+        private function _expireStaleSedoyPool(&$user){
+            $lastCollectMs = intval($user['habar_last_collect_ts'] ?? 0);
+            if($lastCollectMs <= 0) return;
+            $nowMs = intval(round(microtime(true) * 1000));
+            $todayMsk = $this->ops->mskDailyDate(intval($nowMs / 1000));
+            if($this->ops->mskDailyDate(intval($lastCollectMs / 1000)) === $todayMsk) return;
+
+            $uid = abs(intval($this->registry['uid']));
+            $table = $this->registry['utb'];
+            $oldTotal = intval($user['sedoy_dmg_total'] ?? 0);
+            $oldLeft = intval($user['sedoy_dmg_left'] ?? 0);
+            $user['sedoy_dmg_total'] = '0';
+            $user['sedoy_dmg_left'] = '0';
+
+            $link = $this->_rawLink();
+            if(!$link){
+                error_log('[users.get] Sedoy daily pool expiration unavailable');
+                return;
+            }
+            $sql = "UPDATE `$table` SET `sedoy_dmg_total`='0',`sedoy_dmg_left`='0' WHERE `id`=$uid"
+                . " AND `habar_last_collect_ts`=$lastCollectMs"
+                . " AND `sedoy_dmg_total`=$oldTotal AND `sedoy_dmg_left`=$oldLeft";
+            $updated = $link->query($sql);
+            if($updated && $link->affected_rows === 0){
+                // UPDATE мог проиграть гонку новому сбору. Возвращаем в профиль актуальное
+                // состояние, а не нули поверх уже выданного сегодняшнего пула.
+                $result = $link->query("SELECT `habar_last_collect_ts`,`sedoy_dmg_total`,`sedoy_dmg_left` FROM `$table` WHERE `id`=$uid LIMIT 1");
+                $fresh = $result ? $result->fetch_assoc() : null;
+                if($fresh && intval($fresh['habar_last_collect_ts'] ?? 0) > 0
+                    && $this->ops->mskDailyDate(intval(intval($fresh['habar_last_collect_ts']) / 1000)) === $todayMsk){
+                    $user['habar_last_collect_ts'] = $fresh['habar_last_collect_ts'];
+                    $user['sedoy_dmg_total'] = strval($fresh['sedoy_dmg_total']);
+                    $user['sedoy_dmg_left'] = strval($fresh['sedoy_dmg_left']);
+                }
+            }elseif(!$updated){
+                error_log('[users.get] Sedoy daily pool expiration update failed');
+            }
+            $link->close();
         }
 
         private function _defaultResetUdata(){

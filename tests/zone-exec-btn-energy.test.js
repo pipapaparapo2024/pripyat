@@ -58,11 +58,11 @@ console.log('\nTest 3: zone.js._attack() при нехватке энергии 
     assert(!!m, '_attack() найден в zone.js');
     if (m) {
         const body = m[1];
-        assert(/if\(TIMERS\.getEnergy\(\) < energyCost\)\{[\s\S]*?iface\._openEnergyPopup\(\);/.test(body),
-            'при TIMERS.getEnergy() < energyCost вызывается iface._openEnergyPopup() (клиентская проверка — только для мгновенной обратной связи)');
-        assert(!/if\(TIMERS\.getEnergy\(\) < energyCost\)\{[\s\S]{0,200}iface\._openSidorovichError\(\);/.test(body),
+        assert(/if\(!tutorial && TIMERS\.getEnergy\(\) < energyCost\)\{[\s\S]*?iface\._openEnergyPopup\(\);/.test(body),
+            'обычное действие при нехватке энергии открывает покупку энергии; обучение не проверяет и не тратит энергию');
+        assert(!/if\(!tutorial && TIMERS\.getEnergy\(\) < energyCost\)\{[\s\S]{0,200}iface\._openSidorovichError\(\);/.test(body),
             'не вызывается общий iface._openSidorovichError() при нехватке энергии');
-        assert(/TS\.php\('zone\.fillCheckpoint'/.test(body),
+        assert(/TS\.php\('zone\.fillCheckpoint', tutorial \? \{loc: locIdx, cp: cpIdx, tutorial: '1'\} : \{loc: locIdx, cp: cpIdx\}/.test(body),
             'финальное решение и реальное списание энергии — на сервере (zone.php.fillCheckpoint)');
     }
 }

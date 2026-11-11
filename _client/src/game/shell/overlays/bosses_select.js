@@ -319,6 +319,7 @@ export function attachBossesSelect(proto){
 			// 28.09.2026 (адаптив под мобильные): было napP/napA.on('pointerdown', ...) —
 			// предпросмотр боя открывался в момент КАСАНИЯ, поэтому свайп по списку, начатый с
 			// этой кнопки, сразу уводил с экрана. helper.onTap = отпускание без смещения >10px.
+			if(i === 0){napP._tutorialTarget = 'hunter'; napP.on('tutorial-select', _onNapastClick);}
 			helper.onTap(napP, _onNapastClick);
 			helper.onTap(napA, _onNapastClick);
 			cardsContainer.addChild(napP, napA);

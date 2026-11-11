@@ -270,7 +270,8 @@
 
             // Блокировка на время load→mutate→save — см. _withUserLock() выше (защита от
             // параллельных запросов Зоны одного игрока, теряющих часть начисления).
-            $this->_withUserLock(function() use ($locIdx, $cpIdx, $locCfg, $cpCfg){
+            $tutorialRequested = strval($this->registry['user_params']['tutorial'] ?? '') === '1';
+            $this->_withUserLock(function() use ($locIdx, $cpIdx, $locCfg, $cpCfg, $tutorialRequested){
             $user = $this->ops->loadUser();
             if(!$user) return $this->ops->fail(99);
 
@@ -278,16 +279,42 @@
             $this->_locProgress($progress, $locIdx, $locCfg);
             $locKey = strval($locIdx);
 
+            $tutorialActionNumber = 0;
+            if($tutorialRequested){
+                // Два настоящих действия в Кордоне разрешены без энергии только пока серверный
+                // шаг обучения — «Зона». Счётчик живёт в защищённом JSON прогресса зоны и не
+                // перезаписывается клиентским users.save. Запросы сверх двух отклоняются.
+                if(($user['onboarding_step'] ?? '') !== 'zone' || $locIdx !== 0) return $this->ops->fail(62);
+                $tutorialActionNumber = intval($progress['_tutorial_zone_actions'] ?? 0);
+                if($tutorialActionNumber >= 2) return $this->ops->fail(62);
+                $expectedCp = null;
+                for($i = 0; $i < count($locCfg['checkpoints']); $i++){
+                    if(intval($progress[$locKey]['cps'][$i] ?? 0) < 5){$expectedCp = $i; break;}
+                }
+                if($expectedCp === null || $cpIdx !== $expectedCp) return $this->ops->fail(62);
+            }
+
             if($progress[$locKey]['cps'][$cpIdx] >= 5) return $this->ops->fail(55); // ячейка уже заполнена
 
-            $energyCost = intval($cpCfg['cell_cost']);
+            $energyCost = $tutorialRequested ? 0 : intval($cpCfg['cell_cost']);
             // 28.09.2026: списание через Gameops::spendEnergy() — сохраняет остаток прогресса
             // до следующей единицы энергии вместо жёсткого сброса energy_time=time() (см.
             // подробный разбор в gameops.php). fail(56) — недостаточно энергии, как раньше.
-            if(!$this->ops->spendEnergy($user, $energyCost)) return $this->ops->fail(56);
+            if($energyCost > 0){
+                if(!$this->ops->spendEnergy($user, $energyCost)) return $this->ops->fail(56);
+            }else if($tutorialRequested){
+                // Отражаем только естественную регенерацию; сама учебная ячейка энергию не тратит.
+                list($currentEnergy,$energyTime) = $this->ops->energySnapshot($user);
+                $user['energy'] = $currentEnergy;
+                $user['energy_time'] = $energyTime;
+            }
             $newEnergy = $this->ops->i($user, 'energy');
 
             $progress[$locKey]['cps'][$cpIdx]++;
+            if($tutorialRequested){
+                $tutorialActionNumber++;
+                $progress['_tutorial_zone_actions'] = $tutorialActionNumber;
+            }
 
             // Бонусы банды — та же формула, что zone.js._attack() (cigBonus/expBonus).
             $cigMult = 1 + $this->_gangBonus($user, 'stew_bonus') / 100;
@@ -351,7 +378,7 @@
             // 23.10.2026 (по прямому указанию — новая фича "Разнарядка"): учёт заданий
             // "Потратить N энергии" и "Заработать N уважения" — звать ПОСЛЕ собственного
             // saveUser() выше (см. докблок RaznaryadkaProgress::report()).
-            RaznaryadkaProgress::report($this->ops, 'energy', $energyCost);
+            if($energyCost > 0) RaznaryadkaProgress::report($this->ops, 'energy', $energyCost);
             if($totalRespGain > 0) RaznaryadkaProgress::report($this->ops, 'respect', $totalRespGain);
             // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
             // источников, не только со двора"): прохождение чекпоинтов Зоны — самый частый
@@ -372,6 +399,7 @@
                 'capture' => $captureOut,
                 'energy' => $newEnergy,
                 'server_time' => time(),
+                'tutorialActionNumber' => $tutorialActionNumber,
             ]);
             });
         }

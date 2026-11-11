@@ -158,18 +158,17 @@ export default class Onboarding{
     // Озвучка — PIXI.sound, тот же паттерн, что background-music.js. onComplete опционален:
     // попапам (интро/валюта/финал) переход по завершению звука не нужен, шагам тура — нужен.
     _playNarration(url, onComplete, onError){
+        if(this._narrationUrl === url) return;
         this._stopNarration();
         if(!window.PIXI || !PIXI.sound){
             console.error('[onboarding._playNarration] PIXI.sound недоступен — озвучка не заиграет');
             return;
         }
-        const context = PIXI.sound.context && PIXI.sound.context.audioContext;
-        if(context && context.state === 'suspended' && typeof context.resume === 'function'){
-            const resume = context.resume();
-            if(resume && typeof resume.catch === 'function') resume.catch(() => { if(onError) onError(); });
-        }
+        const soundContext = PIXI.sound.context;
+        const context = soundContext && soundContext.audioContext;
         const alias = 'onboarding_' + url;
         this._narrationAlias = alias;
+        this._narrationUrl = url;
         const myGen = (this._narrationGen = (this._narrationGen || 0) + 1);
         // 24.10.2026 (по прямому указанию — "регулировка громкости не работает"): раньше громкость
         // была зафиксирована на максимуме, озвучка обучения не слушала слайдер "звук" вообще (см.
@@ -177,8 +176,20 @@ export default class Onboarding{
         // слайдера ПОКА играет реплика дополнительно подхватывается через applyAudioVolumes()
         // (теперь проходит и по onboarding_*-alias'ам).
         const vol = window._sndVol !== undefined ? window._sndVol : 0.7;
+        const fail = (err) => {
+            if(myGen !== this._narrationGen) return;
+            this._stopNarration();
+            if(onError) onError();
+            console.error('[onboarding._playNarration] ошибка озвучки:', err.message);
+        };
+        if(context && !soundContext.paused && context.state === 'suspended' && typeof context.resume === 'function'){
+            const resume = context.resume();
+            if(resume && typeof resume.catch === 'function') resume.catch(fail);
+        }
+        let started = false;
         const start = () => {
-            if(myGen !== this._narrationGen) return; // успели переключиться, пока грузилось
+            if(started || myGen !== this._narrationGen) return;
+            started = true;
             try{
                 this._narrationInstance = PIXI.sound.play(alias, {
                     volume: vol,
@@ -193,18 +204,19 @@ export default class Onboarding{
                         this._flushQueuedIdleNarration();
                     },
                 });
+                if(this._narrationInstance && typeof this._narrationInstance.catch === 'function'){
+                    this._narrationInstance.then(instance => {
+                        if(myGen !== this._narrationGen) instance?.stop();
+                    }).catch(fail);
+                }
             } catch(e){
-                if(onError) onError();
-                console.error('[onboarding._playNarration] ошибка воспроизведения:', e.message);
+                fail(e);
             }
         };
         if(PIXI.sound.exists(alias)){ start(); return; }
         PIXI.sound.add(alias, {
-            url, preload: true,
-            loaded: (err) => {
-                if(err){ if(onError) onError(); console.error('[onboarding._playNarration] не удалось загрузить ' + url + ':', err.message); return; }
-                start();
-            },
+            url, preload: true, singleInstance: true,
+            loaded: (err) => { if(err) fail(err); else start(); },
         });
     }
 
@@ -223,6 +235,8 @@ export default class Onboarding{
         // autoPlay/_autoPlayOptions (не даст запуститься после загрузки), если уже играет —
         // останавливает все его инстансы. Тот же приём, что
         // modules/background-music.js._stopStrayTracks().
+        this._pendingIdleNarration = false;
+        if(typeof this._narrationInstance?.stop === 'function') this._narrationInstance.stop();
         if(this._narrationAlias && PIXI.sound.exists(this._narrationAlias)){
             try{ PIXI.sound.find(this._narrationAlias).stop(); } catch(e){}
         }
@@ -232,7 +246,7 @@ export default class Onboarding{
     }
 
     _queueIdleNarration(){
-        if(this._narrationInstance){ this._pendingIdleNarration = true; return; }
+        if(this._narrationUrl){ this._pendingIdleNarration = true; return; }
         this._playNarration(ONBOARDING_EXTRA_SOUNDS.idle);
     }
 

@@ -235,6 +235,14 @@ Class Habar {
 
         $patchKeys = [];
         $cigEarnedHabar = 0;
+        $todayMsk = $this->ops->mskDailyDate(intval($now / 1000));
+        $sedoyPoolDay = $lastTs > 0 ? $this->ops->mskDailyDate(intval($lastTs / 1000)) : '';
+        if($sedoyPoolDay !== $todayMsk){
+            $lockedUser['sedoy_dmg_total'] = '0';
+            $lockedUser['sedoy_dmg_left'] = '0';
+            $patchKeys[] = 'sedoy_dmg_total'; $patchKeys[] = 'sedoy_dmg_left';
+        }
+
         foreach($con['rewards'] as $r){
             $type = $r['type']; $amount = intval($r['amount']);
             if(in_array($type, ['coins','cigarettes','dice_points','blue_points','poker_chips'], true)){

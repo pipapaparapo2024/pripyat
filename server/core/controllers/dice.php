@@ -96,7 +96,8 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $session = $this->_loadSession($user);
             $active = $session['active'] ?? null;
             if(!is_array($active)){
-                $this->ops->ok(['active' => false]);
+                $this->ops->ok(['active' => false, 'tutorialCompleted' =>
+                    !empty($session['tutorial_started'])]);
                 return;
             }
             $this->ops->ok([
@@ -366,8 +367,16 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $now = intval(round(microtime(true) * 1000));
             $lastFree = $this->ops->i($user, 'dice_free_ts', 0);
             $freeAvailable = !$lastFree || ($now - $lastFree) >= intval($catalog['free_cooldown_ms']);
+            $tutorial = ($this->registry['user_params']['tutorial'] ?? '') === '1'
+                && ($user['onboarding_step'] ?? '') === 'dvor';
+            if($tutorial && !empty($session['tutorial_started'])){
+                $this->ops->ok(['tutorialCompleted' => true]);
+                return;
+            }
 
-            if($freeAvailable){
+            if($tutorial){
+                $session['tutorial_started'] = true;
+            } elseif($freeAvailable){
                 $user['dice_free_ts'] = $now;
             } else {
                 if(!$this->ops->deduct($user, 'dice_points', 1)) return $this->ops->fail(67); // недостаточно красных поинтов
@@ -415,7 +424,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                 $rolls = $this->_reduceFarmPairs($rolls);
             }
 
-            $swapsAllowed = $this->_swapsAllowed($user, $catalog);
+            $swapsAllowed = $tutorial ? 0 : $this->_swapsAllowed($user, $catalog);
             $session['active'] = [
                 'rolls'        => $rolls,
                 'swapsUsed'    => 0,

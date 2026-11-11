@@ -3,6 +3,11 @@ import { startBackgroundMusic } from '../modules/background-music.js';
 import { checkRewardLink } from '../modules/reward-link.js';
 
 export function setupGameBoot(){
+    const isTelegram = Boolean(window.__telegramRuntime);
+    const pngProgress = (done, total) => {
+        const percent = total ? Math.round(done / total * 100) : 100;
+        return isTelegram ? Math.min(99, percent) : percent;
+    };
     if(PIXI.sound && !PIXI.sound.exists('tutorial_raznaryadka_preload')){
         PIXI.sound.add('tutorial_raznaryadka_preload',{url:'./sounds/обучение/разнарядка.mp3',preload:true});
     }
@@ -334,7 +339,7 @@ export function setupGameBoot(){
         if(state.started) return;
         state.started = true;
         const update = () => {
-            const pct = state.total ? Math.round(state.done / state.total * 100) : 100;
+            const pct = pngProgress(state.done, state.total);
             const bar = document.getElementById('_prgBar');
             const label = document.getElementById('_prgPct');
             if(bar) bar.style.width = pct + '%';
@@ -415,6 +420,8 @@ export function setupGameBoot(){
         const _finishLoading = () => {
             if(_loadingFinished || !_gameShown || !_bgAllLoaded) return;
             _loadingFinished = true;
+            if(isTelegram) _updateProgress(100);
+            clearInterval(_tipInterval);
             console.log('[game-boot._finishLoading] вся загрузка завершена (FLA+текстуры+' +
                 _bgModules.length + ' фоновых модулей) — прячем компас/прогресс-бар');
             if(_clo) _clo.style.display = 'none';
@@ -433,10 +440,9 @@ export function setupGameBoot(){
         };
         const _showGame = () => {
             if(_gameShown) return;
-            _gameShown = true;
-            clearInterval(_tipInterval);
+            if(!isTelegram) clearInterval(_tipInterval);
             window._simActive = false;
-            _updateProgress(100);
+            if(!isTelegram) _updateProgress(100);
             // Инициализируем игру только когда ресурсы загружены — до этого PIXI-контент не создаётся
             modules.constructSkills();
             modules.constructAchievements();
@@ -449,6 +455,7 @@ export function setupGameBoot(){
             // где можно безопасно начать сетевую загрузку Spine-скелетов боссов, не дожидаясь
             // отдельного входа в бой. Игрок в этот момент всё ещё смотрит на прелоадер (см.
             // startPreloaderVisual()) — загрузка идёт параллельно, никак не продлевая его показ.
+            _gameShown = true;
             if(typeof iface._spineBossPreloadAll === 'function') iface._spineBossPreloadAll();
             console.log('[game-boot._showGame] FLA+текстуры готовы, ждём фоновые модули (_bgAllLoaded=' + _bgAllLoaded + ') перед скрытием компаса');
             setTimeout(_finishLoading, 300);
@@ -506,7 +513,7 @@ export function setupGameBoot(){
             if(_completed.has(fname)) return;
             _completed.add(fname);
             _done++;
-            _updateProgress(Math.round((_done / _total) * 100));
+            _updateProgress(pngProgress(_done, _total));
             if(status === 'error'){
                 console.error('[game-boot._startPreload] ошибка загрузки PNG:', fname);
             }
@@ -520,6 +527,11 @@ export function setupGameBoot(){
             if(_total === 0){ _pngsReady = true; _tryShowGame(); return; }
 
             _allPngs.forEach(fname => {
+                // An early error may already have fired on the cached BaseTexture.
+                if(isTelegram && window._pngPreloadState.completed.has(fname)){
+                    _markDone(fname, 'early');
+                    return;
+                }
                 const url = './images/' + fname;
                 const tex = PIXI.Texture.from(url);
                 if(tex.baseTexture.valid){
@@ -557,8 +569,7 @@ export function setupGameBoot(){
         // уже используется параллельно этим же кодом для ~300 PNG-текстур выше (_startPreload),
         // так что параллельная загрузка 16 модулей безопасна тем же способом. 300мс-паузы между
         // модулями убраны (они были частью именно СЕКВЕНЦИАЛЬНОГО дизайна, сейчас не нужны);
-        // стартовая пауза 4000мс перед запуском партии оставлена как есть — не трогаем то, что
-        // не спрашивали (даёт видео/текстурам приоритет в первые секунды).
+        // Telegram starts this batch immediately. Other clients retain the head start for textures.
         let _bgDoneCount = 0;
         const _bgModuleDone = (name) => {
             _bgDoneCount++;
@@ -580,7 +591,7 @@ export function setupGameBoot(){
                     _bgModuleDone(name);
                 }
             });
-        }, 4000);
+        }, isTelegram ? 0 : 4000);
     };
 
     window.loadGame = () => {

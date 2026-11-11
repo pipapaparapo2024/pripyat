@@ -59,8 +59,8 @@ console.log('\nTest 2: energy_spent считается ровно один ра�
     const zoneEnergyIncrements = (zoneSrc.match(/udata\['energy_spent'\]\s*=/g) || []).length;
     assert(zoneEnergyIncrements === 0,
         `zone.js вообще не пишет energy_spent (перенесено на сервер) — найдено ${zoneEnergyIncrements}`);
-    assert(/achievements\.onEnergySpent\(energyCost\);/.test(zoneSrc),
-        'zone.js по-прежнему зовёт achievements.onEnergySpent(energyCost) РОВНО с той суммой, что списал сервер');
+    assert(/if\(energyCost > 0 && window\.achievements\) achievements\.onEnergySpent\(energyCost\);/.test(zoneSrc),
+        'zone.js проверяет достижения после реального списания энергии и пропускает бесплатное учебное действие');
 
     const zonePhp = readSrc('server/core/controllers/zone.php');
     const serverEnergyIncrements = (zonePhp.match(/\$user\['energy_spent'\]\s*=/g) || []).length;
@@ -71,7 +71,7 @@ console.log('\nTest 2: energy_spent считается ровно один ра�
 console.log('\nTest 3: проверка достижений в чекпоинте зоны идёт ПОСЛЕ показа всплывающей награды (z-order)');
 {
     const rewardIdx = zoneSrc.indexOf('this._showCpReward(earned_exp, earned_cig, earned_resp);');
-    const achIdx    = zoneSrc.indexOf('if(window.achievements) achievements.onEnergySpent(energyCost);');
+    const achIdx    = zoneSrc.indexOf('if(energyCost > 0 && window.achievements) achievements.onEnergySpent(energyCost);');
     assert(rewardIdx !== -1 && achIdx !== -1, 'обе строки найдены в zone.js');
     assert(achIdx > rewardIdx, 'onEnergySpent() вызывается ПОСЛЕ _showCpReward() — попап ачивки рисуется поверх, не под наградой');
 }

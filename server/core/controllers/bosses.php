@@ -54,12 +54,50 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // конкретных примерах уточнил, что имел в виду другую механику — HP личное, урон
             // друга (ВК, взаимного) засчитывается независимо от того, какого босса он бьёт,
             // если в момент его удара у МЕНЯ уже шёл бой. friendsDamage/rating вернулись.
-            $this->permits = ['friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey', 'devResetDailyLimits', 'devGrantKeys'];
+            $this->permits = ['tutorialHunter', 'friendsDamage', 'rating', 'killers', 'recordKill', 'claimKill', 'startFight', 'attack', 'endFightSession', 'useSedoy', 'rushFreeWeapon', 'buyKey', 'devResetDailyLimits', 'devGrantKeys'];
         }
 
         // 17.10.2026 (по прямому указанию — dev-кнопка "сбросить дневной лимит боссов"): тот же
         // гейт, что уже есть в users.php._isDevUser()/_requireDevUser() (не вынесен в общий
         // Gameops — там его тоже нет, дублирование те же 2 проверки, что и в users.php).
+        function tutorialHunter(){
+            $shot = filter_var($this->registry['user_params']['shot'] ?? 0, FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 0, 'max_range' => 10]]);
+            if($shot === false) return $this->ops->fail(54);
+            $uid = intval($this->registry['uid']);
+            $table = $this->registry['utb'];
+            $link = $this->_rawLink();
+            if(!$link) return $this->ops->fail(99);
+            try{
+                $link->begin_transaction();
+                $row = $link->execute_query("SELECT onboarding_step,bosses_data,cigarettes,exp FROM `$table` WHERE id=? FOR UPDATE", [$uid])->fetch_assoc();
+                if(!$row || $row['onboarding_step'] !== 'bosses'){
+                    $link->rollback();
+                    return $this->ops->fail(54);
+                }
+                $data = $this->_decodeBossesData($row['bosses_data']) ?? [];
+                $shots = min(10, max(0, intval($data['tutorialHunterShots'] ?? 0)));
+                if($shots < 10 && $shot === $shots + 1){
+                    $data['tutorialHunterShots'] = ++$shots;
+                    if($shots === 10){
+                        $row['cigarettes'] = intval($row['cigarettes']) + 100;
+                        $row['exp'] = intval($row['exp']) + 25;
+                    }
+                    if(!$link->execute_query("UPDATE `$table` SET bosses_data=?,cigarettes=?,exp=? WHERE id=?",
+                        [json_encode($data, JSON_THROW_ON_ERROR), $row['cigarettes'], $row['exp'], $uid])){
+                        throw new RuntimeException('tutorial_save_failed');
+                    }
+                }
+                $link->commit();
+            }catch(Throwable $error){
+                $link->rollback();
+                error_log('[bosses.tutorialHunter] '.get_class($error));
+                return $this->ops->fail(99);
+            }
+            return $this->ops->ok(['shots' => $shots, 'hp' => 1000 - 100*$shots,
+                'patch' => $this->ops->patchCurrencies($row, ['cigarettes','exp'])]);
+        }
+
         private function _isDevUser(){
             if(in_array($this->registry['platform']??'',['telegram','site'],true))return in_array('developer',$this->registry['roles']??[],true);
             return in_array(strval($this->registry['uid']), ['1113977365', '382448269', '438953352', '184138040'], true);
@@ -1663,6 +1701,26 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             $now = intval(round(microtime(true) * 1000));
             if(($now - $bossStartMs) >= $this->MAX_FIGHT_WINDOW_MS) return $this->ops->fail(66); // бой протух
 
+            // Пул Седого — дневная награда хабара. Запись в профиле сама по себе
+            // переживает полночь, поэтому срок проверяется сервером по дате последнего
+            // сбора (МСК). Условный UPDATE не затрёт свежий пул, если параллельный сбор
+            // хабара успел завершиться после нашего loadUser().
+            $lastHabarCollectMs = $this->ops->i($user, 'habar_last_collect_ts');
+            $todayMsk = $this->ops->mskDailyDate(intval($now / 1000));
+            $sedoyPoolDay = $lastHabarCollectMs > 0
+                ? $this->ops->mskDailyDate(intval($lastHabarCollectMs / 1000))
+                : '';
+            if($sedoyPoolDay !== $todayMsk){
+                $expireLink = $this->_rawLink();
+                if(!$expireLink) return $this->ops->fail(99);
+                $expireSql = "UPDATE `{$this->registry['utb']}` SET `sedoy_dmg_total`='0',`sedoy_dmg_left`='0' WHERE `id`=".$uid
+                    ." AND `habar_last_collect_ts`=".$lastHabarCollectMs;
+                $expired = $expireLink->query($expireSql);
+                $expireLink->close();
+                if(!$expired) return $this->ops->fail(99);
+                return $this->ops->fail(69); // остаток сгорел в 00:00 МСК
+            }
+
             $sedoyLeft = $this->ops->i($user, 'sedoy_dmg_left');
             if($sedoyLeft <= 0) return $this->ops->fail(68); // урон седого на сегодня исчерпан
 
@@ -1963,7 +2021,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
             // boss-personal-shmot-drop-pool.test.js). Роллится только для обычного (0) и соло
             // (3) — единственные играбельные режимы.
             //
-            // Персональный дроп: 50% как для цельных вещей, так и для одного фрагмента.
+            // Персональный дроп: гарантия в соло, 50% в обычном режиме.
             $bossShmotItemId  = null; // полная вещь выдана ИМЕННО в этом убийстве (id) — для попапа
             $bossShmotFragment = null; // {id, have, need} — фрагмент добавлен, вещь ещё не собрана
             if($diffIdx === 0 || $diffIdx === 3){
@@ -1983,7 +2041,7 @@ require_once __DIR__ . '/../models/weaponprogress.php';
                         $wonId    = $available[array_rand($available)];
                         $needFrag = intval($fragmentItems[strval($wonId)] ?? 0);
                         $normalRoll = mt_rand(1, 100);
-                        $chancePct = intval($catalog['boss_shmot_normal_chance_pct'] ?? 50);
+                        $chancePct = $diffIdx === 3 ? 100 : intval($catalog['boss_shmot_normal_chance_pct'] ?? 50);
                         $roll = $devForceDrops || $normalRoll <= $chancePct;
                         $claimDebug['bossPersonalPoolDrop'] = [
                             'wonId' => $wonId, 'needFrag' => $needFrag, 'isSolo' => $diffIdx === 3,

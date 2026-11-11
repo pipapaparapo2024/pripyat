@@ -147,7 +147,7 @@ console.log('\nTest 5: dice.php зарегистрирован в permits, dice_
 
 console.log('\nTest 6: dvor-dice-game.js (новый экран) — RNG больше не считает клиент, зовёт сервер start/reroll/resolve');
 {
-    assert(/TS\.php\('dice\.start', \{\}/.test(diceGameJs), '_playDiceNewScreen зовёт dice.start');
+    assert(/TS\.php\('dice\.start', tutorial \? \{tutorial: '1'\} : \{\}/.test(diceGameJs), '_playDiceNewScreen зовёт dice.start с учебным режимом только во время урока');
     assert(/TS\.php\('dice\.reroll', \{idx: selectedIdx\}/.test(diceGameJs), '_diceConfirmNewScreen зовёт dice.reroll');
     assert(/TS\.php\('dice\.resolve', \{\}/.test(diceGameJs), '_resolveDiceNewScreen зовёт dice.resolve');
     assert(!/this\._diceRolls = \[0,0,0,0\]\.map\(\(\)=>Math\.ceil\(6\*Math\.random\(\)\)\)/.test(diceGameJs),

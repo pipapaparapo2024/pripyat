@@ -92,6 +92,7 @@ export function attachDiceScreen(proto){
         exitBtn.interactive = true; exitBtn.buttonMode = true;
         exitBtn.on('pointerover', ()=>{ exitBtn.scale.set(0.54); });
         exitBtn.on('pointerout',  ()=>{ exitBtn.scale.set(0.5); });
+        exitBtn._tutorialTarget = 'exit';
         exitBtn.on('pointerdown', ()=>this._closeDiceScreen());
         win.addChild(exitBtn);
 
@@ -247,6 +248,7 @@ export function attachDiceScreen(proto){
         throwBtn.interactive = true; throwBtn.buttonMode = true;
         throwBtn.on('pointerover', ()=>{ _sa(throwBtn, 0.85); throwBtn.scale.set(1.08); });
         throwBtn.on('pointerout',  ()=>{ _sa(throwBtn, 1); throwBtn.scale.set(1); });
+        throwBtn._tutorialTarget = 'dice-play';
         throwBtn.on('pointerdown', ()=>this._playDiceNewScreen());
         win.addChild(throwBtn);
         this._diceThrowBtn = throwBtn;
@@ -265,6 +267,7 @@ export function attachDiceScreen(proto){
         confirmBtn.visible = false;
         confirmBtn.on('pointerover', ()=>{ _sa(confirmBtn, 0.85); confirmBtn.scale.set(1.08); });
         confirmBtn.on('pointerout',  ()=>{ _sa(confirmBtn, 1); confirmBtn.scale.set(1); });
+        confirmBtn._tutorialTarget = 'dice-play';
         confirmBtn.on('pointerdown', ()=>this._diceConfirmNewScreen());
         win.addChild(confirmBtn);
         this._diceConfirmBtn = confirmBtn;

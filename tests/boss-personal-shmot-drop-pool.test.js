@@ -118,7 +118,7 @@ console.log('\nTest 3: claimKill() — второй, независимый бл
     // 22.09.2026 (уточнение шансов, тот же день): соло и фрагменты — 100% (без броска),
     // "цельные" вещи обычного режима — по проценту boss_shmot_normal_chance_pct (50%), либо
     // мгновенно при включённом dev_force_drops.
-    assert(/\$chancePct = intval\(\$catalog\['boss_shmot_normal_chance_pct'\] \?\? 50\);/.test(body), 'по умолчанию применяет порог 50%');
+    assert(/\$chancePct = \$diffIdx === 3 \? 100 : intval\(\$catalog\['boss_shmot_normal_chance_pct'\] \?\? 50\);/.test(body), 'соло 100%, обычный режим 50% по умолчанию');
     // 23.09.2026: бросок вынесен в отдельную $normalRoll переменную (логируется в debug-ответе
     // как claimDebug.bossPersonalPoolDrop) — сама формула/порядок условий не изменились.
     assert(/\$normalRoll = mt_rand\(1, 100\);/.test(body) &&
