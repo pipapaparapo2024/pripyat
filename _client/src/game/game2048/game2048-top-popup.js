@@ -210,6 +210,14 @@ export function attachGame2048TopPopup(proto){
             avatar.anchor && avatar.anchor.set ? avatar.anchor.set(0, 0.5) : null;
             avatar.scale.set(1.050);
             avatar.x = 387; avatar.y = rowY;
+            avatar.buttonMode = true;
+            avatar.on('pointerdown', event => {
+                const entry = this._topRows[i].entry;
+                if(!entry || !entry.id || !window.iface) return;
+                event.stopPropagation();
+                this.close();
+                window.iface._openPlayerProfile(entry.id, entry.nick);
+            });
             win.addChild(avatar);
 
             const nameTxt = new PIXI.Text('', STYLE_ROW_NAME);
@@ -261,6 +269,8 @@ export function attachGame2048TopPopup(proto){
         this._topRows.forEach((row, i) => {
             const r = rest[i];
             const visible = !!r;
+            row.entry = r;
+            row.avatar.interactive = visible && !!r.id;
             row.placeTxt.visible = visible; row.avatar.visible = visible;
             row.nameTxt.visible = visible; row.gamesTxt.visible = visible;
             if(!visible) return;
