@@ -44,5 +44,14 @@ if (SiteDonations::historyStatus(['order_status'=>'succeeded','credited_at'=>123
 if (SiteDonations::historyStatus(['order_status'=>'created','credited_at'=>null], [], 'not_checked') !== 'created') {
     throw new RuntimeException('Unpaid intent must remain a separate attempt');
 }
+$cached = SiteDonations::normalizeCachedReport(['items'=>[
+    ['order_status'=>'canceled','credited_at'=>null,'provider_status'=>'canceled','provider_paid'=>false,'verification'=>'verified'],
+    ['order_status'=>'pending','credited_at'=>null,'provider_status'=>'succeeded','provider_paid'=>true,'verification'=>'verified'],
+    ['order_status'=>'succeeded','credited_at'=>456,'provider_status'=>'succeeded','provider_paid'=>true,'verification'=>'verified'],
+]]);
+$expectedCached = ['canceled','paid_uncredited','credited'];
+foreach ($expectedCached as $index=>$expected) {
+    if (($cached['items'][$index]['history_status'] ?? null) !== $expected) throw new RuntimeException('Legacy cache compatibility failed');
+}
 echo "PASS: only the authenticated rewards route can load the report configuration\n";
-echo "PASS: expired, canceled, unpaid, paid-uncredited and credited orders are classified separately\n";
+echo "PASS: payment statuses and previous diagnostics cache are classified safely\n";

@@ -20,6 +20,25 @@ final class SiteDonations {
   return 'unverified';
  }
 
+ public static function normalizeCachedReport(array $data): array {
+  $items=$data['items']??[];
+  foreach ($items as &$row) {
+   if (!is_array($row) || isset($row['history_status'])) continue;
+   $row['provider_cancellation_reason'] ??= null;
+   $row['history_status'] = self::historyStatus([
+    'order_status'=>$row['order_status'] ?? '',
+    'credited_at'=>$row['credited_at'] ?? null,
+   ],[
+    'status'=>$row['provider_status'] ?? '',
+    'paid'=>$row['provider_paid'] ?? false,
+    'cancellation_details'=>['reason'=>$row['provider_cancellation_reason']],
+   ],(string)($row['verification'] ?? 'not_checked'));
+  }
+  unset($row);
+  $data['items']=$items;
+  return $data;
+ }
+
  private static function connect(array $d): PDO {
   if(!in_array($d['database']??'',['stalker','stalker_ok','stalker_site_test'],true))throw new RuntimeException('invalid_database');
   return new PDO('mysql:host=127.0.0.1;port=3306;dbname='.$d['database'].';charset=utf8mb4',$d['user'],$d['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);
@@ -32,7 +51,7 @@ final class SiteDonations {
   $config=$loadConfig();
   require_once __DIR__.'/siteroles.php';
   require_once __DIR__.'/socialidentity.php';
-  $file='/var/lib/pripyat-site-test/donations-diagnostics-v2-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}
+  $file='/var/lib/pripyat-site-test/donations-diagnostics-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return self::normalizeCachedReport($data);}
   $rows=[];$excluded=0;$unverified=0;
   foreach(['site','vk','ok'] as $world){
    $db=self::connect($world==='site'?$config['database']:NativeProdBoundary::database($config['native'],$world));
