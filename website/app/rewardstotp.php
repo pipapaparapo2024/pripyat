@@ -8,6 +8,17 @@ final class RewardsTotp {
         return str_pad((string) ($number % (10 ** $digits)), $digits, '0', STR_PAD_LEFT);
     }
 
+    public static function base32(string $value): string {
+        $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $bits = '';
+        foreach (str_split($value) as $byte) $bits .= str_pad(decbin(ord($byte)), 8, '0', STR_PAD_LEFT);
+        $encoded = '';
+        foreach (str_split($bits, 5) as $chunk) {
+            $encoded .= $alphabet[bindec(str_pad($chunk, 5, '0'))];
+        }
+        return $encoded;
+    }
+
     public static function match(string $secret, string $code, int $time, int $lastStep): ?int {
         if (strlen($secret) < 20 || !preg_match('/\A[0-9]{6}\z/', $code)) return null;
         $step = intdiv($time, 30);

@@ -1,0 +1,16 @@
+[Unit]
+Description=Pripyat pending payment reconciliation (%i)
+After=network-online.target mysql.service
+
+[Service]
+Type=oneshot
+UMask=0027
+Environment=PRIPYAT_RECONCILE_STATE=/var/lib/pripyat-payment-reconcile
+Environment=PRIPYAT_TELEGRAM_WEBSITE_PAYMENT_CONFIG=/etc/pripyat/telegram-website-payment-prod.json
+ExecStart=/usr/bin/php /var/www/pripyat-site/tools/run-site-payment-reconcile.php /var/www/pripyat-site/private/site-runtime.json %i
+TimeoutStartSec=30min
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/pripyat-payment-reconcile

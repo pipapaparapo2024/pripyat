@@ -2,6 +2,9 @@
 require __DIR__.'/../../website/app/rewardstotp.php';
 $key = '12345678901234567890';
 $cases = [
+    RewardsTotp::base32('f') === 'MY',
+    RewardsTotp::base32('foo') === 'MZXW6',
+    RewardsTotp::base32('foobar') === 'MZXW6YTBOI',
     RewardsTotp::code($key, 1, 8) === '94287082',
     RewardsTotp::code($key, intdiv(1111111109, 30), 8) === '07081804',
     RewardsTotp::match($key, '287082', 59, -1) === 1,

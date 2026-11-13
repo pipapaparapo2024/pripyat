@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Pripyat pending payments (%i)
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=1min
+RandomizedDelaySec=10s
+Unit=pripyat-payment-reconcile@%i.service
+
+[Install]
+WantedBy=timers.target

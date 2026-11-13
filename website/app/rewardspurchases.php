@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__.'/sitedonations.php';
+require_once __DIR__.'/paymentattempts.php';
 require_once __DIR__.'/rewardstotp-gate.php';
+if (($_SERVER['PRIPYAT_REWARDS_PURCHASES'] ?? '') !== '1' || !is_string($_SERVER['REMOTE_USER'] ?? null) || trim($_SERVER['REMOTE_USER']) === '') {
+    http_response_code(403); exit('Доступ закрыт.');
+}
 requireRewardsTotp();
 header('Cache-Control: private, no-store');
 header('X-Robots-Tag: noindex, nofollow');
@@ -70,7 +74,14 @@ $msk = new DateTimeZone('Europe/Moscow');
                     <dt><?= $escape($title) ?> (МСК)</dt>
                     <dd><?= $row[$field] ? $escape((new DateTimeImmutable('@'.(int)$row[$field]))->setTimezone($msk)->format('d.m.Y H:i:s')) : '—' ?></dd>
                 <?php endforeach; ?>
-                </dl></details></td>
+                </dl>
+                <h3>Попытки фоновой сверки</h3>
+                <?php $attempts = PaymentAttempts::read(getenv('PRIPYAT_RECONCILE_STATE') ?: '/var/lib/pripyat-payment-reconcile', $row['world'], (string)$row['payment_id']); ?>
+                <p>Последние доступные записи журнала (до 100). Отсутствие записи не подтверждает отсутствие попыток.</p>
+                <?php foreach ($attempts as $attempt): ?>
+                <p><?= $escape((new DateTimeImmutable('@'.$attempt['time']))->setTimezone($msk)->format('d.m.Y H:i:s')) ?> — <?= $escape($attempt['outcome']) ?></p>
+                <?php endforeach; ?>
+                </details></td>
             </tr>
         <?php endforeach; ?>
         </tbody>

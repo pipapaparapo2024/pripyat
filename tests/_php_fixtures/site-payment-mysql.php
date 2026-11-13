@@ -47,3 +47,20 @@ foreach(['site','vk','ok'] as $world)foreach([true,false] as $test){
  }
 }
 echo "MySQL TEMP: $checked selected-product creates and settlements across both modes and all worlds; duplicate creates/credits rejected; no real data or API calls\n";
+
+// Reconciliation operates on these same connection-local temporary tables only.
+require __DIR__.'/../../tools/site-payment-reconcile.php';
+$db->exec('DELETE FROM site_payment_receipts');$db->exec('DELETE FROM site_payment_orders');$db->exec('UPDATE users SET stew=100');
+$responses=[];
+foreach(['succeeded','canceled','pending','error'] as $i=>$status){
+ $order=hash('sha256','reconcile-'.$status);$pid='reconcile-'.$status;
+ $q=$db->prepare("INSERT INTO site_payment_orders VALUES(?,2000000001,0,700,'stew',4,?,'pending',1,NULL)");$q->execute([$order,$pid]);
+ $responses[$pid]=['id'=>$pid,'status'=>$status,'paid'=>$status==='succeeded','test'=>true,'amount'=>['value'=>'7.00','currency'=>'RUB'],'recipient'=>['account_id'=>'123'],'metadata'=>['site_order_id'=>$order,'game_world'=>'site']];
+}
+$provider=new SiteYooKassa(['enabled'=>true,'require_test_payment'=>true,'shop_id'=>'123','secret_key'=>'test_fixture'],function($path)use($responses){$p=$responses[substr($path,9)];if($p['status']==='error')throw new RuntimeException('mock_network');return $p;});
+$service=new SitePayments($db,$provider,'site');$events=[];
+$run=fn()=>reconcilePendingPayments($db,fn($id)=>$service->settle($id,200),function($id,$outcome)use(&$events){$events[]=[$id,$outcome];});
+if($run()!==1||$run()!==1)throw new RuntimeException('Reconcile error handling');
+if((int)$db->query('SELECT stew FROM users')->fetchColumn()!==104||(int)$db->query('SELECT COUNT(*) FROM site_payment_receipts')->fetchColumn()!==1)throw new RuntimeException('Reconcile duplicate credit');
+if($db->query("SELECT status FROM site_payment_orders WHERE provider_payment_id='reconcile-canceled'")->fetchColumn()!=='canceled')throw new RuntimeException('Cancellation not saved');
+echo "MySQL TEMP reconciliation: succeeded/canceled/pending/network-error/replay passed; no real players\n";

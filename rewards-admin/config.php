@@ -10,6 +10,8 @@ require dirname(__DIR__).'/app/rewardlinkpublisher.php';
 require __DIR__.'/catalog.php';
 session_name('pripyat_rewards_test');
 session_start(['cookie_httponly'=>true,'cookie_secure'=>true,'cookie_samesite'=>'Strict','cookie_path'=>'/rewards-admin/','use_strict_mode'=>true]);
+require_once dirname(__DIR__).'/app/rewardstotp-gate.php';
+requireRewardsTotp();
 if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(random_bytes(32));
 if(empty($_SESSION['create_nonce']))$_SESSION['create_nonce']=bin2hex(random_bytes(32));
 if(($_SERVER['REQUEST_METHOD']??'')==='POST'&&(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf'],$_POST['csrf']))){http_response_code(403);exit('Обновите страницу.');}

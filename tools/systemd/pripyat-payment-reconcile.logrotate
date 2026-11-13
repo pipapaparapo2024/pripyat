@@ -1,0 +1,11 @@
+/var/lib/pripyat-payment-reconcile/*.jsonl {
+    daily
+    rotate 30
+    maxsize 10M
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root pripyat-site-test
+}
