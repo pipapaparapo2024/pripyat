@@ -13,6 +13,8 @@ def valid(name):
  return p
 def configuration():
  paths=set(Path('/etc/pripyat').rglob('*'))
+ paths.update(Path('/etc/php/8.5/fpm/pool.d').glob('*.conf'));paths.update(Path('/etc/nginx/sites-enabled').glob('*'))
+ paths.add(Path('/var/lib/pripyat-admin-auth/auth.json'))
  for root in roots:
   paths.update(root.glob('**/registry.php'));paths.update((root/'private').glob('*'))
  return {str(p):digest(p) for p in paths if p.is_file()}
