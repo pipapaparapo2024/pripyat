@@ -22,7 +22,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
+function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8').replace(/\r\n/g, '\n'); }
 
 console.log('\nTest 1: файл ассета реально скопирован под namespaced-именем (не коллизионным "отправить.png")');
 {

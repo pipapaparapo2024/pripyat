@@ -22,7 +22,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8'); }
+function readSrc(rel){ return fs.readFileSync(path.join(root, rel), 'utf-8').replace(/\r\n/g, '\n'); }
 
 const pokerJs      = readSrc('_client/src/game/dvor/dvor-poker.js');
 const pokerGameJs  = readSrc('_client/src/game/dvor/dvor-poker-game.js');

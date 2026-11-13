@@ -8,8 +8,8 @@ const path = require('path');
 const assert = require('assert');
 
 const root = path.join(__dirname, '..');
-const client = fs.readFileSync(path.join(root, '_client/src/game/battlepass.js'), 'utf8');
-const server = fs.readFileSync(path.join(root, 'server/core/controllers/bp.php'), 'utf8');
+const client = fs.readFileSync(path.join(root, '_client/src/game/battlepass.js'), 'utf8').replace(/\r\n/g, '\n');
+const server = fs.readFileSync(path.join(root, 'server/core/controllers/bp.php'), 'utf8').replace(/\r\n/g, '\n');
 
 function methodBody(startSignature, endSignature) {
     const start = client.indexOf(startSignature);

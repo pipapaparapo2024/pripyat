@@ -40,10 +40,10 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const shmotSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shmot.js'), 'utf-8');
-const shopSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), 'utf-8');
-const homeSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'home.js'), 'utf-8');
-const skillsSrc    = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'skills.js'), 'utf-8');
+const shmotSrc     = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shmot.js'), 'utf-8').replace(/\r\n/g, '\n');
+const shopSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'shmot_shop.js'), 'utf-8').replace(/\r\n/g, '\n');
+const homeSrc      = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'home.js'), 'utf-8').replace(/\r\n/g, '\n');
+const skillsSrc    = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'skills.js'), 'utf-8').replace(/\r\n/g, '\n');
 
 console.log('\nTest 1: shmot_shop.js больше НЕ определяет _buy/_saveToUdata/_applyMaxEnergyBonus (не затирает server-authoritative методы)');
 {

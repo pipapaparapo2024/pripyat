@@ -28,7 +28,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const resultSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8');
+const resultSrc = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8').replace(/\r\n/g, '\n');
 
 console.log('\nTest 1: показ/скрытие тултипа вынесены в переиспользуемые showTip()/hideTip(), общие для десктопа и мобильного');
 {

@@ -58,7 +58,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const read = (p) => fs.readFileSync(path.join(root, p), 'utf-8');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf-8').replace(/\r\n/g, '\n');
 
 const ryukzakSrc   = read('server/core/controllers/ryukzak.php');
 const rouletteSrc  = read('server/core/controllers/roulette.php');

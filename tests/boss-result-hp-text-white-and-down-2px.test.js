@@ -25,7 +25,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const content = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8');
+const content = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'popups', 'boss_result.js'), 'utf-8').replace(/\r\n/g, '\n');
 
 console.log('\nTest 1: поражение (isWin:false) — hpTxt белым, координаты x:494,y:419 (20.10.2026, -3px)');
 {

@@ -20,7 +20,7 @@ function assert(cond, msg) {
 }
 
 const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'spine-boss.js'), 'utf-8');
+const src = fs.readFileSync(path.join(root, '_client', 'src', 'game', 'shell', 'overlays', 'spine-boss.js'), 'utf-8').replace(/\r\n/g, '\n');
 
 console.log('\nTest 1: spine-boss.js больше не удаляет anim.ik перед парсингом');
 {
@@ -39,8 +39,8 @@ console.log('\nTest 3: независимая проверка — @esotericsoft
 {
     try {
         const spineCorePkg = path.join(root, '_client', 'node_modules', '@esotericsoftware', 'spine-core');
-        const skeletonJsonSrc = fs.readFileSync(path.join(spineCorePkg, 'dist', 'SkeletonJson.js'), 'utf-8');
-        const animationSrc = fs.readFileSync(path.join(spineCorePkg, 'dist', 'Animation.js'), 'utf-8');
+        const skeletonJsonSrc = fs.readFileSync(path.join(spineCorePkg, 'dist', 'SkeletonJson.js'), 'utf-8').replace(/\r\n/g, '\n');
+        const animationSrc = fs.readFileSync(path.join(spineCorePkg, 'dist', 'Animation.js'), 'utf-8').replace(/\r\n/g, '\n');
         assert(/IkConstraintTimeline/.test(animationSrc), 'Animation.js экспортирует класс IkConstraintTimeline');
         assert(/import \{[\s\S]*IkConstraintTimeline[\s\S]*\} from "\.\/Animation\.js"/.test(skeletonJsonSrc),
             'SkeletonJson.js импортирует IkConstraintTimeline из Animation.js');
