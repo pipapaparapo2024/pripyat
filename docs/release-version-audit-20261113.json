@@ -1,0 +1,86 @@
+{
+  "github_main": "5b7852baf7239a1fcbc46294320e67672295458b",
+  "local_head": "5b7852baf7239a1fcbc46294320e67672295458b",
+  "active_bundle_sha256": {
+    "stalker-native-test": "72a703779193a4579e6c14b35310b7a309f579fe6cefd636a287c975e4887872",
+    "stalker-native-prod": "72a703779193a4579e6c14b35310b7a309f579fe6cefd636a287c975e4887872"
+  },
+  "active_bundle_equal": true,
+  "bundle_only_difference_is_sedoy69": true,
+  "scope": "server/core, server/json, client/ver0_41/libs; private configuration, registry and logs excluded",
+  "test_files": 116,
+  "prod_files": 120,
+  "equal_common": 106,
+  "different_common": [
+    "client/ver0_41/libs/index.js",
+    "server/core/controllers/bosses.php",
+    "server/core/controllers/habar.php",
+    "server/core/controllers/rewardlinks.php",
+    "server/core/controllers/users.php"
+  ],
+  "only_test": [
+    "client/ver0_41/libs/index.training-22f85f82aa1b.js",
+    "client/ver0_41/libs/index.training-278dc2d9acb3.js",
+    "client/ver0_41/libs/index.training-444235abfd58.js",
+    "client/ver0_41/libs/index.training-4a2791d6291c.js",
+    "client/ver0_41/libs/index.training-f668f298c91e.js"
+  ],
+  "only_prod": [
+    "client/ver0_41/libs/native-avatar-sync.js",
+    "client/ver0_41/libs/native-site-link.js",
+    "server/core/models/erasedaccounts.php",
+    "server/core/models/nativeavatarcache.php",
+    "server/core/models/nativeplayersessionlock.php",
+    "server/core/models/nativeprodboundary.php",
+    "server/core/models/okprodpaymentcredit.php",
+    "server/core/models/rewardaudit.php",
+    "server/core/models/vkprodpayments.php"
+  ],
+  "source_comparison": {
+    "test": {
+      "local_equal": 64,
+      "head_equal": 74,
+      "compared": 80,
+      "local_diff": [
+        "server/core/controllers/bosses.php",
+        "server/core/controllers/habar.php",
+        "server/core/controllers/users.php",
+        "server/core/controllers/rewardlinks.php",
+        "server/core/models/telegramavatars.php",
+        "server/core/models/telegramaccess.php",
+        "server/core/models/telegramgateway.php",
+        "server/core/models/telegramauth.php",
+        "server/core/models/telegramdebug.php",
+        "server/core/models/telegrambotclient.php",
+        "server/core/models/telegramplayerlock.php",
+        "server/core/models/telegramfriends.php",
+        "server/core/models/telegramoidc.php",
+        "server/core/models/telegrambothandler.php",
+        "server/core/models/telegramstars.php",
+        "server/core/models/rewardlinkpublisher.php"
+      ]
+    },
+    "prod": {
+      "local_equal": 72,
+      "head_equal": 78,
+      "compared": 87,
+      "local_diff": [
+        "server/core/controllers/bosses.php",
+        "server/core/controllers/habar.php",
+        "server/core/controllers/users.php",
+        "server/core/models/telegramavatars.php",
+        "server/core/models/telegramaccess.php",
+        "server/core/models/telegramgateway.php",
+        "server/core/models/telegramauth.php",
+        "server/core/models/telegramdebug.php",
+        "server/core/models/telegrambotclient.php",
+        "server/core/models/telegramplayerlock.php",
+        "server/core/models/telegramfriends.php",
+        "server/core/models/telegramoidc.php",
+        "server/core/models/telegrambothandler.php",
+        "server/core/models/telegramstars.php",
+        "server/core/models/rewardlinkpublisher.php"
+      ]
+    }
+  }
+}

@@ -75,11 +75,12 @@ $msk = new DateTimeZone('Europe/Moscow');
                     <dd><?= $row[$field] ? $escape((new DateTimeImmutable('@'.(int)$row[$field]))->setTimezone($msk)->format('d.m.Y H:i:s')) : '—' ?></dd>
                 <?php endforeach; ?>
                 </dl>
-                <h3>Попытки фоновой сверки</h3>
+                <h3>Сверка и доставка webhook</h3>
                 <?php $attempts = PaymentAttempts::read(getenv('PRIPYAT_RECONCILE_STATE') ?: '/var/lib/pripyat-payment-reconcile', $row['world'], (string)$row['payment_id']); ?>
+                <?php $attempts = array_merge($attempts, PaymentAttempts::read(getenv('PRIPYAT_WEBHOOK_AUDIT_DIR') ?: '/var/lib/pripyat-payment-webhooks', $row['world'], (string)$row['payment_id'])); usort($attempts, static fn($a,$b)=>$a['time']<=>$b['time']); $attempts=array_slice($attempts,-100); ?>
                 <p>Последние доступные записи журнала (до 100). Отсутствие записи не подтверждает отсутствие попыток.</p>
                 <?php foreach ($attempts as $attempt): ?>
-                <p><?= $escape((new DateTimeImmutable('@'.$attempt['time']))->setTimezone($msk)->format('d.m.Y H:i:s')) ?> — <?= $escape($attempt['outcome']) ?></p>
+                <p><?= $escape((new DateTimeImmutable('@'.$attempt['time']))->setTimezone($msk)->format('d.m.Y H:i:s')) ?> — <?= $escape($attempt['source']) ?>: <?= $escape($attempt['outcome']) ?> <?= $attempt['http_status'] ? '(HTTP '.(int)$attempt['http_status'].')' : '' ?> · <?= $escape($attempt['attempt_id']) ?></p>
                 <?php endforeach; ?>
                 </details></td>
             </tr>
