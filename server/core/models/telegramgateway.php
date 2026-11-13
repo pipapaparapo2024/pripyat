@@ -6,7 +6,7 @@ final class TelegramGateway {
     public static function allowed(string $method): bool {
         if($method==='telegramavatars.get')return true;
         if(self::requiresDeveloper($method))return true;
-        if(in_array($method,['telegramstars.create','telegramstars.status'],true))return true;
+        if(in_array($method,['telegramstars.create','telegramstars.status','telegramstars.acceptTerms'],true))return true;
         if(in_array($method,['telegramfriends.list','telegramfriends.requests','telegramfriends.send','telegramfriends.accept','telegramfriends.decline','telegramfriends.remove'],true))return true;
         if (!preg_match('/^([a-z0-9]+)\.([A-Za-z][A-Za-z0-9]*)$/D', $method, $m) || !in_array($m[1], self::CLASSES, true)) return false;
         // Legacy UID-based admin and platform-specific identity operations stay closed.

@@ -1,8 +1,9 @@
 <?php
+require_once __DIR__.'/telegramenvironment.php';
 /** Only Telegram-hosted files downloaded server-side. Never return a bot-token URL. */
 final class TelegramAvatars {
     private $bot,$secret,$dir,$download;
-    public function __construct($bot,string $secret,string $dir='/var/www/stalker-tg-test/public/images/telegram-avatars',$download=null){$this->bot=$bot;$this->secret=$secret;$this->dir=$dir;$this->download=$download;}
+    public function __construct($bot,string $secret,?string $dir=null,$download=null){$this->bot=$bot;$this->secret=$secret;$this->dir=$dir??TelegramEnvironment::runtimeDirectory().'/images/telegram-avatars';$this->download=$download;}
     public function get(string $external,int $now): ?string {
         if(!TelegramAccess::validId($external))return null;
         $key=hash_hmac('sha256',$external,$this->secret);$base=$this->dir.'/'.$key;
@@ -28,5 +29,5 @@ final class TelegramAvatars {
             return $this->cached($key);
         }finally{flock($lock,LOCK_UN);fclose($lock);}
     }
-    private function cached(string $key): ?string {return is_file($this->dir.'/'.$key.'.jpg')?'https://tg-test-pripyat-game.ru/images/telegram-avatars/'.$key.'.jpg?v='.filemtime($this->dir.'/'.$key.'.jpg'):null;}
+    private function cached(string $key): ?string {return is_file($this->dir.'/'.$key.'.jpg')?TelegramEnvironment::origin().'/images/telegram-avatars/'.$key.'.jpg?v='.filemtime($this->dir.'/'.$key.'.jpg'):null;}
 }

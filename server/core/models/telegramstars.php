@@ -24,7 +24,8 @@ final class TelegramStars {
         if($recent>=10)throw new InvalidArgumentException('too_many_orders');
         $id=bin2hex(random_bytes(24));
         $this->q('INSERT INTO telegram_payment_orders (order_id,player_id,telegram_id,product_id,stars,reward_field,reward_count,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?,?)',[$id,$uid,(string)$external,$productId,$p['stars'],$p['field'],$p['count'],$now,$now+1800]);
-        $url=$this->bot->call('createInvoiceLink',['title'=>$p['title'],'description'=>'Покупка для персонажа в Telegram TEST «Припять».','payload'=>'tg1_'.$id,'currency'=>'XTR','prices'=>[['label'=>$p['title'],'amount'=>$p['stars']]]]);
+        $description=TelegramEnvironment::name()==='prod'?'Покупка для персонажа в Telegram «Припять».':'Покупка для персонажа в Telegram TEST «Припять».';
+        $url=$this->bot->call('createInvoiceLink',['title'=>$p['title'],'description'=>$description,'payload'=>'tg1_'.$id,'currency'=>'XTR','prices'=>[['label'=>$p['title'],'amount'=>$p['stars']]]]);
         if(!is_string($url)||!preg_match('~^https://t\.me/\$[A-Za-z0-9_-]+$~D',$url))throw new RuntimeException('invalid_invoice_url');
         error_log('[telegram-stars] event=invoice-created');
         return ['order_id'=>$id,'invoice_url'=>$url,'stars'=>$p['stars'],'product_id'=>$productId];
@@ -80,6 +81,25 @@ final class TelegramStars {
         if(!preg_match('/^[a-f0-9]{48}$/D',$id))throw new InvalidArgumentException('invalid_order');
         $status=$this->q('SELECT status FROM telegram_payment_orders WHERE order_id=? AND player_id=?',[$id,$uid])->fetchColumn();
         if($status===false)throw new InvalidArgumentException('unknown_order');return ['payment_status'=>$status];
+    }
+    public function recentPayments(int $limit=10): array {
+        $limit=max(1,min(20,$limit));
+        return $this->q('SELECT t.charge_id,t.stars,t.credited_at,t.refunded_at,o.telegram_id,o.order_id FROM telegram_payment_transactions t JOIN telegram_payment_orders o ON o.order_id=t.order_id ORDER BY t.credited_at DESC LIMIT '.$limit)->fetchAll(PDO::FETCH_ASSOC);
+    }
+    /** Owner-initiated refund; the source charge and recipient are resolved only from our receipt ledger. */
+    public function refund(string $charge,int $now): array {
+        if(!preg_match('/^[\x21-\x7e]{1,255}$/D',$charge))throw new InvalidArgumentException('invalid_charge');
+        $this->db->beginTransaction();
+        try{
+            $row=$this->q('SELECT t.order_id,t.refunded_at,o.telegram_id FROM telegram_payment_transactions t JOIN telegram_payment_orders o ON o.order_id=t.order_id WHERE t.charge_id=? FOR UPDATE',[$charge])->fetch(PDO::FETCH_ASSOC);
+            if(!$row)throw new InvalidArgumentException('unknown_charge');
+            if($row['refunded_at']!==null)throw new InvalidArgumentException('already_refunded');
+            $this->bot->call('refundStarPayment',['user_id'=>(int)$row['telegram_id'],'telegram_payment_charge_id'=>$charge]);
+            $this->q('UPDATE telegram_payment_transactions SET refunded_at=? WHERE charge_id=? AND refunded_at IS NULL',[$now,$charge]);
+            $this->q("UPDATE telegram_payment_orders SET status='refunded' WHERE order_id=?",[$row['order_id']]);
+            $this->db->commit();error_log('[telegram-stars] event=refund-requested');
+            return ['telegram_id'=>(string)$row['telegram_id']];
+        }catch(Throwable $e){if($this->db->inTransaction())$this->db->rollBack();throw $e;}
     }
     public function refunded(string $external,array $payment,int $now): void {
         $id=$this->orderId($payment);$charge=$payment['telegram_payment_charge_id']??'';

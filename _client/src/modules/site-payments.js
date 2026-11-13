@@ -1,4 +1,4 @@
-export function installSitePayments(enabled,scope=''){
+export function installSitePayments(enabled,scope='',request=(...args)=>window.TS.php(...args)){
  const orderKey='pripyat-site-payment'+(scope?':'+scope:''),urlKey=orderKey+'-url',itemKey=orderKey+'-item';
  let creating=false,checking=false,paymentWindow=null;
  const message=text=>{
@@ -7,7 +7,7 @@ export function installSitePayments(enabled,scope=''){
  };
  const check=()=>{
   const id=sessionStorage.getItem(orderKey);if(!enabled||!id||checking)return;
-  checking=true;window.TS.php('sitepayments.status',{order_id:id},data=>{
+  checking=true;request('sitepayments.status',{order_id:id},data=>{
    checking=false;
    if(['credited','already_credited','canceled'].includes(data.status)){
     // An older status request must not erase a newer selected order.
@@ -34,7 +34,7 @@ export function installSitePayments(enabled,scope=''){
   const existing=sessionStorage.getItem(urlKey);
   if(sessionStorage.getItem(orderKey)&&existing&&sessionStorage.getItem(itemKey)===item){checkoutWindow.location.replace(existing);check();return Promise.resolve(true);}
   const bytes=crypto.getRandomValues(new Uint8Array(32)),intent=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');creating=true;
-  return new Promise(resolve=>window.TS.php('sitepayments.create',{product_id:Number(match[1]),intent},data=>{
+  return new Promise(resolve=>request('sitepayments.create',{product_id:Number(match[1]),intent},data=>{
    creating=false;
    if(typeof data.confirmation_url!=='string'||!/^https:\/\/(yoomoney\.ru|yookassa\.ru|checkout\.yookassa\.ru)\//.test(data.confirmation_url)){
     checkoutWindow.close();message('Не удалось открыть оплату. Попробуйте ещё раз.');resolve(false);return;

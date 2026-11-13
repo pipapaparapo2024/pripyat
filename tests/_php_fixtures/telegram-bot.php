@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../../server/core/models/telegrambothandler.php';
+require_once __DIR__.'/../../server/core/models/telegramaccess.php';
 function assertBot($v){if(!$v)throw new RuntimeException('Проверка Telegram-бота не пройдена');}
 class BotFriendsFake{
     public $removed=[],$accepted=[];
@@ -21,7 +22,14 @@ assertBot(!str_contains($b->calls[0][1]['reply_markup']['inline_keyboard'][0][0]
 assertBot(count($f->accepted)===0);
 $handler->handle(msg('/friends'));assertBot(str_contains(end($b->calls)[1]['text'],'Друг'));
 $handler->handle(msg('/others'));assertBot(str_contains(end($b->calls)[1]['text'],'Не друзья'));
-$handler->handle(msg('/invite'));assertBot(str_contains(end($b->calls)[1]['text'],'ID'));
+$handler->handle(msg('/invite'));assertBot(str_contains(end($b->calls)[1]['text'],'внутри игры'));
+$reward='r1_test_telegram_'.str_repeat('a',32);
+$handler->handle(msg('/start g_'.$reward));
+assertBot(end($b->calls)[1]['reply_markup']['inline_keyboard'][0][0]['web_app']['url']==='https://tg-test-pripyat-game.ru/?reward='.$reward);
+foreach($b->calls as [$method,$params]){
+    $markup=json_encode($params['reply_markup']??[]);
+    assertBot(!str_contains($markup,'"callback_data":"invite"'));
+}
 $handler->handle(['callback_query'=>['id'=>'cb','from'=>['id'=>123],'message'=>['chat'=>['id'=>123,'type'=>'private']],'data'=>'remove:8']]);
 assertBot($f->removed===[[7,8]]);
 foreach($b->calls as [$m,$p])if(isset($p['chat_id']))assertBot($p['chat_id']===123);
@@ -41,11 +49,14 @@ class FakeStars {
     function refunded($id,$p,$now){$this->calls[]='refund';}
 }
 $pay=new FakeStars;$client=new BotClientFake;$handler=new TelegramBotHandler($f,$client,'Welcome',$pay);
-$handler->handle(['pre_checkout_query'=>['id'=>'checkout-1','from'=>['id'=>123],'currency'=>'XTR']]);
-assertBot($pay->calls===['checkout']&&end($client->calls)[0]==='answerPreCheckoutQuery'&&end($client->calls)[1]['ok']===true);
+$handler->handle(['pre_checkout_query'=>['id'=>'checkout-non-owner','from'=>['id'=>123],'currency'=>'XTR']]);
+assertBot($pay->calls===[]&&end($client->calls)[0]==='answerPreCheckoutQuery'&&end($client->calls)[1]['ok']===false,'Non-owner checkout must be declined');
+$handler->handle(['pre_checkout_query'=>['id'=>'checkout-owner','from'=>['id'=>(int)TelegramAccess::OWNER],'currency'=>'XTR']]);
+assertBot($pay->calls===['checkout']&&end($client->calls)[0]==='answerPreCheckoutQuery'&&end($client->calls)[1]['ok']===true,'Owner checkout must be accepted');
 $update=msg('');$update['message']['successful_payment']=['currency'=>'XTR'];$handler->handle($update);
-assertBot($pay->calls===['checkout','credit']);
+assertBot($pay->calls===['checkout','credit'],'Previously valid payment receipt remains processed');
 $update=msg('');$update['message']['refunded_payment']=['currency'=>'XTR'];$handler->handle($update);
 assertBot($pay->calls===['checkout','credit','refund']);
-$handler->handle(msg('/paysupport'));assertBot(str_contains(end($client->calls)[1]['text'],'Опишите проблему'));
+$handler->handle(msg('/paysupport'));assertBot(str_contains(end($client->calls)[1]['text'],'Что случилось'));
+$handler->handle(msg('/support'));assertBot(str_contains(end($client->calls)[1]['text'],'Что случилось'));
 echo "Stars webhook: pre-checkout не начисляет, successful_payment и refund разделены, /paysupport доступен\n";

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/telegramenvironment.php';
 /** Telegram login boundary. Does not load Registry or select VK/OK databases. */
 final class TelegramAuth {
     public static function verify(string $raw, string $botToken, int $now): array {
@@ -33,11 +34,11 @@ final class TelegramAuth {
 
     public static function validateConfig(array $config): void {
         // First stage is TEST only. A client parameter cannot choose a database or bot.
-        if (($config['enabled'] ?? false) !== true || ($config['environment'] ?? '') !== 'test'
-            || ($config['database'] ?? '') !== 'stalker_telegram_test'
+        if (($config['enabled'] ?? false) !== true
             || !is_string($config['bot_token'] ?? null) || !preg_match('/^[0-9]+:[A-Za-z0-9_-]{20,}$/D', $config['bot_token'])) {
             throw new RuntimeException('telegram_disabled');
         }
+        TelegramEnvironment::select($config);
     }
 
     /** Store must implement transaction + UNIQUE Telegram ID; injected for offline tests. */
@@ -47,10 +48,17 @@ final class TelegramAuth {
         return self::issueSession($identity,$store,$now);
     }
     /** Website JWT must verify cryptographically; posted IDs never reach the store. */
-    public static function loginWebsite(string $jwt,array $jwks,string $clientId,string $nonce,array $config,$store,int $now): array {
+    public static function loginWebsite(string $jwt,array $jwks,string $clientId,?string $nonce,array $config,$store,int $now): array {
         self::validateConfig($config);
         require_once __DIR__.'/telegramoidc.php';
         $identity=TelegramOidc::verify($jwt,$jwks,$clientId,$nonce,$now);
+        return self::issueSession($identity,$store,$now);
+    }
+    /** Identity must come exclusively from the server session created by a verified OIDC callback. */
+    public static function loginVerifiedWebsiteSession(array $identity,array $config,$store,int $now): array {
+        self::validateConfig($config);
+        if(!is_string($identity['telegram_id']??null)||!preg_match('/^[1-9][0-9]{0,15}$/D',$identity['telegram_id'])
+            ||!is_array($identity['profile']??null))throw new InvalidArgumentException('invalid_website_identity');
         return self::issueSession($identity,$store,$now);
     }
     private static function issueSession(array $identity,$store,int $now): array {
@@ -66,7 +74,7 @@ final class TelegramAuth {
             $store->rollback();
             throw $e;
         }
-        return ['platform'=>'telegram', 'environment'=>'test', 'player_id'=>(string)$uid,
+        return ['platform'=>'telegram', 'environment'=>TelegramEnvironment::name(), 'player_id'=>(string)$uid,
             'token'=>$token, 'expires_at'=>$now + 3600, 'req_key'=>$requestKey, 'profile'=>$identity['profile'],
             'owner_diagnostics'=>$identity['telegram_id']==='1355806786',
             'roles'=>method_exists($store,'roles')?$store->roles($uid):[]];

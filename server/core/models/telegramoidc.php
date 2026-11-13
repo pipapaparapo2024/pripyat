@@ -9,9 +9,13 @@ final class TelegramOidc {
         return $decoded;
     }
     public static function begin(string $clientId,string $redirect,int $now): array {
-        if (!preg_match('/^[1-9][0-9]+$/D',$clientId) || $redirect!=='https://pripyat-game-site.ru/auth/telegram/callback') throw new InvalidArgumentException('invalid_oidc_config');
-        $pending=['state'=>bin2hex(random_bytes(32)),'nonce'=>bin2hex(random_bytes(32)), 'verifier'=>self::base64url(random_bytes(48)),'created_at'=>$now];
-        $url='https://oauth.telegram.org/auth?'.http_build_query(['client_id'=>$clientId,'redirect_uri'=>$redirect,'response_type'=>'code','scope'=>'openid profile','state'=>$pending['state'],'nonce'=>$pending['nonce'],'code_challenge'=>self::base64url(hash('sha256',$pending['verifier'],true)),'code_challenge_method'=>'S256'],'','&',PHP_QUERY_RFC3986);
+        if (!preg_match('/^[1-9][0-9]+$/D',$clientId)
+            || !in_array($redirect,[
+                'https://pripyat-game-site.ru/auth/telegram/callback',
+                'https://pripyat-game-site.ru/auth/telegram-prod/callback',
+            ],true)) throw new InvalidArgumentException('invalid_oidc_config');
+        $pending=['state'=>bin2hex(random_bytes(32)), 'verifier'=>self::base64url(random_bytes(48)),'created_at'=>$now];
+        $url='https://oauth.telegram.org/auth?'.http_build_query(['client_id'=>$clientId,'redirect_uri'=>$redirect,'response_type'=>'code','scope'=>'openid profile','state'=>$pending['state'],'code_challenge'=>self::base64url(hash('sha256',$pending['verifier'],true)),'code_challenge_method'=>'S256'],'','&',PHP_QUERY_RFC3986);
         return ['pending'=>$pending,'url'=>$url];
     }
     /** Removes pending challenge even on failure, so a callback cannot be replayed. */
@@ -38,8 +42,8 @@ final class TelegramOidc {
         $spki=self::der(48,hex2bin('300d06092a864886f70d0101010500').self::der(3,"\0".$rsa));
         return "-----BEGIN PUBLIC KEY-----\n".chunk_split(base64_encode($spki),64,"\n")."-----END PUBLIC KEY-----\n";
     }
-    public static function verify(string $jwt,array $jwks,string $clientId,string $nonce,int $now): array {
-        if(strlen($jwt)>16384 || strlen($nonce)<32)throw new InvalidArgumentException('invalid_id_token');
+    public static function verify(string $jwt,array $jwks,string $clientId,?string $nonce,int $now): array {
+        if(strlen($jwt)>16384 || ($nonce!==null && strlen($nonce)<32))throw new InvalidArgumentException('invalid_id_token');
         $parts=explode('.',$jwt);if(count($parts)!==3)throw new InvalidArgumentException('invalid_id_token');
         $head=json_decode(self::decode($parts[0]),true,16,JSON_THROW_ON_ERROR);
         $claims=json_decode(self::decode($parts[1]),true,16,JSON_THROW_ON_ERROR);
@@ -47,14 +51,22 @@ final class TelegramOidc {
         $keys=[];
         foreach($jwks['keys']??[] as $key)if(is_array($key)&&($key['kid']??null)===$head['kid']&&($key['kty']??'')==='RSA'&&($key['alg']??'RS256')==='RS256'&&($key['use']??'sig')==='sig')$keys[]=$key;
         if(count($keys)!==1 || openssl_verify($parts[0].'.'.$parts[1],self::decode($parts[2]),self::pem($keys[0]),OPENSSL_ALGO_SHA256)!==1)throw new InvalidArgumentException('invalid_jwt_signature');
-        $id=$claims['id']??null;
         if(($claims['iss']??'')!=='https://oauth.telegram.org'||!is_string($claims['aud']??null)||$claims['aud']!==$clientId
             ||!is_string($claims['sub']??null)||$claims['sub']===''||strlen($claims['sub'])>255
             ||!is_int($claims['exp']??null)||$claims['exp']<=$now||!is_int($claims['iat']??null)||$claims['iat']>$now+30||$claims['iat']>$claims['exp']
-            ||(isset($claims['nbf'])&&(!is_int($claims['nbf'])||$claims['nbf']>$now))
-            ||!is_string($claims['nonce']??null)||!hash_equals($nonce,$claims['nonce'])
-            ||!is_int($id)||$id<1||$id>4503599627370495)throw new InvalidArgumentException('invalid_jwt_claims');
+            ||(isset($claims['nbf'])&&(!is_int($claims['nbf'])||$claims['nbf']>$now)))throw new InvalidArgumentException('invalid_jwt_claims');
+        // Telegram's documented server-side code flow uses state and PKCE without requesting a nonce.
+        if($nonce===null ? array_key_exists('nonce',$claims) : !is_string($claims['nonce']??null)||!hash_equals($nonce,$claims['nonce'])) {
+            throw new InvalidArgumentException('invalid_jwt_nonce');
+        }
+        if(!array_key_exists('id',$claims))throw new InvalidArgumentException('missing_jwt_telegram_id');
+        $id=$claims['id'];
+        if(is_int($id))$id=(string)$id;
+        if(!is_string($id)||!preg_match('/^[1-9][0-9]{0,15}$/D',$id)
+            ||(strlen($id)===16&&strcmp($id,'4503599627370495')>0)) {
+            throw new InvalidArgumentException('invalid_jwt_telegram_id');
+        }
         // sub is an OIDC subject, NOT the Mini App Telegram user ID.
-        return ['telegram_id'=>(string)$id,'expires_at'=>$claims['exp'],'profile'=>['first_name'=>is_string($claims['given_name']??null)?$claims['given_name']:(is_string($claims['name']??null)?$claims['name']:'Сталкер'),'last_name'=>is_string($claims['family_name']??null)?$claims['family_name']:'']];
+        return ['telegram_id'=>$id,'expires_at'=>$claims['exp'],'profile'=>['first_name'=>is_string($claims['given_name']??null)?$claims['given_name']:(is_string($claims['name']??null)?$claims['name']:'Сталкер'),'last_name'=>is_string($claims['family_name']??null)?$claims['family_name']:'']];
     }
 }

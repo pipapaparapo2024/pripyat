@@ -220,6 +220,7 @@ export default class Habar{
             }
         }
 
+        if(window.__habarAutoTest === true) this._buildAutoCollect(win);
         this._updateHabarTimer();
 
         win.y = 36;
@@ -278,6 +279,58 @@ export default class Habar{
                 timer.text = hh + ':' + mm + ':' + ss + countSuffix;
             }
         }
+    }
+
+    _buildAutoCollect(win){
+        const toggle = new PIXI.Text('Автосбор Хабара…', {
+            fontFamily:'Southbank LT, sans-serif', fontSize:22, fill:0xffdf9c,
+        });
+        toggle.position.set(60, 60);
+        toggle.buttonMode = true;
+        win.addChild(toggle);
+
+        const status = new PIXI.Text('', {
+            fontFamily:'Southbank LT, sans-serif', fontSize:16, fill:0xffffff,
+        });
+        status.position.set(60, 89);
+        win.addChild(status);
+
+        let enabled = false;
+        const render = (res) => {
+            enabled = res.enabled === true;
+            toggle.text = enabled ? 'Автосбор Хабара: ВКЛ' : 'Автосбор Хабара: ВЫКЛ';
+            toggle.interactive = true;
+            const last = res.lastAutoMs > 0 ? new Date(res.lastAutoMs).toLocaleString('ru-RU', {
+                timeZone:'Europe/Moscow', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit',
+            }) : '';
+            const collectedToday = res.lastCollectMs > 0 && _mskDayKey(res.lastCollectMs) === _mskDayKey(res.current_time * 1000);
+            const hasAccess = res.accessUntilMs > res.current_time * 1000;
+            status.text = !hasAccess ? 'Доступ к боту не активен' :
+                !enabled ? 'Нажмите, чтобы включить сбор вне игры' :
+                res.used ? 'Сбор за текущий срок выполнен' :
+                !res.active ? 'Ожидает активного Хабара' :
+                collectedToday ? 'Следующий сбор после 00:00 МСК' : 'Ожидает запуска автосбора';
+            if(hasAccess){
+                const until = new Date(res.accessUntilMs).toLocaleString('ru-RU', {timeZone:'Europe/Moscow'});
+                status.text += ' · Доступ до ' + until + ' МСК';
+            }
+            if(last) status.text += ' · Последний автосбор: ' + last + ' МСК';
+        };
+        const loadFailed = () => { toggle.text = 'Статус недоступен. Нажмите, чтобы повторить'; toggle.interactive = true; };
+        let loaded = false;
+        const load = () => {
+            toggle.interactive = false;
+            TS.php('habar.autoStatus', {}, (res) => { loaded = true; render(res); }, loadFailed);
+        };
+        toggle.on('pointerdown', () => {
+            if(!loaded){ load(); return; }
+            toggle.interactive = false;
+            TS.php('habar.setAutoCollect', {enabled:!enabled}, render, () => {
+                toggle.interactive = true;
+                status.text = 'Не удалось сохранить. Нажмите, чтобы повторить';
+            });
+        });
+        load();
     }
 
     _requestCancelHabar(){

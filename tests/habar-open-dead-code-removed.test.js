@@ -36,10 +36,12 @@ const habarPhp = readSrc('server/core/controllers/habar.php');
 
 console.log('\nTest 1: habar.php — permits больше не включает \'open\'');
 {
-    assert(/\$this->permits = \['buy', 'collectDay', 'cancel'\];/.test(habarPhp),
-        "\$permits сузился до ['buy', 'collectDay'] — 'open' убран");
+    assert(/\$this->permits = \['buy', 'collectDay', 'cancel', 'autoStatus', 'setAutoCollect'\];/.test(habarPhp),
+        "ручные методы и ожидаемые TEST-методы перечислены в permits");
     assert(!/\$this->permits = \[[^\]]*'open'[^\]]*\]/.test(habarPhp),
         "нигде в permits не осталось 'open'");
+    assert((habarPhp.match(/if\(empty\(\$this->registry\['habar_auto_test'\]\)\)/g)||[]).length>=2,
+        'методы автосбора закрыты TEST-флагом habar_auto_test');
 }
 
 console.log('\nTest 2: habar.php — function open()/_roll() удалены целиком');
@@ -64,7 +66,7 @@ console.log('\nTest 3: habar.php.buy() не затронут — по-прежн
 
 console.log('\nTest 4: habar.php.collectDay() не затронут — реальная и единственная выдача награды хабара');
 {
-    assert(/function collectDay\(\)\{/.test(habarPhp), 'collectDay() на месте');
+    assert(/function collectDay\([^)]*\)\s*\{/.test(habarPhp), 'collectDay() на месте');
     assert(/\$cfg = \$this->ops->catalog\('habar_daily_config'\);/.test(habarPhp),
         'collectDay() по-прежнему читает единственный живой каталог наград — habar_daily_config.json');
 }

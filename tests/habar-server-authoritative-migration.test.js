@@ -51,8 +51,9 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     // 28.09.2026: 'open' убран из permits вместе с самим методом Habar::open() — был
     // недостижимым мёртвым кодом (client habar.js его никогда не вызывал), см.
     // tests/habar-open-dead-code-removed.test.js.
-    assert(/\$this->permits = \['buy', 'collectDay', 'cancel'\];/.test(src), "'collectDay' добавлен в permits");
-    assert(/function collectDay\(\)\{/.test(src), 'collectDay() определён');
+    assert(/\$this->permits = \['buy', 'collectDay', 'cancel', 'autoStatus', 'setAutoCollect'\];/.test(src), "'collectDay' и TEST-методы автосбора заданы в permits");
+    assert(/function collectDay\(bool \$automatic = false\)\{/.test(src), 'collectDay() определён; автосбор выключен по умолчанию');
+    assert(/if\(\$automatic && \(PHP_SAPI !== 'cli' \|\| empty\(\$this->registry\['habar_auto_test'\]\)\)\) return \$this->ops->fail\(56\);/.test(src), 'автоматический сбор ограничен CLI-воркером TEST');
     assert(/\$boughtIdx = \$this->ops->i\(\$user, 'habar_bought'\) - 1;/.test(src), 'читает habar_bought из ПОЛНОЙ строки (loadUser), не из client-writable whitelist');
     assert(/if\(\$boughtIdx < 0\) return \$this->ops->fail\(57\);/.test(src), 'отклоняет сбор, если хабар не куплен');
     // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней от даты покупки, не от
@@ -68,7 +69,9 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     assert(/\$lockedUser\['habar_days_collected'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'habar_days_collected'\) \+ 1;/.test(src),
         'инкремент дней по-прежнему пишется на сервере (статистика, не влияет на истечение)');
     assert(/\$lockedUser\['habar_last_collect_ts'\] = \$now;/.test(src), 'таймер последнего сбора пишется на сервере, серверным временем');
-    assert(/if\(!\$this->ops->saveUser\(\$user\)\) return \$this->ops->fail\(99\);/.test(src), 'реально сохраняет через Gameops::saveUser (полная строка, не whitelist)');
+    assert(src.includes('if(!$link || !$link->begin_transaction()) return $this->ops->fail(99);') && src.includes('if(!$committed) $link->rollback();'), 'оба режима требуют транзакцию и откатывают неуспешную выдачу');
+    assert(/if\(\$automatic\) \$lockCols\[\] = 'bot_settings';/.test(src), 'автосбор лочит настройки вместе с состоянием хабара');
+    assert(src.includes('if(!$link || !$link->begin_transaction()) return $this->ops->fail(99);'), 'сбор отклоняется без транзакционного соединения');
 
     console.log('\nhabar.php — buy() тоже считает stew_spent на сервере (раньше это делал клиент)');
     // 05.10.2026 (стале-пин, не регрессия — раньше buy() инкрементировал stew_spent отдельной
@@ -76,7 +79,7 @@ console.log('\nhabar.php — новый серверный эндпоинт coll
     // для currency==='stew' (см. gameops.php:80-82) — отдельная строка здесь задвоила бы счёт.
     // Проверяем, что явного дублирующего инкремента НЕТ и что deduct() реально вызывается на
     // валюте 'stew' внутри buy() (единственный путь, которым stew_spent теперь растёт здесь).
-    assert(!/\$lockedUser\['stew_spent'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'stew_spent'\)\s*\+/.test(src.slice(src.indexOf('function buy()'), src.indexOf('function collectDay()'))),
+    assert(!/\$lockedUser\['stew_spent'\]\s*=\s*\$this->ops->i\(\$lockedUser, 'stew_spent'\)\s*\+/.test(src.slice(src.indexOf('function buy()'), src.indexOf('function collectDay('))),
         'buy() не дублирует инкремент stew_spent отдельной строкой — доверяет Gameops::deduct()');
     assert(/if\(!\$this->ops->deduct\(\$lockedUser, \$cur, \$price\)\)/.test(src),
         'stew_spent инкрементируется на сервере при покупке через deduct(..., $cur, ...) (нужно для достижения spend_stew)');

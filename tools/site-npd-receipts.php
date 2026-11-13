@@ -131,7 +131,7 @@ function npdRun(bool $checkOnly): void
             throw new RuntimeException('npd_not_ready');
         }
     }
-    $worlds = ['site' => 'stalker_site_test', 'vk' => 'stalker', 'ok' => 'stalker_ok'];
+    $worlds = ['site' => 'stalker_site_test', 'vk' => 'stalker', 'ok' => 'stalker_ok', 'telegram' => 'stalker_telegram'];
     $pdo = new PDO('mysql:unix_socket=/run/mysqld/mysqld.sock', 'root', '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $pending = 0;
     foreach ($worlds as $world => $schema) {
@@ -146,7 +146,9 @@ function npdRun(bool $checkOnly): void
                 continue;
             }
             $file = $dir . '/' . $id . '.json';
-            $published = '/var/www/pripyat-site/private/npd-receipts/' . $id . '.json';
+            $published = ($world === 'telegram'
+                ? '/var/lib/pripyat-telegram-website/receipts/'
+                : '/var/www/pripyat-site/private/npd-receipts/') . $id . '.json';
             $old = is_file($file) ? json_decode(file_get_contents($file), true) : [];
             $terminal = in_array($old['status'] ?? '', ['review','failed','unknown','canceled','refund_review'], true);
             $registered = ($old['status'] ?? '') === 'registered' && isset($old['receipt_url']);
@@ -189,7 +191,7 @@ function npdRun(bool $checkOnly): void
         }
     }
     if ($checkOnly) {
-        echo "NPD API connected, subscription active, all three ledgers readable. Pending: $pending\n";
+        echo "NPD API connected, subscription active, payment ledgers readable. Pending: $pending\n";
     }
 }
 

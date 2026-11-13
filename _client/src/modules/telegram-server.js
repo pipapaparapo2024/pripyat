@@ -2,7 +2,7 @@ import Server from './server.js';
 
 export default class TelegramServer extends Server {
     constructor(session, base){
-        super(['telegram-test',session.player_id,base]);
+        super(['telegram-'+session.environment,session.player_id,base]);
         this.scriptURL=base+'/telegram-api.php';
         this.token=session.token;this.req_key=session.req_key;
     }

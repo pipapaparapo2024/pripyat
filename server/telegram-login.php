@@ -22,14 +22,14 @@ try {
     if(!(new TelegramAccess)->allowed($identity['telegram_id'])){
         http_response_code(403);echo json_encode(['status'=>'error','code'=>'telegram_access_denied','text'=>'Закрытое тестирование. Запросите доступ у разработчика. Ваш Telegram ID: '.$identity['telegram_id']]);exit;
     }
-    $db = new PDO('mysql:host=127.0.0.1;port=3306;dbname=stalker_telegram_test;charset=utf8mb4',
+    $db = new PDO('mysql:host=127.0.0.1;port=3306;dbname='.TelegramEnvironment::database().';charset=utf8mb4',
         $config['db_user'], $config['db_password'], [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES=>false]);
     $actual = $db->query('SELECT DATABASE()')->fetchColumn();
-    if ($actual !== 'stalker_telegram_test') throw new RuntimeException('database_mismatch');
+    if ($actual !== TelegramEnvironment::database()) throw new RuntimeException('database_mismatch');
     $session=TelegramAuth::login($raw, $config, new TelegramLoginStore($db), time());
     $start=$identity['start_param'];
     $reward=str_starts_with($start,'g_')?substr($start,2):($_POST['reward_code']??'');
-    if(is_string($reward)&&preg_match('/^r1_test_telegram_[a-f0-9]{32}$/D',$reward)&&RewardLinkTargets::matches($reward,$config['database']))$session['reward_code']=$reward;
+    if(is_string($reward)&&preg_match('/^r1_(?:test|prod)_telegram_[a-f0-9]{32}$/D',$reward)&&RewardLinkTargets::matches($reward,$config['database']))$session['reward_code']=$reward;
     // A URL invite is an opaque invitation, never an asserted user identity. Resolve it
     // only AFTER authenticating initData; signed start_param takes precedence.
     echo json_encode($session, JSON_THROW_ON_ERROR);

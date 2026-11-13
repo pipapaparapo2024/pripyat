@@ -58,7 +58,11 @@ async function refresh() {
   inFlight = true;
   let loggedOut = false;
   try {
-    const response = await fetch('/auth/status?receipts=1', {cache: 'no-store', credentials: 'same-origin'});
+    const telegram = new URLSearchParams(location.search).get('platform') === 'telegram';
+    let response = await fetch(telegram ? '/auth/telegram-prod/receipts' : '/auth/status?receipts=1', {cache: 'no-store', credentials: 'same-origin'});
+    if (!telegram && response.status === 401) {
+      response = await fetch('/auth/telegram-prod/receipts', {cache: 'no-store', credentials: 'same-origin'});
+    }
     if (response.status === 401) {
       loggedOut = true;
       list.replaceChildren();

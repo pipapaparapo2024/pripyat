@@ -1,9 +1,11 @@
 <?php
+require_once __DIR__.'/telegramenvironment.php';
 /** Private TEST allowlist. No SQL, usernames, request parameters or developer roles grant access. */
 final class TelegramAccess {
     const OWNER='1355806786';
     private $path;
-    public function __construct(string $path='/var/lib/pripyat-tg-test/access.json'){$this->path=$path;}
+    public function __construct(?string $path=null){$this->path=$path??TelegramEnvironment::stateDirectory().'/access.json';}
+    public static function canUseStars(string $id): bool {return $id===self::OWNER||(TelegramEnvironment::name()==='prod'&&self::validId($id));}
     public static function validId(string $id): bool {return preg_match('/^[1-9][0-9]{0,15}$/D',$id) && strlen($id)<=16 && (int)$id<=4503599627370495;}
     private function read(): array {
         if(!is_file($this->path))return [];
@@ -11,7 +13,7 @@ final class TelegramAccess {
         if(!is_array($data)||!isset($data['allowed'])||!is_array($data['allowed']))throw new RuntimeException('access_config_invalid');
         return array_values(array_filter($data['allowed'],fn($id)=>is_string($id)&&self::validId($id)));
     }
-    public function allowed(string $id): bool {return $id===self::OWNER || in_array($id,$this->read(),true);}
+    public function allowed(string $id): bool {return self::validId($id)&&(TelegramEnvironment::name()==='prod'||$id===self::OWNER || in_array($id,$this->read(),true));}
     public function listing(string $actor): array {if($actor!==self::OWNER)throw new InvalidArgumentException('owner_only');return array_values(array_unique(array_merge([self::OWNER],$this->read())));}
     public function change(string $actor,string $id,bool $allow): void {
         if($actor!==self::OWNER)throw new InvalidArgumentException('owner_only');

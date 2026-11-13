@@ -4,7 +4,7 @@ class Gameops {function loadUser(){return ['habar_bought'=>2,'habar_bought_ts'=>
 class CancelTools{public $out;}
 class CancelDb{
  public $connect_error=false;public static $row=['habar_bought'=>2,'habar_bought_ts'=>123];public static $queries=[];public static $fail=false;public static $rollback=0;public static $commit=0;
- function __construct(...$a){}function set_charset($s){}function begin_transaction(){}function close(){}function rollback(){self::$rollback++;}function commit(){self::$commit++;return true;}
+ function __construct(...$a){}function set_charset($s){}function begin_transaction(){return true;}function close(){}function rollback(){self::$rollback++;}function commit(){self::$commit++;return true;}
  function query($sql){self::$queries[]=$sql;if(str_starts_with($sql,'SELECT'))return new class {public $num_rows=1;function fetch_assoc(){return CancelDb::$row;}};return !self::$fail;}
 }
 $s=file_get_contents(__DIR__.'/../../server/core/controllers/habar.php');$s=preg_replace('/^require_once __DIR__.*weaponprogress.php.*$/m','',$s);eval(str_replace(['<?php','new mysqli('],['','new CancelDb('],$s));

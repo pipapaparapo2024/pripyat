@@ -37,6 +37,7 @@
             $this->permits = ['cacheAvatar', 'get', 'save', 'getProfile', 'resetSession', 'setFriendsScopeGranted', 'setFriendsCache', 'devGrantWeapons', 'devGrantShmot', 'devGrantCurrency', 'devGrantEnergy', 'devSetRyukzakLevel', 'setDevFlag', 'setDevCombo', 'toggleDevKeyring', 'devPeekRouletteCups', 'devGetLogs'];
         }
         function cacheAvatar(){
+            require_once __DIR__.'/../models/nativeavatarcache.php';
             $url=$this->registry['user_params']['url']??null;$platform=$this->registry['platform']??'';
             if(!is_string($url)||!in_array($platform,['vk','ok'],true))return $this->registry['tools']->error(54);
             $ok=NativeAvatarCache::put($platform,(int)$this->registry['uid'],$url);$this->registry['tools']->output(['ok'=>$ok]);

@@ -11,4 +11,17 @@ foreach(['production'=>'','test'=>'test/'] as $mode=>$prefix){
 }
 $rejected=false;try{new TelegramBotClient('123:fixture','unknown');}catch(InvalidArgumentException $e){$rejected=true;}networkCheck($rejected);
 $bad=new TelegramBotClient('123:fixture','test',fn()=>['ok'=>false]);$rejected=false;try{$bad->call('createInvoiceLink',[]);}catch(RuntimeException $e){$rejected=true;}networkCheck($rejected);
+$options=new ReflectionMethod(TelegramBotClient::class,'connectionOptions');
+networkCheck($options->invoke(new TelegramBotClient('123:fixture'))===[]);
+$relay=new TelegramBotClient('123:fixture','production',$transport,10443);
+networkCheck($relay->call('getMe',[])==='https://t.me/$fixture');
+networkCheck(end($calls)[0]==='https://api.telegram.org/bot123:fixture/getMe');
+if(extension_loaded('curl')){
+ networkCheck($options->invoke($relay)===[
+  CURLOPT_CONNECT_TO=>['api.telegram.org:443:127.0.0.1:10443'],CURLOPT_PROXY=>'',
+ ]);
+}
+foreach([0,443,65536] as $port){
+ $rejected=false;try{new TelegramBotClient('123:fixture','production',null,$port);}catch(InvalidArgumentException $e){$rejected=true;}networkCheck($rejected);
+}
 echo "Telegram Bot API: production preserved, separate test endpoint, invoice result, invalid network/method and provider error checked; no network calls\n";

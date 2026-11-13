@@ -8,7 +8,7 @@ export function createTelegramRuntime(session, webApp){
         const promise=new Promise(resolve=>{
             window.TS.php('telegramavatars.get',{player_id:key},data=>{
                 const url=data.photo_url;
-                resolve(typeof url==='string'&&/^https:\/\/tg-test-pripyat-game\.ru\/images\/telegram-avatars\/[a-f0-9]{64}\.jpg\?v=[0-9]+$/.test(url)?url:null);
+                resolve(typeof url==='string'&&/^https:\/\/(?:tg-test-pripyat-game\.ru|pripyat-game-site\.ru\/telegram)\/images\/telegram-avatars\/[a-f0-9]{64}\.jpg\?v=[0-9]+$/.test(url)?url:null);
             },()=>resolve(null));
         });avatars.set(key,promise);return promise;
     };
@@ -17,7 +17,7 @@ export function createTelegramRuntime(session, webApp){
         platform:'telegram',capabilities:Object.freeze({friendsPermission:false,vkStorage:false,nativeShare:false,purchases:true}),
         getRoles:()=>Object.freeze([...(session.roles||[])]),
         getRewardCode:()=>typeof session.reward_code==='string'?session.reward_code:null,
-        getPlayerId:()=>session.player_id,getAppId:()=>'telegram-test',getLaunchParams:()=>({}),getSignedLaunchParams:()=>({}),getAccessToken:()=>null,
+        getPlayerId:()=>session.player_id,getAppId:()=>'telegram-'+session.environment,getLaunchParams:()=>({}),getSignedLaunchParams:()=>({}),getAccessToken:()=>null,
         initialize:()=>{webApp.ready();webApp.expand();return Promise.resolve();},
         setSwipeHistory:()=>Promise.resolve(),
         getServerTime:()=>Promise.resolve({response:session.expires_at-3600}),

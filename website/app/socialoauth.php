@@ -15,10 +15,11 @@ final class SocialOAuth {
    default=>'other',
   };
  }
- public static function begin(array $config,string $platform,int $now): array {
+ public static function begin(array $config,string $platform,int $now,bool $retry=false): array {
   if(!in_array($platform,['vk','ok'],true)||(string)($config['client_id']??'')!=='54875983'||($config['redirect_uri']??'')!=='https://pripyat-game-site.ru/auth/vk/callback')throw new InvalidArgumentException('invalid_social_config');
   $verifier=bin2hex(random_bytes(32));$state=bin2hex(random_bytes(32));
   $params=['client_id'=>$config['client_id'],'app_id'=>$config['client_id'],'redirect_uri'=>$config['redirect_uri'],'response_type'=>'code','code_challenge'=>rtrim(strtr(base64_encode(hash('sha256',$verifier,true)),'+/','-_'),'='),'code_challenge_method'=>'s256','state'=>$state,'provider'=>$platform==='ok'?'ok_ru':'vkid','scope'=>'vkid.personal_info'];
+  if($platform==='vk'&&$retry)$params['prompt']='login';
   return ['pending'=>['state'=>$state,'verifier'=>$verifier,'platform'=>$platform,'expires_at'=>$now+600],'url'=>'https://id.vk.ru/authorize?'.http_build_query($params)];
  }
  public static function consume(array &$session,string $state,int $now): array {

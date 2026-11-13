@@ -2,6 +2,7 @@
 require_once __DIR__.'/sitedonations.php';
 require_once __DIR__.'/paymentattempts.php';
 require_once __DIR__.'/rewardstotp-gate.php';
+if (getenv('PRIPYAT_REWARDS_AUTH_CONFIG')) requireRewardsLogin();
 if (($_SERVER['PRIPYAT_REWARDS_PURCHASES'] ?? '') !== '1' || !is_string($_SERVER['REMOTE_USER'] ?? null) || trim($_SERVER['REMOTE_USER']) === '') {
     http_response_code(403); exit('Доступ закрыт.');
 }

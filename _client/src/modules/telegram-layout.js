@@ -1,7 +1,7 @@
 // Telegram TEST: общая область игры и прилоудера.
 export function telegramGameViewport(vp, mobile = false) {
     if (mobile || vp.w < 1000 || vp.h < 600) return vp;
-    const w = Math.min(1120, vp.w * 0.82, vp.h * 0.82 * 16 / 9);
+    const w = Math.min(vp.w * 0.95, vp.h * 16 / 9);
     const h = w * 9 / 16;
     return {...vp, w, h, left: vp.left + (vp.w-w)/2, top: vp.top + (vp.h-h)/2};
 }

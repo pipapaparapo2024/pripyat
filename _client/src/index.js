@@ -291,6 +291,7 @@ window.my_server = (typeof location !== 'undefined' && location.hostname === 'te
     ? 'https://test-pripyat-game.ru/server'
     : 'https://pripyat-game.ru/server';
 if(window.__siteRuntime || window.__telegramRuntime) window.my_server = window.location.origin + '/server';
+if(window.__telegramRuntime) window.my_server = new URL('./server',window.location.href).href;
 
 window.bridge = bridge;
 window.Timers = Timers;

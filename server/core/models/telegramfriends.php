@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/telegramenvironment.php';
 /** Canonical, mutual Telegram friendship. Never reads VK/OK data. */
 final class TelegramFriends {
     private $db;
@@ -32,7 +33,7 @@ final class TelegramFriends {
             $this->lockPlayers([$uid]);
             $code=$this->q('SELECT code FROM telegram_friend_invites WHERE owner_player_id=? AND revoked_at IS NULL ORDER BY created_at,code LIMIT 1',[$uid])->fetchColumn();
             if($code===false){$code=bin2hex(random_bytes(24));$this->q('INSERT INTO telegram_friend_invites (code,owner_player_id,created_at) VALUES (?,?,?)',[$code,$uid,$now]);}
-            $this->db->commit();return 'https://t.me/pripyat_game_test_bot?start=f_'.$code;
+            $this->db->commit();return 'https://t.me/'.TelegramEnvironment::botUsername().'?start=f_'.$code;
         }catch(Throwable $e){$this->db->rollBack();throw $e;}
     }
     public function accept(int $uid,string $parameter,int $sinceMs): string {

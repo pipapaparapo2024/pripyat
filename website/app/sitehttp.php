@@ -7,6 +7,8 @@ if($path==='/auth/status'&&array_key_exists('donations',$_GET)){
  http_response_code(404);echo '{"error":"route_not_found"}';exit;
 }
 require_once __DIR__.'/siteauth.php';
+require_once __DIR__.'/rewardintent.php';
+require_once __DIR__.'/rewardintent.php';
 require_once __DIR__.'/siteratelimit.php';
 require_once __DIR__.'/sitephoneactions.php';
 require_once __DIR__.'/sitesessions.php';
@@ -15,6 +17,10 @@ require_once __DIR__.'/siteavatar.php';
 require_once __DIR__.'/siteroles.php';
 require_once __DIR__.'/siteyookassa.php';
 function siteResult(array $data,int $code=200): never {
+ if($code>=400)RewardIntent::audit('bootstrap_error',in_array($data['error']??'',['csrf_rejected','rate_limited','login_required','temporarily_unavailable','request_rejected','invalid_input'],true)?$data['error']:'request_rejected',(int)($_SESSION['site_authenticated']['player_id']??0));
+ if(isset($data['player_id'],$data['platform'])&&array_key_exists('reward_code',$data))RewardIntent::audit('bootstrap',is_string($data['reward_code'])?'delivered':(($_SESSION['reward_intent']['platform']??null)!==$data['platform']?'target_mismatch':'intent_expired'),(int)$data['player_id'],$data['platform']);
+ if($code>=400)RewardIntent::audit('bootstrap_error',in_array($data['error']??'',['csrf_rejected','rate_limited','login_required','temporarily_unavailable','request_rejected','invalid_input'],true)?$data['error']:'request_rejected',(int)($_SESSION['site_authenticated']['player_id']??0));
+ if(isset($data['player_id'],$data['platform'])&&array_key_exists('reward_code',$data))RewardIntent::audit('bootstrap',is_string($data['reward_code'])?'delivered':(($_SESSION['reward_intent']['platform']??null)!==$data['platform']?'target_mismatch':'intent_expired'),(int)$data['player_id'],$data['platform']);
  http_response_code($code);echo json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);exit;
 }
 try {
@@ -37,7 +43,7 @@ try {
  }
  if($path==='/auth/status'&&($_SERVER['REQUEST_METHOD']??'')==='GET')siteResult(['authenticated'=>(($_SESSION['site_authenticated']['expires_at']??0)>time())||(($_SESSION['social_verified']['expires_at']??0)>time()),'platform'=>isset($_SESSION['site_authenticated'])?'site':($_SESSION['social_verified']['platform']??null),'needs_character_link'=>!empty($_SESSION['social_needs_link'])&&!isset($_SESSION['site_authenticated']),'providers'=>['site'=>true,'vk'=>true,'ok'=>true,'telegram'=>false],'csrf'=>$_SESSION['csrf']]);
  if(($_SERVER['REQUEST_METHOD']??'')!=='POST')siteResult(['error'=>'post_required'],405);
- if(($_SERVER['HTTP_ORIGIN']??'')!=='https://pripyat-game-site.ru'||!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf'],$_POST['csrf']))siteResult(['error'=>'csrf_rejected','text'=>'Обновите страницу и повторите действие.'],403);
+ if(($_SERVER['HTTP_ORIGIN']??'')!=='https://pripyat-game-site.ru'||!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf'],$_POST['csrf']))siteResult(['error'=>'csrf_rejected','text'=>'РћР±РЅРѕРІРёС‚Рµ СЃС‚СЂР°РЅРёС†Сѓ Рё РїРѕРІС‚РѕСЂРёС‚Рµ РґРµР№СЃС‚РІРёРµ.'],403);
  if((int)($_SERVER['CONTENT_LENGTH']??0)>($path==='/auth/site/avatar'?2200000:8192))siteResult(['error'=>'request_too_large'],413);
  $action=basename($path);
  if(!in_array($action,['register','login','verify','resend','forgot','reset','phone-start','phone-check','bootstrap','logout','avatar','set-password'],true))siteResult(['error'=>'route_not_found'],404);
@@ -58,7 +64,7 @@ try {
   if(!is_array($owner)||($owner['expires_at']??0)<=$now)throw new DomainException('login_required');
   $q=$db->prepare('SELECT email,disabled_at FROM site_accounts WHERE player_id=?');$q->execute([$owner['player_id']]);$row=$q->fetch(PDO::FETCH_ASSOC);
   if(!$row||$row['disabled_at']!==null||(!in_array('*',$access['email']['ids'],true)&&!in_array(strtolower($row['email']),$access['email']['ids'],true)))throw new DomainException('access_denied');
-  $url=SiteAvatar::upload((int)$owner['player_id'],$_FILES['avatar']??[],$c['rate_secret']);siteResult(['avatar_url'=>$url,'text'=>'Аватар сохранён.']);
+  $url=SiteAvatar::upload((int)$owner['player_id'],$_FILES['avatar']??[],$c['rate_secret']);siteResult(['avatar_url'=>$url,'text'=>'РђРІР°С‚Р°СЂ СЃРѕС…СЂР°РЅС‘РЅ.']);
  }
  if($action==='bootstrap'){require_once __DIR__.'/sitepaymentaccess.php';
   if(isset($_SESSION['social_verified'])&&!isset($_SESSION['site_authenticated'])){
@@ -94,12 +100,12 @@ try {
  $result=$actions->handle($action,$_POST,$now);
  if(($result['phone_step']??false)&&isset($_SESSION['site_pending'])){
   $q=$db->prepare('SELECT player_id FROM site_phone_identities WHERE player_id=?');$q->execute([$_SESSION['site_pending']['player_id']]);
-  if($q->fetchColumn()!==false||!SiteSessions::requiresPhone($_SESSION['site_pending']['email'])){$_SESSION['site_authenticated']=$_SESSION['site_pending'];$_SESSION['site_authenticated']['expires_at']=$now+3600;unset($_SESSION['site_pending']);$result=['redirect'=>'/game/','text'=>'Вход выполнен.'];}
+  if($q->fetchColumn()!==false||!SiteSessions::requiresPhone($_SESSION['site_pending']['email'])){$_SESSION['site_authenticated']=$_SESSION['site_pending'];$_SESSION['site_authenticated']['expires_at']=$now+3600;unset($_SESSION['site_pending']);$result=['redirect'=>'/game/','text'=>'Р’С…РѕРґ РІС‹РїРѕР»РЅРµРЅ.'];}
  }
  siteResult($result);
 }catch(DomainException $e){
  $code=$e->getMessage();
- $messages=['registration_closed'=>'Регистрация сейчас недоступна.','account_exists'=>'Аккаунт уже зарегистрирован. Войдите или восстановите пароль.','invalid_credentials'=>'Неверная почта или пароль.','invalid_email_token'=>'Ссылка недействительна или срок её действия истёк.','rate_limited'=>'Слишком много запросов. Попробуйте позже.'];
- siteResult(['error'=>isset($messages[$code])?$code:'request_rejected','text'=>$messages[$code]??'Не удалось выполнить действие.'],$code==='rate_limited'?429:400);
-}catch(InvalidArgumentException $e){siteResult(['error'=>'invalid_input','text'=>($action??'')==='phone-start'?'Введите номер телефона с + и кодом страны.':'Проверьте почту и пароль. Пароль должен содержать от 10 до 256 символов.'],400);
-}catch(Throwable $e){error_log('[site-auth] failed type='.get_class($e));siteResult(['error'=>'temporarily_unavailable','text'=>'Сервис временно недоступен. Повторите позже.'],503);}
+ $messages=['registration_closed'=>'Р РµРіРёСЃС‚СЂР°С†РёСЏ СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРЅР°.','account_exists'=>'РђРєРєР°СѓРЅС‚ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ. Р’РѕР№РґРёС‚Рµ РёР»Рё РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚Рµ РїР°СЂРѕР»СЊ.','invalid_credentials'=>'РќРµРІРµСЂРЅР°СЏ РїРѕС‡С‚Р° РёР»Рё РїР°СЂРѕР»СЊ.','invalid_email_token'=>'РЎСЃС‹Р»РєР° РЅРµРґРµР№СЃС‚РІРёС‚РµР»СЊРЅР° РёР»Рё СЃСЂРѕРє РµС‘ РґРµР№СЃС‚РІРёСЏ РёСЃС‚С‘Рє.','rate_limited'=>'РЎР»РёС€РєРѕРј РјРЅРѕРіРѕ Р·Р°РїСЂРѕСЃРѕРІ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.'];
+ siteResult(['error'=>isset($messages[$code])?$code:'request_rejected','text'=>$messages[$code]??'РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РїРѕР»РЅРёС‚СЊ РґРµР№СЃС‚РІРёРµ.'],$code==='rate_limited'?429:400);
+}catch(InvalidArgumentException $e){siteResult(['error'=>'invalid_input','text'=>($action??'')==='phone-start'?'Р’РІРµРґРёС‚Рµ РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР° СЃ + Рё РєРѕРґРѕРј СЃС‚СЂР°РЅС‹.':'РџСЂРѕРІРµСЂСЊС‚Рµ РїРѕС‡С‚Сѓ Рё РїР°СЂРѕР»СЊ. РџР°СЂРѕР»СЊ РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ РѕС‚ 10 РґРѕ 256 СЃРёРјРІРѕР»РѕРІ.'],400);
+}catch(Throwable $e){error_log('[site-auth] failed type='.get_class($e));siteResult(['error'=>'temporarily_unavailable','text'=>'РЎРµСЂРІРёСЃ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РџРѕРІС‚РѕСЂРёС‚Рµ РїРѕР·Р¶Рµ.'],503);}

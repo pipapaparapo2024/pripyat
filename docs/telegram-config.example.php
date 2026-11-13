@@ -7,6 +7,8 @@ return [
     // 'test' means Telegram's separate test network, not merely a game TEST deployment.
     // Use a bot created in that network and a separate database/config/vhost.
     'bot_api_environment' => 'production',
+    // TEST VPS uses a local TLS-preserving relay to api.telegram.org.
+    'bot_api_relay_port' => 10443,
     'environment' => 'test',
     'database' => 'stalker_telegram_test',
     'bot_token' => 'SET_PRIVATELY_ON_SERVER',

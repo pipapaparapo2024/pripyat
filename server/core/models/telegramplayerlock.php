@@ -1,10 +1,11 @@
 <?php
+require_once __DIR__.'/telegramenvironment.php';
 /** Serializes TEST login and complete API operations, including legacy mysqli writes. No DDL. */
 final class TelegramPlayerLock {
     private $db,$name,$released=false;
     public function __construct(PDO $db,int $uid){
         if($uid<1||$uid>2147483647)throw new InvalidArgumentException('invalid_lock_player');
-        $this->db=$db;$this->name='pripyat.telegram.test.player.'.$uid;
+        $this->db=$db;$this->name='pripyat.telegram.'.TelegramEnvironment::name().'.player.'.$uid;
         $q=$db->prepare('SELECT GET_LOCK(?, 5)');$q->execute([$this->name]);
         if((string)$q->fetchColumn()!=='1'){$this->released=true;throw new RuntimeException('player_busy');}
     }

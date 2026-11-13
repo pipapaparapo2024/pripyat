@@ -3,6 +3,8 @@ ini_set('display_errors','0');header('Cache-Control: no-store, private');header(
 require_once __DIR__.'/socialoauth.php';require_once __DIR__.'/siteratelimit.php';
 require_once __DIR__.'/socialprofiles.php';
 function socialTrace(string $attempt,string $platform,string $stage,string $result): void {
+ require_once __DIR__.'/rewardintent.php';
+ RewardIntent::audit('oauth_'.$stage,$result,($platform==='vk'?(int)($_SESSION['social_verified']['native_vk_id']??0):0));
  // Use syslog directly. FastCGI stderr can make Nginx append the callback URL.
  if(!function_exists('openlog')||!function_exists('syslog')||!function_exists('closelog'))return;
  if(!openlog('pripyat-site-oauth',LOG_PID,LOG_USER))return;
@@ -24,9 +26,10 @@ try{
   $platform=$m[1];$stage='start';
   (new SiteRateLimit('/var/lib/pripyat-site-test/limits',$c['rate_secret']))->consume('social-start',$_SERVER['REMOTE_ADDR']??'',10,900,time());
   require_once __DIR__.'/rewardintent.php';RewardIntent::capture($_GET+['platform'=>$m[1]],time());
-  $begin=SocialOAuth::begin($vk,$m[1],time());$_SESSION['social_oauth']=$begin['pending'];
+  $retry=$platform==='vk'&&($_GET['retry']??null)==='1';
+  $begin=SocialOAuth::begin($vk,$platform,time(),$retry);$_SESSION['social_oauth']=$begin['pending'];
   $attempt=SocialOAuth::traceId($begin['pending']['state'],(string)($c['rate_secret']??''));
-  socialTrace($attempt,$platform,'start','redirected');header('Location: '.$begin['url'],true,302);exit;
+  socialTrace($attempt,$platform,'start',$retry?'retry_redirected':'redirected');header('Location: '.$begin['url'],true,302);exit;
  }
  if($path!=='/auth/vk/callback')socialPage('Страница не найдена','Вернитесь на главную.',404);
  $stage='callback';$state=$_GET['state']??'';

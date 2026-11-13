@@ -95,7 +95,7 @@ console.log('\nTest 3: _client/src/game/habar.js — клиентское зер
 console.log('\nTest 4: server/core/controllers/habar.php — collectDay() по-прежнему кредитует dice_points (регрессия)');
 {
     const src = fs.readFileSync(path.join(root, 'server/core/controllers/habar.php'), 'utf-8');
-    const start = src.indexOf('function collectDay()');
+    const start = src.indexOf('function collectDay(');
     const end   = src.indexOf('function _grantWeaponReward');
     const body  = src.slice(start, end);
     assert(/in_array\(\$type, \['coins','cigarettes','dice_points','blue_points','poker_chips'\], true\)/.test(body),

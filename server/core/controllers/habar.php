@@ -8,7 +8,7 @@ Class Habar {
     function __construct($registry){
         $this->registry = $registry;
         $this->ops = new Gameops($registry);
-        $this->permits = ['buy', 'collectDay', 'cancel'];
+        $this->permits = ['buy', 'collectDay', 'cancel', 'autoStatus', 'setAutoCollect'];
     }
 
     // Отдельное прямое подключение к БД — тот же паттерн, что zone.php/bosses.php._rawLink()
@@ -155,7 +155,54 @@ Class Habar {
     // либо вообще напрямую выставить себе валюту. Теперь сервер сам проверяет покупку/кулдаун/
     // лимит 30 дней и сам решает, что выдать — ровно тот же фиксированный список наград на тир,
     // что раньше был захардкожен в habar.js.containers, теперь в habar_daily_config.json.
-    function collectDay(){
+    function autoStatus(){
+        if(empty($this->registry['habar_auto_test'])) return $this->ops->fail(56);
+        $user = $this->ops->loadUser(['id', 'bot_settings', 'habar_bought', 'habar_bought_ts', 'habar_last_collect_ts']);
+        if(!$user) return $this->ops->fail(99);
+        $settings = $this->ops->j($user, 'bot_settings');
+        $boughtTs = $this->ops->i($user, 'habar_bought_ts');
+        $days = intval($this->ops->catalog('habar_daily_config')['total_days']);
+        $this->ops->ok([
+            'enabled' => ($settings['autoHabar'] ?? false) === true,
+            'lastAutoMs' => intval($settings['lastAutoHabarMs'] ?? 0),
+            'accessUntilMs' => intval($settings['autoHabarAccessUntilMs'] ?? 0),
+            'used' => HabarAutoTest::used($settings),
+            'active' => $this->ops->i($user, 'habar_bought') > 0 &&
+                ($boughtTs <= 0 || time() * 1000 < Gameops::habarExpiresAtMs($boughtTs, $days)),
+            'nextResetMs' => $this->ops->mskNextResetMs(),
+            'lastCollectMs' => $this->ops->i($user, 'habar_last_collect_ts'),
+        ]);
+    }
+
+    function setAutoCollect(){
+        if(empty($this->registry['habar_auto_test'])) return $this->ops->fail(56);
+        $enabled = $this->registry['user_params']['enabled'] ?? null;
+        if(!is_bool($enabled)) return $this->ops->fail(54);
+        $link = $this->_rawLink();
+        if(!$link || !$link->begin_transaction()) return $this->ops->fail(99);
+        $committed = false;
+        try {
+            $uid = intval($this->registry['uid']);
+            $table = $this->registry['utb'];
+            $result = $link->query("SELECT bot_settings FROM `$table` WHERE id=$uid FOR UPDATE");
+            $row = $result ? $result->fetch_assoc() : null;
+            if(!$row) return $this->ops->fail(99);
+            $settings = $this->ops->j($row, 'bot_settings');
+            $settings['autoHabar'] = $enabled;
+            $json = $link->real_escape_string(json_encode($settings, JSON_FORCE_OBJECT | JSON_THROW_ON_ERROR));
+            if(!$link->query("UPDATE `$table` SET bot_settings='$json' WHERE id=$uid") || !$link->commit()){
+                return $this->ops->fail(99);
+            }
+            $committed = true;
+        } finally {
+            if(!$committed) $link->rollback();
+            $link->close();
+        }
+        $this->autoStatus();
+    }
+
+    function collectDay(bool $automatic = false){
+        if($automatic && (PHP_SAPI !== 'cli' || empty($this->registry['habar_auto_test']))) return $this->ops->fail(56);
         $user = $this->ops->loadUser();
         if(!$user) return $this->ops->fail(99);
 
@@ -180,113 +227,123 @@ Class Habar {
         $lockCols = ['habar_bought', 'habar_days_collected', 'habar_last_collect_ts', 'habar_bought_ts', 'coins', 'cigarettes',
             'dice_points', 'blue_points', 'poker_chips', 'sedoy_dmg_total', 'sedoy_dmg_left',
             'weapons', 'ammo_machete', 'ammo_gun', 'ammo_auto'];
+        if($automatic) $lockCols[] = 'bot_settings';
         $link = $this->_rawLink();
-        $lockedUser = $user;
-        if($link){
-            $link->begin_transaction();
+        if(!$link || !$link->begin_transaction()) return $this->ops->fail(99);
+        $committed = false;
+        try {
+            $lockedUser = $user;
             $colList = implode(',', array_map(function($c){ return "`$c`"; }, $lockCols));
             $res = $link->query("SELECT $colList FROM `{$this->registry['utb']}` WHERE `id`=$uid FOR UPDATE");
             $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
-            if($row !== null) $lockedUser = array_merge($lockedUser, $row);
-        }
+            if(!$row) return $this->ops->fail(99);
+            $lockedUser = array_merge($lockedUser, $row);
 
-        if($this->ops->i($lockedUser, 'habar_bought') !== $boughtIdx + 1 ||
-            $this->ops->i($lockedUser, 'habar_bought_ts') !== $this->ops->i($user, 'habar_bought_ts')){
-            if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(57);
-        }
-
-        $now = intval(round(microtime(true) * 1000));
-
-        // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от
-        // дня покупки, а не от количества сборов"): истечение больше не считается по числу
-        // успешных сборов (habar_days_collected) — игрок, пропустивший часть дней, раньше мог
-        // растянуть один хабар на МНОГО больше 30 календарных дней. Теперь единственный критерий
-        // — 30 дней от habar_bought_ts. habar_days_collected по-прежнему пишется ниже (нужен для
-        // статистики/дебага), просто не участвует в проверке и не показывается на экране
-        // (см. habar.js — счётчик "N/30" убран из UI).
-        $boughtTs = $this->ops->i($lockedUser, 'habar_bought_ts');
-        if($boughtTs <= 0){
-            // Бэкфилл для аккаунтов, купивших хабар ДО этого перехода (у них нет записанного
-            // момента покупки) — считаем точкой отсчёта сегодняшний день, а не мгновенно
-            // просрочиваем уже оплаченную покупку.
-            $boughtTs = $now;
-            $lockedUser['habar_bought_ts'] = $boughtTs;
-        }
-        $totalDays = intval($cfg['total_days']);
-        // Calendar expiry at Moscow midnight; never normalise/overwrite boughtTs itself.
-        if($now >= Gameops::habarExpiresAtMs($boughtTs, $totalDays)){
-            if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(58); // 00:00 МСК на дату получения + 30 дней
-        }
-
-        // 20.10.2026 (по прямому указанию — "обнуление раз в сутки по московскому времени, в
-        // 00:00"): раньше кулдаун был "24 часа с момента ПРЕДЫДУЩЕГО сбора" (скользящее окно) —
-        // собрав в 23:00, игрок не мог собрать снова до следующих 23:00. Теперь — фиксированная
-        // граница МСК-полуночи (Gameops::mskDailyDate(), тот же источник правды, что у дневных
-        // лимитов боссов/покера/блэкджека): доступно не чаще раза за календарный день по МСК,
-        // ровно в 00:00 МСК становится доступно СНОВА, независимо от точного времени предыдущего
-        // сбора.
-        $lastTs = $this->ops->i($lockedUser, 'habar_last_collect_ts');
-        if($lastTs > 0 && $this->ops->mskDailyDate(intval($lastTs / 1000)) === $this->ops->mskDailyDate(intval($now / 1000))){
-            if($link){ $link->rollback(); $link->close(); }
-            return $this->ops->fail(59); // сегодня уже собрано (по МСК)
-        }
-
-        $patchKeys = [];
-        $cigEarnedHabar = 0;
-        $todayMsk = $this->ops->mskDailyDate(intval($now / 1000));
-        $sedoyPoolDay = $lastTs > 0 ? $this->ops->mskDailyDate(intval($lastTs / 1000)) : '';
-        if($sedoyPoolDay !== $todayMsk){
-            $lockedUser['sedoy_dmg_total'] = '0';
-            $lockedUser['sedoy_dmg_left'] = '0';
-            $patchKeys[] = 'sedoy_dmg_total'; $patchKeys[] = 'sedoy_dmg_left';
-        }
-
-        foreach($con['rewards'] as $r){
-            $type = $r['type']; $amount = intval($r['amount']);
-            if(in_array($type, ['coins','cigarettes','dice_points','blue_points','poker_chips'], true)){
-                $this->ops->add($lockedUser, $type, $amount);
-                $patchKeys[] = $type;
-                // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
-                // источников"): копим сигаретную часть награды хабара для report() ниже, ПОСЛЕ
-                // собственного saveUser() этой функции.
-                if($type === 'cigarettes') $cigEarnedHabar += $amount;
-            } else if($type === 'damage'){
-                // Пул "урон Седого" — та же семантика, что была в клиенте: не накапливается
-                // между сборами хабара (полностью перезаполняется до максимума из уже
-                // полученного/нового), а не складывается бесконечно.
-                $sedoyMax = max($this->ops->i($lockedUser, 'sedoy_dmg_total'), $amount);
-                $lockedUser['sedoy_dmg_total'] = $sedoyMax;
-                $lockedUser['sedoy_dmg_left']  = $sedoyMax;
-                $patchKeys[] = 'sedoy_dmg_total'; $patchKeys[] = 'sedoy_dmg_left';
-            } else if(in_array($type, ['ammo_machete','ammo_gun','ammo_auto'], true)){
-                $this->_grantWeaponReward($lockedUser, substr($type, 5), $amount);
-                $patchKeys[] = $type; $patchKeys[] = 'weapons';
+            $now = intval(round(microtime(true) * 1000));
+            if($automatic){
+                $settings = $this->ops->j($row ?? [], 'bot_settings');
+                if(!HabarAutoTest::eligible($settings, $now)){
+                    return $this->ops->fail(56);
+                }
             }
-        }
 
-        // Счётчик по-прежнему пишется (статистика/дебаг) — просто больше не влияет на то, когда
-        // хабар истекает (см. комментарий у habar_bought_ts выше) и не выводится в UI.
-        $lockedUser['habar_days_collected']  = $this->ops->i($lockedUser, 'habar_days_collected') + 1;
-        $lockedUser['habar_last_collect_ts'] = $now;
+            if($this->ops->i($lockedUser, 'habar_bought') !== $boughtIdx + 1 ||
+                $this->ops->i($lockedUser, 'habar_bought_ts') !== $this->ops->i($user, 'habar_bought_ts')){
+                return $this->ops->fail(57);
+            }
 
-        if($link){
+
+            // 20.10.2026 (по прямому указанию — "хабар покупается на 30 дней, дни отчитываются от
+            // дня покупки, а не от количества сборов"): истечение больше не считается по числу
+            // успешных сборов (habar_days_collected) — игрок, пропустивший часть дней, раньше мог
+            // растянуть один хабар на МНОГО больше 30 календарных дней. Теперь единственный критерий
+            // — 30 дней от habar_bought_ts. habar_days_collected по-прежнему пишется ниже (нужен для
+            // статистики/дебага), просто не участвует в проверке и не показывается на экране
+            // (см. habar.js — счётчик "N/30" убран из UI).
+            $boughtTs = $this->ops->i($lockedUser, 'habar_bought_ts');
+            if($boughtTs <= 0){
+                // Бэкфилл для аккаунтов, купивших хабар ДО этого перехода (у них нет записанного
+                // момента покупки) — считаем точкой отсчёта сегодняшний день, а не мгновенно
+                // просрочиваем уже оплаченную покупку.
+                $boughtTs = $now;
+                $lockedUser['habar_bought_ts'] = $boughtTs;
+            }
+            $totalDays = intval($cfg['total_days']);
+            // Calendar expiry at Moscow midnight; never normalise/overwrite boughtTs itself.
+            if($now >= Gameops::habarExpiresAtMs($boughtTs, $totalDays)){
+                return $this->ops->fail(58); // 00:00 МСК на дату получения + 30 дней
+            }
+
+            // 20.10.2026 (по прямому указанию — "обнуление раз в сутки по московскому времени, в
+            // 00:00"): раньше кулдаун был "24 часа с момента ПРЕДЫДУЩЕГО сбора" (скользящее окно) —
+            // собрав в 23:00, игрок не мог собрать снова до следующих 23:00. Теперь — фиксированная
+            // граница МСК-полуночи (Gameops::mskDailyDate(), тот же источник правды, что у дневных
+            // лимитов боссов/покера/блэкджека): доступно не чаще раза за календарный день по МСК,
+            // ровно в 00:00 МСК становится доступно СНОВА, независимо от точного времени предыдущего
+            // сбора.
+            $lastTs = $this->ops->i($lockedUser, 'habar_last_collect_ts');
+            if($lastTs > 0 && $this->ops->mskDailyDate(intval($lastTs / 1000)) === $this->ops->mskDailyDate(intval($now / 1000))){
+                return $this->ops->fail(59); // сегодня уже собрано (по МСК)
+            }
+
+            $patchKeys = [];
+            $cigEarnedHabar = 0;
+
+            // Урон Седого действует только в календарный день сбора по Москве. Сбрасываем
+            // вчерашний остаток ПОД тем же SELECT...FOR UPDATE, что и остальные награды:
+            // новый сбор без награды damage тоже не должен продлевать старый пул.
+            $todayMsk = $this->ops->mskDailyDate(intval($now / 1000));
+            $sedoyPoolDay = $lastTs > 0 ? $this->ops->mskDailyDate(intval($lastTs / 1000)) : '';
+            if($sedoyPoolDay !== $todayMsk){
+                $lockedUser['sedoy_dmg_total'] = '0';
+                $lockedUser['sedoy_dmg_left'] = '0';
+                $patchKeys[] = 'sedoy_dmg_total'; $patchKeys[] = 'sedoy_dmg_left';
+            }
+
+            foreach($con['rewards'] as $r){
+                $type = $r['type']; $amount = intval($r['amount']);
+                if(in_array($type, ['coins','cigarettes','dice_points','blue_points','poker_chips'], true)){
+                    $this->ops->add($lockedUser, $type, $amount);
+                    $patchKeys[] = $type;
+                    // 24.10.2026 (по прямому указанию — "сбор сухарей должен происходить из любых
+                    // источников"): копим сигаретную часть награды хабара для report() ниже, ПОСЛЕ
+                    // собственного saveUser() этой функции.
+                    if($type === 'cigarettes') $cigEarnedHabar += $amount;
+                } else if($type === 'damage'){
+                    // Пул "урон Седого" — та же семантика, что была в клиенте: не накапливается
+                    // между сборами хабара (полностью перезаполняется до максимума из уже
+                    // полученного/нового), а не складывается бесконечно.
+                    $sedoyMax = max($this->ops->i($lockedUser, 'sedoy_dmg_total'), $amount);
+                    $lockedUser['sedoy_dmg_total'] = $sedoyMax;
+                    $lockedUser['sedoy_dmg_left']  = $sedoyMax;
+                    $patchKeys[] = 'sedoy_dmg_total'; $patchKeys[] = 'sedoy_dmg_left';
+                } else if(in_array($type, ['ammo_machete','ammo_gun','ammo_auto'], true)){
+                    $this->_grantWeaponReward($lockedUser, substr($type, 5), $amount);
+                    $patchKeys[] = $type; $patchKeys[] = 'weapons';
+                }
+            }
+
+            // Счётчик по-прежнему пишется (статистика/дебаг) — просто больше не влияет на то, когда
+            // хабар истекает (см. комментарий у habar_bought_ts выше) и не выводится в UI.
+            $lockedUser['habar_days_collected']  = $this->ops->i($lockedUser, 'habar_days_collected') + 1;
+            $lockedUser['habar_last_collect_ts'] = $now;
+            if($automatic){
+                $settings['lastAutoHabarMs'] = $now;
+                $lockedUser['bot_settings'] = json_encode($settings, JSON_FORCE_OBJECT);
+            }
+
             $sets = [];
             foreach($lockCols as $c) $sets[] = "`$c`='".$link->real_escape_string($lockedUser[$c] ?? '')."'";
-            $link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid");
-            $link->commit();
+            if(!$link->query("UPDATE `{$this->registry['utb']}` SET ".implode(',', $sets)." WHERE `id`=$uid") || !$link->commit()){
+                return $this->ops->fail(99);
+            }
+            $committed = true;
+        } finally {
+            if(!$committed) $link->rollback();
             $link->close();
-        } else {
-            // 04.10.2026 (тот же баг, что уже находили в bosses/weapons/ryukzak — без лока
-            // отложенное присвоение после saveUser() было бы слишком поздним). Без лока —
-            // переносим ВСЕ посчитанные поля в $user ДО saveUser(), как было до этого фикса.
-            foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
         }
 
-        if($link) foreach($lockCols as $field) unset($user[$field]);
-        if(!$this->ops->saveUser($user)) return $this->ops->fail(99);
-        if($link) foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
+        foreach($lockCols as $c) $user[$c] = $lockedUser[$c];
 
         if($cigEarnedHabar > 0) RaznaryadkaProgress::report($this->ops, 'sukhari', $cigEarnedHabar);
 

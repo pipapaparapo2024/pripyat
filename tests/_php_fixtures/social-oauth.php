@@ -8,6 +8,14 @@ foreach(['vk','ok'] as $platform){
  $s=['social_oauth'=>$b['pending']];$p=SocialOAuth::consume($s,$b['pending']['state'],1001);if(isset($s['social_oauth'])||$p['platform']!==$platform)throw new RuntimeException('State not consumed');
  foreach([['social_oauth'=>$b['pending']],[]] as $s){try{SocialOAuth::consume($s,str_repeat('0',64),2000);throw new LogicException('Invalid state accepted');}catch(DomainException $e){}}
 }
+foreach(['vk','ok'] as $platform){
+ $first=SocialOAuth::begin($config,$platform,1000);
+ $retry=SocialOAuth::begin($config,$platform,1001,true);
+ parse_str(parse_url($first['url'],PHP_URL_QUERY),$originalQuery);
+ parse_str(parse_url($retry['url'],PHP_URL_QUERY),$retryQuery);
+ if(isset($originalQuery['prompt'])||($retryQuery['prompt']??null)!==($platform==='vk'?'login':null))throw new RuntimeException('Prompt must be limited to VK retry');
+ if($first['pending']['state']===$retry['pending']['state']||$first['pending']['verifier']===$retry['pending']['verifier'])throw new RuntimeException('Retry reused OAuth credentials');
+}
 echo "Social OAuth: PKCE, providers, one-time state and expiry passed\n";
 
 $state=str_repeat('a',64);

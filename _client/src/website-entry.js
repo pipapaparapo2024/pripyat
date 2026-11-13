@@ -1,23 +1,40 @@
 import {createSiteRuntime} from './modules/site-runtime.js';
 import SiteServer from './modules/site-server.js';
+import TelegramServer from './modules/telegram-server.js';
 import {openSiteFriends} from './modules/site-friends-ui.js';
 import siteRubCatalog from '../../server/json/site_prices.json';
 import {installSitePayments} from './modules/site-payments.js';
 (async()=>{
- const status=await fetch('/auth/status',{cache:'no-store'}).then(r=>r.json());
+ const authMode=new URLSearchParams(location.search).get('auth');
+ const telegramLogin=authMode==='telegram'||authMode==='telegram-prod';
+ const authBase=authMode==='telegram-prod'?'/auth/telegram-prod':telegramLogin?'/auth/telegram':'/auth';
+ const status=await fetch(authBase+'/status',{cache:'no-store'}).then(r=>r.json());
  const rewardParams=new URLSearchParams([...new URLSearchParams(location.search)].filter(([k])=>['reward','platform'].includes(k)));
  if(!status.authenticated||(rewardParams.has('reward')&&rewardParams.get('platform')!==status.platform)){
   location.replace('/'+(rewardParams.size?'?'+rewardParams:''));
   return;
  }
- const r=await fetch('/auth/bootstrap',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({csrf:status.csrf,...Object.fromEntries([...new URLSearchParams(location.search)].filter(([k])=>['reward','platform'].includes(k)))})});
+ const r=await fetch(authBase+'/bootstrap',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({csrf:status.csrf,...Object.fromEntries([...new URLSearchParams(location.search)].filter(([k])=>['reward','platform'].includes(k)))})});
  const session=await r.json();
- if(!r.ok||!['site','vk','ok'].includes(session.platform)||!['test','prod'].includes(session.environment)||!/^[1-9][0-9]{0,9}$/.test(session.player_id)||!(session.platform==='site'?/^[a-f0-9]{64}$/:/^[a-f0-9]{32}$/).test(session.token)||!/^[a-f0-9]{32}$/.test(session.req_key))throw new Error('Не удалось подтвердить вход.');
- window.__siteRuntime=createSiteRuntime(session);window.__siteServer=new SiteServer(session,location.origin+'/server');
- if(session.platform!=='site'){window.__siteRuntime=Object.freeze({...window.__siteRuntime,platform:session.platform});window.__siteServer.scriptURL=location.origin+'/server/social-api.php';}
+ if(!r.ok||!['site','vk','ok','telegram'].includes(session.platform)||(telegramLogin&&session.platform!=='telegram')||(!telegramLogin&&session.platform==='telegram')||!['test','prod'].includes(session.environment)||!/^[1-9][0-9]{0,9}$/.test(session.player_id)||!(session.platform==='site'||session.platform==='telegram'?/^[a-f0-9]{64}$/:/^[a-f0-9]{32}$/).test(session.token)||!/^[a-f0-9]{32}$/.test(session.req_key))throw new Error('Не удалось подтвердить вход.');
+ window.__siteRuntime=createSiteRuntime(session);
+ if(session.platform!=='site')window.__siteRuntime=Object.freeze({...window.__siteRuntime,platform:session.platform});
+ window.__siteServer=session.platform==='telegram'?new TelegramServer(session,location.origin+(authMode==='telegram-prod'?'/telegram/server':'/server')):new SiteServer(session,location.origin+'/server');
+ if(session.platform!=='site'&&session.platform!=='telegram')window.__siteServer.scriptURL=location.origin+'/server/social-api.php';
  window.openSiteFriends=openSiteFriends;
  window.siteRubCatalog=siteRubCatalog;
- installSitePayments(session.payments_enabled===true,session.platform+'-'+session.player_id+'-'+(session.payment_mode==='live'?'live':'test'));
+ const telegramCheckout=telegramLogin?(method,params,onSuccess,onError)=>{
+  const action=method==='sitepayments.create'?'payment-create':'payment-status';
+  fetch(authBase+'/'+action,{
+   method:'POST',
+   headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:new URLSearchParams({...params,csrf:status.csrf}),
+  }).then(response=>{
+   if(!response.ok)throw new Error('Не удалось проверить платёж.');
+   return response.json();
+  }).then(onSuccess,onError);
+ }:undefined;
+ installSitePayments(session.payments_enabled===true,session.platform+'-'+session.player_id+'-'+(session.payment_mode==='live'?'live':'test'),telegramCheckout);
  if(typeof BroadcastChannel==='function'){
   const channel=new BroadcastChannel('pripyat-website-'+session.platform+'-player-'+session.player_id);
   channel.onmessage=event=>{

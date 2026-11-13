@@ -1,8 +1,7 @@
 """Exercise real TEST SQL/HTTP payment paths with a disposable identity, never spend Stars."""
 from pathlib import Path
-import importlib.util
+import subprocess
 ROOT=Path(__file__).resolve().parents[1]
-spec=importlib.util.spec_from_file_location('release',ROOT/'tools/release.py');release=importlib.util.module_from_spec(spec);spec.loader.exec_module(release)
 source=(ROOT/'tools/smoke-telegram-test.py').read_text(encoding='utf-8')
 header=source.split("php=r'''",1)[1].split('try{\n',1)[0].replace('4503599627370401','4503599627370421')
 cleanup=source.split('}finally{',1)[1].split("'''",1)[0]
@@ -16,10 +15,16 @@ try{
     checkSmoke(empty($session['roles']),'Ordinary identity received developer role');
     checkSmoke((apiTg('users.devGetLogs')['status']??'')==='error','Ordinary user can read logs');
     apiTg('users.get');
-    $invoice=apiTg('telegramstars.create',['product_id'=>0]);
+    $blocked=apiTg('telegramstars.create',['product_id'=>0]);
+    checkSmoke(($blocked['status']??'')==='error','Non-owner API access to Stars must be rejected');
+    require_once '/var/www/stalker-tg-test/public/server/core/models/telegrambotclient.php';
+    $catalog=json_decode(file_get_contents('/var/www/stalker-tg-test/public/server/json/telegram_stars.json'),true);
+    $liveBot=new TelegramBotClient($c['bot_token'],$c['bot_api_environment']??'production',null,$c['bot_api_relay_port']??null);
+    $invoice=(new TelegramStars($db,$catalog,$liveBot))->create($uid,0,time());
     checkSmoke(isset($invoice['invoice_url'])&&str_starts_with($invoice['invoice_url'],'https://t.me/$'),'Real invoice creation');
     checkSmoke((int)$invoice['stars']===4,'Invoice amount');
-    $catalog=json_decode(file_get_contents('/var/www/stalker-tg-test/public/server/json/telegram_stars.json'),true);
+    $statusDenied=apiTg('telegramstars.status',['order_id'=>$invoice['order_id']]);
+    checkSmoke(($statusDenied['status']??'')==='error','Non-owner API access to Stars status must be rejected');
     $fakeBot=new class {function call($method,$body){return 'https://t.me/$fixture';}};
     $stars=new TelegramStars($db,$catalog,$fakeBot);$now=time();
     function receipt($order,$charge){return ['currency'=>'XTR','total_amount'=>(int)$order['stars'],'invoice_payload'=>'tg1_'.$order['order_id'],'telegram_payment_charge_id'=>$charge];}
@@ -61,13 +66,18 @@ try{
     checkSmoke($stars->credit($external,$lateReceipt,$now)==='credited','Late receipt dropped');
     $stars->refunded($external,$lateReceipt,$now);checkSmoke($stars->status($uid,$late['order_id'])['payment_status']==='refunded','Refund missing');
     checkSmoke($stars->credit($external,$lateReceipt,$now)==='duplicate'&&balance('stew')==='4','Refund receipt credited twice');
-    $roles=$db->query("SELECT player_id FROM telegram_roles WHERE role='developer'")->fetchAll(PDO::FETCH_COLUMN);checkSmoke(array_map('intval',$roles)===[18],'Developer allowlist changed');
-    echo "Stars TEST: invoice, webhook secret, owner/amount/currency checks, precheckout/retry, exactly-once credit, BIGINT precision, SQL rollback, energy/save, expiry/refund and developer denial passed. No Stars spent.\n";
+    $ownerQuery=$db->prepare('SELECT player_id FROM telegram_identities WHERE telegram_id=?');$ownerQuery->execute([TelegramAccess::OWNER]);$ownerPlayer=(int)$ownerQuery->fetchColumn();
+    $roles=array_map('intval',$db->query("SELECT player_id FROM telegram_roles WHERE role='developer' ORDER BY player_id")->fetchAll(PDO::FETCH_COLUMN));
+    checkSmoke($ownerPlayer>0&&$roles===[$ownerPlayer],'Developer role must belong only to the verified Telegram owner');
+    echo "Stars TEST: non-owner API denial, Bot API invoice creation, webhook secret, owner/amount/currency checks, precheckout/retry, exactly-once credit, BIGINT precision, SQL rollback, energy/save, expiry/refund and developer denial passed. No Stars spent.\n";
 }finally{
     foreach($markers??[] as $path)if(is_file($path))unlink($path);
 '''
 php=header+body+cleanup
-code='import subprocess\np=subprocess.run(["runuser","-u","pripyat-tg-test","--","php"],input='+repr(php)+',cwd="/var/www/stalker-tg-test/public/server",capture_output=True,text=True)\nprint(p.stdout)\nif p.returncode:\n print(p.stderr[-1600:]);raise RuntimeError("Stars TEST smoke failed")'
-client=release.connect()
-try:print(release.run_remote_python(client,code))
-finally:client.close()
+ssh=['ssh','-o','BatchMode=yes','-o','ConnectTimeout=15','-i',str(Path.home()/'.ssh/id_ed25519_stalker'),'root@135.106.159.212',
+     'cd /var/www/stalker-tg-test/public/server && runuser -u pripyat-tg-test -- php']
+result=subprocess.run(ssh,input=php,capture_output=True,text=True,encoding='utf-8',timeout=240)
+print(result.stdout)
+if result.returncode:
+    print(result.stderr[-1800:])
+    raise RuntimeError('Stars TEST smoke failed')

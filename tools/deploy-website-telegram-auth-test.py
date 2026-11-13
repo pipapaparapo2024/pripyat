@@ -3,8 +3,8 @@ from pathlib import Path
 import importlib.util,base64
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('p',ROOT/'tools/provision-new-server.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
-files={'app/auth.php':ROOT/'website/app/auth.php'}
-for name in ['telegramoidc','telegramauth','telegramloginstore','telegramplayerlock','gameaccesspolicy','rewardlinktargets']:files['app/'+name+'.php']=ROOT/'server/core/models'/(name+'.php')
+files={'app/auth.php':ROOT/'website/app/auth.php','index.html':ROOT/'website/index.html','login.js':ROOT/'website/login.js'}
+for name in ['telegramoidc','telegramauth','telegramloginstore','telegramplayerlock','telegramwebsitetestaccess','gameaccesspolicy','rewardlinktargets']:files['app/'+name+'.php']=ROOT/'server/core/models'/(name+'.php')
 for f in (ROOT/'assets/libs').glob('*'):
  if f.is_file():files['game-libs/'+f.name]=f
 for f in (ROOT/'_client/website-build/libs').glob('*.js'):files['game-libs/'+f.name]=f
@@ -31,7 +31,7 @@ try:user=pwd.getpwnam('pripyat-site-test')
 except KeyError:
  run(['useradd','--system','--no-create-home','--shell','/usr/sbin/nologin','pripyat-site-test']);user=pwd.getpwnam('pripyat-site-test')
 private=Path('/etc/pripyat');config=private/'website-auth-test.json';shutil.copy2(config,backup/'auth-before.json');(backup/'auth-before.json').chmod(0o600)
-c=json.loads(config.read_text());c['access']=json.loads((private/'closed-test-access.json').read_text());config.write_text(json.dumps(c,indent=2));os.chown(config,0,user.pw_gid);config.chmod(0o640)
+c=json.loads(config.read_text());c['access']=json.loads((private/'closed-test-access.json').read_text());c['access']['telegram']={'mode':'allowlist','ids':['1355806786']};c.setdefault('telegram',{})['oauth_relay_port']=10444;config.write_text(json.dumps(c,indent=2));os.chown(config,0,user.pw_gid);config.chmod(0o640)
 gameconfig=private/'website-game-test.php'
 if not gameconfig.exists():shutil.copy2(private/'telegram-test.php',gameconfig)
 os.chown(gameconfig,0,user.pw_gid);gameconfig.chmod(0o640)
@@ -53,7 +53,10 @@ except Exception:
  shutil.copy2(backup/'nginx-before.conf',site);shutil.copy2(backup/'tg-nginx-before.conf',tg);pool.unlink();raise
 run(['systemctl','reload','php8.5-fpm']);run(['systemctl','reload','nginx'])
 print(json.dumps({'website_oidc_routes_staged':True,'telegram_provider_enabled':bool(c.get('enabled') and c.get('telegram',{}).get('enabled')),'other_providers_enabled':False,'shared_game_database':'stalker_telegram_test','sql_executed':False,'backup':str(backup)}))
-'''.replace('FILES',repr(payload)).replace('BLOCK',repr(''' location ~ ^/auth/(status|bootstrap|logout|telegram/start|telegram/callback)$ {
+'''.replace('FILES',repr(payload)).replace('BLOCK',repr(''' location ~ ^/auth/telegram/(status|test-access|bootstrap|logout|start|callback)$ {
+  access_log off;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy no-referrer always;
   include fastcgi_params;
   fastcgi_param SCRIPT_FILENAME /var/www/pripyat-site/app/auth.php;
   fastcgi_pass unix:/run/php/php8.5-fpm-site-test.sock;

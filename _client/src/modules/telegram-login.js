@@ -17,7 +17,7 @@ export async function loginTelegramTest({webApp, endpoint, inviteCode = '', rewa
         throw new Error('Не удалось войти через Telegram. Откройте игру заново.');
     }
     const session = await response.json();
-    if(session.platform !== 'telegram' || session.environment !== 'test'
+    if(session.platform !== 'telegram' || !['test','prod'].includes(session.environment)
         || !/^[1-9][0-9]*$/.test(session.player_id) || Number(session.player_id)>2147483647
         || !/^[a-f0-9]{64}$/.test(session.token) || !/^[a-f0-9]{32}$/.test(session.req_key) || !Number.isInteger(session.expires_at)){
         throw new Error('Некорректный ответ входа Telegram.');

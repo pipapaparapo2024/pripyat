@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../../server/core/models/telegramstars.php';
+require_once __DIR__.'/../../server/core/models/telegramaccess.php';
 require_once __DIR__.'/../../server/core/models/gameops.php';
 function starsCheck($v){if(!$v)throw new RuntimeException('Проверка Stars не пройдена');}
 $catalog=json_decode(file_get_contents(__DIR__.'/../../server/json/telegram_stars.json'),true);
@@ -16,6 +17,10 @@ foreach([-1,24,99,108] as $id){$failed=false;try{TelegramStars::product($catalog
 $order=['order_id'=>str_repeat('a',48),'telegram_id'=>'123456','stars'=>4];
 $payment=['invoice_payload'=>'tg1_'.$order['order_id'],'currency'=>'XTR','total_amount'=>4];
 starsCheck(TelegramStars::matches($order,'123456',$payment));
+starsCheck(TelegramAccess::canUseStars(TelegramAccess::OWNER));
+starsCheck(!TelegramAccess::canUseStars('7522704539'));
+starsCheck(!TelegramAccess::canUseStars('592854868'));
+starsCheck(!TelegramAccess::canUseStars('123456'));
 starsCheck(!TelegramStars::matches($order,'654321',$payment));
 foreach([['currency'=>'RUB'],['total_amount'=>3],['total_amount'=>'4'],['invoice_payload'=>'fake']] as $change)starsCheck(!TelegramStars::matches($order,'123456',array_replace($payment,$change)));
 $now=time();$game=new Gameops([]);

@@ -1,0 +1,59 @@
+# Подключение Telegram PROD
+
+Владелец поручил подключить @pripyat_game_bot с функционалом TEST и использовать действующий боевой магазин сайта. Отдельно разрешены три таблицы в stalker_telegram — game_friend_requests, site_payment_orders, site_payment_receipts.
+
+Новый токен введён владельцем через tools/set-telegram-prod-token.py, getMe подтвердил @pripyat_game_bot. Секрет хранится только в /etc/pripyat/telegram-prod-token.json с правами 0600. Код и история команд не содержат токена.
+
+Runtime опубликован в /var/www/stalker-tg-prod/public, адрес https://pripyat-game-site.ru/telegram/. Отдельный PHP-пул pripyat-tg-prod, конфигурация /etc/pripyat/telegram-prod.php. TLS-маршрут Bot API через Амстердам 10443. Webhook /telegram/server/telegram-bot.php зарегистрирован с отдельным секретом, message/callback_query/pre_checkout_query включены. Кнопка меню «Играть», команды и описания перенесены с TEST.
+
+TelegramEnvironment выбирает только пары test/stalker_telegram_test и prod/stalker_telegram из закрытой серверной конфигурации. Пути аватаров, поддержки, журналов, update-lock и mutex игроков разделены. Друзья, наградные ссылки, игровой API и Stars направлены в PROD. Stars в PROD доступны авторизованным игрокам; TEST сохраняет owner-only. При первом входе подтверждённого владельца 1355806786 назначается роль developer в PROD.
+
+Перед публикацией прошли npm test — 97 базовых проверок и 813 файлов — и сборка Telegram. Проверены HTTP 200 страницы, 405 GET login, 401 поддельного initData, 403 неподписанного webhook, 404 PHP-исходников. Отдельно из пользователя PHP-пула проверены подключение к stalker_telegram и stars_enabled=true. Владелец подтвердил запуск PROD-бота.
+
+Резервная копия /var/backups/telegram-prod-launch-20261109T225328Z содержит dump базы до миграции и прежнюю Nginx-конфигурацию. Добавлены только три согласованные таблицы, определения прежних таблиц сверены. TEST runtime не публиковался.
+
+Main Mini App настроен владельцем в BotFather; getMe подтвердил has_main_web_app=true. Адрес https://pripyat-game-site.ru/telegram/. Меню «Играть» и URL webhook повторно сверены.
+
+В getWebhookInfo была историческая ошибка Connection timed out сразу после подключения. На последующей проверке pending_update_count=0. HTTP POST из Амстердама дошёл за 0.44 секунды и получил ожидаемый 403 без секрета. Авторизованный инертный webhook получил 200 и был помечен done без отправки сообщений. Реальный /start и запуск владельцем запрошены для финального подтверждения. Технический update_id=999999999 удалён из журнала дедупликации после проверки.
+
+ID и ключ действующего боевого магазина сверены с /etc/pripyat/yookassa-live.json и закрытым site-runtime.json, сохранены в website_rub_payments PROD-конфига. Рублёвые платежи и вход Telegram на сайте ещё не опубликованы для PROD: нужен отдельный OIDC Client Secret Login Widget, обработчик PROD website login, подключение боевого платёжного мира, квитанций/НПД Чек и webhook. Текущая рублёвая проверка Telegram TEST продолжает использовать тестовый магазин. Для приватного ввода Client Secret подготовлен tools/set-telegram-prod-oidc.py, предполагаемый callback /auth/telegram-prod/callback пока не активен.
+
+10.11.2026 исправлена доставка команд PROD. Telegram не мог достучаться до прямого webhook на основном VPS (135.106.159.212); сравнение показало, что TEST webhook обслуживается через Amsterdam (146.103.98.14). PROD webhook теперь использует TLS relay `https://tg-test-pripyat-game.ru:8443/server/telegram-prod-bot.php` с явно закреплённым IP Amsterdam. На основном VPS этот точный путь направлен в PROD PHP-пул и БД `stalker_telegram`; TEST обработчик и БД не используются. Очередь, накопившаяся до переноса, не сбрасывалась. В результате Telegram доставил все пять ожидавших обновлений, очередь стала 0.
+
+`/start` отдельно падал: Telegram Bot API отклонял `sendPhoto` (HTTP 400), webhook отвечал 503. Приветственное изображение PROD теперь запрашивается через тот же Amsterdam relay; при отказе фото обработчик отправляет приветствие с кнопками через `sendMessage`. Пять повторно доставленных обновлений обработаны с ответом HTTP 200 после включения fallback. Добавлены безопасные логи этапа/кода отказа без содержимого сообщений, токена или ID игрока; Bot API method и HTTP/API-коды ограничены безопасными кодами.
+
+Для диагностики временно включён metadata-only Nginx access log `/var/log/nginx/telegram-prod-webhook.log` (время, HTTP status, длительность, размер запроса/ответа; без IP и содержимого). После проверки владельцем всех команд этот временный access log и неиспользуемый диагностический маршрут `/telegram/server/telegram-bot.php` следует вернуть к `access_log off`. PHP-файлы прошли `php -l`, FPM перезагружен graceful. Владелец повторил `/start` и подтвердил, что приветствие работает после переноса URL медиа на relay.
+
+В PROD обработчике списка «Не друзья» убрана жёстко заданная подпись `Telegram TEST`: теперь PROD выводит «другие игроки Telegram», TEST сохраняет подпись своего тестового окружения. Подсказка направляет заявки в раздел «Друзья» внутри игры. Обновлённый PHP-файл прошёл `php -l`, опубликован точечно с резервной копией `/var/backups/telegram-prod-label-fix-20261110T053150Z`, FPM graceful reload.
+
+10.11.2026 владелец провёл реальную покупку Stars в @pripyat_game_bot. По `stalker_telegram` найдена одна успешная транзакция на 4 Stars: 4 тушёнки зачислены персонажу `player_id=1`, заказ имеет статус `paid`, `refunded_at` пустой; баланс тушёнки после операции — 4. Повторной транзакции на этот заказ не обнаружено. Charge ID и Telegram ID в документацию не записывались.
+
+## Локальная подготовка Telegram-входа и рублёвых оплат сайта — 10.11.2026
+
+Локально добавлен отдельный PROD OIDC handler `/auth/telegram-prod/*`, отдельная cookie-сессия и переход в `/game/telegram.html?auth=telegram-prod`. Игровой bootstrap/Telegram API использует PROD-мир `stalker_telegram`; источник идентификатора — проверенный OIDC JWT, с PKCE/state и проверкой подписи/JWKS. PROD checkout направляет заказ в live YooKassa с `game_world=telegram`; проверка подтверждённого статуса остаётся на стороне YooKassa, начисление защищено уникальным receipt/транзакцией и PROD mutex. TEST маршруты и TEST конфигурация не выбирают PROD.
+
+Для Telegram PROD предусмотрен отдельный webhook endpoint; общий webhook сайта/VK/ОК не получает доступ к приватному конфигу Telegram PROD. Уведомление не считается подтверждением: handler повторно запрашивает платёж в YooKassa и сверяет магазин, режим, мир и заказ. Фоновый НПД Чек worker включает PROD Telegram ledger; история чеков имеет отдельный session-bound endpoint. Скрипт закрытого ввода OIDC Client Secret готовит серверный merged config с правами группы PROD PHP-пула, не печатая секрет.
+
+Добавлены регрессии PROD/TEST boundaries, callback, live-only режим, webhook и НПД ledger. `npm run build:website` завершился успешно; `npm test` — 97 базовых проверок и 816 тестовых файлов, 0 падений. `git diff --check` без замечаний. Проверки выполнялись локально; PROD/TEST серверы, YooKassa, Telegram webhook и игровые базы не менялись.
+
+Это не публикация. В PROD ещё отсутствует Login Widget Client Secret, поэтому после его безопасного ввода скриптом потребуется отдельный релиз: создать PROD PHP route/pool config, отдать страницу `/game/telegram.html` и клиентскую сборку, настроить права PHP-пула на приватный OIDC config и каталог чеков, установить обновлённый НПД worker и зарегистрировать дополнительный YooKassa callback для `/auth/telegram-prod/payment-notification` на события `payment.succeeded`/`payment.canceled`. Затем закрыто проверить реальный вход, статус и начисление платежа, а также выдачу и показ чека. Реальное списание и открытие всем игрокам требуют отдельного поручения владельца. Миграции и записи в БД не нужны.
+
+## Продолжение локальной подготовки — 10.11.2026
+
+Владелец безопасно ввёл Login Widget Client Secret через `tools/set-telegram-prod-oidc.py`. На сервере проверено только наличие файлов и метаданные: `telegram-prod-oidc.json` mode 0600, `website-auth-prod.json` mode 0640 для группы PROD Telegram PHP. Значения секрета не читались и не выводились. Проверено совпадение Bot ID и callback `/auth/telegram-prod/callback`, а также `environment=prod`, база `stalker_telegram` и live-настройка YooKassa.
+
+Уточнена схема уведомлений ЮKassa: боевой магазин уже отправляет уведомления общего сайта/ВК/ОК в `/server/site-payments-webhook.php`. Не менять URL магазина на отдельный Telegram endpoint. Этот общий обработчик локально расширен: он определяет Telegram по подтверждённому `game_world`, проверяет боевой режим, читает минимальный DB-конфиг из отдельного пути окружения и фиксирует платёж только в `stalker_telegram`. Прежняя маршрутизация сайта/ВК/ОК сохранена. Для публикации нужно создать минимальный config с PROD DB реквизитами, выдать доступ только действующему webhook PHP-пулу и указать его путь в env/open_basedir; полный bot/OIDC config webhook-пулу не открывать.
+
+Добавлен тест `tests/telegram-prod-webhook-routing.test.js`. PHP lint изменённого общего callback выполнен PHP 8.5 на VPS через stdin; PROD-файл не обновлялся. `npm test`: 97 базовых проверок и 817 файлов, 0 падений. Фокусные Telegram PROD/OIDC/оплата проверки также прошли. Публикацию пока не выполнять: отдельный PROD PHP-пул и маршруты, страница `/game/telegram.html`, отдельный bundle, права на каталог чеков и обновлённый worker ещё требуется собрать в отдельную проверяемую выкладку. Текущий URL уведомлений YooKassa оставить прежним; отдельный callback в кабинете не добавлять.
+
+## Состояние сайта и входа PROD — проверка 10.11.2026
+
+**Обновление после публикации 10.11.2026.** Вход Telegram на сайте, игровой клиент, общий callback ЮKassa и worker чеков опубликованы скриптом `tools/deploy-telegram-website-prod.py`. Точка отката `/var/backups/telegram-website-prod-8x0j6lnw`. Публичные проверки подтвердили HTTP 302 у старта входа ВК и ОК, HTTP 200 у главной, общей игровой страницы и страницы Telegram, а также редирект Telegram OAuth с PKCE. Проверены контрольные суммы игровых JS, отказ неавторизованным запросам к оплате и чекам, ответ общего webhook на инертное событие и доступность журналов покупок для worker. Клиентский вход после согласия в Telegram, реальное начисление и чек требуют покупки владельцем. Существующий URL уведомлений ЮKassa сохранён. Миграций не выполнялось.
+
+Telegram Mini App PROD и Stars работают отдельно от входа на сайт. На VPS нет `/etc/pripyat/website-auth-prod.json` и `/etc/pripyat/telegram-prod-oidc.json`; в Nginx опубликован только owner-only route `auth/telegram/*` через PHP TEST pool. Значит, вход через Telegram на сайте и игровая страница сайта пока не подключены к `stalker_telegram` для PROD.
+
+Боевой магазин YooKassa уже настроен в `/etc/pripyat/telegram-prod.php` (`enabled=true`, `live_checkout_enabled=true`, receipt mode `npdcheck`), а Telegram PROD база имеет согласованные таблицы заказов/квитанций. Но отдельный PROD website login/payment handler и callback-маршрут не развернуты.
+
+Проверка кода НПД Чек показала, что текущий `tools/site-npd-receipts.php` обрабатывает сайт/ВК/ОК и не включает `stalker_telegram`. До широкого запуска Telegram-оплат нужно добавить PROD Telegram ledger в обработчик чеков, настроить точное соответствие provider `game_world`, проверить повторы/возвраты и зарегистрировать уведомления YooKassa на выделенный PROD endpoint. Owner-only TEST live checkout использует ручной чек; это не подтверждает боевую автоматизацию чеков.
+
+Остаются: ручная проверка владельцем OIDC входа и покупки в TEST; отдельный безопасный ввод PROD Login/OIDC Client Secret и callback URL; реализация/тесты PROD website session/bootstrap/payment flow с allowlist по `stalker_telegram`; проверка NPD Чек и уведомлений на Telegram ledger; закрытая пробная покупка владельцем в PROD после отдельного поручения; затем явное решение о публичном допуске всех игроков. Данные и runtime PROD в этой проверке не изменялись.

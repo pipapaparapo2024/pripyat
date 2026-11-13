@@ -69,6 +69,14 @@ function assertLockedUserContract(body, label, lockColNames) {
     assert(/UPDATE `\{\$this->registry\['utb'\]\}` SET /.test(body), label + ': пишет итог отдельным прямым UPDATE под той же транзакцией');
     assert(body.includes('$link->rollback()'), label + ': откатывает транзакцию на отказных ветках (не держит лок до конца процесса)');
 
+    if (label === 'habar.collectDay') {
+        assert(body.includes('if(!$link || !$link->begin_transaction()) return $this->ops->fail(99);'), 'сбор без лока закрыт');
+        assert(body.includes('if(!$committed) $link->rollback();'), 'неуспешный сбор явно откатывается');
+        assert(body.indexOf(ASSIGN_TPL) > body.indexOf('$link->commit()'), 'состояние публикуется только после commit');
+        assert(!body.includes('saveUser($user)'), 'нет повторного сохранения устаревшего снимка');
+        for(const col of lockColNames)assert(body.includes(col), label + ': lock '+col);
+        return;
+    }
     const assignCount = body.split(ASSIGN_TPL).length - 1;
     assert(assignCount === 2, label + ': ровно 2 присвоения $lockedUser→$user (фолбэк-ветка + после save), найдено ' + assignCount);
 
@@ -101,7 +109,7 @@ assertLockedUserContract(
 
 console.log('\nTest 2: habar.php.collectDay() лочит счётчики дня + валюты награды + weapons, двухветочный контракт');
 assertLockedUserContract(
-    sliceFn(habarPhp, 'function collectDay(){', 'private function _grantWeaponReward'),
+    sliceFn(habarPhp, 'function collectDay(', 'private function _grantWeaponReward'),
     'habar.collectDay', ["'habar_days_collected'", "'habar_last_collect_ts'", "'weapons'", "'sedoy_dmg_total'"]
 );
 

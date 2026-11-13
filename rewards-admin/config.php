@@ -1,10 +1,12 @@
 <?php
 ini_set('display_errors','0');
 header('Cache-Control: no-store, private');
+require_once dirname(__DIR__).'/app/rewardsauth.php';
+requireRewardsLogin();
 $private=getenv('PRIPYAT_REWARDS_CONFIG');
 if(!$private||!is_file($private)){http_response_code(503);exit('Генератор ещё не настроен.');}
 $rewardConfig=json_decode(file_get_contents($private),true,32,JSON_THROW_ON_ERROR);
-if(($rewardConfig['enabled']??false)!==true||($rewardConfig['environment']??'')!=='test'
+if(($rewardConfig['enabled']??false)!==true||($rewardConfig['environment']??'')!=='website'
     ||!is_string($rewardConfig['admin_user']??null)||($_SERVER['REMOTE_USER']??'')!==$rewardConfig['admin_user']){http_response_code(403);exit('Нет доступа.');}
 require dirname(__DIR__).'/app/rewardlinkpublisher.php';
 require __DIR__.'/catalog.php';
@@ -22,19 +24,19 @@ function reward_platform(): string {
 }
 function reward_credentials(string $database): array {
     global $rewardConfig;
-    if(!in_array($database,RewardLinkTargets::DATABASES['test'],true))throw new RuntimeException('test_only');
+    if(!in_array($database,['stalker','stalker_ok','stalker_telegram_test','stalker_site_test'],true))throw new RuntimeException('test_only');
     $c=$rewardConfig['databases'][$database]??null;
     if(!is_array($c)||($c['database']??null)!==$database)throw new RuntimeException('invalid_database_config');return $c;
 }
 function db(){
     static $db=null;if($db)return $db;
-    $name=RewardLinkTargets::database('test',reward_platform());$c=reward_credentials($name);
+    $name=RewardLinkTargets::database(in_array(reward_platform(),['vk','ok'],true)?'prod':'test',reward_platform());$c=reward_credentials($name);
     $db=new mysqli('127.0.0.1',$c['user'],$c['password'],$name,3306);$db->set_charset('utf8mb4');return $db;
 }
 function reward_publisher(): RewardLinkPublisher {
-    return new RewardLinkPublisher('test',function($name){$c=reward_credentials($name);return new PDO('mysql:host=127.0.0.1;dbname='.$name.';charset=utf8mb4',$c['user'],$c['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);});
+    return new RewardLinkPublisher('website',function($name){$c=reward_credentials($name);return new PDO('mysql:host=127.0.0.1;dbname='.$name.';charset=utf8mb4',$c['user'],$c['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);});
 }
 function reward_url(string $code): string {
-    if(!str_starts_with($code,'r1_'))return '#';return RewardLinkTargets::url('test',reward_platform(),$code);
+    if(!str_starts_with($code,'r1_'))return '#';return RewardLinkTargets::url(in_array(reward_platform(),['vk','ok'],true)?'prod':'test',reward_platform(),$code);
 }
 reward_platform();

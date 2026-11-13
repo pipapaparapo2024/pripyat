@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../models/weaponprogress.php';
 require_once __DIR__ . '/../models/rewardlinktargets.php';
+require_once __DIR__ . '/../models/rewardaudit.php';
     // ── НАГРАДНЫЕ ССЫЛКИ (25.09.2026, по прямому указанию) ──────────────────────────────
     //
     // Отдельный сайт-генератор (vk_game/сайт/, деплоится на этот же сервер, /rewards-admin/)
@@ -159,14 +160,22 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
             return null;
         }
 
+        private function auditReward(string $stage,string $reason): void {
+            RewardAudit::write($stage,$reason,(string)$this->registry['db'],(int)$this->registry['uid'],trim(strval($this->registry['user_params']['code']??'')));
+        }
+        private function rewardResult(array $result,?string $reason=null){
+            $this->auditReward('claim_result',$reason??(($result['claimed']??0)===1?'credited':($result['reason']??'unknown')));
+            return $this->ops->ok($result);
+        }
         function claim(){
+            $this->auditReward('claim','requested');
             $code = trim(strval($this->registry['user_params']['code'] ?? ''));
-            if($code === '' || strlen($code) > 64) return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
-            if(!RewardLinkTargets::matches($code,(string)$this->registry['db']))return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
+            if($code === '' || strlen($code) > 64) return $this->rewardResult(['claimed'=>0,'reason'=>'notfound']);
+            if(!RewardLinkTargets::matches($code,(string)$this->registry['db']))return $this->rewardResult(['claimed'=>0,'reason'=>'notfound'],'target_mismatch');
             $link = null;
             try {
                 $link = $this->_rawLink();
-                if(!$link) return $this->ops->fail(99);
+                if(!$link){$this->auditReward('claim_result','database_unavailable');return $this->ops->fail(99);}
                 if(!$link->begin_transaction()) throw new RuntimeException('Transaction failed');
                 // Share-lock the definition while allowing other players to claim this link.
                 $stmt = $link->prepare('SELECT id, reward, expires_at, active FROM reward_links WHERE code = ? LIMIT 1 LOCK IN SHARE MODE');
@@ -175,7 +184,7 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
                 $row = $stmt->get_result()->fetch_assoc(); $stmt->close();
                 if(!$row || !intval($row['active'])){
                     $link->rollback(); $link->close();
-                    return $this->ops->ok(['claimed'=>0,'reason'=>'notfound']);
+                    return $this->rewardResult(['claimed'=>0,'reason'=>'notfound']);
                 }
                 $uid=intval($this->registry['uid']);
                 // All reward fields are read and written on this same locked connection.
@@ -186,7 +195,7 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
                 $nowMs = intval(round(microtime(true) * 1000)); $now = intdiv($nowMs,1000);
                 if(intval($row['expires_at'] ?? 0)>0 && $now>=intval($row['expires_at'])){
                     $link->rollback(); $link->close();
-                    return $this->ops->ok(['claimed'=>0,'reason'=>'expired']);
+                    return $this->rewardResult(['claimed'=>0,'reason'=>'expired']);
                 }
                 $linkId=intval($row['id']);
                 // The unique (link_id,user_id) reservation commits with the reward, never before it.
@@ -196,7 +205,7 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
                 $reserved=$link->affected_rows===1; $stmtI->close();
                 if(!$reserved){
                     $link->rollback(); $link->close();
-                    return $this->ops->ok(['claimed'=>0,'reason'=>'already']);
+                    return $this->rewardResult(['claimed'=>0,'reason'=>'already']);
                 }
                 $reward=json_decode($row['reward'],true);
                 if(!is_array($reward)) throw new RuntimeException('Invalid reward');
@@ -209,7 +218,7 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
                 if(($state['habar_blocked_reason'] ?? '')==='habar_date_missing' || !$summary){
                     $reason=$state['habar_blocked_reason'] ?? 'notfound';
                     $link->rollback(); $link->close();
-                    return $this->ops->ok(['claimed'=>0,'reason'=>$reason]);
+                    return $this->rewardResult(['claimed'=>0,'reason'=>$reason]);
                 }
                 foreach(['shmot','bosses_data','weapons'] as $field) if($state[$field]!==null) $user[$field]=json_encode($state[$field]);
                 if(isset($user['exp']) && strval($user['exp'])!==strval($before['exp'] ?? '')){
@@ -228,10 +237,10 @@ require_once __DIR__ . '/../models/rewardlinktargets.php';
                 if(!$link->commit()) throw new RuntimeException('Commit failed');
                 $link->close();
                 $patch=$this->ops->patchCurrencies($user,array_merge(self::CURRENCY_FIELDS,['shmot','bosses_data','weapons','max_energy','energy_time','level','habar_bought','habar_bought_ts','habar_days_collected','habar_last_collect_ts']));
-                return $this->ops->ok(['claimed'=>1,'patch'=>$patch,'summary'=>$summary]);
+                return $this->rewardResult(['claimed'=>1,'patch'=>$patch,'summary'=>$summary]);
             } catch(Throwable $error){
                 if($link){try{$link->rollback();}catch(Throwable $ignored){} $link->close();}
-                error_log('[Rewardlinks.claim] transaction_failed type='.get_class($error));
+                $this->auditReward('claim_result','transaction_failed');
                 return $this->ops->fail(99);
             }
         }
