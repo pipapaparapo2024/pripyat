@@ -30,28 +30,15 @@ $escape = static fn ($value): string => htmlspecialchars((string)$value, ENT_QUO
 $money = static fn (int $minor): string => number_format($minor / 100, 2, ',', ' ').' ₽';
 $worlds = ['site'=>'Сайт','vk'=>'ВКонтакте','ok'=>'Одноклассники'];
 $msk = new DateTimeZone('Europe/Moscow');
-?>
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>История покупок — Припять</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body><main class="wrap">
-<nav><h1>История покупок</h1><a href="index.php">К наградным ссылкам</a></nav>
-<p><?= $escape($report['note']) ?></p>
-<?php if ($report['unverified'] > 0): ?>
-<p>Заказов, которые не удалось подтвердить: <?= (int)$report['unverified'] ?>.</p>
-<?php endif; ?>
-<?php foreach ([0 => 'Игроки', 1 => 'Разработчики'] as $group => $label):
-    $items = array_filter($report['items'], static fn (array $row): bool => (int)$row['developer'] === $group);
-    $sum = array_sum(array_column(array_filter($items, static fn ($row) => $row['credited_at'] !== null), 'amount_minor'));
-?>
-<section>
-    <h2><?= $escape($label) ?> · <?= count($items) ?> · <?= $money($sum) ?></h2>
-    <?php if (!$items): ?><p>Подтверждённых покупок нет.</p><?php else: ?>
+$statusLabels = [
+    'credited'=>'Зачислено', 'paid_uncredited'=>'Оплачено — начисление не подтверждено',
+    'expired'=>'Срок оплаты истёк', 'canceled'=>'Оплата отменена',
+    'pending'=>'Ожидает оплаты', 'created'=>'Попытка оплаты создана',
+    'unverified'=>'Статус не подтверждён',
+];
+$renderTable = static function (array $items) use ($escape, $money, $worlds, $msk, $statusLabels): void {
+    if (!$items) return;
+    ?>
     <table>
         <thead><tr><th>Игрок</th><th>Мир / ID</th><th>Дата и время (МСК)</th><th>Сумма</th><th>Статус и детали</th></tr></thead>
         <tbody>
@@ -61,17 +48,18 @@ $msk = new DateTimeZone('Europe/Moscow');
                 <td><?= $escape($worlds[$row['world']] ?? $row['world']) ?> / <?= $escape($row['player_id']) ?></td>
                 <td><?= $escape((new DateTimeImmutable('@'.(int)$row['time']))->setTimezone($msk)->format('d.m.Y H:i')) ?></td>
                 <td><?= $money((int)$row['amount_minor']) ?></td>
-                <td><details><summary><?= $escape($row['order_status']) ?></summary><dl>
+                <td><details><summary><?= $escape($statusLabels[$row['history_status']] ?? 'Статус не подтверждён') ?></summary><dl>
                 <?php foreach ([
                     'order_id'=>'ID заказа', 'payment_id'=>'ID платежа', 'product_id'=>'ID товара',
                     'reward_field'=>'Ресурс', 'reward_count'=>'Количество', 'currency'=>'Валюта',
-                    'provider_status'=>'Статус ЮKassa', 'provider_method'=>'Способ оплаты',
+                    'order_status'=>'Статус заказа', 'provider_status'=>'Статус ЮKassa',
+                    'provider_cancellation_reason'=>'Причина отмены ЮKassa', 'provider_method'=>'Способ оплаты',
                     'provider_created_at'=>'Создание платежа', 'provider_captured_at'=>'Подтверждение оплаты',
                     'verification'=>'Проверка через API'
                 ] as $field => $title): ?>
                     <dt><?= $escape($title) ?></dt><dd><?= $escape($row[$field] ?? '—') ?></dd>
                 <?php endforeach; ?>
-                <?php foreach (['created_at'=>'Создание заказа', 'credited_at'=>'Начисление'] as $field => $title): ?>
+                <?php foreach (['created_at'=>'Создание попытки', 'credited_at'=>'Начисление'] as $field => $title): ?>
                     <dt><?= $escape($title) ?> (МСК)</dt>
                     <dd><?= $row[$field] ? $escape((new DateTimeImmutable('@'.(int)$row[$field]))->setTimezone($msk)->format('d.m.Y H:i:s')) : '—' ?></dd>
                 <?php endforeach; ?>
@@ -88,6 +76,47 @@ $msk = new DateTimeZone('Europe/Moscow');
         <?php endforeach; ?>
         </tbody>
     </table>
+    <?php
+};
+?>
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>История покупок — Припять</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body><main class="wrap">
+<nav><h1>История покупок</h1><a href="index.php">К наградным ссылкам</a></nav>
+<p><?= $escape($report['note']) ?></p>
+<?php if ($report['unverified'] > 0): ?>
+<p>Заказов, которые не удалось подтвердить: <?= (int)$report['unverified'] ?>.</p>
+<?php endif; ?>
+<?php foreach ([0 => 'Игроки', 1 => 'Разработчики'] as $group => $label):
+    $items = array_values(array_filter($report['items'], static fn (array $row): bool => (int)$row['developer'] === $group));
+    $purchases = array_values(array_filter($items, static fn (array $row): bool => $row['history_status'] === 'credited'));
+    $paidUncredited = array_values(array_filter($items, static fn (array $row): bool => $row['history_status'] === 'paid_uncredited'));
+    $unverified = array_values(array_filter($items, static fn (array $row): bool => $row['history_status'] === 'unverified'));
+    $attempts = array_values(array_filter($items, static fn (array $row): bool => in_array($row['history_status'], ['expired','canceled','pending','created'], true)));
+    $sum = array_sum(array_column($purchases, 'amount_minor'));
+?>
+<section>
+    <h2><?= $escape($label) ?> — зачисленные покупки · <?= count($purchases) ?> · <?= $money($sum) ?></h2>
+    <?php if (!$purchases): ?><p>Зачисленных покупок нет.</p><?php else: $renderTable($purchases); endif; ?>
+    <?php if ($paidUncredited): ?>
+    <h3>Оплачено, начисление не подтверждено · <?= count($paidUncredited) ?></h3>
+    <p>ЮKassa подтвердила оплату, но запись о зачислении отсутствует. Эти платежи вынесены отдельно и требуют разбора.</p>
+    <?php $renderTable($paidUncredited); endif; ?>
+    <?php if ($unverified): ?>
+    <details><summary>Статус не удалось подтвердить · <?= count($unverified) ?></summary>
+    <p>Сверьте эти заказы вручную. Они не включаются ни в сумму зачисленных покупок, ни в список подтверждённых оплат.</p>
+    <?php $renderTable($unverified); ?></details>
+    <?php endif; ?>
+    <?php if ($attempts): ?>
+    <details><summary>Попытки оплаты — не входят в историю покупок · <?= count($attempts) ?></summary>
+    <p>Включает отменённые, просроченные и незавершённые попытки. Эти строки не считаются покупками и не входят в сумму.</p>
+    <?php $renderTable($attempts); ?></details>
     <?php endif; ?>
 </section>
 <?php endforeach; ?>

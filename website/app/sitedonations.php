@@ -1,6 +1,25 @@
 <?php
 require_once __DIR__.'/siteyookassa.php';
 final class SiteDonations {
+ public static function historyStatus(array $order, array $payment, string $verification): string {
+  if (($order['credited_at'] ?? null) !== null) return 'credited';
+  if ($verification !== 'verified') {
+   return match ($order['order_status'] ?? '') {
+    'canceled' => 'canceled',
+    'pending' => 'pending',
+    'created' => 'created',
+    default => 'unverified',
+   };
+  }
+  if (($payment['status'] ?? '') === 'succeeded' && ($payment['paid'] ?? false) === true) return 'paid_uncredited';
+  if (($payment['status'] ?? '') === 'canceled') {
+   return ($payment['cancellation_details']['reason'] ?? '') === 'expired_on_confirmation' ? 'expired' : 'canceled';
+  }
+  if (($payment['status'] ?? '') === 'pending') return 'pending';
+  if (($order['order_status'] ?? '') === 'created') return 'created';
+  return 'unverified';
+ }
+
  private static function connect(array $d): PDO {
   if(!in_array($d['database']??'',['stalker','stalker_ok','stalker_site_test'],true))throw new RuntimeException('invalid_database');
   return new PDO('mysql:host=127.0.0.1;port=3306;dbname='.$d['database'].';charset=utf8mb4',$d['user'],$d['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);
@@ -13,7 +32,7 @@ final class SiteDonations {
   $config=$loadConfig();
   require_once __DIR__.'/siteroles.php';
   require_once __DIR__.'/socialidentity.php';
-  $file='/var/lib/pripyat-site-test/donations-diagnostics-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}
+  $file='/var/lib/pripyat-site-test/donations-diagnostics-v2-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}
   $rows=[];$excluded=0;$unverified=0;
   foreach(['site','vk','ok'] as $world){
    $db=self::connect($world==='site'?$config['database']:NativeProdBoundary::database($config['native'],$world));
@@ -43,10 +62,16 @@ final class SiteDonations {
      'order_status'=>$o['status'], 'created_at'=>(int)$o['created_at'], 'credited_at'=>$o['credited_at'],
      'provider_status'=>$payment['status']??null, 'provider_paid'=>$payment['paid']??null,
      'provider_created_at'=>$payment['created_at']??null, 'provider_captured_at'=>$payment['captured_at']??null,
-     'provider_method'=>$payment['payment_method']['type']??null, 'verification'=>$check];
+     'provider_method'=>$payment['payment_method']['type']??null,
+     'provider_cancellation_reason'=>$payment['cancellation_details']['reason']??null,
+     'verification'=>$check,
+     'history_status'=>self::historyStatus([
+      'order_status'=>$o['status'],
+      'credited_at'=>$o['credited_at'],
+     ],$payment,$check)];
    }
   }
-  usort($rows,fn($a,$b)=>$b['time']<=>$a['time']);$data=['items'=>$rows,'test_excluded'=>$excluded,'unverified'=>$unverified,'updated_at'=>time(),'note'=>'Заказы ЮKassa; до 1000 последних заказов каждого мира. Платежи голосами ВК и ОК сюда не входят.'];
+  usort($rows,fn($a,$b)=>$b['time']<=>$a['time']);$data=['items'=>$rows,'test_excluded'=>$excluded,'unverified'=>$unverified,'updated_at'=>time(),'note'=>'Покупками считаются только заказы с подтверждённым зачислением. Неоплаченные попытки и незавершённые оплаты показаны отдельно и не входят в сумму покупок. Платежи голосами ВК и ОК сюда не входят.'];
   if($unverified===0){$tmp=$file.'.'.bin2hex(random_bytes(8));file_put_contents($tmp,json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),LOCK_EX);chmod($tmp,0600);rename($tmp,$file);}
   return $data;
  }
