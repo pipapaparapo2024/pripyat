@@ -8,7 +8,6 @@ if($path==='/auth/status'&&array_key_exists('donations',$_GET)){
 }
 require_once __DIR__.'/siteauth.php';
 require_once __DIR__.'/rewardintent.php';
-require_once __DIR__.'/rewardintent.php';
 require_once __DIR__.'/siteratelimit.php';
 require_once __DIR__.'/sitephoneactions.php';
 require_once __DIR__.'/sitesessions.php';
@@ -17,8 +16,6 @@ require_once __DIR__.'/siteavatar.php';
 require_once __DIR__.'/siteroles.php';
 require_once __DIR__.'/siteyookassa.php';
 function siteResult(array $data,int $code=200): never {
- if($code>=400)RewardIntent::audit('bootstrap_error',in_array($data['error']??'',['csrf_rejected','rate_limited','login_required','temporarily_unavailable','request_rejected','invalid_input'],true)?$data['error']:'request_rejected',(int)($_SESSION['site_authenticated']['player_id']??0));
- if(isset($data['player_id'],$data['platform'])&&array_key_exists('reward_code',$data))RewardIntent::audit('bootstrap',is_string($data['reward_code'])?'delivered':(($_SESSION['reward_intent']['platform']??null)!==$data['platform']?'target_mismatch':'intent_expired'),(int)$data['player_id'],$data['platform']);
  if($code>=400)RewardIntent::audit('bootstrap_error',in_array($data['error']??'',['csrf_rejected','rate_limited','login_required','temporarily_unavailable','request_rejected','invalid_input'],true)?$data['error']:'request_rejected',(int)($_SESSION['site_authenticated']['player_id']??0));
  if(isset($data['player_id'],$data['platform'])&&array_key_exists('reward_code',$data))RewardIntent::audit('bootstrap',is_string($data['reward_code'])?'delivered':(($_SESSION['reward_intent']['platform']??null)!==$data['platform']?'target_mismatch':'intent_expired'),(int)$data['player_id'],$data['platform']);
  http_response_code($code);echo json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);exit;
