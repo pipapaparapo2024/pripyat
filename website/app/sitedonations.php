@@ -13,21 +13,40 @@ final class SiteDonations {
   $config=$loadConfig();
   require_once __DIR__.'/siteroles.php';
   require_once __DIR__.'/socialidentity.php';
-  $file='/var/lib/pripyat-site-test/donations-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}
+  $file='/var/lib/pripyat-site-test/donations-diagnostics-cache.json';if(is_file($file)&&filemtime($file)>time()-60){$data=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if(is_array($data))return $data;}
   $rows=[];$excluded=0;$unverified=0;
   foreach(['site','vk','ok'] as $world){
    $db=self::connect($world==='site'?$config['database']:NativeProdBoundary::database($config['native'],$world));
-   $orders=$db->query("SELECT o.*,u.nick FROM site_payment_orders o LEFT JOIN users u ON u.id=o.player_id WHERE o.status='succeeded' AND o.credited_at IS NOT NULL ORDER BY o.credited_at DESC LIMIT 1000")->fetchAll(PDO::FETCH_ASSOC);
+   $orders=$db->query("SELECT o.*,u.nick FROM site_payment_orders o LEFT JOIN users u ON u.id=o.player_id ORDER BY o.created_at DESC LIMIT 1000")->fetchAll(PDO::FETCH_ASSOC);
    foreach($orders as $o){
-    try{[$provider,$payment]=SiteYooKassa::lookup($config,$o['provider_payment_id']);if($provider->isTest()){$excluded++;continue;}SiteYooKassa::validatePaid($payment,$o,$provider->shopId(),false);}catch(Throwable $e){$unverified++;continue;}
+    $payment = [];
+    $check = 'not_checked';
+    if ($o['provider_payment_id']) {
+     try {
+      [$provider, $payment] = SiteYooKassa::lookup($config, $o['provider_payment_id']);
+      if ($provider->isTest()) {$excluded++; continue;}
+      SiteYooKassa::validateOrder($payment, $o, $provider->shopId(), false);
+      $check = 'verified';
+     } catch (Throwable $e) {
+      $unverified++;
+      $payment = [];
+      $check = 'verification_failed';
+     }
+    }
     $id=(int)$o['player_id'];$developer=false;
     if($world==='site'){$q=$db->prepare('SELECT email FROM site_accounts WHERE player_id=?');$q->execute([$id]);$developer=in_array('developer',SiteRoles::forEmail((string)$q->fetchColumn(),$config),true);}
     elseif($world==='vk')$developer=in_array('developer',SocialIdentity::roles('vk',(string)$id),true);
     else{$q=$db->prepare("SELECT JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(vk_params),vk_params,'{}'),'$.vk_ok_user_id')) FROM secure WHERE id=?");$q->execute([$id]);$developer=in_array('developer',SocialIdentity::roles('ok',(string)$q->fetchColumn()),true);}
-    $rows[]=['world'=>$world,'player_id'=>$id,'nick'=>$o['nick']?:'Сталкер','amount_minor'=>(int)$o['amount_minor'],'time'=>(int)$o['credited_at'],'developer'=>$developer];
+    $rows[]=['world'=>$world,'player_id'=>$id,'nick'=>$o['nick']?:'Сталкер','amount_minor'=>(int)$o['amount_minor'],'time'=>(int)($o['credited_at'] ?? $o['created_at']),'developer'=>$developer,
+     'order_id'=>$o['id'], 'payment_id'=>$o['provider_payment_id'], 'product_id'=>$o['product_id'],
+     'reward_field'=>$o['reward_field'], 'reward_count'=>$o['reward_count'], 'currency'=>$o['currency'],
+     'order_status'=>$o['status'], 'created_at'=>(int)$o['created_at'], 'credited_at'=>$o['credited_at'],
+     'provider_status'=>$payment['status']??null, 'provider_paid'=>$payment['paid']??null,
+     'provider_created_at'=>$payment['created_at']??null, 'provider_captured_at'=>$payment['captured_at']??null,
+     'provider_method'=>$payment['payment_method']['type']??null, 'verification'=>$check];
    }
   }
-  usort($rows,fn($a,$b)=>$b['time']<=>$a['time']);$data=['items'=>$rows,'test_excluded'=>$excluded,'unverified'=>$unverified,'updated_at'=>time(),'note'=>'Подтверждённые покупки через ЮKassa; до 1000 последних заказов каждого мира. Платежи голосами ВК и ОК сюда не входят.'];
+  usort($rows,fn($a,$b)=>$b['time']<=>$a['time']);$data=['items'=>$rows,'test_excluded'=>$excluded,'unverified'=>$unverified,'updated_at'=>time(),'note'=>'Заказы ЮKassa; до 1000 последних заказов каждого мира. Платежи голосами ВК и ОК сюда не входят.'];
   if($unverified===0){$tmp=$file.'.'.bin2hex(random_bytes(8));file_put_contents($tmp,json_encode($data,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),LOCK_EX);chmod($tmp,0600);rename($tmp,$file);}
   return $data;
  }

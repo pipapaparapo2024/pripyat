@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__.'/sitedonations.php';
+require_once __DIR__.'/rewardstotp-gate.php';
+requireRewardsTotp();
 header('Cache-Control: private, no-store');
 header('X-Robots-Tag: noindex, nofollow');
 header('Content-Type: text/html; charset=utf-8');
@@ -40,13 +42,13 @@ $msk = new DateTimeZone('Europe/Moscow');
 <?php endif; ?>
 <?php foreach ([0 => 'Игроки', 1 => 'Разработчики'] as $group => $label):
     $items = array_filter($report['items'], static fn (array $row): bool => (int)$row['developer'] === $group);
-    $sum = array_sum(array_column($items, 'amount_minor'));
+    $sum = array_sum(array_column(array_filter($items, static fn ($row) => $row['credited_at'] !== null), 'amount_minor'));
 ?>
 <section>
     <h2><?= $escape($label) ?> · <?= count($items) ?> · <?= $money($sum) ?></h2>
     <?php if (!$items): ?><p>Подтверждённых покупок нет.</p><?php else: ?>
     <table>
-        <thead><tr><th>Игрок</th><th>Мир / ID</th><th>Дата и время (МСК)</th><th>Сумма</th></tr></thead>
+        <thead><tr><th>Игрок</th><th>Мир / ID</th><th>Дата и время (МСК)</th><th>Сумма</th><th>Статус и детали</th></tr></thead>
         <tbody>
         <?php foreach ($items as $row): ?>
             <tr>
@@ -54,6 +56,21 @@ $msk = new DateTimeZone('Europe/Moscow');
                 <td><?= $escape($worlds[$row['world']] ?? $row['world']) ?> / <?= $escape($row['player_id']) ?></td>
                 <td><?= $escape((new DateTimeImmutable('@'.(int)$row['time']))->setTimezone($msk)->format('d.m.Y H:i')) ?></td>
                 <td><?= $money((int)$row['amount_minor']) ?></td>
+                <td><details><summary><?= $escape($row['order_status']) ?></summary><dl>
+                <?php foreach ([
+                    'order_id'=>'ID заказа', 'payment_id'=>'ID платежа', 'product_id'=>'ID товара',
+                    'reward_field'=>'Ресурс', 'reward_count'=>'Количество', 'currency'=>'Валюта',
+                    'provider_status'=>'Статус ЮKassa', 'provider_method'=>'Способ оплаты',
+                    'provider_created_at'=>'Создание платежа', 'provider_captured_at'=>'Подтверждение оплаты',
+                    'verification'=>'Проверка через API'
+                ] as $field => $title): ?>
+                    <dt><?= $escape($title) ?></dt><dd><?= $escape($row[$field] ?? '—') ?></dd>
+                <?php endforeach; ?>
+                <?php foreach (['created_at'=>'Создание заказа', 'credited_at'=>'Начисление'] as $field => $title): ?>
+                    <dt><?= $escape($title) ?> (МСК)</dt>
+                    <dd><?= $row[$field] ? $escape((new DateTimeImmutable('@'.(int)$row[$field]))->setTimezone($msk)->format('d.m.Y H:i:s')) : '—' ?></dd>
+                <?php endforeach; ?>
+                </dl></details></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
