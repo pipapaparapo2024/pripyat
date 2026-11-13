@@ -8,7 +8,19 @@ try{
  $raw=file_get_contents('php://input',false,null,0,65537);if(strlen($raw)>65536)throw new InvalidArgumentException('too_large');$data=json_decode($raw,true,32,JSON_THROW_ON_ERROR);
  if(($data['type']??'')!=='notification'||!in_array($data['event']??'',['payment.succeeded','payment.canceled'],true)){http_response_code(200);echo '{}';exit;}
  $id=(string)($data['object']['id']??'');if(!preg_match('/^[a-zA-Z0-9-]{1,64}$/D',$id))throw new InvalidArgumentException('invalid_payment');
- [$provider,$verified]=SiteYooKassa::lookup($c,$id);$world=$verified['metadata']['game_world']??'site';if(!in_array($world,['site','vk','ok'],true))throw new DomainException('invalid_world');
+ [$provider,$verified]=SiteYooKassa::lookup($c,$id);$world=$verified['metadata']['game_world']??'site';
+ if($world==='telegram'){
+  if($provider->isTest())throw new DomainException('invalid_payment_environment');
+  $path=getenv('PRIPYAT_TELEGRAM_WEBSITE_PAYMENT_CONFIG');
+  if(!is_string($path)||$path===''||!is_file($path))throw new RuntimeException('telegram_payment_config_missing');
+  $telegram=json_decode((string)file_get_contents($path),true,16,JSON_THROW_ON_ERROR);
+  if(($telegram['environment']??'')!=='prod'||($telegram['database']??'')!=='stalker_telegram'
+   ||($telegram['host']??'')!=='127.0.0.1'||(int)($telegram['port']??0)!==3306
+   ||!is_string($telegram['user']??null)||!is_string($telegram['password']??null))throw new RuntimeException('telegram_payment_config_invalid');
+  $pdo=new PDO('mysql:host=127.0.0.1;port=3306;dbname=stalker_telegram;charset=utf8mb4',$telegram['user'],$telegram['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);
+  (new SitePayments($pdo,$provider,'telegram'))->settle($id,time());echo '{}';exit;
+ }
+ if(!in_array($world,['site','vk','ok'],true))throw new DomainException('invalid_world');
  $d=$world==='site'?$c['database']:NativeProdBoundary::database($c['native'],$world);$expected=['site'=>'stalker_site_test','vk'=>'stalker','ok'=>'stalker_ok'][$world];if($d['database']!==$expected||$d['host']!=='127.0.0.1')throw new RuntimeException('invalid_database');
  $pdo=new PDO('mysql:host=127.0.0.1;dbname='.$expected.';charset=utf8mb4',$d['user'],$d['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false]);
  (new SitePayments($pdo,$provider,$world))->settle($id,time());echo '{}';

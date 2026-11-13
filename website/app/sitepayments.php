@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__.'/siteyookassa.php';require_once __DIR__.'/sitesessions.php';
 final class SitePayments {
- public function __construct(private PDO $db,private SiteYooKassa $provider,private string $world='site') {if(!in_array($world,['site','vk','ok'],true))throw new InvalidArgumentException('invalid_payment_world');}
+ public function __construct(private PDO $db,private SiteYooKassa $provider,private string $world='site') {
+  if(!in_array($world,['site','vk','ok','telegram','telegram_test','telegram_test_live'],true)||($world==='telegram_test'&&!$provider->isTest())||($world==='telegram_test_live'&&$provider->isTest())||($world==='telegram'&&$provider->isTest()))throw new InvalidArgumentException('invalid_payment_world');
+ }
  private function q(string $sql,array $args=[]): PDOStatement {$q=$this->db->prepare($sql);$q->execute($args);return $q;}
  public static function product(int $id): array {
   $counts=['stew'=>[4,12,24,80,200,400,2000,4000],'coins'=>[16,36,56,100,600,2000,10000,20000],'cigarettes'=>[1600,3600,6000,8000,11000,22000,125000,300000],'energy'=>[50,110,180,400,850,1300,2000,3500]];
@@ -19,7 +21,9 @@ final class SitePayments {
   $this->q('INSERT IGNORE INTO site_payment_orders(id,player_id,product_id,amount_minor,reward_field,reward_count,created_at) VALUES(?,?,?,?,?,?,?)',[$intent,$uid,$product,$p['amount_minor'],$p['reward_field'],$p['reward_count'],$now]);
   $o=$this->q('SELECT * FROM site_payment_orders WHERE id=?',[$intent])->fetch(PDO::FETCH_ASSOC);
   if(!$o||(int)$o['player_id']!==$uid||(int)$o['product_id']!==$product||$now-(int)$o['created_at']>82800)throw new DomainException('invalid_payment_intent');
-  $payment=$o['provider_payment_id']?$this->provider->request('payments/'.$o['provider_payment_id']):$this->provider->request('payments',['amount'=>['value'=>sprintf('%d.00',intdiv((int)$o['amount_minor'],100)),'currency'=>'RUB'],'capture'=>true,'confirmation'=>['type'=>'redirect','return_url'=>'https://pripyat-game-site.ru/payment/'],'description'=>'Припять: '.$p['reward_count'].' '.$p['reward_field'],'metadata'=>['site_order_id'=>$intent,'game_world'=>$this->world]],$intent);
+  $confirmation=['type'=>'redirect','return_url'=>'https://pripyat-game-site.ru/payment/'];
+  if(in_array($this->world,['telegram','telegram_test','telegram_test_live'],true))$confirmation['return_url']='https://pripyat-game-site.ru/telegram-payment-return.html';
+  $payment=$o['provider_payment_id']?$this->provider->request('payments/'.$o['provider_payment_id']):$this->provider->request('payments',['amount'=>['value'=>sprintf('%d.00',intdiv((int)$o['amount_minor'],100)),'currency'=>'RUB'],'capture'=>true,'confirmation'=>$confirmation,'description'=>'Припять: '.$p['reward_count'].' '.$p['reward_field'],'metadata'=>['site_order_id'=>$intent,'game_world'=>$this->world]],$intent);
   $id=$payment['id']??'';
   $this->provider->assertEnvironment($payment);
   if(!is_string($id)||!preg_match('/^[a-zA-Z0-9-]{1,64}$/D',$id)||($payment['metadata']['site_order_id']??'')!==$intent||($payment['metadata']['game_world']??'site')!==$this->world||($payment['amount']['currency']??'')!=='RUB'||($payment['amount']['value']??'')!==sprintf('%d.00',intdiv((int)$o['amount_minor'],100)))throw new DomainException('payment_mismatch');
@@ -38,7 +42,15 @@ final class SitePayments {
   if(($p['status']??'')==='canceled'){$this->q("UPDATE site_payment_orders SET status='canceled' WHERE id=? AND credited_at IS NULL",[$o['id']]);return 'canceled';}
   if(($p['status']??'')!=='succeeded')return 'pending';
   SiteYooKassa::validatePaid($p,$o,$this->provider->shopId(),$this->provider->isTest());$uid=(int)$o['player_id'];
-  $lock=($this->world==='site'?'pripyat.site.test.player.':'pripyat.native.prod.'.($this->world==='vk'?'stalker':'stalker_ok').'.player.').$uid;if((int)$this->q('SELECT GET_LOCK(?,10)',[$lock])->fetchColumn()!==1)throw new RuntimeException('player_busy');
+  $lock=match($this->world){
+   'site'=>'pripyat.site.test.player.',
+   'telegram'=>'pripyat.telegram.prod.player.',
+   'telegram_test'=>'pripyat.telegram.test.player.',
+    'telegram_test_live'=>'pripyat.telegram.test.player.',
+   'vk'=>'pripyat.native.prod.stalker.player.',
+   'ok'=>'pripyat.native.prod.stalker_ok.player.',
+  }.$uid;
+  if((int)$this->q('SELECT GET_LOCK(?,10)',[$lock])->fetchColumn()!==1)throw new RuntimeException('player_busy');
   try{
    $this->db->beginTransaction();$o=$this->q('SELECT * FROM site_payment_orders WHERE id=? FOR UPDATE',[$o['id']])->fetch(PDO::FETCH_ASSOC);
    if($o['credited_at']!==null){$this->db->commit();return 'already_credited';}
